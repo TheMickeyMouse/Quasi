@@ -89,7 +89,7 @@ namespace Graphics
 #undef SHADER_UNIF_FV
 #pragma endregion
 #pragma region Uniform Matricies
-#define SHADER_UNIF_MAT(s, m) GLCALL(glUniformMatrix##s##fv(GetUniformLocation(name), 1, GL_FALSE, m))
+#define SHADER_UNIF_MAT(s, m) GLCALL(glUniformMatrix##s##fv(GetUniformLocation(name), 1, GL_TRUE, m))
         void SetUniformMatrix2x2(string name, floatptr mat) { SHADER_UNIF_MAT(2, mat); }
         void SetUniformMatrix3x3(string name, floatptr mat) { SHADER_UNIF_MAT(3, mat); }
             
@@ -100,7 +100,7 @@ namespace Graphics
         void SetUniformMatrix3x4(string name, floatptr mat) { SHADER_UNIF_MAT(3x4, mat); }
         void SetUniformMatrix4x3(string name, floatptr mat) { SHADER_UNIF_MAT(4x3, mat); }
             
-        void SetUniformMatrix4x4(string name, const Maths::Matrix3D& mat) { SHADER_UNIF_MAT(4, mat.GetInCol()); }
+        void SetUniformMatrix4x4(string name, const Maths::Matrix3D& mat) { SHADER_UNIF_MAT(4, mat.GetInRow()); }
 #undef SHADER_UNIF_MAT
 #pragma endregion
     

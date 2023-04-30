@@ -1,28 +1,27 @@
 ﻿#pragma once
 
-#include "BlockBase.h"
-#include "BlockPtr.h"
+#include "GraphicsDevice.h"
 #include "Serialization/WorldSerialization.h"
 #include "stdu/sorted_vector.h"
+#include "stdu/ref.h"
 
 namespace Game {
+    class BlockBase;
+    class BlockPtr;
+    
     class World {
-        // basically std::optional<std::reference_wrapper<T>> but with no overhead 
-        template <class T> using opt_ref = const T*;
+        friend BlockBase;
         
         private:
             Maths::Vec3Int boundsMin, boundsMax;
-            static int DefaultBlockComparison(const Maths::Vec3Int& vec) {
-                return vec.x * 256 + vec.y * 16 + vec.z;
-            }
-            static int DefaultBlockComparison(const BlockPtr& x) {
-                const auto vec = x->GetPosition();
-                return vec.x * 256 + vec.y * 16 + vec.z;
-            }
+        
+            static int DefaultBlockComparison(const Maths::Vec3Int& vec);
+            static int DefaultBlockComparison(const BlockPtr& x);
+        
             stdu::sorted_vector<BlockPtr, int(*)(const BlockPtr&)> blocks = { DefaultBlockComparison };
 
-            opt_ref<BlockBase> BlockAt(const Maths::Vec3Int& position, int startIndex = 0);
-            
+            stdu::ref<BlockBase>  BlockAt(const Maths::Vec3Int& position, int startIndex = 0);
+            stdu::cref<BlockBase> BlockAt(const Maths::Vec3Int& position, int startIndex = 0) const;
         public:
             World();
             World(const Serialization::WorldStructure& ws);

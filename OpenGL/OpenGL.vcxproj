@@ -112,6 +112,7 @@
       <PreprocessorDefinitions>GLEW_STATIC</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\GLFW\include;$(SolutionDir)Dependencies\GLEW\include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -158,6 +159,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Application.cpp" />
+    <ClCompile Include="src\Game\BlockBase.cpp" />
     <ClCompile Include="src\Game\BlockRenderer.cpp" />
     <ClCompile Include="src\Game\Game.cpp" />
     <ClCompile Include="src\Game\GameTime.cpp" />
@@ -173,6 +175,7 @@
     <ClCompile Include="src\Graphics\Graphicals\MeshObject.cpp" />
     <ClCompile Include="src\Graphics\Utils\Textures\Texture.cpp" />
     <ClCompile Include="src\Graphics\Utils\Textures\TextureAtlas.cpp" />
+    <ClCompile Include="src\IO\Mouse.cpp" />
     <ClCompile Include="src\Maths\Matrix.cpp" />
     <ClCompile Include="src\test\TestBatchedTextured.cpp" />
     <ClCompile Include="src\test\TestClearColor.cpp" />
@@ -237,12 +240,15 @@
     <ClInclude Include="src\Graphics\Meshes\TriMesh.h" />
     <ClInclude Include="src\Graphics\Utils\Textures\Texture.h" />
     <ClInclude Include="src\Graphics\Utils\Textures\TextureAtlas.h" />
+    <ClInclude Include="src\IO\IO.h" />
+    <ClInclude Include="src\IO\Mouse.h" />
     <ClInclude Include="src\Maths\Corner.h" />
     <ClInclude Include="src\Maths\Direction.h" />
     <ClInclude Include="src\Maths\NumTypes.h" />
     <ClInclude Include="src\Maths\Vector.h" />
     <ClInclude Include="src\Maths\Matrix.h" />
     <ClInclude Include="src\stdu\enum_utils.h" />
+    <ClInclude Include="src\stdu\ref.h" />
     <ClInclude Include="src\test\Test.h" />
     <ClInclude Include="src\test\TestBatchedTextured.h" />
     <ClInclude Include="src\test\TestClearColor.h" />
@@ -270,6 +276,7 @@
     <Content Include="res\backup.txt" />
     <Content Include="res\game_planning.txt" />
     <Content Include="res\levels\level_test.json" />
+    <Content Include="res\shaders\basic_tex.glsl" />
     <Content Include="res\textures\block_texture_atl.json" />
     <Content Include="res\textures\simple_tm.png" />
     <Content Include="res\textures\test_atlas.png" />

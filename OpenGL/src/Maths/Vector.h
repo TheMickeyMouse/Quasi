@@ -42,6 +42,12 @@ namespace Maths
     using Vector2 = Vec2<float>;
     using Vector3 = Vec3<float>;
     using Vector4 = Vec4<float>;
+    using Vec2f64 = Vec2<double>;
+    using Vec3f64 = Vec3<double>;
+    using Vec4f64 = Vec4<double>;
+    using Vec2d = Vec2<double>;
+    using Vec3d = Vec3<double>;
+    using Vec4d = Vec4<double>;
     using Vec2Int = Vec2<int>;
     using Vec3Int = Vec3<int>;
     using Vec4Int = Vec4<int>;
@@ -73,15 +79,22 @@ namespace Maths
         T operator[] (unsigned int i) const { return ((const T*)this)[i]; }
         operator T*() { return (T*)this; }
 
-#define DEF_VEC2_OP(OP)     Vec2 operator OP (const Vec2& other) const { return { x OP other.x, y OP other.y }; } \
-                            Vec2 operator OP (T&& other) const { return { x OP other, y OP other }; } \
-                            Vec2 operator OP (const T& other) const { return { x OP other, y OP other }; }
+#define DEF_VEC2_OP(OP) Vec2 operator OP (const Vec2& other) const { return { x OP other.x, y OP other.y }; } \
+                        Vec2 operator OP (T other) const { return { x OP other, y OP other }; } \
+                        Vec2& operator OP##= (const Vec2& other) { x OP##= other.x; y OP##= other.y; return *this; } \
+                        Vec2& operator OP##= (T other) { x OP##= other; y OP##= other; return *this; }
 
         DEF_VEC2_OP(+)
         DEF_VEC2_OP(-)
         DEF_VEC2_OP(*)
         DEF_VEC2_OP(/)
         DEF_VEC2_OP(%)
+
+        Vec2 operator+() const { return *this; }
+        Vec2 operator-() const { return { -x, -y }; }
+        
+        bool operator==(const Vec2& other) const { return x == other.x && y == other.y; }
+        bool operator!=(const Vec2& other) const { return !(*this == other); }
 
 #undef DEF_VEC2_OP
 #define DEF_VEC2_CAST(TYPE)
@@ -115,14 +128,21 @@ namespace Maths
         operator T*() { return (T*)this; }
 
 #define DEF_VEC3_OP(OP) Vec3 operator OP (const Vec3& other) const { return { x OP other.x, y OP other.y, z OP other.z }; } \
-                        Vec3 operator OP (T&& other) const { return { x OP other, y OP other, z OP other }; } \
-                        Vec3 operator OP (const T& other) const { return { x OP other, y OP other, z OP other }; }
-
+                        Vec3 operator OP (T other) const { return { x OP other, y OP other, z OP other }; } \
+                        Vec3& operator OP##= (const Vec3& other) { x OP##= other.x; y OP##= other.y; z OP##= other.z; return *this; } \
+                        Vec3& operator OP##= (T other) { x OP##= other; y OP##= other; z OP##= other; return *this; }
+        
         DEF_VEC3_OP(+)
         DEF_VEC3_OP(-)
         DEF_VEC3_OP(*)
         DEF_VEC3_OP(/)
         DEF_VEC3_OP(%)
+
+        Vec3 operator+() const { return *this; }
+        Vec3 operator-() const { return { -x, -y, -z }; }
+
+        bool operator==(const Vec3& other) const { return x == other.x && y == other.y && z == other.z; }
+        bool operator!=(const Vec3& other) const { return !(*this == other); }
 
 #undef DEF_VEC3_OP
         template <Numeral TOther> operator Vec3<TOther>() { return { (TOther)x, (TOther)y, (TOther)z }; }
@@ -158,14 +178,21 @@ namespace Maths
         operator T*() { return (T*)this; }
 
 #define DEF_VEC4_OP(OP) Vec4 operator OP (const Vec4& other) const { return { x OP other.x, y OP other.y, z OP other.z, w OP other.w }; } \
-                        Vec4 operator OP (T&& other) const { return { x OP other, y OP other, z OP other, w OP other }; } \
-                        Vec4 operator OP (const T& other) const { return { x OP other, y OP other, z OP other, w OP other }; }
-
+                        Vec4 operator OP (T other) const { return { x OP other, y OP other, z OP other, w OP other }; } \
+                        Vec4& operator OP##= (const Vec4& other) { x OP##= other.x; y OP##= other.y; z OP##= other.z; w OP##= other.w; return *this; } \
+                        Vec4& operator OP##= (T other) { x OP##= other; y OP##= other; z OP##= other; w OP##= other; return *this; }
+        
         DEF_VEC4_OP(+)
         DEF_VEC4_OP(-)
         DEF_VEC4_OP(*)
         DEF_VEC4_OP(/)
         DEF_VEC4_OP(%)
+
+        Vec4 operator+() const { return *this; }
+        Vec4 operator-() const { return { -x, -y, -z, -w }; }
+        
+        bool operator==(const Vec4& other) const { return x == other.x && y == other.y && z == other.z && w == other.w; }
+        bool operator!=(const Vec4& other) const { return !(*this == other); }
 
 #undef DEF_VEC3_OP
         template <Numeral TOther> operator Vec4<TOther>() { return { (TOther)x, (TOther)y, (TOther)z, (TOther)w }; }

@@ -17,28 +17,28 @@ namespace Game {
                { { -0.5f,  0.5f, -0.5f }, { 1, 1, 1, 1 }, 0, 2 }, { { -0.5f, -0.5f, -0.5f }, { 1, 1, 1, 1 }, 0, 3 }, },
     };
 
-    BlockRenderer::BlockRenderer(BlockBase& parent, unsigned enabledFlags) : enabledFlags(enabledFlags), parentBlock(&parent) {}
+    BlockRenderer::BlockRenderer(stdu::ref<BlockBase> parent, unsigned enabledFlags) : enabledFlags(enabledFlags), ParentBlock(parent) {}
 
-    BlockRenderer::BlockRenderer(const BlockRenderer& copy) : enabledFlags(copy.enabledFlags), textureID(copy.textureID), parentBlock(copy.parentBlock) {}
-    BlockRenderer::BlockRenderer(BlockRenderer&& copy) noexcept : enabledFlags(copy.enabledFlags), textureID(copy.textureID), parentBlock(copy.parentBlock) {
-        copy.parentBlock = nullptr;
+    BlockRenderer::BlockRenderer(const BlockRenderer& copy) : enabledFlags(copy.enabledFlags), textureID(copy.textureID), ParentBlock(copy.ParentBlock) {}
+    BlockRenderer::BlockRenderer(BlockRenderer&& copy) noexcept : enabledFlags(copy.enabledFlags), textureID(copy.textureID), ParentBlock(copy.ParentBlock) {
+        copy.ParentBlock = nullptr;
     }
     BlockRenderer& BlockRenderer::operator=(const BlockRenderer& copy) noexcept {
         if (this == &copy) return *this;
         enabledFlags = copy.enabledFlags;
         textureID = copy.textureID;
-        parentBlock = copy.parentBlock;
+        ParentBlock = copy.ParentBlock;
         return *this;
     }
     BlockRenderer& BlockRenderer::operator=(BlockRenderer&& copy) noexcept {
         enabledFlags = copy.enabledFlags;
         textureID = copy.textureID;
-        parentBlock = copy.parentBlock;
-        copy.parentBlock = nullptr;
+        ParentBlock = copy.ParentBlock;
+        copy.ParentBlock = nullptr;
         return *this;
     }
 
-    const Maths::Vec3Int& BlockRenderer::GetPosition() const { return parentBlock->Position; }
+    const Maths::Vec3Int& BlockRenderer::GetPosition() const { return ParentBlock->Position; }
 
     void BlockRenderer::SetTextureOfMesh(Graphics::QuadMesh<Vertex>& mesh, int textureID) {
         Vertex* subMeshStart = mesh.GetVertices();
@@ -51,7 +51,7 @@ namespace Game {
             (++subMeshStart)->TextureAtlID = (intf)textureID;
     }
 
-    void BlockRenderer::SetTextures(Serialization::BlockTextureStructure texture) {
+    void BlockRenderer::UseTexture(Serialization::BlockTextureStructure texture) {
         using namespace Serialization;
         
         const int all = texture.all.id;
@@ -61,6 +61,40 @@ namespace Game {
         } else {
             textureID.fill(all);
         }
+    }
+    
+    bool BlockRenderer::MatchesTextureState(const BlockStateMatchingStructure& match) const {
+        if (match.position && match.position != ParentBlock->Position) 
+            return false;
+        
+        for (auto i = (Maths::Direction3D)0; i < 6; ++i) {
+            const auto blockFacing = ParentBlock->BlockInDirection(i);
+            auto bfID = blockFacing.is_null() ? BlockType::NIL : blockFacing->ID();
+            if (match.facing[(int)i] && bfID != match.facing[(int)i])
+                return false;
+        }
+
+        return true;
+    }
+
+    void BlockRenderer::UseTextureDispatch(const BlockTextureDispatcher& disp) {
+        uint useTextureID = ~0; // using uint for no linting warning lol
+        for (uint i = 0; i < disp.stateDispatch.size(); ++i) {
+            if (MatchesTextureState(disp.stateDispatch[i].matchingState))
+                useTextureID = i;
+        }
+
+        if (~useTextureID == 0) {
+            UseTexture(disp.defaultTexture);
+        } else {
+            UseTexture(disp.stateDispatch[useTextureID].dispatchedTexture);
+        }
+    }
+
+    void BlockRenderer::UseTextureDispatch(const TextureDispatcher& disp) {
+        if (!disp.blockTextures.contains(ParentBlock->ID())) return;
+        
+        UseTextureDispatch(disp.blockTextures.at(ParentBlock->ID()));
     }
 
     Graphics::MeshObject& BlockRenderer::GetMeshObjectForm() {
@@ -73,7 +107,7 @@ namespace Game {
             }
 
         meshObj = Graphics::MeshObject::Make<Graphics::QuadMesh>(faces.data(), faces.size());
-        meshObj.Transform(Maths::Matrix3D::TranslateMat(parentBlock->Position));
+        meshObj.Transform(Maths::Matrix3D::TranslateMat(ParentBlock->Position));
         return meshObj;
     }
 }

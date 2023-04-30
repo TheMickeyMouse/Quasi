@@ -27,9 +27,7 @@ namespace Maths
         Matrix3D(const Vector4& r1, const Vector4& r2, const Vector4& r3, const Vector4& r4, bool verticalPacking = true);
 
         const float* GetInRow() const;
-        const float* GetInCol() const;
         const Vector4* GetRows() const;
-        const Vector4* GetCols() const;
 
         void Translate(const Vector3& translation);
         static Matrix3D TranslateMat(const Vector3& translation, const Matrix3D& mat = {});
@@ -38,20 +36,27 @@ namespace Maths
         void Rotate(const Vector3& rotation);
         static Matrix3D RotateMat(const Vector3& rotation, const Matrix3D& mat = {});
 
-        static Matrix3D OrthoProjection(float left, float right, float down, float up, float back, float front);
+        static Matrix3D OrthoProjection(float left, float right, float down, float up, float near, float front);
+        static Matrix3D PerspectiveProjection(float left, float right, float down, float up, float near, float far);
+        static Matrix3D PerspectiveProjectionFOV(float fovDeg, float aspect, float near, float far);
         static Matrix3D Transform(const Vector3& translate, const Vector3& scale, const Vector3& rotate);
 
+        [[nodiscard]] Matrix3D Transpose() const;
+        [[nodiscard]] float Determinate() const;
+        [[nodiscard]] Matrix3D Adjugate() const;
+        [[nodiscard]] Matrix3D Inverse() const;
+
+        static Matrix3D UnitAxis(Direction3D x, Direction3D y, Direction3D z);
+
         float operator[](unsigned i) { return *((float*)this + i); }
+
+        Vector3 operator* (const Vector3& v) const;
+        Vector4 operator* (const Vector4& v) const;
+        Matrix3D operator* (const Matrix3D& m) const;
+        Matrix3D operator* (float x) const;
         
         friend std::ostream& operator<<(std::ostream& stream, const Matrix3D& mat);
-        friend Vector3 operator* (const Matrix3D& transform, const Vector3& v);
-        friend Vector4 operator* (const Matrix3D& transform, const Vector4& v);
-        friend Matrix3D operator* (const Matrix3D& transform, const Matrix3D& vec);
     };
 
     std::ostream& operator<<(std::ostream& stream, const Matrix3D& mat);
-
-    Vector3 operator* (const Matrix3D& transform, const Vector3& v);
-    Vector4 operator* (const Matrix3D& transform, const Vector4& v);
-    Matrix3D operator* (const Matrix3D& transform, const Matrix3D& mat);
 }

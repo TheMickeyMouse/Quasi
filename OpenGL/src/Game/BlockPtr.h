@@ -2,7 +2,6 @@
 #include <memory>
 
 #include "BlockBase.h"
-#include <iostream>
 
 namespace Game {
     class BlockPtr {

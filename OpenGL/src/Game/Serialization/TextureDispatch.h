@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <fstream>
 #include <unordered_map>
 
 #include "BlockTextureDispatch.h"

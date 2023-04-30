@@ -1,14 +1,13 @@
 ﻿#pragma once
-#include "BoxBlock.h"
 
 namespace Game::Blocks {
     using GoalBlock = Block<BlockType::GOAL>;
     
-    template <> class Block<BlockType::GOAL> : public BlockBase {
+    template <> class Block<BlockType::GOAL> final : public BlockBase {
         friend BlockBase;
         
         protected:
-            Block(const Maths::Vec3Int& position) : BlockBase(position) {}
+            Block(const Maths::Vec3Int& position, stdu::ref<World> world) : BlockBase(position, world) {}
         public:
             Block() : BlockBase() {}
             Block(const BlockBase& copy) : BlockBase(copy) {}
@@ -16,6 +15,7 @@ namespace Game::Blocks {
 
             ~Block() override = default;
 
-            inline static BlockType TypeID = BlockType::GOAL;
+            inline static constexpr BlockType TypeID = BlockType::GOAL;
+            [[nodiscard]] BlockType ID() const override { return TypeID; }
     };
 }

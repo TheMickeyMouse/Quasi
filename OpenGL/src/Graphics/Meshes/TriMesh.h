@@ -61,14 +61,14 @@ namespace Graphics
         if (vertices) memcpy(*vertices, points, sizeof(TVertex) * 3);
         
         if (indexSize) *indexSize = 3;
-        if (indices) { unsigned int i[] = {0,1,2}; memcpy(*indices, i, sizeof(TVertex) * 3); }
+        if (indices) { unsigned int i[] = { 0, 1, 2 }; memcpy(*indices, i, 3); }
     }
 
     template<typename TVertex>
     void TriMesh<TVertex>::AddTo(DynamicVertexBuffer<TVertex>& vb, DynamicIndexBuffer& ib)
     {
         vb.AddData(points, 3);
-        unsigned i[3] = {0,1,2};
+        unsigned i[3] = { 0, 1, 2 };
         ib.AddData(i, 3, 3);
     }
 

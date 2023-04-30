@@ -59,14 +59,14 @@ namespace Graphics
         if (vertices) memcpy(*vertices, points, sizeof(TVertex) * 4);
         
         if (indexSize) *indexSize = 6;
-        if (indices) { unsigned int i[] = {0,1,2,1,2,3}; memcpy(*indices, i, sizeof(TVertex) * 6); }
+        if (indices) { unsigned int i[] = { 0, 1, 2, 1, 2, 3 }; memcpy(*indices, i, 6); }
     }
 
     template<typename TVertex>
     void QuadMesh<TVertex>::AddTo(DynamicVertexBuffer<TVertex>& vb, DynamicIndexBuffer& ib)
     {
         vb.AddData(points, 4);
-        unsigned i[6] = {0,1,2,1,2,3};
+        unsigned i[6] = { 0, 1, 2, 1, 2, 3 };
         ib.AddData(i, 6, 4);
     }
 
