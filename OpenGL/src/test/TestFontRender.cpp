@@ -99,8 +99,4 @@ namespace Test {
         Test::OnDestroy(gdevice);
         render.Destroy();
     }
-
-    TestFontRender::Vertex operator*(const Maths::mat3D& transform, const TestFontRender::Vertex& vertex) {
-        return { transform * vertex.Position, vertex.Color, vertex.TextureCoordinate };
-    }
 }

@@ -97,7 +97,9 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ShowIncludes>false</ShowIncludes>
       <UseFullPaths>false</UseFullPaths>
-      <AdditionalOptions>/FS</AdditionalOptions>
+      <AdditionalOptions></AdditionalOptions>
+      <PreprocessKeepComments>false</PreprocessKeepComments>
+      <UseStandardPreprocessor>false</UseStandardPreprocessor>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -247,7 +249,9 @@
     <ClInclude Include="src\opengl.h" />
     <ClInclude Include="src\stdu\enum_utils.h" />
     <ClInclude Include="src\stdu\io.h" />
+    <ClInclude Include="src\stdu\macros.h" />
     <ClInclude Include="src\stdu\ref.h" />
+    <ClInclude Include="src\stdu\types.h" />
     <ClInclude Include="src\test\Test.h" />
     <ClInclude Include="src\test\TestBatchedTextured.h" />
     <ClInclude Include="src\test\TestClearColor.h" />
@@ -260,7 +264,6 @@
     <ClInclude Include="src\test\TestingFramework.h" />
     <ClInclude Include="src\test\TestTexturedSquare.h" />
     <ClInclude Include="src\stdu\sorted_vector.h" />
-    <ClInclude Include="src\stdu\func.h" />
     <ClInclude Include="src\vendor\freetype\freetype\config\ftconfig.h" />
     <ClInclude Include="src\vendor\freetype\freetype\config\ftheader.h" />
     <ClInclude Include="src\vendor\freetype\freetype\config\ftmodule.h" />

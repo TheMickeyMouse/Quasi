@@ -5,12 +5,17 @@ namespace Graphics {
         for (const auto& component : comps) Push(component);
     }
 
-    void VertexBufferLayout::Push(const VertexBufferComponent& comp) {
+    void VertexBufferLayout::Push(VertexBufferComponent comp) {
         _components.push_back(comp);
         stride += comp.count * GLSizeOf(comp.type);
     }
 
     void VertexBufferLayout::PushLayout(const VertexBufferLayout& layout) {
         for (const auto& component : layout.GetComponents()) Push(component);
+    }
+
+    VertexBufferLayout& VertexBufferLayout::Join(VertexBufferComponent comp) {
+        Push(comp);
+        return *this;
     }
 }

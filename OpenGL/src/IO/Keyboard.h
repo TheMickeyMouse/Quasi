@@ -68,7 +68,7 @@ namespace IO {
 
         LAST = MENU
     };
-    IMPL_ENUM_OPERATORS(Key);
+    STDU_IMPL_ENUM_OPERATORS(Key);
     #undef KEY_IMPL_GLFW
 
     #define MOD_IMPL_GLFW(K) K = GLFW_MOD_##K
@@ -81,7 +81,7 @@ namespace IO {
         MOD_IMPL_GLFW(NUM_LOCK),
     };
     #undef MOD_IMPL_GLFW
-    IMPL_ENUM_OPERATORS(ModifierKey);
+    STDU_IMPL_ENUM_OPERATORS(ModifierKey);
 
     // TODO: this v
     // enum class KeyType : int {

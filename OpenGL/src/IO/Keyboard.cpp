@@ -254,7 +254,7 @@ namespace IO {
 #undef RANGE_MATCH
 
     Key KeyboardT::FromModBits(ModifierKey mod) {
-#define MOD_KEY_CASE(M) case ModifierKey::##M: return Key::L##M
+#define MOD_KEY_CASE(M) case ModifierKey::M: return Key::L##M
         switch (mod) {
             MOD_KEY_CASE(SHIFT);
             MOD_KEY_CASE(CONTROL);
@@ -272,9 +272,9 @@ namespace IO {
     }
     
     const char* KeyboardT::KeyToStr(Key key) {
-#define BASIC_KEY_CASE(K) case Key::##K: return #K
-#define PS_KEY_CASE(PK, PN, K) case Key::##PK##K: return #PN#K
-#define SPECIAL_KEY_CASE(K, N) case Key::##K: return N
+#define BASIC_KEY_CASE(K) case Key::K: return #K
+#define PS_KEY_CASE(PK, PN, K) case Key::PK##K: return #PN#K
+#define SPECIAL_KEY_CASE(K, N) case Key::K: return N
 
         switch (key) {
             BASIC_KEY_CASE(A);

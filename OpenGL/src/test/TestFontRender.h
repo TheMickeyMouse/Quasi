@@ -11,7 +11,9 @@ namespace Test {
             Maths::colorf Color;
             Maths::fvec2  TextureCoordinate;
     
-            VERTEX_STRUCT_LAYOUT = { VERTEX_COMP Vec3(), VERTEX_COMP Vec4(), VERTEX_COMP Vec2() };
+            GL_VERTEX_T(Vertex);
+            GL_VERTEX_FIELD((Position)(Color)(TextureCoordinate));
+            GL_VERTEX_TRANSFORM_FIELDS((Position))
         };
     private:
         Graphics::RenderObject<Vertex> render;
@@ -35,6 +37,4 @@ namespace Test {
         OPENGL_API void OnImGuiRender(Graphics::GraphicsDevice& gdevice) override;
         OPENGL_API void OnDestroy(Graphics::GraphicsDevice& gdevice) override;
     };
-
-    TestFontRender::Vertex operator*(const Maths::mat3D& transform, const TestFontRender::Vertex& vertex);
 }

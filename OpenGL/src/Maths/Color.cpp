@@ -85,52 +85,43 @@ namespace Maths {
             }
         }
     }
-
-#define CAT(A, B) A##B
     
-#define IF0(...)
-#define IF1(...) __VA_ARGS__
-#define IF(C, ...) CAT(IF, C)(__VA_ARGS__)
-    
-#define NOT0 1
-#define NOT1 0
-#define NOT(C) CAT(NOT, C)
-    
-#define CM(F) IF(F, 255.0f) IF(NOT(F), 1)
-#define A(HAS_A) IF(HAS_A, a) IF(NOT(HAS_A), 1)
+#define CM(F) STDU_IF_ELSE(F, (255.0f), (1))
+#define CM_N(F) STDU_IF_ELSE(F, (1), (255.0f))
+#define A(HAS_A) STDU_IF_ELSE(HAS_A, (a), (1))
 #define COLOR_IMPL(T, HAS_A, F) \
-    float T::luminance() const { return (0.2126f * r + 0.7152f * g + 0.0722f * b) / CM(NOT(F)); /*https://en.wikipedia.org/wiki/Relative_luminance*/ } \
+    float T::luminance() const { return (0.2126f * r + 0.7152f * g + 0.0722f * b) / CM_N(F); /*https://en.wikipedia.org/wiki/Relative_luminance*/ } \
     bvec3 T::as_rgb()   const { return { (uchar)(r * CM(F)), (uchar)(g * CM(F)), (uchar)(b * CM(F)) }; } \
-    bvec4 T::as_rgba()  const { return as_rgb() IF(HAS_A, .with_w((uchar)(A(HAS_A) * CM(F)))); } \
-    fvec3 T::as_rgbf()  const { return { r / CM(NOT(F)), g / CM(NOT(F)), b / CM(NOT(F)) }; } \
-    fvec4 T::as_rgbaf() const { return as_rgbf() IF(HAS_A, .with_w(A(HAS_A) / CM(NOT(F)))); } \
-    fvec3 T::as_hsl()   const { return Color::rgb2hsl(r / CM(NOT(F)), g / CM(NOT(F)), b / CM(NOT(F))); } \
-    fvec4 T::as_hsla()  const { return as_hsl() IF(HAS_A, .with_w(A(HAS_A) / CM(NOT(F)))); } \
-    T T::from_hsl(float hue, float saturation, float lightness IF(HAS_A, , float alpha)) { \
-        return Color::hsl2rgb(hue / 360.0f, saturation, lightness) IF(HAS_A, .with_w(alpha)) .color(); \
+    bvec4 T::as_rgba()  const { return as_rgb() STDU_IF(HAS_A, .with_w((uchar)(A(HAS_A) * CM(F)))); } \
+    fvec3 T::as_rgbf()  const { return { r / CM_N(F), g / CM_N(F), b / CM_N(F) }; } \
+    fvec4 T::as_rgbaf() const { return as_rgbf() STDU_IF(HAS_A, .with_w(A(HAS_A) / CM_N(F))); } \
+    fvec3 T::as_hsl()   const { return Color::rgb2hsl(r / CM_N(F), g / CM_N(F), b / CM_N(F)); } \
+    fvec4 T::as_hsla()  const { return as_hsl() STDU_IF(HAS_A, .with_w(A(HAS_A) / CM_N(F))); } \
+    T T::from_hsl(float hue, float saturation, float lightness STDU_IF(HAS_A, , float alpha)) { \
+        return Color::hsl2rgb(hue / 360.0f, saturation, lightness) STDU_IF(HAS_A, .with_w(alpha)) .color(); \
     } \
-    T T::from_hsl(IF(HAS_A, fvec4 hsla) IF(NOT(HAS_A), fvec3 hsl)) { \
-        return IF(HAS_A, from_hsl(hsla.x, hsla.y, hsla.z, hsla.w)) IF(NOT(HAS_A), from_hsl(hsl.x, hsl.y, hsl.z)); \
+    T T::from_hsl(STDU_IF_ELSE(HAS_A, (fvec4 hsla), (fvec3 hsl))) { \
+        return STDU_IF_ELSE(HAS_A, (from_hsl(hsla.x, hsla.y, hsla.z, hsla.w)), (from_hsl(hsl.x, hsl.y, hsl.z))); \
     } \
-    fvec3 T::as_hsv()  const { return Color::rgb2hsv(r / CM(NOT(F)), g / CM(NOT(F)), b / CM(NOT(F))); } \
-    fvec4 T::as_hsva() const { return as_hsv() IF(HAS_A, .with_w(A(HAS_A) / CM(NOT(F)))); } \
-    T T::from_hsv(float hue, float saturation, float value IF(HAS_A, , float alpha)) { \
-        return Color::hsv2rgb(hue / 360.0f, saturation, value) IF(HAS_A, .with_w(alpha)) .color(); \
+    fvec3 T::as_hsv()  const { return Color::rgb2hsv(r / CM_N(F), g / CM_N(F), b / CM_N(F)); } \
+    fvec4 T::as_hsva() const { return as_hsv() STDU_IF(HAS_A, .with_w(A(HAS_A) / CM_N(F))); } \
+    T T::from_hsv(float hue, float saturation, float value STDU_IF(HAS_A, , float alpha)) { \
+        return Color::hsv2rgb(hue / 360.0f, saturation, value) STDU_IF(HAS_A, .with_w(alpha)) .color(); \
     } \
-    T T::from_hsv(IF(HAS_A, fvec4 hsva) IF(NOT(HAS_A), fvec3 hsv)) { \
-        return IF(HAS_A, from_hsv(hsva.x, hsva.y, hsva.z, hsva.w)) IF(NOT(HAS_A), from_hsv(hsv.x, hsv.y, hsv.z)); \
+    T T::from_hsv(STDU_IF_ELSE(HAS_A, (fvec4 hsva), (fvec3 hsv))) { \
+        return STDU_IF_ELSE(HAS_A, (from_hsv(hsva.x, hsva.y, hsva.z, hsva.w)), (from_hsv(hsv.x, hsv.y, hsv.z))); \
     } \
     \
-    IF(HAS_A, T::without_alpha_t T::rgb() const { return { r, g, b }; }) \
-    IF(NOT(HAS_A), T::with_alpha_t T::with_alpha(scalar alpha) const { return { r, g, b, alpha }; }) \
+    STDU_IF_ELSE(HAS_A, (T::without_alpha_t T::rgb() const { return { r, g, b }; }), \
+                        (T::with_alpha_t T::with_alpha(scalar alpha) const { return { r, g, b, alpha }; })) \
     \
-    IF(HAS_A,      T::operator T::without_alpha_t() const { return rgb(); }) \
-    IF(NOT(HAS_A), T::operator T::with_alpha_t()    const { return with_alpha(); }) \
+    STDU_IF_ELSE(HAS_A, (T::operator T::without_alpha_t() const { return rgb(); }), \
+                        (T::operator T::with_alpha_t()    const { return with_alpha(); })) \
     \
-    IF(NOT(HAS_A), IF(F,      T::operator color3()  const { return { (uchar)(r * 255), (uchar)(g * 255), (uchar)(b * 255) }; } ) \
-                   IF(NOT(F), T::operator color3f() const { return { r / 255.0f, g / 255.0f, b / 255.0f }; } )) \
-    IF(HAS_A,      IF(F,      T::operator color()   const { return { (uchar)(r * 255), (uchar)(g * 255), (uchar)(b * 255), (uchar)(a * 255) }; } ) \
-                   IF(NOT(F), T::operator colorf()  const { return { r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f }; } )) \
+    STDU_IF_ELSE(HAS_A, (STDU_IF_ELSE(F, (T::operator color()   const { return { (uchar)(r * 255), (uchar)(g * 255), (uchar)(b * 255), (uchar)(a * 255) }; }), \
+                                         (T::operator colorf()  const { return { r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f }; } ))), \
+                        (STDU_IF_ELSE(F, (T::operator color3()  const { return { (uchar)(r * 255), (uchar)(g * 255), (uchar)(b * 255) }; }), \
+                                         (T::operator color3f() const { return { r / 255.0f, g / 255.0f, b / 255.0f }; } )))) \
 
     COLOR_IMPL(color3f, 0, 1);
     COLOR_IMPL(color3,  0, 0);
@@ -138,17 +129,7 @@ namespace Maths {
     COLOR_IMPL(color,   1, 0);
 #undef COLOR_IMPL
 #undef A
-    
 #undef CM
-#undef CAT
-    
-#undef IF0
-#undef IF1
-#undef IF
-    
-#undef NOT0
-#undef NOT1
-#undef NOT
     
 // #define COLOR_CONSTANT(T, C) \
 //     const T T::BLACK 	  = { 0   / C, 0   / C, 0   / C }; /* NOLINT(bugprone-macro-parentheses) */ \

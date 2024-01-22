@@ -4,6 +4,7 @@
 #include "opengl.h"
 
 #include "NumTypes.h"
+#include "Vector.h"
 
 namespace Graphics {
     template <class T> constexpr uint GLTypeOf = 0;
@@ -22,26 +23,33 @@ namespace Graphics {
         uchar normalized;
 
         VertexBufferComponent() = default;
-        VertexBufferComponent(uint type, uint count, uchar norm)
+        VertexBufferComponent(uint type, uint count, uchar norm = false)
             : type(type), count(count), normalized(norm) {}
         
-        static VertexBufferComponent Float()  { return { GLTypeOf<float>,  1, false }; }
-        static VertexBufferComponent Double() { return { GLTypeOf<double>, 1, false }; }
-        static VertexBufferComponent Int()    { return { GLTypeOf<int>,    1, false }; }
-        static VertexBufferComponent Uint()   { return { GLTypeOf<uint>,   1, false }; }
-        static VertexBufferComponent SByte()  { return { GLTypeOf<char>,   1, false }; }
-        static VertexBufferComponent Byte()   { return { GLTypeOf<uchar>,  1, false }; }
-        static VertexBufferComponent Vec2()   { return { GLTypeOf<float>,  2, false }; }
-        static VertexBufferComponent Vec3()   { return { GLTypeOf<float>,  3, false }; }
-        static VertexBufferComponent Vec4()   { return { GLTypeOf<float>,  4, false }; }
-        static VertexBufferComponent IVec2()  { return { GLTypeOf<int>,    2, false }; }
-        static VertexBufferComponent IVec3()  { return { GLTypeOf<int>,    3, false }; }
-        static VertexBufferComponent IVec4()  { return { GLTypeOf<int>,    4, false }; }
+        static VertexBufferComponent Float()  { return { GLTypeOf<float>,  1 }; }
+        static VertexBufferComponent Double() { return { GLTypeOf<double>, 1 }; }
+        static VertexBufferComponent Int()    { return { GLTypeOf<int>,    1 }; }
+        static VertexBufferComponent Uint()   { return { GLTypeOf<uint>,   1 }; }
+        static VertexBufferComponent SByte()  { return { GLTypeOf<char>,   1 }; }
+        static VertexBufferComponent Byte()   { return { GLTypeOf<uchar>,  1 }; }
+        static VertexBufferComponent Vec2()   { return { GLTypeOf<float>,  2 }; }
+        static VertexBufferComponent Vec3()   { return { GLTypeOf<float>,  3 }; }
+        static VertexBufferComponent Vec4()   { return { GLTypeOf<float>,  4 }; }
+        static VertexBufferComponent IVec2()  { return { GLTypeOf<int>,    2 }; }
+        static VertexBufferComponent IVec3()  { return { GLTypeOf<int>,    3 }; }
+        static VertexBufferComponent IVec4()  { return { GLTypeOf<int>,    4 }; }
+
+        template <class T> static VertexBufferComponent Type() {
+            if constexpr (std::is_arithmetic_v<T>) return { GLTypeOf<T>, 1 };
+            if constexpr (Maths::is_vec_v<T> || Maths::is_color_v<T>)
+                return { GLTypeOf<typename T::scalar>, T::dimension };
+            return { 0, 0 };
+        }
     };
     
     // ReSharper disable once IdentifierTypo
     inline uint GLSizeOf(uint GLtype) {
-#define MATCH_TYPE(T) case GLTypeOf<##T>: return sizeof(T)
+#define MATCH_TYPE(T) case GLTypeOf<T>: return sizeof(T)
         switch (GLtype) {
             MATCH_TYPE(float);
             MATCH_TYPE(double);
@@ -64,8 +72,10 @@ namespace Graphics {
             OPENGL_API VertexBufferLayout(std::initializer_list<VertexBufferComponent> comps);
 
             template <class T> void Push(uint count, bool normalized = false);
-            OPENGL_API void Push(const VertexBufferComponent& comp);
+            OPENGL_API void Push(VertexBufferComponent comp);
             OPENGL_API void PushLayout(const VertexBufferLayout& layout);
+
+            OPENGL_API VertexBufferLayout& Join(VertexBufferComponent comp);
 
 #define VBE VertexBufferComponent::
         

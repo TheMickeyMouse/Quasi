@@ -7,7 +7,7 @@ namespace stdu {
         if (std::ifstream in { fname, std::ios::in | std::ios::binary }) {
             std::string contents;
             in.seekg(0, std::ios::end);
-            contents.resize(in.tellg());  // NOLINT(clang-diagnostic-shorten-64-to-32)
+            contents.resize((uint)in.tellg());
             // ill be honest idk what the compiler wants from me
             in.seekg(0, std::ios::beg);
             in.read(contents.data(), contents.size());

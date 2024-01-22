@@ -116,10 +116,9 @@ namespace Maths {
     }
 #undef MROW4
 
-#define EXPAND(X) X
 #define DET3_(E11, E12, E13, E21, E22, E23, E31, E32, E33) E11 * E22 * E33 + E12 * E23 * E31 + E13 * E21 * E32 - /* NOLINT(bugprone-macro-parentheses) */ \
                                                            E13 * E22 * E31 - E12 * E21 * E33 - E11 * E23 * E32   /* NOLINT(bugprone-macro-parentheses) */
-#define DET3(...) EXPAND(DET3_(__VA_ARGS__))
+#define DET3(...) STDU_UNARY(DET3_(__VA_ARGS__))
 #define DETMAT3(R1, R2, R3) (DET3(y.R1, z.R1, w.R1, y.R2, z.R2, w.R2, y.R3, z.R3, w.R3)) /* NOLINT(bugprone-macro-parentheses) */
 
     // https://semath.info/src/inverse-cofactor-ex4.html for matrix math
@@ -129,9 +128,7 @@ namespace Maths {
 
     // doing this because c++, i guess
     // * haha macro hacks go brrrrr
-#define CAT_LIT(A, B) A ## B
-#define CAT(A, B) CAT_LIT(A, B)
-#define IGNORE(I) CAT(IGNORE_, I)
+#define IGNORE(I) STDU_CAT(IGNORE_, I)
 #define IGNORE_x y, z, w
 #define IGNORE_y x, z, w
 #define IGNORE_z x, y, w
@@ -139,7 +136,7 @@ namespace Maths {
 #define IGNORE_ELEM(I, J) IGNORE(I), IGNORE(J)
 #define DOT(X, I1, I2, I3) I1.X, I2.X, I3.X /* NOLINT(bugprone-macro-parentheses) */
 #define SUBMAT_(I1, I2, I3, J1, J2, J3) DOT(I1, J1, J2, J3), DOT(I2, J1, J2, J3), DOT(I3, J1, J2, J3)
-#define SUBMAT(...) EXPAND(SUBMAT_(__VA_ARGS__))
+#define SUBMAT(...) STDU_UNARY(SUBMAT_(__VA_ARGS__))
 #define ADJUGATE_ELEM(I, J) (DET3(SUBMAT(IGNORE_ELEM(J, I))))
 #define ADJUGATE_VEC(U) { ADJUGATE_ELEM(x, U), ADJUGATE_ELEM(y, U), ADJUGATE_ELEM(z, U), ADJUGATE_ELEM(w, U) }
     
@@ -151,8 +148,6 @@ namespace Maths {
         return adjugate() * (1 / det());
     }
 
-#undef CAT_LIT
-#undef CAT
 #undef IGNORE
 #undef IGNORE_1
 #undef IGNORE_2
@@ -168,7 +163,6 @@ namespace Maths {
 #undef DET3_
 #undef DET3
 #undef DETMAT3
-#undef EXPAND
 
     mat4x4 mat4x4::unit_axis(Direction3D xd, Direction3D yd, Direction3D zd) {
         return { fvec3(xd).with_w(0), fvec3(yd).with_w(0), fvec3(zd).with_w(0),};

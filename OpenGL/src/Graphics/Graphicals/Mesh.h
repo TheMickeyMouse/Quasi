@@ -72,7 +72,7 @@ namespace Graphics {
     void Mesh<T>::AddTo(DynamicVertexBuffer& vbuffer, DynamicIndexBuffer& ibuffer) const {
         std::vector<T> transformed;
         transformed.resize(vertices.size());
-        std::transform(vertices.begin(), vertices.end(), transformed.begin(), [&](auto v) { return modelTransform * v; });
+        std::transform(vertices.begin(), vertices.end(), transformed.begin(), [&](auto v) { return GL_VERTEX_MATMUL(v, modelTransform); });
         vbuffer.AddData(transformed);
         ibuffer.AddData((uint*)indices.data(), indices.size() * 3, vertices.size() - 1);
     }

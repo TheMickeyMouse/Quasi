@@ -102,7 +102,7 @@ namespace Graphics {
 	template <class T>
 	RenderData RenderData::Create(uint vsize, uint isize) {
 		// times 3 to account for triangles
-		return RenderData(vsize, isize * 3, sizeof(T), typeid(T), VERTEX_LAYOUT_OF(T));
+		return RenderData(vsize, isize * 3, sizeof(T), typeid(T), GL_VERTEX_LAYOUT_OF(T));
 	}
 
 	template <class T>

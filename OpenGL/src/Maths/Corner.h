@@ -15,7 +15,7 @@ namespace Maths {
 
         CENTER = 16
     };
-    IMPL_ENUM_OPERATORS(Corner2D);
+    STDU_IMPL_ENUM_OPERATORS(Corner2D);
     
     enum class Corner3D : int {
         SIDE_RIGHT   = 0,
@@ -36,7 +36,7 @@ namespace Maths {
         
         CENTER = 16
     };
-    IMPL_ENUM_OPERATORS(Corner3D);
+    STDU_IMPL_ENUM_OPERATORS(Corner3D);
 
     enum class Corner4D : int {
         SIDE_RIGHT   = 0,
@@ -67,7 +67,7 @@ namespace Maths {
 
         CENTER = 16
     };
-    IMPL_ENUM_OPERATORS(Corner4D);
+    STDU_IMPL_ENUM_OPERATORS(Corner4D);
 
     template <class E>
     concept Corner = requires {
