@@ -54,8 +54,8 @@ namespace Graphics {
 
         [[nodiscard]] bool IsBound() const { return render; }
 
-        void Bind(RenderData& render);
-        void Bind(RenderObject<T>& render);
+        void Bind(RenderData& rend);
+        void Bind(RenderObject<T>& rend);
         void Unbind();
 
         std::vector<Vertex>& GetVertices() { return vertices; }
@@ -74,7 +74,7 @@ namespace Graphics {
         transformed.resize(vertices.size());
         std::transform(vertices.begin(), vertices.end(), transformed.begin(), [&](auto v) { return GL_VERTEX_MATMUL(v, modelTransform); });
         vbuffer.AddData(transformed);
-        ibuffer.AddData((uint*)indices.data(), indices.size() * 3, vertices.size() - 1);
+        ibuffer.AddData((const uint*)indices.data(), indices.size() * 3, vertices.size() - 1);
     }
 
     template <class T>
@@ -101,6 +101,7 @@ namespace Graphics {
 
         dest.modelTransform = from.modelTransform;
 
+        if (dest.render) dest.render->UnbindMesh(dest.deviceIndex);
         dest.render = from.render;
         from.render = nullptr;
 
@@ -117,15 +118,15 @@ namespace Graphics {
     }
 
     template <class T>
-    void Mesh<T>::Bind(RenderData& render) { 
-        deviceIndex = render.GetMeshes().size();
-        render.GetMeshes().push_back(this);
-        this->render = &render;
+    void Mesh<T>::Bind(RenderData& rend) { 
+        deviceIndex = rend.GetMeshes().size();
+        rend.GetMeshes().push_back(this);
+        this->render = &rend;
     }
 
     template <class T>
-    void Mesh<T>::Bind(RenderObject<T>& render) { 
-        Bind(render.GetRenderData());
+    void Mesh<T>::Bind(RenderObject<T>& rend) { 
+        Bind(rend.GetRenderData());
     }
 
     template <class T>

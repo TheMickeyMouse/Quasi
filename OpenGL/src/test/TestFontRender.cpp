@@ -1,6 +1,8 @@
 #include "TestFontRender.h"
 
 #include "imgui.h"
+#include "misc/cpp/imgui_stdlib.h"
+#include "Keyboard.h"
 #include "Graphics/Utils/Fonts/Font.h"
 
 namespace Test {
@@ -35,7 +37,7 @@ namespace Test {
         );
         render.SetProjection(projection);
         
-        font = Graphics::Font::LoadFile(R"(C:\Users\User\AppData\Local\Microsoft\Windows\Fonts\JetBrainsMono-Medium.ttf)");
+        font = Graphics::Font::LoadFile(R"(C:\Windows\Fonts\arial.ttf)");
 
         font.SetSize(48);
         font.RenderBitmap();
@@ -57,13 +59,6 @@ namespace Test {
             std::vector(vertices, vertices + 4),
             std::vector(indices, indices + 2)
         );
-
-        meshStr = font.RenderString("Hello, World!", 48)
-            .Convert<Vertex>([](const VertexColorTexture3D& v) {
-                return Vertex { v.Position, v.Color, v.TextureCoordinate };
-            });
-
-        meshStr.Bind(render);
     }
 
     void TestFontRender::OnRender(Graphics::GraphicsDevice& gdevice) {
@@ -74,6 +69,13 @@ namespace Test {
         render.SetCamera(mat);
         render.GetShader().Bind();
         render.GetShader().SetUniform1I("u_font", 0);
+
+        meshStr = font.RenderString(string, 48)
+            .Convert<Vertex>([](const VertexColorTexture3D& v) {
+                return Vertex { v.Position, v.Color, v.TextureCoordinate };
+            });
+        meshStr.Bind(render);
+        
         //LOG(mat);
         meshStr.ApplyMaterial(&Vertex::Color, color);
         
@@ -89,6 +91,11 @@ namespace Test {
         ImGui::DragFloat3("Scale",       modelScale.begin(), 0.1f);
         ImGui::DragFloat3("Rotation",    modelRotation.begin(), 0.03f);
         ImGui::ColorEdit4("Color",       color.begin());
+
+        ImGui::GetIO().AddKeyEvent(ImGuiKey_Backspace, IO::Keyboard.KeyPressed(IO::Key::BACKSPACE) && string.size() > 1);
+        ImGui::GetIO().AddKeyEvent(ImGuiKey_Enter, IO::Keyboard.KeyPressed(IO::Key::ENTER));
+
+        ImGui::InputTextMultiline("String", &string);
 
         if (ImGui::Button(showAtlas ? "Hide Atlas" : "Show Atlas")) {
             showAtlas ^= true;

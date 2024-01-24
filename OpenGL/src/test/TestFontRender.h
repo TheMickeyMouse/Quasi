@@ -21,6 +21,8 @@ namespace Test {
         Graphics::Texture texture;
         bool showAtlas = false;
 
+        std::string string = "Hello, World!";
+
         Graphics::Font font;
         Maths::colorf color = 1;
 

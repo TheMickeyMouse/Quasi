@@ -7,20 +7,22 @@
 
 int main() {
     Graphics::GraphicsDevice GraphicsDevice = Graphics::GraphicsDevice::Initialize();
-    Test::TestManager testm;
+    {
+        Test::TestManager testm;
     
-    testm.OnInit(GraphicsDevice);
-    while (GraphicsDevice.WindowIsOpen()) {
-        testm.OnUpdate();
+        testm.OnInit(GraphicsDevice);
+        while (GraphicsDevice.WindowIsOpen()) {
+            testm.OnUpdate();
     
-        GraphicsDevice.BeginRender();
+            GraphicsDevice.BeginRender();
     
-        testm.OnRender(GraphicsDevice);
-        testm.OnImGuiRender(GraphicsDevice);
+            testm.OnRender(GraphicsDevice);
+            testm.OnImGuiRender(GraphicsDevice);
     
-        GraphicsDevice.EndRender();
+            GraphicsDevice.EndRender();
+        }
+        testm.OnDestroy(GraphicsDevice);
     }
-    testm.OnDestroy(GraphicsDevice);
     // using namespace Maths;
     // using namespace IO;
     // fvec3 trans = { 0, 0, -2 }, scale = 1, rot;

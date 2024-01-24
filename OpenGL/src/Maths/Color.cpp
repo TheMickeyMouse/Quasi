@@ -84,27 +84,63 @@ namespace Maths {
                 default: return 0;
             }
         }
+
+        float overlay_channel(float a, float b) {
+            return a < 0.5f ? 2 * a * b : 1 - 2 * (1 - a) * (1 - b);
+        }
+
+        uchar overlay_channel(uchar a, uchar b) {
+            return a < 128 ? a * b * 255 / 2 : 255 - 255 * (1 - a) * (1 - b) / 2;
+        }
     }
     
 #define CM(F) STDU_IF_ELSE(F, (255.0f), (1))
-#define CM_N(F) STDU_IF_ELSE(F, (1), (255.0f))
+#define CM_N(F) STDU_IF_ELSE(F, (1), (255))
 #define A(HAS_A) STDU_IF_ELSE(HAS_A, (a), (1))
+#define S scalar
 #define COLOR_IMPL(T, HAS_A, F) \
-    float T::luminance() const { return (0.2126f * r + 0.7152f * g + 0.0722f * b) / CM_N(F); /*https://en.wikipedia.org/wiki/Relative_luminance*/ } \
+    T T::neg() const { return { (S)(CM_N(F) - r), (S)(CM_N(F) - g), (S)(CM_N(F) - b) STDU_IF(HAS_A, , (S)(CM_N(F) - a))}; } \
+    T T::lerp(const T& other, float t) const { \
+        float s = (1 - t); \
+        return { \
+            (S)(((float)r*s + (float)other.r*t) / CM_N(F)), (S)(((float)g*s + (float)other.g*t) / CM_N(F)), \
+            (S)(((float)b*s + (float)other.b*t) / CM_N(F)) STDU_IF(HAS_A, , (S)(((float)a*s + (float)other.a*t) / CM_N(F))) \
+        }; \
+    } \
+    T T::mul(const T& other) const { \
+        return { \
+            (S)(r * other.r / CM_N(F)), (S)(g * other.g / CM_N(F)), \
+            (S)(b * other.b / CM_N(F)) STDU_IF(HAS_A, , (S)(a * other.a / CM_N(F))) \
+        }; \
+    } \
+    T T::screen(const T& other) const { return neg().mul(other).neg(); } \
+    T T::overlay(const T& other) const { \
+        return { \
+            Color::overlay_channel(r, other.r), Color::overlay_channel(g, other.g), \
+            Color::overlay_channel(b, other.b) STDU_IF(HAS_A, , Color::overlay_channel(r, other.r)) \
+        }; \
+    } \
+    STDU_IF(HAS_A, T::without_alpha_t T::mul_alpha() const { \
+        return { \
+            (S)(r * a / CM_N(F)), (S)(g * a / CM_N(F)), (S)(b * a / CM_N(F)) \
+        }; \
+    }) \
+    \
+    float T::luminance() const { return (0.2126f * (float)r + 0.7152f * (float)g + 0.0722f * (float)b) / CM_N(F); /*https://en.wikipedia.org/wiki/Relative_luminance*/ } \
     bvec3 T::as_rgb()   const { return { (uchar)(r * CM(F)), (uchar)(g * CM(F)), (uchar)(b * CM(F)) }; } \
     bvec4 T::as_rgba()  const { return as_rgb() STDU_IF(HAS_A, .with_w((uchar)(A(HAS_A) * CM(F)))); } \
-    fvec3 T::as_rgbf()  const { return { r / CM_N(F), g / CM_N(F), b / CM_N(F) }; } \
-    fvec4 T::as_rgbaf() const { return as_rgbf() STDU_IF(HAS_A, .with_w(A(HAS_A) / CM_N(F))); } \
-    fvec3 T::as_hsl()   const { return Color::rgb2hsl(r / CM_N(F), g / CM_N(F), b / CM_N(F)); } \
-    fvec4 T::as_hsla()  const { return as_hsl() STDU_IF(HAS_A, .with_w(A(HAS_A) / CM_N(F))); } \
+    fvec3 T::as_rgbf()  const { return { (float)r / CM_N(F), (float)g / CM_N(F), (float)b / CM_N(F) }; } \
+    fvec4 T::as_rgbaf() const { return as_rgbf() STDU_IF(HAS_A, .with_w((float)A(HAS_A) / CM_N(F))); } \
+    fvec3 T::as_hsl()   const { return Color::rgb2hsl((float)r / CM_N(F), (float)g / CM_N(F), (float)b / CM_N(F)); } \
+    fvec4 T::as_hsla()  const { return as_hsl() STDU_IF(HAS_A, .with_w((float)A(HAS_A) / CM_N(F))); } \
     T T::from_hsl(float hue, float saturation, float lightness STDU_IF(HAS_A, , float alpha)) { \
         return Color::hsl2rgb(hue / 360.0f, saturation, lightness) STDU_IF(HAS_A, .with_w(alpha)) .color(); \
     } \
     T T::from_hsl(STDU_IF_ELSE(HAS_A, (fvec4 hsla), (fvec3 hsl))) { \
         return STDU_IF_ELSE(HAS_A, (from_hsl(hsla.x, hsla.y, hsla.z, hsla.w)), (from_hsl(hsl.x, hsl.y, hsl.z))); \
     } \
-    fvec3 T::as_hsv()  const { return Color::rgb2hsv(r / CM_N(F), g / CM_N(F), b / CM_N(F)); } \
-    fvec4 T::as_hsva() const { return as_hsv() STDU_IF(HAS_A, .with_w(A(HAS_A) / CM_N(F))); } \
+    fvec3 T::as_hsv()  const { return Color::rgb2hsv((float)r / CM_N(F), (float)g / CM_N(F), (float)b / CM_N(F)); } \
+    fvec4 T::as_hsva() const { return as_hsv() STDU_IF(HAS_A, .with_w((float)A(HAS_A) / CM_N(F))); } \
     T T::from_hsv(float hue, float saturation, float value STDU_IF(HAS_A, , float alpha)) { \
         return Color::hsv2rgb(hue / 360.0f, saturation, value) STDU_IF(HAS_A, .with_w(alpha)) .color(); \
     } \
@@ -112,16 +148,17 @@ namespace Maths {
         return STDU_IF_ELSE(HAS_A, (from_hsv(hsva.x, hsva.y, hsva.z, hsva.w)), (from_hsv(hsv.x, hsv.y, hsv.z))); \
     } \
     \
-    STDU_IF_ELSE(HAS_A, (T::without_alpha_t T::rgb() const { return { r, g, b }; }), \
-                        (T::with_alpha_t T::with_alpha(scalar alpha) const { return { r, g, b, alpha }; })) \
+    STDU_IF(HAS_A, T::without_alpha_t T::rgb() const { return { r, g, b }; }) \
+    T STDU_IF_NOT(HAS_A, ::with_alpha_t) T::with_alpha(scalar alpha) const { return { r, g, b, alpha }; } \
+    T STDU_IF_NOT(HAS_A, ::with_alpha_t) T::rgb1() const { return { r, g, b, CM_N(F) }; } \
     \
     STDU_IF_ELSE(HAS_A, (T::operator T::without_alpha_t() const { return rgb(); }), \
                         (T::operator T::with_alpha_t()    const { return with_alpha(); })) \
     \
     STDU_IF_ELSE(HAS_A, (STDU_IF_ELSE(F, (T::operator color()   const { return { (uchar)(r * 255), (uchar)(g * 255), (uchar)(b * 255), (uchar)(a * 255) }; }), \
-                                         (T::operator colorf()  const { return { r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f }; } ))), \
+                                         (T::operator colorf()  const { return { (float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f, (float)a / 255.0f }; } ))), \
                         (STDU_IF_ELSE(F, (T::operator color3()  const { return { (uchar)(r * 255), (uchar)(g * 255), (uchar)(b * 255) }; }), \
-                                         (T::operator color3f() const { return { r / 255.0f, g / 255.0f, b / 255.0f }; } )))) \
+                                         (T::operator color3f() const { return { (float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f }; } )))) \
 
     COLOR_IMPL(color3f, 0, 1);
     COLOR_IMPL(color3,  0, 0);
@@ -130,6 +167,8 @@ namespace Maths {
 #undef COLOR_IMPL
 #undef A
 #undef CM
+#undef CM_N
+#undef S
     
 // #define COLOR_CONSTANT(T, C) \
 //     const T T::BLACK 	  = { 0   / C, 0   / C, 0   / C }; /* NOLINT(bugprone-macro-parentheses) */ \

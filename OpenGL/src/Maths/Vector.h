@@ -15,13 +15,6 @@
 namespace Maths {
 #pragma region Declaration
 #pragma region Concepts and Decls
-    template <class T> T neg_t(T x) { return -x; }
-    template <std::unsigned_integral S> S neg_t(S) { return 0; }
-    
-    template <class T> T mod_t(T a, T b) { return a % b; }
-    template <std::floating_point F> F mod_t(F a, F b) { return std::fmod(a, b); }
-    template <class T> T mul_t(T a, T b) { return (T)(a * b); }
-    
     template <class T> struct vec2;
     template <class T> struct vec3;
     template <class T> struct vec4;
@@ -74,6 +67,9 @@ namespace Maths {
     
     template <class T>
     concept color_t = is_color_v<T>;
+
+    template <vec_t V, class T>
+    using base_vec_t = typename vecn<V::dimension, T>::type;
     
 #pragma endregion // concepts and decls
 #pragma region Vector Swizzle Impl
@@ -121,6 +117,21 @@ namespace Maths {
 #define SCALAR_T(V) typename V::scalar
     
 #define S_ONLY(T) template <class S = scalar> std::enable_if_t<std::is_signed_v<S>, T>
+
+#define ARITH(T, U) stdu::arithmetic_t<T, U>
+#define ARITH_T(T, U, O) typename ARITH(T, U)::O##_t
+#define ARITH_DO(U, M) ARITH(scalar, U)::M
+    
+#define VEC_OP(V, M, N, R) \
+    template <class U> auto M(U v) const { \
+        if constexpr (std::is_arithmetic_v<U>) return V<ARITH_T(scalar, U, M)> STDU_REMOVE_SCOPE(N); /* NOLINT(bugprone-macro-parentheses) */ \
+        else if constexpr (is_vec_v<U>) return V<ARITH_T(scalar, SCALAR_T(U), M)> STDU_REMOVE_SCOPE(R); /* NOLINT(bugprone-macro-parentheses) */ \
+        else return V {}; /* NOLINT(bugprone-macro-parentheses) */ \
+    }
+#define VEC_OP_OTHER(V, M) \
+    template <class U, class T> \
+    requires (std::is_arithmetic_v<U> && requires (U u, V<T> t) { t M u; }) /* NOLINT(bugprone-macro-parentheses) */ \
+    auto operator M(U u, const V<T>& t) { return t M u; }
     
 #define VEC2DEF(NAME, SCALAR, _X, _Y, DEF_OP, DEF_EQ, CEXPR, ...) \
     struct NAME { \
@@ -131,23 +142,44 @@ namespace Maths {
         STDU_IF(CEXPR, constexpr) NAME (SCALAR s = 0) : _X(s), _Y(s) {} \
         STDU_IF(CEXPR, constexpr) NAME (SCALAR _X, SCALAR _Y) : _X(_X), _Y(_Y) {} \
         \
-        STDU_IF(DEF_OP, \
         STDU_IF(CEXPR, constexpr) SCALAR operator[] (uint i) const { return ((const SCALAR*)this)[i]; } /* NOLINT(bugprone-macro-parentheses) */ \
         \
-        NAME operator+(R(NAME) v) const; NAME operator+(SCALAR v) const; /* NOLINT(bugprone-macro-parentheses) */ \
-        NAME& operator+=(R(NAME) v); NAME& operator+=(SCALAR v); /* NOLINT(bugprone-macro-parentheses) */ \
+        STDU_IF(DEF_OP, \
         \
-        NAME operator-(R(NAME) v) const; NAME operator-(SCALAR v) const; /* NOLINT(bugprone-macro-parentheses) */ \
-        NAME& operator-=(R(NAME) v); NAME& operator-=(SCALAR v); /* NOLINT(bugprone-macro-parentheses) */ \
+        VEC_OP(vec2, add, \
+            ({ ARITH_DO(U,           add)(x, v),   ARITH_DO(U,           add)(y, v)   }), \
+            ({ ARITH_DO(SCALAR_T(U), add)(x, v.x), ARITH_DO(SCALAR_T(U), add)(y, v.y) }) \
+        ); \
+        VEC_OP(vec2, sub, \
+            ({ ARITH_DO(U,           sub)(x, v),   ARITH_DO(U,           sub)(y, v)   }), \
+            ({ ARITH_DO(SCALAR_T(U), sub)(x, v.x), ARITH_DO(SCALAR_T(U), sub)(y, v.y) }) \
+        ); \
+        VEC_OP(vec2, mul, \
+            ({ ARITH_DO(U,           mul)(x, v),   ARITH_DO(U,           mul)(y, v)   }), \
+            ({ ARITH_DO(SCALAR_T(U), mul)(x, v.x), ARITH_DO(SCALAR_T(U), mul)(y, v.y) }) \
+        ); \
+        VEC_OP(vec2, div, \
+            ({ ARITH_DO(U,           div)(x, v),   ARITH_DO(U,           div)(y, v)   }), \
+            ({ ARITH_DO(SCALAR_T(U), div)(x, v.x), ARITH_DO(SCALAR_T(U), div)(y, v.y) }) \
+        ); \
+        VEC_OP(vec2, mod, \
+            ({ ARITH_DO(U,           mod)(x, v),   ARITH_DO(U,           mod)(y, v)   }), \
+            ({ ARITH_DO(SCALAR_T(U), mod)(x, v.x), ARITH_DO(SCALAR_T(U), mod)(y, v.y) })  \
+        ); \
+        template <class U> auto  operator+ (U v) const { return  add(v); } \
+        template <class U> auto& operator+=(U v)       { *this = add(v); return *this; } \
         \
-        NAME operator*(R(NAME) v) const; NAME operator*(SCALAR v) const; /* NOLINT(bugprone-macro-parentheses) */ \
-        NAME& operator*=(R(NAME) v); NAME& operator*=(SCALAR v); /* NOLINT(bugprone-macro-parentheses) */ \
+        template <class U> auto  operator- (U v) const { return  sub(v); } \
+        template <class U> auto& operator-=(U v)       { *this = sub(v); return *this; } \
         \
-        NAME operator/(R(NAME) v) const; NAME operator/(SCALAR v) const; /* NOLINT(bugprone-macro-parentheses) */ \
-        NAME& operator/=(R(NAME) v); NAME& operator/=(SCALAR v); /* NOLINT(bugprone-macro-parentheses) */ \
+        template <class U> auto  operator* (U v) const { return  mul(v); } \
+        template <class U> auto& operator*=(U v)       { *this = mul(v); return *this; } \
         \
-        NAME operator%(R(NAME) v) const; NAME operator%(SCALAR v) const; /* NOLINT(bugprone-macro-parentheses) */ \
-        NAME& operator%=(R(NAME) v); NAME& operator%=(SCALAR v); /* NOLINT(bugprone-macro-parentheses) */ \
+        template <class U> auto  operator/ (U v) const { return  div(v); } \
+        template <class U> auto& operator/=(U v)       { *this = div(v); return *this; } \
+        \
+        template <class U> auto  operator% (U v) const { return  mod(v); } \
+        template <class U> auto& operator%=(U v)       { *this = mod(v); return *this; } \
         ) \
         STDU_IF(DEF_EQ, \
         NAME operator+() const { return *this; } /* NOLINT(bugprone-macro-parentheses) */ \
@@ -171,7 +203,14 @@ namespace Maths {
         std::string str() const { return std::format("("#_X": {}, "#_Y": {})", _X, _Y); } \
         \
         __VA_ARGS__ /* extra declarations */ \
-    }
+    }; \
+    STDU_IF(DEF_OP, \
+        VEC_OP_OTHER(vec2, +) \
+        VEC_OP_OTHER(vec2, -) \
+        VEC_OP_OTHER(vec2, *) \
+        VEC_OP_OTHER(vec2, /) \
+        VEC_OP_OTHER(vec2, %) \
+    )
 
 #define VEC3DEF(NAME, SCALAR, _X, _Y, _Z, DEF_OP, DEF_EQ, CEXPR, ...) \
     struct NAME { \
@@ -185,20 +224,40 @@ namespace Maths {
         STDU_IF(CEXPR, constexpr) SCALAR operator[] (uint i) const { return ((const SCALAR*)this)[i]; } /* NOLINT(bugprone-macro-parentheses) */ \
         \
         STDU_IF(DEF_OP, \
-        NAME operator+(R(NAME) v) const; NAME operator+(SCALAR v) const; /* NOLINT(bugprone-macro-parentheses) */ \
-        NAME& operator+=(R(NAME) v); NAME& operator+=(SCALAR v); /* NOLINT(bugprone-macro-parentheses) */ \
+        VEC_OP(vec3, add, \
+            ({ ARITH_DO(U,           add)(x, v),   ARITH_DO(U,           add)(y, v),   ARITH_DO(U,           add)(z, v)   }), \
+            ({ ARITH_DO(SCALAR_T(U), add)(x, v.x), ARITH_DO(SCALAR_T(U), add)(y, v.y), ARITH_DO(SCALAR_T(U), add)(z, v.z) })  \
+        ); \
+        VEC_OP(vec3, sub, \
+            ({ ARITH_DO(U,           sub)(x, v),   ARITH_DO(U,           sub)(y, v),   ARITH_DO(U,           sub)(z, v)   }), \
+            ({ ARITH_DO(SCALAR_T(U), sub)(x, v.x), ARITH_DO(SCALAR_T(U), sub)(y, v.y), ARITH_DO(SCALAR_T(U), sub)(z, v.z) })  \
+        ); \
+        VEC_OP(vec3, mul, \
+            ({ ARITH_DO(U,           mul)(x, v),   ARITH_DO(U,           mul)(y, v),   ARITH_DO(U,           mul)(z, v)   }), \
+            ({ ARITH_DO(SCALAR_T(U), mul)(x, v.x), ARITH_DO(SCALAR_T(U), mul)(y, v.y), ARITH_DO(SCALAR_T(U), mul)(z, v.z) })  \
+        ); \
+        VEC_OP(vec3, div, \
+            ({ ARITH_DO(U,           div)(x, v),   ARITH_DO(U,           div)(y, v),   ARITH_DO(U,           div)(z, v)   }), \
+            ({ ARITH_DO(SCALAR_T(U), div)(x, v.x), ARITH_DO(SCALAR_T(U), div)(y, v.y), ARITH_DO(SCALAR_T(U), div)(z, v.z) })  \
+        ); \
+        VEC_OP(vec3, mod, \
+            ({ ARITH_DO(U,           mod)(x, v),   ARITH_DO(U,           mod)(y, v),   ARITH_DO(U,           mod)(z, v)   }), \
+            ({ ARITH_DO(SCALAR_T(U), mod)(x, v.x), ARITH_DO(SCALAR_T(U), mod)(y, v.y), ARITH_DO(SCALAR_T(U), mod)(z, v.z) })  \
+        ); \
+        template <class U> auto  operator+ (U v) const { return  add(v); } \
+        template <class U> auto& operator+=(U v)       { *this = add(v); return *this; } \
         \
-        NAME operator-(R(NAME) v) const; NAME operator-(SCALAR v) const; /* NOLINT(bugprone-macro-parentheses) */ \
-        NAME& operator-=(R(NAME) v); NAME& operator-=(SCALAR v); /* NOLINT(bugprone-macro-parentheses) */ \
+        template <class U> auto  operator- (U v) const { return  sub(v); } \
+        template <class U> auto& operator-=(U v)       { *this = sub(v); return *this; } \
         \
-        NAME operator*(R(NAME) v) const; NAME operator*(SCALAR v) const; /* NOLINT(bugprone-macro-parentheses) */ \
-        NAME& operator*=(R(NAME) v); NAME& operator*=(SCALAR v); /* NOLINT(bugprone-macro-parentheses) */ \
+        template <class U> auto  operator* (U v) const { return  mul(v); } \
+        template <class U> auto& operator*=(U v)       { *this = mul(v); return *this; } \
         \
-        NAME operator/(R(NAME) v) const; NAME operator/(SCALAR v) const; /* NOLINT(bugprone-macro-parentheses) */ \
-        NAME& operator/=(R(NAME) v); NAME& operator/=(SCALAR v); /* NOLINT(bugprone-macro-parentheses) */ \
+        template <class U> auto  operator/ (U v) const { return  div(v); } \
+        template <class U> auto& operator/=(U v)       { *this = div(v); return *this; } \
         \
-        NAME operator%(R(NAME) v) const; NAME operator%(SCALAR v) const; /* NOLINT(bugprone-macro-parentheses) */ \
-        NAME& operator%=(R(NAME) v); NAME& operator%=(SCALAR v); /* NOLINT(bugprone-macro-parentheses) */ \
+        template <class U> auto  operator% (U v) const { return  mod(v); } \
+        template <class U> auto& operator%=(U v)       { *this = mod(v); return *this; } \
         \
         NAME operator+() const { return *this; } /* NOLINT(bugprone-macro-parentheses) */ \
         S_ONLY(NAME) operator-() const { return { -_X, -_Y, -_Z }; } /* NOLINT(bugprone-macro-parentheses) */ \
@@ -222,7 +281,14 @@ namespace Maths {
         std::string str() const { return std::format("("#_X": {}, "#_Y": {}, "#_Z": {})", _X, _Y, _Z); } \
         \
         __VA_ARGS__ /* extra declarations */ \
-    }
+    }; \
+    STDU_IF(DEF_OP, \
+        VEC_OP_OTHER(vec3, +) \
+        VEC_OP_OTHER(vec3, -) \
+        VEC_OP_OTHER(vec3, *) \
+        VEC_OP_OTHER(vec3, /) \
+        VEC_OP_OTHER(vec3, %) \
+    )
 
 #define VEC4DEF(NAME, SCALAR, _X, _Y, _Z, _W, DEF_OP, DEF_EQ, DEF_W_VAL, CEXPR, ...) \
     struct NAME { \
@@ -237,20 +303,40 @@ namespace Maths {
         STDU_IF(CEXPR, constexpr) SCALAR operator[] (uint i) const { return ((const SCALAR*)this)[i]; } /* NOLINT(bugprone-macro-parentheses) */ \
         \
         STDU_IF(DEF_OP, \
-        NAME operator+(R(NAME) v) const; NAME operator+(SCALAR v) const; /* NOLINT(bugprone-macro-parentheses) */ \
-        NAME& operator+=(R(NAME) v); NAME& operator+=(SCALAR v); /* NOLINT(bugprone-macro-parentheses) */ \
+        VEC_OP(vec4, add, \
+            ({ ARITH_DO(U,           add)(x, v),   ARITH_DO(U,           add)(y, v),   ARITH_DO(U,           add)(z, v),   ARITH_DO(U,           add)(z, v)   }), \
+            ({ ARITH_DO(SCALAR_T(U), add)(x, v.x), ARITH_DO(SCALAR_T(U), add)(y, v.y), ARITH_DO(SCALAR_T(U), add)(z, v.z), ARITH_DO(SCALAR_T(U), add)(w, v.w) })  \
+        ); \
+        VEC_OP(vec4, sub, \
+            ({ ARITH_DO(U,           sub)(x, v),   ARITH_DO(U,           sub)(y, v),   ARITH_DO(U,           sub)(z, v),   ARITH_DO(U,           sub)(z, v)   }), \
+            ({ ARITH_DO(SCALAR_T(U), sub)(x, v.x), ARITH_DO(SCALAR_T(U), sub)(y, v.y), ARITH_DO(SCALAR_T(U), sub)(z, v.z), ARITH_DO(SCALAR_T(U), sub)(w, v.w) })  \
+        ); \
+        VEC_OP(vec4, mul, \
+            ({ ARITH_DO(U,           mul)(x, v),   ARITH_DO(U,           mul)(y, v),   ARITH_DO(U,           mul)(z, v),   ARITH_DO(U,           mul)(z, v)   }), \
+            ({ ARITH_DO(SCALAR_T(U), mul)(x, v.x), ARITH_DO(SCALAR_T(U), mul)(y, v.y), ARITH_DO(SCALAR_T(U), mul)(z, v.z), ARITH_DO(SCALAR_T(U), mul)(w, v.w) })  \
+        ); \
+        VEC_OP(vec4, div, \
+            ({ ARITH_DO(U,           div)(x, v),   ARITH_DO(U,           div)(y, v),   ARITH_DO(U,           div)(z, v),   ARITH_DO(U,           div)(z, v)   }), \
+            ({ ARITH_DO(SCALAR_T(U), div)(x, v.x), ARITH_DO(SCALAR_T(U), div)(y, v.y), ARITH_DO(SCALAR_T(U), div)(z, v.z), ARITH_DO(SCALAR_T(U), div)(w, v.w) })  \
+        ); \
+        VEC_OP(vec4, mod, \
+            ({ ARITH_DO(U,           mod)(x, v),   ARITH_DO(U,           mod)(y, v),   ARITH_DO(U,           mod)(z, v),   ARITH_DO(U,           mod)(z, v)   }), \
+            ({ ARITH_DO(SCALAR_T(U), mod)(x, v.x), ARITH_DO(SCALAR_T(U), mod)(y, v.y), ARITH_DO(SCALAR_T(U), mod)(z, v.z), ARITH_DO(SCALAR_T(U), mod)(w, v.w) })  \
+        ); \
+        template <class U> auto  operator+ (U v) const { return  add(v); } \
+        template <class U> auto& operator+=(U v)       { *this = add(v); return *this; } \
         \
-        NAME operator-(R(NAME) v) const; NAME operator-(SCALAR v) const; /* NOLINT(bugprone-macro-parentheses) */ \
-        NAME& operator-=(R(NAME) v); NAME& operator-=(SCALAR v); /* NOLINT(bugprone-macro-parentheses) */ \
+        template <class U> auto  operator- (U v) const { return  sub(v); } \
+        template <class U> auto& operator-=(U v)       { *this = sub(v); return *this; } \
         \
-        NAME operator*(R(NAME) v) const; NAME operator*(SCALAR v) const; /* NOLINT(bugprone-macro-parentheses) */ \
-        NAME& operator*=(R(NAME) v); NAME& operator*=(SCALAR v); /* NOLINT(bugprone-macro-parentheses) */ \
+        template <class U> auto  operator* (U v) const { return  mul(v); } \
+        template <class U> auto& operator*=(U v)       { *this = mul(v); return *this; } \
         \
-        NAME operator/(R(NAME) v) const; NAME operator/(SCALAR v) const; /* NOLINT(bugprone-macro-parentheses) */ \
-        NAME& operator/=(R(NAME) v); NAME& operator/=(SCALAR v); /* NOLINT(bugprone-macro-parentheses) */ \
+        template <class U> auto  operator/ (U v) const { return  div(v); } \
+        template <class U> auto& operator/=(U v)       { *this = div(v); return *this; } \
         \
-        NAME operator%(R(NAME) v) const; NAME operator%(SCALAR v) const; /* NOLINT(bugprone-macro-parentheses) */\
-        NAME& operator%=(R(NAME) v); NAME& operator%=(SCALAR v); /* NOLINT(bugprone-macro-parentheses) */\
+        template <class U> auto  operator% (U v) const { return  mod(v); } \
+        template <class U> auto& operator%=(U v)       { *this = mod(v); return *this; } \
         \
         NAME operator+() const { return *this; } /* NOLINT(bugprone-macro-parentheses) */ \
         S_ONLY(NAME) operator-() const { return { -_X, -_Y, -_Z, -_W }; } /* NOLINT(bugprone-macro-parentheses) */ \
@@ -274,7 +360,14 @@ namespace Maths {
         std::string str() const { return std::format("("#_X": {}, "#_Y": {}, "#_Z": {}, "#_W": {})", _X, _Y, _Z, _W); } \
         \
         __VA_ARGS__ /* extra declarations */ \
-    }
+    }; \
+    STDU_IF(DEF_OP, \
+    VEC_OP_OTHER(vec4, +) \
+    VEC_OP_OTHER(vec4, -) \
+    VEC_OP_OTHER(vec4, *) \
+    VEC_OP_OTHER(vec4, /) \
+    VEC_OP_OTHER(vec4, %) \
+    )
 
 #define B_ONLY(T) template <class S = scalar> std::enable_if_t<std::is_same_v<S, uchar>, T>
 #define S_ONLY_U(U) std::conditional_t<std::is_signed_v<scalar>, U, stdu::empty>
@@ -283,12 +376,12 @@ namespace Maths {
     float len() const; \
     scalar lensq() const; \
     float dist(R(T) to) const; \
-    scalar distsq(R(T) to) const; \
+    auto distsq(R(T) to) const; \
     bool in_range(R(T) other, scalar d) const; \
     \
     scalar sum() const; \
     \
-    scalar dot(R(T) other) const; \
+    auto dot(R(T) other) const; \
     \
     F_ONLY(T<float>) norm(float d = 1) const; /* NOLINT(bugprone-macro-parentheses) */ \
     \
@@ -346,7 +439,7 @@ namespace Maths {
         F_ONLY(vec2&) reflect_uc(const vec2& normal); \
         \
         vec3<T> with_z(T z) const; \
-    );
+    )
 #pragma endregion // vec2
 #pragma region Vec3
     template <class T>
@@ -432,7 +525,15 @@ namespace Maths {
 #pragma region Color
 #define COLOR_COMMON(T, HAS_A, C) \
     constexpr T(const char (&hex)[1+6+1]); \
-    STDU_IF(HAS_A, constexpr T(const char (&hex)[1+8+1]);)\
+    STDU_IF(HAS_A, constexpr T(const char (&hex)[1+8+1]);) \
+    \
+    OPENGL_API T neg() const; \
+    OPENGL_API T lerp(const T& other, float t) const; \
+    OPENGL_API T mul(const T& other) const; \
+    OPENGL_API T screen(const T& other) const; \
+    OPENGL_API T overlay(const T& other) const; \
+    STDU_IF(HAS_A, OPENGL_API without_alpha_t mul_alpha() const;) \
+    \
     OPENGL_API float luminance() const; \
     \
     OPENGL_API bvec3 as_rgb()   const; \
@@ -448,11 +549,12 @@ namespace Maths {
     OPENGL_API static T from_hsv(float hue, float saturation = 1, float value = 1 STDU_IF(HAS_A, , float alpha = 1)); /* hue: [0-360], sat: [0-1], val: [0-1] */ \
     OPENGL_API static T from_hsv(STDU_IF_ELSE(HAS_A, (fvec4 hsva), (fvec3 hsv))); /* hue: [0-360], sat: [0-1], val: [0-1] */ \
     \
-    OPENGL_API \
-    STDU_IF_ELSE(HAS_A, (without_alpha_t rgb() const;), (with_alpha_t with_alpha(scalar alpha = 1) const;)) \
+    STDU_IF(HAS_A, OPENGL_API without_alpha_t rgb() const;) \
+    OPENGL_API STDU_IF_ELSE(HAS_A, (T), (with_alpha_t)) with_alpha(scalar alpha = (C)) const; \
+    OPENGL_API STDU_IF_ELSE(HAS_A, (T), (with_alpha_t)) rgb1() const; \
     \
     OPENGL_API \
-    STDU_IF_ELSE(HAS_A, (operator without_alpha_t() const;), (operator with_alpha_t()    const;)) \
+    STDU_IF_ELSE(HAS_A, (operator without_alpha_t() const;), (operator with_alpha_t() const;)) \
     \
     static constexpr T BLACK()      { return "#000000"; } /* solid black: rgb(000, 000, 000) or #000000 */ \
     static constexpr T DARK_GRAY()  { return "#404040"; } /*   25% white: rgb(064, 064, 064) or #404040 */ \
@@ -520,12 +622,16 @@ namespace Maths {
     \
     STDU_IF(HAS_A, static constexpr T CLEAR() { return "#00000000"; } /* complete transparency. RGBA is (0, 0, 0, 0). */) \
     
-    VEC3DEF(color3f, float, r, g, b,    0, 0,      1, OPENGL_API operator color3 () const; using with_alpha_t    = colorf;  COLOR_COMMON(color3f, 0, 255.0f));
-    VEC3DEF(color3,  uchar, r, g, b,    0, 1,      1, OPENGL_API operator color3f() const; using with_alpha_t    = color;   COLOR_COMMON(color3,  0, 1));
-    VEC4DEF(colorf,  float, r, g, b, a, 0, 0, 1,   1, OPENGL_API operator color  () const; using without_alpha_t = color3f; COLOR_COMMON(colorf,  1, 255.0f));
-    VEC4DEF(color,   uchar, r, g, b, a, 0, 1, 255, 1, OPENGL_API operator colorf () const; using without_alpha_t = color3;  COLOR_COMMON(color,   1, 1));
+    VEC3DEF(color3f, float, r, g, b,    0, 0,      1, OPENGL_API operator color3 () const; using with_alpha_t    = colorf;  COLOR_COMMON(color3f, 0, 1.0f));
+    VEC3DEF(color3,  uchar, r, g, b,    0, 1,      1, OPENGL_API operator color3f() const; using with_alpha_t    = color;   COLOR_COMMON(color3,  0, 255));
+    VEC4DEF(colorf,  float, r, g, b, a, 0, 0, 1,   1, OPENGL_API operator color  () const; using without_alpha_t = color3f; COLOR_COMMON(colorf,  1, 1.0f));
+    VEC4DEF(color,   uchar, r, g, b, a, 0, 1, 255, 1, OPENGL_API operator colorf () const; using without_alpha_t = color3;  COLOR_COMMON(color,   1, 255));
+
+
 #pragma endregion // color
-    
+
+#undef VEC_OP
+#undef VEC_OP_OTHER
 #undef COLOR_COMMON
 #undef VEC2DEF
 #undef VEC3DEF
@@ -550,11 +656,11 @@ namespace Maths {
     VEC2_IMPL(float,    len,      0)() const { return std::sqrtf((float)lensq()); }
     VEC2_IMPL(T,        lensq,    0)() const { return x*x + y*y; }
     VEC2_IMPL(float,    dist,     0)(const vec2& to) const { return (*this - to).len(); }
-    VEC2_IMPL(T,        distsq,   0)(const vec2& to) const { return (*this - to).lensq(); }
+    VEC2_IMPL(auto,     distsq,   0)(const vec2& to) const { return (*this - to).lensq(); }
     VEC2_IMPL(bool,     in_range, 0)(const vec2& other, T d) const { return distsq(other) <= d * d; }
     
     VEC2_IMPL(T,        sum, 0)()                  const { return x + y; }
-    VEC2_IMPL(T,        dot, 0)(const vec2& other) const { return (*this * other).sum(); }
+    VEC2_IMPL(auto,     dot, 0)(const vec2& other) const { return (*this * other).sum(); }
     
     VEC2_IMPL(fvec2,    norm, 1)(float d) const { float l = d / len(); return { x * l, y * l }; }
     
@@ -591,37 +697,20 @@ namespace Maths {
 
     VEC2_IMPL(vec3<T>, with_z, 0)(T z) const { return { x, y, z }; }
 
-#define IMPL_VEC2_OP(OP) VEC2_IMPL(vec2<T>,  operator OP,    0)(const vec2& other) const { return { (T)(x OP other.x), (T)(y OP other.y) }; } /* NOLINT(bugprone-macro-parentheses) */ \
-                         VEC2_IMPL(vec2<T>,  operator OP,    0)(T other)           const { return { (T)(x OP other),   (T)(y OP other)   }; } /* NOLINT(bugprone-macro-parentheses) */ \
-                         VEC2_IMPL(vec2<T>&, operator OP##=, 0)(const vec2& other) { (T)(x OP##= other.x); (T)(y OP##= other.y); return *this; } \
-                         VEC2_IMPL(vec2<T>&, operator OP##=, 0)(T other)           { (T)(x OP##= other);   (T)(y OP##= other);   return *this; }
-
-    IMPL_VEC2_OP(+)
-    IMPL_VEC2_OP(-)
-    IMPL_VEC2_OP(*)
-    IMPL_VEC2_OP(/)
-    
-    VEC2_IMPL(vec2<T>,  operator%,  0)(const vec2& v) const { return { mod_t(x, v.x), mod_t(y, v.y) }; }
-    VEC2_IMPL(vec2<T>,  operator%,  0)(T v)           const { return { mod_t(x, v),   mod_t(y, v)   }; }
-    VEC2_IMPL(vec2<T>&, operator%=, 0)(const vec2& v) { x = mod_t(x, v.x); y = mod_t(y, v.y); return *this; }
-    VEC2_IMPL(vec2<T>&, operator%=, 0)(T v)           { x = mod_t(x, v);   y = mod_t(y, v);   return *this; }
-
-#undef IMPL_VEC2_OP
-
     VEC2_IMPL(, vec2, 0)(Direction2D dir, T scale) : x(0), y(0) {
         using enum Direction2D;
         if (dir == UNIT) {
             x = y = scale; return;
         }
         if (dir < 0 || dir > DOWN) return;
-        (&x)[(int)(dir >> 1)] = (int)(dir & 1) ? neg_t(scale) : scale;
+        (&x)[(int)(dir >> 1)] = (int)(dir & 1) ? ARITH_DO(int, clamped_neg)(scale) : scale;
     }
 
     VEC2_IMPL(, vec2, 0)(Corner2D cor, T scale) : x(0), y(0) {
         using enum Corner2D;
         if (cor < 0 || cor > BOTTOM_LEFT) return;
-        x = (int)(cor & SIDE_LEFT  ) ? neg_t(scale) : scale;
-        y = (int)(cor & SIDE_BOTTOM) ? neg_t(scale) : scale;
+        x = (int)(cor & SIDE_LEFT  ) ? ARITH_DO(int, clamped_neg)(scale) : scale;
+        y = (int)(cor & SIDE_BOTTOM) ? ARITH_DO(int, clamped_neg)(scale) : scale;
     }
     
 #undef VEC2_IMPL
@@ -631,11 +720,11 @@ namespace Maths {
     VEC3_IMPL(float,    len,      0)() const { return std::sqrtf((float)lensq()); }
     VEC3_IMPL(T,        lensq,    0)() const { return x*x + y*y + z*z; }
     VEC3_IMPL(float,    dist,     0)(const vec3& to) const { return (*this - to).len(); }
-    VEC3_IMPL(T,        distsq,   0)(const vec3& to) const { return (*this - to).lensq(); }
+    VEC3_IMPL(auto,     distsq,   0)(const vec3& to) const { return (*this - to).lensq(); }
     VEC3_IMPL(bool,     in_range, 0)(const vec3& other, T d) const { return distsq(other) <= d * d; }
     
     VEC3_IMPL(T,        sum, 0)()                  const { return x + y + z; }
-    VEC3_IMPL(T,        dot, 0)(const vec3& other) const { return (*this * other).sum(); }
+    VEC3_IMPL(auto,     dot, 0)(const vec3& other) const { return (*this * other).sum(); }
     
     VEC3_IMPL(fvec3,    norm, 1)(float d) const { float l = d / len(); return { x * l, y * l, z * l }; }
     
@@ -672,23 +761,6 @@ namespace Maths {
     
     VEC3_IMPL(vec2<T>, xy,     0)()    const { return { x, y }; }
     VEC3_IMPL(vec4<T>, with_w, 0)(T w) const { return { x, y, z, w }; }
-     
-#define IMPL_VEC3_OP(OP) VEC3_IMPL(vec3<T>,  operator OP,    0)(const vec3& other) const { return { (T)(x OP other.x), (T)(y OP other.y), (T)(z OP other.z) }; } /* NOLINT(bugprone-macro-parentheses) */ \
-                         VEC3_IMPL(vec3<T>,  operator OP,    0)(T other)           const { return { (T)(x OP other),   (T)(y OP other),   (T)(z OP other)   }; } /* NOLINT(bugprone-macro-parentheses) */ \
-                         VEC3_IMPL(vec3<T>&, operator OP##=, 0)(const vec3& other) { (T)(x OP##= other.x); (T)(y OP##= other.y); (T)(z OP##= other.z); return *this; } \
-                         VEC3_IMPL(vec3<T>&, operator OP##=, 0)(T other)           { (T)(x OP##= other);   (T)(y OP##= other);   (T)(z OP##= other);   return *this; }
-
-    IMPL_VEC3_OP(+)
-    IMPL_VEC3_OP(-)
-    IMPL_VEC3_OP(*)
-    IMPL_VEC3_OP(/)
-
-    VEC3_IMPL(vec3<T>,  operator%,  0)(const vec3& v) const { return { mod_t(x, v.x), mod_t(y, v.y), mod_t(z, v.z) }; }
-    VEC3_IMPL(vec3<T>,  operator%,  0)(T v)           const { return { mod_t(x, v),   mod_t(y, v),   mod_t(z, v)   }; }
-    VEC3_IMPL(vec3<T>&, operator%=, 0)(const vec3& v) { x = mod_t(x, v.x); y = mod_t(y, v.y); z = mod_t(z, v.z); return *this; }
-    VEC3_IMPL(vec3<T>&, operator%=, 0)(T v)           { x = mod_t(x, v);   y = mod_t(y, v);   z = mod_t(z, v);   return *this; }
-
-#undef IMPL_VEC3_OP
 
     VEC3_IMPL(, vec3, 0)(Direction3D dir, T scale) : x(0), y(0), z(0) {
         using enum Direction3D;
@@ -696,15 +768,15 @@ namespace Maths {
             x = y = z = scale; return;
         }
         if (dir < 0 || dir > BACK) return;
-        (&x)[(int)(dir >> 1)] = (int)(dir & 1) ? neg_t(scale) : scale;
+        (&x)[(int)(dir >> 1)] = (int)(dir & 1) ? ARITH_DO(int, clamped_neg)(scale) : scale;
     }
 
     VEC3_IMPL(, vec3, 0)(Corner3D cor, T scale) : x(0), y(0), z(0) {
         using enum Corner3D;
         if (cor < 0 || cor > BACK_BOTTOM_LEFT) return;
-        x = (int)(cor & SIDE_LEFT  ) ? neg_t(scale) : scale;
-        y = (int)(cor & SIDE_BOTTOM) ? neg_t(scale) : scale;
-        y = (int)(cor & SIDE_BACK  ) ? neg_t(scale) : scale;
+        x = (int)(cor & SIDE_LEFT  ) ? ARITH_DO(int, clamped_neg)(scale) : scale;
+        y = (int)(cor & SIDE_BOTTOM) ? ARITH_DO(int, clamped_neg)(scale) : scale;
+        y = (int)(cor & SIDE_BACK  ) ? ARITH_DO(int, clamped_neg)(scale) : scale;
     }
     
 #undef VEC3_IMPL
@@ -714,11 +786,11 @@ namespace Maths {
     VEC4_IMPL(float,    len,      0)() const { return std::sqrtf((float)lensq()); }
     VEC4_IMPL(T,        lensq,    0)() const { return x*x + y*y + z*z + w*w; }
     VEC4_IMPL(float,    dist,     0)(const vec4& to) const { return (*this - to).len(); }
-    VEC4_IMPL(T,        distsq,   0)(const vec4& to) const { return (*this - to).lensq(); }
+    VEC4_IMPL(auto,     distsq,   0)(const vec4& to) const { return (*this - to).lensq(); }
     VEC4_IMPL(bool,     in_range, 0)(const vec4& other, T d) const { return distsq(other) <= d * d; }
     
     VEC4_IMPL(T,        sum, 0)()                  const { return x + y + z + w; }
-    VEC4_IMPL(T,        dot, 0)(const vec4& other) const { return (*this * other).sum(); }
+    VEC4_IMPL(auto,     dot, 0)(const vec4& other) const { return (*this * other).sum(); }
     
     VEC4_IMPL(fvec4,    norm, 1)(float d) const { float l = d / len(); return { x * l, y * l, z * l, w * l }; }
     
@@ -742,39 +814,22 @@ namespace Maths {
     VEC4_IMPL(vec2<T>, xy,  0)() const { return { x, y }; }
     VEC4_IMPL(vec3<T>, xyz, 0)() const { return { x, y, z }; }
 
-#define IMPL_VEC4_OP(OP) VEC4_IMPL(vec4<T>,  operator OP,    0)(const vec4& other) const { return { (T)(x OP other.x), (T)(y OP other.y), (T)(z OP other.z), (T)(w OP other.w) }; } /* NOLINT(bugprone-macro-parentheses) */ \
-                         VEC4_IMPL(vec4<T>,  operator OP,    0)(T other)           const { return { (T)(x OP other),   (T)(y OP other),   (T)(z OP other),   (T)(w OP other)   }; } /* NOLINT(bugprone-macro-parentheses) */ \
-                         VEC4_IMPL(vec4<T>&, operator OP##=, 0)(const vec4& other) { (T)(x OP##= other.x); (T)(y OP##= other.y); (T)(z OP##= other.z); (T)(w OP##= other.w); return *this; } \
-                         VEC4_IMPL(vec4<T>&, operator OP##=, 0)(T other)           { (T)(x OP##= other);   (T)(y OP##= other);   (T)(z OP##= other);   (T)(w OP##= other);   return *this; }
-
-    IMPL_VEC4_OP(+)
-    IMPL_VEC4_OP(-)
-    IMPL_VEC4_OP(*)
-    IMPL_VEC4_OP(/)
-
-    VEC4_IMPL(vec4<T>,  operator%,  0)(const vec4& v) const { return { mod_t(x, v.x), mod_t(y, v.y), mod_t(z, v.z), mod_t(w, v.w) }; }
-    VEC4_IMPL(vec4<T>,  operator%,  0)(T v)           const { return { mod_t(x, v),   mod_t(y, v),   mod_t(z, v),   mod_t(w, v)   }; }
-    VEC4_IMPL(vec4<T>&, operator%=, 0)(const vec4& v) { x = mod_t(x, v.x); y = mod_t(y, v.y); z = mod_t(z, v.z); w = mod_t(w, v.w); return *this; }
-    VEC4_IMPL(vec4<T>&, operator%=, 0)(T v)           { x = mod_t(x, v);   y = mod_t(y, v);   z = mod_t(z, v);   w = mod_t(w, v);   return *this; }
-
-#undef IMPL_VEC4_OP
-
     VEC4_IMPL(, vec4, 0)(Direction4D dir, T scale) : x(0), y(0), z(0), w(0) {
         using enum Direction4D;
         if (dir == UNIT) {
             x = y = z = w = scale; return;
         }
         if (dir < 0 || dir > OUT) return;
-        (&x)[(int)(dir >> 1)] = (int)(dir & 1) ? neg_t(scale) : scale;
+        (&x)[(int)(dir >> 1)] = (int)(dir & 1) ? ARITH_DO(int, clamped_neg)(scale) : scale;
     }
 
     VEC4_IMPL(, vec4, 0)(Corner4D cor, T scale) : x(0), y(0), z(0), w(0) {
         using enum Corner4D;
         if (cor < 0 || cor > OUTER_BACK_BOTTOM_LEFT) return;
-        x = (int)(cor & SIDE_LEFT  ) ? neg_t(scale) : scale;
-        y = (int)(cor & SIDE_BOTTOM) ? neg_t(scale) : scale;
-        z = (int)(cor & SIDE_BACK  ) ? neg_t(scale) : scale;
-        w = (int)(cor & SIDE_OUTER ) ? neg_t(scale) : scale;
+        x = (int)(cor & SIDE_LEFT  ) ? ARITH_DO(int, clamped_neg)(scale) : scale;
+        y = (int)(cor & SIDE_BOTTOM) ? ARITH_DO(int, clamped_neg)(scale) : scale;
+        z = (int)(cor & SIDE_BACK  ) ? ARITH_DO(int, clamped_neg)(scale) : scale;
+        w = (int)(cor & SIDE_OUTER ) ? ARITH_DO(int, clamped_neg)(scale) : scale;
     }
     
 #undef VEC4_IMPL
@@ -839,6 +894,10 @@ namespace Maths {
     template struct vec3<uchar>;
     template struct vec4<uchar>;
 
+#undef ARITH_DO
+#undef ARITH
+#undef ARITH_T
+    
 #undef F_ONLY
 #undef B_ONLY
 #undef S_ONLY
