@@ -92,6 +92,14 @@ namespace Maths {
         uchar overlay_channel(uchar a, uchar b) {
             return a < 128 ? a * b * 255 / 2 : 255 - 255 * (1 - a) * (1 - b) / 2;
         }
+
+        bool channel_eq(float a, float b) { // loose equality
+            return std::abs(a - b) < (1 / 255.0f);
+        }
+        
+        bool color_eq(const float* a, const float* b) {
+            return channel_eq(a[0], b[0]) && channel_eq(a[1], b[1]) && channel_eq(a[2], b[2]);
+        }
     }
     
 #define CM(F) STDU_IF_ELSE(F, (255.0f), (1))
@@ -99,6 +107,17 @@ namespace Maths {
 #define A(HAS_A) STDU_IF_ELSE(HAS_A, (a), (1))
 #define S scalar
 #define COLOR_IMPL(T, HAS_A, F) \
+    bool T::eq(const T& other) const { return r == other.r && g == other.g && b == other.b STDU_IF(HAS_A, && r == other.r); } \
+    bool T::loose_eq(const T& other) const { \
+        return STDU_IF_ELSE(F, \
+            (Color::color_eq((const float*)this, (const float*)&other) \
+             STDU_IF(HAS_A, && Color::channel_eq(a, other.a))), \
+            (eq(other)) \
+        ); \
+    } \
+    bool T::neq(const T& other) const { return !eq(other); } \
+    bool T::operator==(const T& other) const { return eq(other); } \
+    \
     T T::neg() const { return { (S)(CM_N(F) - r), (S)(CM_N(F) - g), (S)(CM_N(F) - b) STDU_IF(HAS_A, , (S)(CM_N(F) - a))}; } \
     T T::lerp(const T& other, float t) const { \
         float s = (1 - t); \
@@ -121,9 +140,7 @@ namespace Maths {
         }; \
     } \
     STDU_IF(HAS_A, T::without_alpha_t T::mul_alpha() const { \
-        return { \
-            (S)(r * a / CM_N(F)), (S)(g * a / CM_N(F)), (S)(b * a / CM_N(F)) \
-        }; \
+        return { (S)(r * a / CM_N(F)), (S)(g * a / CM_N(F)), (S)(b * a / CM_N(F)) }; \
     }) \
     \
     float T::luminance() const { return (0.2126f * (float)r + 0.7152f * (float)g + 0.0722f * (float)b) / CM_N(F); /*https://en.wikipedia.org/wiki/Relative_luminance*/ } \

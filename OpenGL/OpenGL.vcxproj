@@ -247,8 +247,10 @@
     <ClInclude Include="src\Maths\Corner.h" />
     <ClInclude Include="src\Maths\Direction.h" />
     <ClInclude Include="src\Maths\NumTypes.h" />
+    <ClInclude Include="src\Maths\Rect.h" />
     <ClInclude Include="src\Maths\Vector.h" />
     <ClInclude Include="src\Maths\Matrix.h" />
+    <ClInclude Include="src\Maths\VectorImpl.h" />
     <ClInclude Include="src\opengl.h" />
     <ClInclude Include="src\stdu\enum_utils.h" />
     <ClInclude Include="src\stdu\io.h" />

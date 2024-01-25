@@ -77,5 +77,8 @@ int main() {
     //
     //     GraphicsDevice.EndRender();
     // }
+    // Maths::fvec4 x = { 1, 0, 0, 0 };
+    // auto y = x * 1.0f;
+    // std::cout << y.str() << '\n';
     return 0;
 }

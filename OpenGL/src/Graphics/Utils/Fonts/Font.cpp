@@ -24,9 +24,10 @@ namespace Graphics {
     }
 
     void Font::RenderBitmap() {
+        using namespace Maths;
         const FT_GlyphSlot glyphHandle = faceHandle->glyph;
         constexpr int padding = 0;
-        Maths::ivec2 pen      = { padding, 0 };
+        ivec2 pen      = { padding, 0 };
 
         constexpr int textureWidth = 512;
         uchar textureBuffer[textureWidth * textureWidth] = { 0 };
@@ -60,9 +61,7 @@ namespace Graphics {
             }
 
             Glyph& glyph = glyphs[charCode - 32];
-            glyph.position = { pen.x, textureWidth - pen.y };
-            glyph.size = { (int)width, (int)height };
-            
+            glyph.rect = fvec2 { pen.x, textureWidth - pen.y }.to(fvec2 { width, -(int)height }.as_size()) / textureWidth;
             glyph.advance = { (float)glyphHandle->advance.x / 64.0f, (float)glyphHandle->advance.y / 64.0f };
             glyph.offset  = { glyphHandle->bitmap_left, glyphHandle->bitmap_top };
 
@@ -89,8 +88,7 @@ namespace Graphics {
 
         // TODO: make this auto-detect texture width with packing alg
         constexpr float textureWidth = 512.0f;
-        for (uint i = 0; i < str.size(); ++i) {
-            const char glyph = str[i];
+        for (char glyph : str) {
             if (glyph == '\n') {
                 pen.y -= (int)((float)fontHeight.px() * scaleRatio);
                 pen.x = 0;
@@ -100,21 +98,18 @@ namespace Graphics {
 
             const Glyph& rect = GetGlyphRect(glyph);
 
-            const fvec2 minCoord = rect.position / textureWidth;
-            const fvec2 dCoord   = rect.size / textureWidth;
-            const fvec2 maxCoord = { minCoord.x + dCoord.x, minCoord.y - dCoord.y };
-            fvec2 begin   = pen + rect.offset * scaleRatio;
-            auto [dx, dy] = rect.size * scaleRatio;
+            fvec2 size = rect.rect.size() * textureWidth;
+            rect2f pos = rect.offset.as<float>().to(fvec2 { size.x, -size.y }.as_size()) * scaleRatio + pen;
             
-            vert.push_back({ begin + fvec2 { 0,   0  }, 1, { minCoord.x, minCoord.y }, 0 });
-            vert.push_back({ begin + fvec2 { dx,  0  }, 1, { maxCoord.x, minCoord.y }, 0 });
-            vert.push_back({ begin + fvec2 { 0,  -dy }, 1, { minCoord.x, maxCoord.y }, 0 });
-            vert.push_back({ begin + fvec2 { dx, -dy }, 1, { maxCoord.x, maxCoord.y }, 0 });
+            vert.push_back({ pos.corner(0), 1, rect.rect.corner(0), 0 });
+            vert.push_back({ pos.corner(1), 1, rect.rect.corner(1), 0 });
+            vert.push_back({ pos.corner(2), 1, rect.rect.corner(2), 0 });
+            vert.push_back({ pos.corner(3), 1, rect.rect.corner(3), 0 });
 
             ind.push_back(TriIndices { 0, 1, 2 } + ti * 4);
             ind.push_back(TriIndices { 1, 2, 3 } + ti * 4);
             
-            ++ti; // ti is not always i, could encounter \n
+            ++ti; // ti is not always index, could encounter \n
             pen += rect.advance * scaleRatio;
         }
 

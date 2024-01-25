@@ -53,6 +53,13 @@ namespace stdu {
             if constexpr (std::is_unsigned_v<T>) return 0;
             else return -x;
         }
+
+        static bool lt(T a, U b) { return a  < b; }
+        static bool le(T a, U b) { return a <= b; }
+        static bool eq(T a, U b) { return a == b; }
+        static bool ge(T a, U b) { return a >= b; }
+        static bool gt(T a, U b) { return a  > b; }
+        static bool ne(T a, U b) { return a != b; }
     };
 
     template <class F, class... Ts> struct or_ts {
@@ -61,4 +68,7 @@ namespace stdu {
     template <class F> struct or_ts<F> { using type = F; };
 
     template <class F, class... Ts> using or_t = typename or_ts<F, Ts...>::type;
+
+    template <class T, class U>
+    concept convertible_to = std::is_convertible_v<T, U>;
 }

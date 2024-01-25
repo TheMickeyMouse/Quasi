@@ -15,8 +15,7 @@ namespace Graphics {
         
         struct Glyph {
             // internal coords
-            Maths::ivec2 position;
-            Maths::ivec2 size;
+            Maths::rect2f rect;
             // render data
             Maths::fvec2 advance;
             Maths::ivec2 offset;
