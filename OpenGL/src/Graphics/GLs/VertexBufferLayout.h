@@ -82,6 +82,7 @@ namespace Graphics {
             void PushFloat()      { Push(VBE Float());  }
             void PushDouble()     { Push(VBE Double()); }
             void PushInt()        { Push(VBE Int());    }
+            void PushUInt()       { Push(VBE Uint());   }
             void PushChar()       { Push(VBE SByte());  }
             void PushByte()       { Push(VBE Byte());   }
             void PushVector2()    { Push(VBE Vec2());   }

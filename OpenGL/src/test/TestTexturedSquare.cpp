@@ -75,13 +75,13 @@ namespace Test {
 #pragma endregion
         
         texture = Graphics::Texture::LoadPNGBytes(tex, sizeof(tex) / sizeof(uchar), false);
-        texture.Bind(0);
+        gdevice.BindTexture(texture);
 
         VertexColorTexture3D vertices[] = { 
-            { { -50.0f, -50.0f, 0 }, 1, { 0.0f, 0.0f }, 0 },
-            { { +50.0f, -50.0f, 0 }, 1, { 1.0f, 0.0f }, 0 },
-            { { +50.0f, +50.0f, 0 }, 1, { 1.0f, 1.0f }, 0 },
-            { { -50.0f, +50.0f, 0 }, 1, { 0.0f, 1.0f }, 0 },
+            { { -50.0f, -50.0f, 0 }, 1, { 0.0f, 0.0f }, texture.Slot() },
+            { { +50.0f, -50.0f, 0 }, 1, { 1.0f, 0.0f }, texture.Slot() },
+            { { +50.0f, +50.0f, 0 }, 1, { 1.0f, 1.0f }, texture.Slot() },
+            { { -50.0f, +50.0f, 0 }, 1, { 0.0f, 1.0f }, texture.Slot() },
         };
 
         Graphics::TriIndices indices[] = {

@@ -14,6 +14,7 @@ namespace Graphics {
         static constexpr unsigned int MAX_INDEX_COUNT = 1000;
     private:
         std::vector<RenderData> renders;
+        std::vector<Texture*> textures;
         // Maths::Matrix3D::PerspectiveProjectionFOV(45.0f, 4.0f / 3, 0.1f, 100.0f);
 
         Maths::ivec2 windowSize;
@@ -41,7 +42,9 @@ namespace Graphics {
         OPENGL_API void Render(RenderData& r);
         void Render(uint index) { Render(GetRender(index)); }
 
-        OPENGL_API void BindTexture(Texture& texture, uint slot);
+        OPENGL_API void BindTexture(Texture& texture, int slot = -1);
+        OPENGL_API void UnbindTexture(int slot);
+        OPENGL_API void UnbindAllTextures();
 
         OPENGL_API void ClearColor(const Maths::colorf& color);
 
@@ -66,6 +69,8 @@ namespace Graphics {
         //void Render(bool autoSort = true);
 
         OPENGL_API static GraphicsDevice Initialize(Maths::ivec2 winSize = { 640, 480 });
+
+        friend class Texture;
     };
 
     template <class T>

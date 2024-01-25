@@ -7,7 +7,7 @@
 
 namespace Test {
     void TestFontRender::OnInit(Graphics::GraphicsDevice& gdevice) {
-        render = gdevice.CreateNewRender<Vertex>(100, 50);
+        render = gdevice.CreateNewRender<Vertex>(200, 100);
 
         render.UseShader(
             "#shader vertex\n"
@@ -41,13 +41,16 @@ namespace Test {
 
         font.SetSize(48);
         font.RenderBitmap();
-        font.GetTexture().Bind(0);
+        gdevice.BindTexture(font.GetTexture());
 
+
+        const Maths::fvec2 size = font.GetTexture().GetSize();
+        float x = size.x / size.y;
         Vertex vertices[] = { 
-            { { -100.0f, -100.0f, 0 }, 1, { 0.0f, 0.0f } },
-            { { +100.0f, -100.0f, 0 }, 1, { 1.0f, 0.0f } },
-            { { +100.0f, +100.0f, 0 }, 1, { 1.0f, 1.0f } },
-            { { -100.0f, +100.0f, 0 }, 1, { 0.0f, 1.0f } },
+            { { -100.0f * x, -100.0f, 0 }, 1, { 0.0f, 0.0f } },
+            { { +100.0f * x, -100.0f, 0 }, 1, { 1.0f, 0.0f } },
+            { { +100.0f * x, +100.0f, 0 }, 1, { 1.0f, 1.0f } },
+            { { -100.0f * x, +100.0f, 0 }, 1, { 0.0f, 1.0f } },
         };
         
         Graphics::TriIndices indices[] = {
@@ -68,19 +71,19 @@ namespace Test {
                                                    modelRotation);
         render.SetCamera(mat);
         render.GetShader().Bind();
-        render.GetShader().SetUniform1I("u_font", 0);
-
-        meshStr = font.RenderString(string, 48)
-            .Convert<Vertex>([](const VertexColorTexture3D& v) {
-                return Vertex { v.Position, v.Color, v.TextureCoordinate };
-            });
-        meshStr.Bind(render);
+        render.GetShader().SetUniformTex("u_font", font.GetTexture());
         
-        //LOG(mat);
-        meshStr.ApplyMaterial(&Vertex::Color, color);
-        
-        render.ResetData();
-        if (showAtlas) render.AddNewMeshes(&meshAtlas, 1);
+        render.ClearData();
+        if (showAtlas) {
+            render.AddNewMeshes(&meshAtlas, 1);
+        } else {
+            meshStr = font.RenderString(string, 48)
+                .Convert<Vertex>([](const VertexColorTexture3D& v) {
+                    return Vertex { v.Position, v.Color, v.TextureCoordinate };
+                });
+            meshStr.ApplyMaterial(&Vertex::Color, color);
+            render.AddNewMeshes(&meshStr, 1);
+        }
         render.Render();
     }
 
@@ -99,6 +102,13 @@ namespace Test {
 
         if (ImGui::Button(showAtlas ? "Hide Atlas" : "Show Atlas")) {
             showAtlas ^= true;
+        }
+
+        if (showAtlas) {
+            const char searchChar = string.back();
+            const float x = meshAtlas.GetVertices()[1].Position.x;
+            const auto& glyph = font.GetGlyphRect(searchChar);
+            meshAtlas.SetTransform(Maths::mat3D::translate_mat({ x * (1 - 2 * glyph.rect.center().x), 0, 0 }));
         }
     }
 

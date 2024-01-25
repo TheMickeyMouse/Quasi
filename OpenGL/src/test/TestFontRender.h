@@ -18,10 +18,9 @@ namespace Test {
     private:
         Graphics::RenderObject<Vertex> render;
         Graphics::Mesh<Vertex> meshStr, meshAtlas;
-        Graphics::Texture texture;
         bool showAtlas = false;
 
-        std::string string = "Hello, World!";
+        std::string string = " Hello, World!";
 
         Graphics::Font font;
         Maths::colorf color = 1;

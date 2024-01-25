@@ -26,11 +26,22 @@ namespace Graphics {
     void Font::RenderBitmap() {
         using namespace Maths;
         const FT_GlyphSlot glyphHandle = faceHandle->glyph;
-        constexpr int padding = 0;
-        ivec2 pen      = { padding, 0 };
+        int pen = 0;
 
-        constexpr int textureWidth = 512;
-        uchar textureBuffer[textureWidth * textureWidth] = { 0 };
+        textureSize = 0;
+        for (uchar charCode = 32; charCode < 127; ++charCode) {
+            const uint glyphIdx = FT_Get_Char_Index(faceHandle, charCode);
+            if (const int error = FT_Load_Glyph(faceHandle, glyphIdx, FT_LOAD_DEFAULT)) {
+                LOG("[ERR]: loading char with error code " << error);
+                continue;  /* ignore errors */
+            }
+
+            textureSize.y = std::max(textureSize.y, glyphHandle->bitmap.rows);
+            textureSize.x += glyphHandle->bitmap.width;
+        }
+        
+        std::unique_ptr<uchar[]> textureBuffer(new uchar[textureSize.x * textureSize.y] { 0 });
+        
         glyphs.resize(127-32);
         for (uchar charCode = 32; charCode < 127; ++charCode) {
             const int error = FT_Load_Char(faceHandle, charCode, FT_LOAD_RENDER);
@@ -39,44 +50,37 @@ namespace Graphics {
                 continue;  /* ignore errors */
             }
 
-            if (pen.x + glyphHandle->bitmap.width + padding >= textureWidth) {
-                pen.x = padding;
-                pen.y += fontSize.px();
-                if (pen.y >= textureWidth)
-                    break;
-            }
-
             // Font Height
             fontHeight = std::max(
                 (faceHandle->size->metrics.ascender - faceHandle->size->metrics.descender) >> 6,
                 (long)fontHeight.points());
 
-            uchar* tbuff = textureBuffer + (textureWidth - 1 - pen.y) * textureWidth + pen.x;
+            uchar* tbuff = textureBuffer.get() + (textureSize.y - 1) * textureSize.x + pen;
             const uint width = glyphHandle->bitmap.width, height = glyphHandle->bitmap.rows;
             for (int y = 0; y < (int)height; ++y) {
                 for (uint x = 0; x < width; ++x) {
-                    tbuff[-y * textureWidth + x] =
+                    tbuff[-y * textureSize.x + x] =
                         glyphHandle->bitmap.buffer[y * width + x];
                 }
             }
 
             Glyph& glyph = glyphs[charCode - 32];
-            glyph.rect = fvec2 { pen.x, textureWidth - pen.y }.to(fvec2 { width, -(int)height }.as_size()) / textureWidth;
+            glyph.rect = fvec2 { pen, textureSize.y }.to(fvec2 { width, -(int)height }.as_size()) / textureSize;
             glyph.advance = { (float)glyphHandle->advance.x / 64.0f, (float)glyphHandle->advance.y / 64.0f };
             glyph.offset  = { glyphHandle->bitmap_left, glyphHandle->bitmap_top };
 
-            pen.x += (int)glyphHandle->bitmap.width + padding;
+            pen += (int)width;
         }
 
         // Upload OpenGL Texture
-        atlas = Texture(textureBuffer, textureWidth, textureWidth, false, GL_RED);
+        atlas = Texture(textureBuffer.get(), textureSize.x, textureSize.y, false, GL_RED, 1);
     }
 
     Font::Glyph& Font::GetGlyphRect(char c) {
         return glyphs[c - 32];
     }
 
-    Mesh<VertexColorTexture3D> Font::RenderString(const std::string& str, PointPer64 size) {
+    Mesh<VertexColorTexture3D> Font::RenderString(const std::string& str, PointPer64 size, StrFmt fmt) {
         using namespace Maths;
         ivec2 pen = { 0, 0 };
         Mesh<VertexColorTexture3D> mesh = {};
@@ -87,7 +91,6 @@ namespace Graphics {
         const float scaleRatio = size / fontSize;
 
         // TODO: make this auto-detect texture width with packing alg
-        constexpr float textureWidth = 512.0f;
         for (char glyph : str) {
             if (glyph == '\n') {
                 pen.y -= (int)((float)fontHeight.px() * scaleRatio);
@@ -98,8 +101,8 @@ namespace Graphics {
 
             const Glyph& rect = GetGlyphRect(glyph);
 
-            fvec2 size = rect.rect.size() * textureWidth;
-            rect2f pos = rect.offset.as<float>().to(fvec2 { size.x, -size.y }.as_size()) * scaleRatio + pen;
+            const fvec2 rsize = rect.rect.size() * textureSize;
+            rect2f pos = rect.offset.as<float>().to(fvec2 { rsize.x, -rsize.y }.as_size()) * scaleRatio + pen;
             
             vert.push_back({ pos.corner(0), 1, rect.rect.corner(0), 0 });
             vert.push_back({ pos.corner(1), 1, rect.rect.corner(1), 0 });

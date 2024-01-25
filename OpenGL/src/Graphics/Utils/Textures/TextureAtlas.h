@@ -11,11 +11,11 @@ namespace Graphics {
         public:
             OPENGL_API explicit TextureAtlas(const std::string& filename, uint xSize, uint ySize);
 
-            [[nodiscard]] Maths::uvec2 GetTextureSize()    const { return { texture.GetWidth(), texture.GetHeight() }; }
+            [[nodiscard]] Maths::uvec2 GetTextureSize()    const { return texture.GetSize(); }
             [[nodiscard]] Maths::uvec2 GetAtlasSize()      const { return atlasSize; }
             [[nodiscard]] Maths::uvec2 GetSubTextureSize() const { return subTextureSize; }
 
-            void Bind(uint slot = 0) const { texture.Bind(slot); }
-            void Unbind()            const { texture.Unbind(); }
+            Texture& GetTexture() { return texture; }
+            [[nodiscard]] const Texture& GetTexture() const { return texture; }
     };
 }

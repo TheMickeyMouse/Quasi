@@ -55,19 +55,19 @@ namespace Test {
         textures[1] = Graphics::Texture::LoadPNGBytes(tex1, sizeof(tex1) / sizeof(uchar), false);
 #pragma endregion
 
-        gdevice.BindTexture(textures[0], 0);
-        gdevice.BindTexture(textures[1], 1);
+        gdevice.BindTexture(textures[0]);
+        gdevice.BindTexture(textures[1]);
 
         VertexColorTexture3D vertices[] = {
-            { { -240.0f, -80.0f, 0 }, 1, { 0.0f, 0.0f }, 0 },
-            { { -80.00f, -80.0f, 0 }, 1, { 1.0f, 0.0f }, 0 },
-            { { -80.00f, +80.0f, 0 }, 1, { 1.0f, 1.0f }, 0 },
-            { { -240.0f, +80.0f, 0 }, 1, { 0.0f, 1.0f }, 0 },
+            { { -240.0f, -80.0f, 0 }, 1, { 0.0f, 0.0f }, textures[0].Slot() },
+            { { -80.00f, -80.0f, 0 }, 1, { 1.0f, 0.0f }, textures[0].Slot() },
+            { { -80.00f, +80.0f, 0 }, 1, { 1.0f, 1.0f }, textures[0].Slot() },
+            { { -240.0f, +80.0f, 0 }, 1, { 0.0f, 1.0f }, textures[0].Slot() },
 
-            { { +80.00f, -80.0f, 0 }, 1, { 0.0f, 0.0f }, 1 },
-            { { +240.0f, -80.0f, 0 }, 1, { 1.0f, 0.0f }, 1 },
-            { { +240.0f, +80.0f, 0 }, 1, { 1.0f, 1.0f }, 1 },
-            { { +80.00f, +80.0f, 0 }, 1, { 0.0f, 1.0f }, 1 },
+            { { +80.00f, -80.0f, 0 }, 1, { 0.0f, 0.0f }, textures[1].Slot() },
+            { { +240.0f, -80.0f, 0 }, 1, { 1.0f, 0.0f }, textures[1].Slot() },
+            { { +240.0f, +80.0f, 0 }, 1, { 1.0f, 1.0f }, textures[1].Slot() },
+            { { +80.00f, +80.0f, 0 }, 1, { 0.0f, 1.0f }, textures[1].Slot() },
         };
 
         Graphics::TriIndices indices[] = {
@@ -90,8 +90,8 @@ namespace Test {
         Test::OnRender(gdevice);
         //shader.SetUniform4F("u_Color", color);
         Maths::mat3D mat = Maths::mat3D::transform(modelTranslation,
-                                                         modelScale,
-                                                         modelRotation);
+                                                   modelScale,
+                                                   modelRotation);
         render.SetCamera(mat);
 
         render.ResetData();

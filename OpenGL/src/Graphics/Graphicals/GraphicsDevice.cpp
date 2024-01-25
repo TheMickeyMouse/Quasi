@@ -19,10 +19,16 @@ namespace Graphics {
         windowSize(winSize), mainWindow{ window } {
         Instance = *this;
         IO::Init(*this);
+
+        int textureCount = 0;
+        glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &textureCount);
+        LOG("Texture Count: " << textureCount);
+        textures.resize(textureCount, nullptr);
     }
 
     void GraphicsDevice::Quit() {
         DeleteAllRenders(); // delete gl objects
+        UnbindAllTextures(); // delete textures
         
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
@@ -89,8 +95,28 @@ namespace Graphics {
         Render::Draw(r, r.shader);
     }
 
-    void GraphicsDevice::BindTexture(Texture& texture, uint slot) {
-        texture.Bind(slot);
+    void GraphicsDevice::BindTexture(Texture& texture, int slot) {
+        if (slot == -1) {
+            const auto free = std::ranges::find_if(textures, [](Texture* t) { return t == nullptr; });
+            slot = free - textures.begin();
+        }
+        texture.Bind(slot, this);
+        textures[slot] = &texture;
+    }
+
+    void GraphicsDevice::UnbindTexture(int slot) {
+        Texture* t = textures[slot];
+        textures[slot] = nullptr;
+        if (t)
+            t->Unbind();
+    }
+
+    void GraphicsDevice::UnbindAllTextures() {
+        for (Texture*& t : textures) {
+            if (!t) continue;
+            t->Destroy();
+            t = nullptr;
+        }
     }
 
     void GraphicsDevice::ClearColor(const Maths::colorf& color) {

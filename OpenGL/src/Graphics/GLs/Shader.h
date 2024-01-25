@@ -108,6 +108,8 @@ namespace Graphics {
             void SetUniformMatrix4x4(stringr name, const Maths::mat3D& mat) { SHADER_UNIF_MAT(4, mat.get_in_col()); }
 #undef SHADER_UNIF_MAT
 #pragma endregion
+        OPENGL_API void SetUniformTex(stringr name, const class Texture& texture);
+
 
             inline const static std::string StdColored = 
                 "#shader vertex\n"

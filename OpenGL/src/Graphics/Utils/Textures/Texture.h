@@ -3,17 +3,22 @@
 #include "opengl.h"
 
 #include "NumTypes.h"
+#include "Vector.h"
 
 namespace Graphics {
     class Texture {
     private:
         glID rendererID = GL_NULL;
-        int width = 0, height = 0, BPPixel = 0; //stands for bits per pixel
+        Maths::uvec2 size;
+        int BPPixel = 0; //stands for bits per pixel
+        
+        class GraphicsDevice* device = nullptr;
+        uint textureSlot = 0;
 
-        OPENGL_API void LoadTexture(const uchar* img, bool useLinear = true, int format = 0x1908);
+        OPENGL_API void LoadTexture(const uchar* img, bool useLinear = true, int format = 0x1908, int alignment = 4 /* see https://registry.khronos.org/OpenGL-Refpages/gl4/html/glPixelStore.xhtml */);
      public:
         OPENGL_API Texture() = default;
-        OPENGL_API explicit Texture(const uchar* raw, int w, int h, bool useLinear = true, int format = 0x1908 /* GL_RGBA */);
+        OPENGL_API explicit Texture(const uchar* raw, uint w, uint h, bool useLinear = true, int format = 0x1908 /* GL_RGBA */, int alignment = 4);
         OPENGL_API explicit Texture(const std::string& filePath, bool useLinear = true);
         OPENGL_API ~Texture();
 
@@ -25,10 +30,12 @@ namespace Graphics {
 
         OPENGL_API static Texture LoadPNGBytes(const uchar* png, int len, bool useLinear = true);
 
-        OPENGL_API void Bind(uint slot = 0) const;
-        OPENGL_API void Unbind() const;
+        OPENGL_API void Bind(uint slot, GraphicsDevice* gdevice);
+        OPENGL_API void Unbind();
+        OPENGL_API void Destroy();
 
-        unsigned int GetWidth() const { return width; }
-        unsigned int GetHeight() const { return height; }
+        [[nodiscard]] int Slot() const { return (int)textureSlot; }
+
+        [[nodiscard]] Maths::uvec2 GetSize() const { return size; }
     };
 }

@@ -7,7 +7,7 @@
 #define GL_VERTEX_T(T) using __vertex_type__ = T
 
 #define GL_VERTEX_LAYOUT_OF(T) T::__VERTEX_LAYOUT__
-#define GL_VERTEX_CUSTOM_TRANSFORM(N) __vertex_type__ __vertex_mul__(const Maths::mat3D& N) const
+#define GL_VERTEX_CUSTOM_TRANSFORM(N) __vertex_type__ __vertex_mul__(const Maths::mat3D& N) const // NOLINT(bugprone-macro-parentheses)
 
 #define __GL_VERTEX_TRANSFORM_FIELD__(M) copy.M = _m * copy.M;  // NOLINT(clang-diagnostic-reserved-macro-identifier)
 #define __GL_VERTEX_TRANSFORM_SEQUENCE__(SEQ) STDU_CAT(__GL_VT1__ SEQ, END__) // NOLINT(clang-diagnostic-reserved-macro-identifier)

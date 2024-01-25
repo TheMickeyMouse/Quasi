@@ -8,11 +8,32 @@
 #include "Vector.h"
 
 namespace Graphics {
+    enum class StringFormatOptions : uchar {
+        ALIGN_LEFT    = 1 << 0,
+        ALIGN_RIGHT   = 1 << 1,
+        ALIGN_JUSTIFY = ALIGN_LEFT | ALIGN_RIGHT,
+        ALIGN_CENTER  = 0,
+
+        VERTICAL_TOP     = 1 << 2,
+        VERTICAL_BOTTOM  = 1 << 3,
+        VERTICAL_JUSTIFY = VERTICAL_TOP | VERTICAL_BOTTOM,
+        VERTICAL_CENTER  = 0,
+
+        BOLD          = 1 << 4,
+        ITALIC        = 1 << 5,
+        UNDERLINE     = 1 << 6,
+        STRIKETHROUGH = 1 << 7,
+        
+        DEFAULT = 0
+    };
+    STDU_IMPL_ENUM_OPERATORS(StringFormatOptions);
+    using StrFmt = StringFormatOptions;
+    
     class Font {
         FT_Face faceHandle = nullptr;
         PointPer64 fontSize = 0;
         PointPer64 fontHeight = 0;
-        
+    public: 
         struct Glyph {
             // internal coords
             Maths::rect2f rect;
@@ -20,8 +41,9 @@ namespace Graphics {
             Maths::fvec2 advance;
             Maths::ivec2 offset;
         };
-
+    private:
         std::vector<Glyph> glyphs;
+        Maths::uvec2 textureSize;
         Texture atlas;
     public:
         Font() {}
@@ -38,7 +60,9 @@ namespace Graphics {
         OPENGL_API void RenderBitmap();
 
         OPENGL_API Glyph& GetGlyphRect(char c);
-        OPENGL_API Mesh<VertexColorTexture3D> RenderString(const std::string& str, PointPer64 size);
+        OPENGL_API Mesh<VertexColorTexture3D> RenderString(
+            const std::string& str, PointPer64 size, StrFmt fmt = StrFmt::DEFAULT /* TODO: add this */
+        );
 
         Texture& GetTexture() { return atlas; }
         [[nodiscard]] const Texture& GetTexture() const { return atlas; }

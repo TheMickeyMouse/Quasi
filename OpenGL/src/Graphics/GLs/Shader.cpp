@@ -4,6 +4,7 @@
 #include "stdu/io.h"
 
 #include "Debugging.h"
+#include "Texture.h"
 
 namespace Graphics {
     Shader::Shader(const std::string& program) {
@@ -74,6 +75,10 @@ namespace Graphics {
 
     ShaderProgramSource Shader::ParseFromFile(stringr filepath) {
         return ParseShader(stdu::readfile(filepath));
+    }
+
+    void Shader::SetUniformTex(stringr name, const Texture& texture) {
+        GLCALL(glUniform1i(GetUniformLocation(name), texture.Slot()));
     }
 
     Shader Shader::FromFile(stringr filepath) {
