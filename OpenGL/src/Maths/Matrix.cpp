@@ -70,25 +70,26 @@ namespace Maths {
                  {  0,   0, 1, 0 } };
     }
 
-    mat4x4 mat4x4::ortho_projection(float l, float r, float d, float u, float n, float f) {
-        const float dx = r - l; 
-        const float dy = u - d; 
-        const float dz = f - n; 
-        return { { +2 / dx,        0,             0,            0 },
-                 { 0,             +2 / dy,        0,            0 },
-                 { 0,              0,            -2 / dz,       0 },
-                 { -(r + l) / dx, -(u + d) / dy, -(f + n) / dz, 1 } };
+    mat4x4 mat4x4::ortho_projection(const rect3f& box) {
+        const float dx = box.width(),  sx = box.min.x + box.max.x,
+                    dy = box.height(), sy = box.min.y + box.max.y,
+                    dz = box.depth(),  sz = box.min.z + box.max.z;
+        return { { +2  / dx,  0,        0,       0 },
+                 { 0,        +2  / dy,  0,       0 },
+                 { 0,         0,       -2  / dz, 0 },
+                 { -sx / dx, -sy / dy, -sz / dz, 1 } };
     }
 
-    mat4x4 mat4x4::perspective_projection(float l, float r, float d, float u, float n, float f) {
+    mat4x4 mat4x4::perspective_projection(const rect3f& box) {
         // heres the math: http://www.songho.ca/opengl/gl_projectionmatrix.html
-        const float dx = r - l;
-        const float dy = u - d;
-        const float dz = f - n;
-        return { { 2 * n / dx,   0,            0,               0 },
-                 { 0,            2 * n / dy,   0,               0 },
-                 { (r + l) / dx, (u + d) / dx, -(n + f) / dx,  -1 },
-                 { 0,            0,            -2 * n * f / dz, 0 } };
+        const float n = box.min.z, f = box.max.z,
+                    dx = box.width(),  sx = box.min.x + box.max.x,
+                    dy = box.height(), sy = box.min.y + box.max.y,
+                    dz = box.depth(),  sz = box.min.z + box.max.z;
+        return { { 2 * n / dx, 0,          0,               0 },
+                 { 0,          2 * n / dy, 0,               0 },
+                 { sx    / dx, sy    / dx, -sz / dx,       -1 },
+                 { 0,          0,          -2 * n * f / dz, 0 } };
     }
 
     mat4x4 mat4x4::perspective_fov(float fovDeg, float aspect, float near, float far) {

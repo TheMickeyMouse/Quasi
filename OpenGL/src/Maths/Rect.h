@@ -22,16 +22,20 @@ namespace Maths {
         static_assert(std::is_arithmetic_v<U> || is_vec_v<U>, "rect::" #M  " not supported"); \
         if constexpr (std::is_arithmetic_v<U>) return rect<N, ARITH_T(T, U, M)> { min OP v, max OP v }; \
         else if constexpr (is_vec_v<U>) return rect<N, ARITH_T(T, typename U::scalar, M)> { min OP v, max OP v }; \
-    }
+    } \
+    template <class U> rect& operator OP##=(U v) { return *this = *this + v; }
     
     template <int N, class T>
     struct rect { 
         using vec = typename vecn<N, T>::type;
-        using scalar = typename vec::scalar;
+        using scalar = T;
         static int constexpr dimension = N;
         vec min, max;
 
         rect() : min(0), max(0) {}
+        rect(T minX, T maxX, T minY, T maxY) requires (N == 2) : min(minX, minY), max(maxX, maxY) {}
+        rect(T minX, T maxX, T minY, T maxY, T minZ, T maxZ) requires (N == 3) : min(minX, minY, minZ), max(maxX, maxY, maxZ) {}
+        rect(T minX, T maxX, T minY, T maxY, T minZ, T maxZ, T minW, T maxW) requires (N == 4) : min(minX, minY, minZ, minW), max(maxX, maxY, maxZ, maxW) {}
         rect(const vec& min, const vec& max) : min(min), max(max) {}
         rect(const vec& min, const _rect_size_inbetween_<vec>& size) : min(min), max(min + size.pos) {}
         rect(const _rect_origin_inbetween_<vec>& origin, const vec& size) { *this = origin.rect(size); }
@@ -43,6 +47,23 @@ namespace Maths {
         RECT_OP(sub, -)
         RECT_OP(mul, *)
         RECT_OP(div, /)
+        
+        scalar n_distance(int n) const { return max[n] - min[n]; }
+        scalar width()    const { return n_distance(0); }
+        scalar height()   const { return n_distance(1); }
+        scalar depth()    const requires (N >= 3) { return n_distance(2); }
+        scalar duration() const requires (N >= 4) { return n_distance(3); }
+
+        scalar n_volume() const {
+            static_assert(2 <= N && N <= 4, "invalid dimension");
+            if constexpr (N == 2) return width() * height();
+            else if constexpr (N == 3) return width() * height() * depth();
+            else if constexpr (N == 4) return width() * height() * depth() * duration();
+            else return 0;
+        }
+        scalar area()        const requires (N == 2) { return n_volume(); }
+        scalar volume()      const requires (N == 3) { return n_volume(); }
+        scalar hypervolume() const requires (N == 4) { return n_volume(); }
         
         vec size()   const { return  max - min; }
         vec center() const { return (max + min) / 2; }
@@ -68,6 +89,7 @@ namespace Maths {
         rect_iter<rect> begin() const;
         rect_iter<rect> end() const;
     };
+#undef RECT_OP
 #undef ARITH
 #undef ARITH_T
     template <rect_t R>

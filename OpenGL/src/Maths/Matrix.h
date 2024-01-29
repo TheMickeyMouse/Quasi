@@ -29,8 +29,8 @@ namespace Maths {
         OPENGL_API static mat4x4 rotate_y(float pitch);
         OPENGL_API static mat4x4 rotate_z(float yaw);
 
-        OPENGL_API static mat4x4 ortho_projection(float left, float right, float down, float up, float near, float front);
-        OPENGL_API static mat4x4 perspective_projection(float left, float right, float down, float up, float near, float far);
+        OPENGL_API static mat4x4 ortho_projection(const rect3f& box);
+        OPENGL_API static mat4x4 perspective_projection(const rect3f& box);
         OPENGL_API static mat4x4 perspective_fov(float fovDeg, float aspect, float near, float far);
         OPENGL_API static mat4x4 transform(const fvec3& translate, const fvec3& scale, const fvec3& rotate);
 

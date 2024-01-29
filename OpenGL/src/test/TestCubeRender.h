@@ -9,7 +9,7 @@ namespace Test {
         Graphics::RenderObject<VertexColor3D> render;
         Graphics::Mesh<VertexColor3D> cube;
 
-        Maths::mat3D projection = Maths::mat3D::ortho_projection(-5.0f, 5.0f, -5.0f, 5.0f, -5.0f, 5.0f);
+        Maths::mat3D projection = Maths::mat3D::ortho_projection({ -5.0f, 5.0f, -5.0f, 5.0f, -5.0f, 5.0f });
         Maths::fvec3 modelTranslation = 0;
         Maths::fvec3 modelScale       = 1;
         Maths::fvec3 modelRotation    = 0;

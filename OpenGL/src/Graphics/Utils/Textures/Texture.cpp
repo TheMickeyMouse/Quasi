@@ -63,6 +63,11 @@ namespace Graphics {
         GLCALL(glBindTexture(GL_TEXTURE_2D, rendererID));
     }
 
+    void Texture::SetActive(uint slot) const {
+        GLCALL(glActiveTexture(GL_TEXTURE0 + slot));
+        GLCALL(glBindTexture(GL_TEXTURE_2D, rendererID));
+    }
+
     void Texture::Unbind() {
         if (!rendererID) return;
         GLCALL(glBindTexture(GL_TEXTURE_2D, 0));
@@ -77,5 +82,11 @@ namespace Graphics {
         if (rendererID == GL_NULL) return;
         GLCALL(glDeleteTextures(1, &rendererID));
         rendererID = GL_NULL;
+    }
+
+    void Texture::SetSubTexture(const uchar* data, Maths::rect2u rect, int format) {
+        GLCALL(glTexSubImage2D(GL_TEXTURE_2D, 0,
+            rect.min.x, rect.min.y, rect.width(), rect.height(),
+            format, GL_UNSIGNED_BYTE, data));
     }
 }

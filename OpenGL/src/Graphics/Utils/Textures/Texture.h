@@ -31,8 +31,11 @@ namespace Graphics {
         OPENGL_API static Texture LoadPNGBytes(const uchar* png, int len, bool useLinear = true);
 
         OPENGL_API void Bind(uint slot, GraphicsDevice* gdevice);
+        OPENGL_API void SetActive(uint slot) const;
         OPENGL_API void Unbind();
         OPENGL_API void Destroy();
+
+        OPENGL_API void SetSubTexture(const uchar* data, Maths::rect2u rect, int format = 0x1908 /* GL_RGBA */);
 
         [[nodiscard]] int Slot() const { return (int)textureSlot; }
 

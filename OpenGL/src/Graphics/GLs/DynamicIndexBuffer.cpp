@@ -55,7 +55,7 @@ namespace Graphics {
         std::vector<uint> dataOff(size);
         const uint indexOff = indexOffset;
         std::transform(data, data + size, dataOff.begin(), [=](uint i){ return i + indexOff; } );
-        maxIndex = maxIndex == -1 ? *std::ranges::max_element(dataOff) : (maxIndex + indexOffset);  // NOLINT(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
+        maxIndex = maxIndex == INT_MIN ? *std::ranges::max_element(dataOff) : (maxIndex + indexOffset);  // NOLINT(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, dataOffset * sizeof(uint), size * sizeof(uint), dataOff.data());  // NOLINT(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
         dataOffset += size;
         indexOffset = maxIndex + 1;

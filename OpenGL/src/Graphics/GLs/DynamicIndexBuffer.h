@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <limits.h>
 #include <utility>
 #include "opengl.h"
 
@@ -37,8 +38,8 @@ namespace Graphics {
         
             OPENGL_API void ClearData(bool shallowClear = true);
         
-            OPENGL_API void AddData(const uint* data, uint size, int maxIndex = -1);
-            OPENGL_API void AddData(const TriIndices* data, uint size, int maxIndex = -1) { AddData((const uint*)data, size * 3, maxIndex); }
+            OPENGL_API void AddData(const uint* data, uint size, int maxIndex = INT_MIN);
+            OPENGL_API void AddData(const TriIndices* data, uint size, int maxIndex = INT_MIN) { AddData((const uint*)data, size * 3, maxIndex); }
             template <class T> void AddData(const T& arr, int maxIndex = -1) { AddData(arr.data(), arr.size(), maxIndex); }
 
             [[nodiscard]] uint GetLength() const { return bufferSize; }

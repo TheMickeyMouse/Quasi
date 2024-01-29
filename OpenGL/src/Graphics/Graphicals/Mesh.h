@@ -37,6 +37,7 @@ namespace Graphics {
         static void Transfer(Mesh& dest, Mesh&& from);
         Mesh(Mesh&& mesh) noexcept { Transfer(*this, std::move(mesh)); }
         Mesh& operator=(Mesh&& mesh) noexcept { Transfer(*this, std::move(mesh)); return *this; }
+        Mesh& Replace(Mesh&& mesh);
 
         void SetTransform(const Maths::mat3D& model) { modelTransform = model; }
         void Transform(const Maths::mat3D& model) { modelTransform *= model; }
@@ -110,6 +111,13 @@ namespace Graphics {
         
         if (dest.render)
             dest.render->GetMeshes()[dest.deviceIndex].Set(&dest);
+    }
+
+    template <class T> Mesh<T>& Mesh<T>::Replace(Mesh&& mesh) {
+        vertices = std::move(mesh.vertices);
+        indices = std::move(mesh.indices);
+        modelTransform = mesh.modelTransform;
+        return *this;
     }
 
     template <class T>

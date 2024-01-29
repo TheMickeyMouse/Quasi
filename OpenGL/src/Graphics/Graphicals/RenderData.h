@@ -17,7 +17,7 @@ namespace Graphics {
 
 		std::vector<GenericMesh> meshes {};
 
-	    Maths::mat3D projection = Maths::mat3D::ortho_projection(-4, 4, -3, 3, 0.1f, 100);
+	    Maths::mat3D projection = Maths::mat3D::ortho_projection({ -4, 4, -3, 3, 0.1f, 100 });
 	    Maths::mat3D camera {};
 	    Shader shader = {}; // shader can be null if renderId is 0
 

@@ -136,7 +136,7 @@ namespace Maths {
 #define R(T) const T&
 #define SCALAR_T(V) typename V::scalar
     
-#define S_ONLY(T) template <class S = scalar> std::enable_if_t<std::is_signed_v<S>, T>
+#define S_ONLY requires std::is_signed_v<scalar>
 
 #define ARITH(T, U) stdu::arithmetic_t<T, U>
 #define ARITH_T(T, U, O) typename ARITH(T, U)::O##_t
@@ -196,7 +196,7 @@ namespace Maths {
         template <class U> NAME& operator%=(U v)       { return *this = mod(v); } \
         \
         NAME operator+() const { return *this; } /* NOLINT(bugprone-macro-parentheses) */ \
-        S_ONLY(NAME) operator-() const { return { -_X, -_Y }; } /* NOLINT(bugprone-macro-parentheses) */ \
+        NAME operator-() const S_ONLY { return { -_X, -_Y }; } /* NOLINT(bugprone-macro-parentheses) */ \
         ) \
         \
         STDU_IF(DEF_CMP, \
@@ -276,7 +276,7 @@ namespace Maths {
         template <class U> NAME& operator%=(U v)       { return *this = mod(v); } \
         \
         NAME operator+() const { return *this; } /* NOLINT(bugprone-macro-parentheses) */ \
-        S_ONLY(NAME) operator-() const { return { -_X, -_Y, -_Z }; } /* NOLINT(bugprone-macro-parentheses) */ \
+        NAME operator-() const S_ONLY { return { -_X, -_Y, -_Z }; } /* NOLINT(bugprone-macro-parentheses) */ \
         ) \
         \
         STDU_IF(DEF_CMP, \
@@ -357,7 +357,7 @@ namespace Maths {
         template <class U> NAME& operator%=(U v)       { return *this = mod(v); } \
         \
         NAME operator+() const { return *this; } /* NOLINT(bugprone-macro-parentheses) */ \
-        S_ONLY(NAME) operator-() const { return { -_X, -_Y, -_Z, -_W }; } /* NOLINT(bugprone-macro-parentheses) */ \
+        NAME operator-() const S_ONLY { return { -_X, -_Y, -_Z, -_W }; } /* NOLINT(bugprone-macro-parentheses) */ \
         ) \
         \
         STDU_IF(DEF_CMP, \
@@ -407,14 +407,14 @@ namespace Maths {
     VEC_CMP_OTHER(vec4, !=, !=) \
     )
 
-#define BOOL_ONLY(T) template <class S = scalar> std::enable_if_t<std::is_same_v<S, bool>, T>
-#define B_ONLY(T) template <class S = scalar> std::enable_if_t<std::is_same_v<S, uchar>, T>
+#define BOOL_ONLY requires std::is_same_v<scalar, bool>
+#define B_ONLY requires std::is_same_v<scalar, uchar>
 #define S_ONLY_U(U) std::conditional_t<std::is_signed_v<scalar>, U, stdu::empty>
-#define F_ONLY(T) template <class S = scalar> std::enable_if_t<std::is_floating_point_v<S>, T>
+#define F_ONLY requires std::is_floating_point_v<scalar>
 #define COMMON_VEC_MATH(T) \
-    float len() const; \
+    auto len() const; \
     scalar lensq() const; \
-    float dist(R(T) to) const; \
+    auto dist(R(T) to) const; \
     auto distsq(R(T) to) const; \
     bool in_range(R(T) other, scalar d) const; \
     \
@@ -422,28 +422,28 @@ namespace Maths {
     \
     auto dot(R(T) other) const; \
     \
-    F_ONLY(T<float>) norm(float d = 1) const; /* NOLINT(bugprone-macro-parentheses) */ \
+    T  norm(float d = 1) const F_ONLY; /* NOLINT(bugprone-macro-parentheses) */ \
     \
-    F_ONLY(T) lerp(R(T) other, float t) const; \
-    F_ONLY(T&) lerp_to(R(T) other, float t); /* NOLINT(bugprone-macro-parentheses) */ \
-    F_ONLY(T) towards(R(T) other, float max_d) const; \
-    F_ONLY(T&) move_towards(R(T) other, float max_d); /* NOLINT(bugprone-macro-parentheses) */ \
+    T  lerp(R(T) other, float t) const F_ONLY; \
+    T& lerp_to(R(T) other, float t) F_ONLY; /* NOLINT(bugprone-macro-parentheses) */ \
+    T  towards(R(T) other, float max_d) const F_ONLY; \
+    T& move_towards(R(T) other, float max_d) F_ONLY; /* NOLINT(bugprone-macro-parentheses) */ \
     \
-    F_ONLY(float) angle(R(T) other) const; \
+    scalar angle(R(T) other) const F_ONLY; \
     \
-    F_ONLY(T) clamped() const; \
+    T clamped() const F_ONLY; \
     static T max(R(T) a, R(T) b); \
     static T min(R(T) a, R(T) b); \
     static T clamp(R(T) rmin, R(T) rmax, R(T) x); \
     \
     _rect_origin_inbetween_<T> as_origin() const; \
     _rect_size_inbetween_<T> as_size() const; \
-    auto to(const T& other) const; \
-    auto to(const _rect_size_inbetween_<T>& other) const; \
+    auto to(R(T) other) const; \
+    auto to(R(_rect_size_inbetween_<T>) other) const; \
     bool is_in(const rect<dimension, scalar>& region) const; \
     \
-    BOOL_ONLY(bool) all() const; \
-    BOOL_ONLY(bool) any() const; \
+    bool all() const BOOL_ONLY; \
+    bool any() const BOOL_ONLY; \
     \
     template <class F, class... Ts> \
     auto apply(F func, const T<Ts>&... args) const -> T<decltype(func((scalar)0, ((Ts)0)...))>;
@@ -474,22 +474,22 @@ namespace Maths {
         \
         auto slope() const; \
         \
-        F_ONLY(float) angle_signed(const vec2& other) const; \
-        float angle() const; \
-        fvec2 polar() const; \
-        F_ONLY(fvec2) cartesian() const; \
+        T angle_signed(const vec2& other) const F_ONLY; \
+        T angle() const F_ONLY; \
+        vec2 polar() const F_ONLY; \
+        vec2 cartesian() const F_ONLY; \
         \
-        S_ONLY(vec2 ) perpend() const; \
+        vec2  perpend() const S_ONLY; \
         \
-        F_ONLY(vec2 ) rotated(float angle) const; \
-        F_ONLY(vec2&) rotate(float angle); \
-        F_ONLY(vec2 ) rotated(float angle, const vec2& origin) const; \
-        F_ONLY(vec2&) rotate(float angle, const vec2& origin); \
+        vec2  rotated(float angle) const F_ONLY; \
+        vec2& rotate(float angle) F_ONLY; \
+        vec2  rotated(float angle, const vec2& origin) const F_ONLY; \
+        vec2& rotate(float angle, const vec2& origin) F_ONLY; \
         \
-        F_ONLY(vec2 ) reflected(const vec2& normal) const; \
-        F_ONLY(vec2&) reflect(const vec2& normal); \
-        F_ONLY(vec2 ) reflected_uc(const vec2& normal) const; \
-        F_ONLY(vec2&) reflect_uc(const vec2& normal); \
+        vec2  reflected(const vec2& normal) const F_ONLY; \
+        vec2& reflect(const vec2& normal) F_ONLY; \
+        vec2  reflected_uc(const vec2& normal) const F_ONLY; \
+        vec2& reflect_uc(const vec2& normal) F_ONLY; \
         \
         vec3<T> with_z(T z) const; \
     )
@@ -522,23 +522,23 @@ namespace Maths {
         \
         vec3 cross(const vec3& other) const; \
         \
-        F_ONLY(float) angle_signed(const vec3& other, const vec3& normal) const; /* normal should be normalized */ \
+        T angle_signed(const vec3& other, const vec3& normal) const F_ONLY; /* normal should be normalized */ \
         \
-        F_ONLY(float) altitude() const; \
-        F_ONLY(float) azimuth() const; \
-        F_ONLY(fvec3) spheric() const; /* 3d polar coordinates, (x,y,z) into (r,theta,phi) */ \
-        F_ONLY(fvec3) cartesian() const; /* converts (r,theta,phi) into (x,y,z) */ \
+        T altitude() const F_ONLY; \
+        T azimuth() const F_ONLY; \
+        vec3 spheric() const F_ONLY; /* 3d polar coordinates, (x,y,z) into (r,theta,phi) */ \
+        vec3 cartesian() const F_ONLY; /* converts (r,theta,phi) into (x,y,z) */ \
         \
-        F_ONLY(vec2<T>) projected() const;
-        F_ONLY(vec3 ) reflected(const vec3& normal) const; \
-        F_ONLY(vec3&) reflect(const vec3& normal); \
-        F_ONLY(vec3 ) reflected_uc(const vec3& normal) const; /* this assumes normal is normalized */ \
-        F_ONLY(vec3&) reflect_uc(const vec3& normal); /* this assumes normal is normalized */ \
+        vec2<T> projected() const F_ONLY;
+        vec3  reflected(const vec3& normal) const F_ONLY; \
+        vec3& reflect(const vec3& normal) F_ONLY; \
+        vec3  reflected_uc(const vec3& normal) const F_ONLY; /* this assumes normal is normalized */ \
+        vec3& reflect_uc(const vec3& normal) F_ONLY; /* this assumes normal is normalized */ \
         \
-        B_ONLY(color) color(uchar a) const; \
-        F_ONLY(colorf) color(float a) const; \
-        B_ONLY(color3) color() const; \
-        F_ONLY(color3f) color() const; \
+        color color(uchar a) const B_ONLY; \
+        colorf color(float a) const F_ONLY; \
+        color3 color() const B_ONLY; \
+        color3f color() const F_ONLY; \
         \
         vec4<T> with_w(T w = 1) const; \
     );
@@ -572,10 +572,10 @@ namespace Maths {
         vec3<T> xyz() const; \
         vec2<T> xy() const; \
         \
-        F_ONLY(vec3<T>) projected() const; \
+        vec3<T> projected() const F_ONLY; \
         \
-        B_ONLY(color) color() const; \
-        F_ONLY(colorf) color() const; \
+        color color() const B_ONLY; \
+        colorf color() const F_ONLY; \
     );
 #pragma endregion // vec4
 

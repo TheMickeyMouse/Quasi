@@ -4,31 +4,11 @@
 #include "FontDevice.h"
 #include "Mesh.h"
 #include "NumTypes.h"
+#include "StringAlign.h"
 #include "Texture.h"
 #include "Vector.h"
 
 namespace Graphics {
-    enum class StringFormatOptions : uchar {
-        ALIGN_LEFT    = 1 << 0,
-        ALIGN_RIGHT   = 1 << 1,
-        ALIGN_JUSTIFY = ALIGN_LEFT | ALIGN_RIGHT,
-        ALIGN_CENTER  = 0,
-
-        VERTICAL_TOP     = 1 << 2,
-        VERTICAL_BOTTOM  = 1 << 3,
-        VERTICAL_JUSTIFY = VERTICAL_TOP | VERTICAL_BOTTOM,
-        VERTICAL_CENTER  = 0,
-
-        BOLD          = 1 << 4,
-        ITALIC        = 1 << 5,
-        UNDERLINE     = 1 << 6,
-        STRIKETHROUGH = 1 << 7,
-        
-        DEFAULT = 0
-    };
-    STDU_IMPL_ENUM_OPERATORS(StringFormatOptions);
-    using StrFmt = StringFormatOptions;
-    
     class Font {
         FT_Face faceHandle = nullptr;
         PointPer64 fontSize = 0;
@@ -40,6 +20,15 @@ namespace Graphics {
             // render data
             Maths::fvec2 advance;
             Maths::ivec2 offset;
+        };
+
+        struct Vertex {
+            Maths::fvec3 Position;
+            Maths::fvec2 TextureCoord;
+
+            GL_VERTEX_T(Vertex);
+            GL_VERTEX_FIELD((Position)(TextureCoord));
+            GL_VERTEX_TRANSFORM_FIELDS((Position))
         };
     private:
         std::vector<Glyph> glyphs;
@@ -59,10 +48,11 @@ namespace Graphics {
         OPENGL_API void SetSize(PointPer64 charWidth, PointPer64 charHeight = 0 /* use width instead */, uint dpi = FontDevice::DPI());
         OPENGL_API void RenderBitmap();
 
-        OPENGL_API Glyph& GetGlyphRect(char c);
-        OPENGL_API Mesh<VertexColorTexture3D> RenderString(
-            const std::string& str, PointPer64 size, StrFmt fmt = StrFmt::DEFAULT /* TODO: add this */
-        );
+        OPENGL_API [[nodiscard]] const Glyph& GetGlyphRect(char c) const;
+        OPENGL_API Mesh<Vertex> RenderString(
+            const std::string& string, PointPer64 size,
+            const StringAlign& align = { { 0, INFINITY } }
+        ) const;
 
         Texture& GetTexture() { return atlas; }
         [[nodiscard]] const Texture& GetTexture() const { return atlas; }

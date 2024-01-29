@@ -183,6 +183,10 @@ namespace Graphics {
                 ImGui::Text("   %s", IO::KeyboardT::KeyToStr(key));
             }
         }
+
+        if (ImGui::CollapsingHeader("ImGui Demo")) {
+            ImGui::ShowDemoWindow();
+        }
         // ImGui::ShowDemoWindow();
 
         skipDebugs:
@@ -217,6 +221,7 @@ namespace Graphics {
 
         GLCALL(glEnable(GL_BLEND));
         GLCALL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+        GLCALL(glBlendColor(1.0f, 1.0f, 1.0f, 1.0f)); // prevents texture artifacts
         GLCALL(glEnable(GL_DEPTH_TEST));
         glDepthFunc(GL_LEQUAL);
 
