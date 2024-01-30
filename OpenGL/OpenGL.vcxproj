@@ -185,7 +185,8 @@
     <ClCompile Include="src\Graphics\Primitives\Tri.cpp" />
     <ClCompile Include="src\Graphics\Utils\Fonts\Font.cpp" />
     <ClCompile Include="src\Graphics\Utils\Fonts\FontDevice.cpp" />
-    <ClCompile Include="src\Graphics\Utils\Fonts\StringAlign.cpp" />
+    <ClCompile Include="src\Graphics\Utils\Fonts\TextAlign.cpp" />
+    <ClCompile Include="src\Graphics\Utils\Fonts\TextRenderer.cpp" />
     <ClCompile Include="src\Graphics\Utils\Textures\Texture.cpp" />
     <ClCompile Include="src\Graphics\Utils\Textures\TextureAtlas.cpp" />
     <ClCompile Include="src\IO\IO.cpp" />
@@ -240,7 +241,8 @@
     <ClInclude Include="src\Graphics\Primitives\Tri.h" />
     <ClInclude Include="src\Graphics\Utils\Fonts\Font.h" />
     <ClInclude Include="src\Graphics\Utils\Fonts\FontDevice.h" />
-    <ClInclude Include="src\Graphics\Utils\Fonts\StringAlign.h" />
+    <ClInclude Include="src\Graphics\Utils\Fonts\TextAlign.h" />
+    <ClInclude Include="src\Graphics\Utils\Fonts\TextRenderer.h" />
     <ClInclude Include="src\Graphics\Utils\Textures\Texture.h" />
     <ClInclude Include="src\Graphics\Utils\Textures\TextureAtlas.h" />
     <ClInclude Include="src\IO\IO.h" />

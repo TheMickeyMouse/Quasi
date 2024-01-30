@@ -23,6 +23,7 @@ namespace Test {
         int alignX = 0, alignY = 0, wrapMethod = 0;
         bool cropX = false, cropY = false;
         float letterSpace = 0, lineSpace = 1;
+        Maths::rect2f textBox = { -200, 200, -200, 200 };
 
         float fontSize = 48;
         float thickness = 0.5f, softness = 0.05f;

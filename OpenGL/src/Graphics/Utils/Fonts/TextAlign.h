@@ -3,7 +3,7 @@
 #include "Vector.h"
 
 namespace Graphics {
-    struct StringAlign {
+    struct TextAlign {
         enum AlignOptions {
             ALIGN_LEFT    = 1 << 0,
             ALIGN_RIGHT   = 1 << 1,
@@ -30,14 +30,15 @@ namespace Graphics {
         PointPer64 letterSpacing = 0_p64; // this is extra offset
         float lineSpacing = 1; // this is a multiplier
 
-        StringAlign(const Maths::rect2f& rect) : rect(rect) {}
+        TextAlign(const Maths::rect2f& rect) : rect(rect) {}
 
-        OPENGL_API StringAlign& Move(Maths::fvec2 offset);
+        OPENGL_API TextAlign& Move(Maths::fvec2 offset);
 
-        OPENGL_API StringAlign& SpaceOut(float line = 1, PointPer64 letter = 0_p64);
-        OPENGL_API StringAlign& Align(std::initializer_list<AlignOptions> options);
-        OPENGL_API StringAlign& Align(std::initializer_list<AlignOptI> options);
-        OPENGL_API StringAlign& ResetAlign();
+        OPENGL_API TextAlign& SpaceOut(float line = 1, PointPer64 letter = 0_p64);
+        OPENGL_API TextAlign& Align(std::initializer_list<AlignOptions> options);
+        OPENGL_API TextAlign& Align(std::initializer_list<AlignOptI> options);
+        OPENGL_API TextAlign& Align(uchar alignX, uchar alignY, uchar wrapping, bool cropX, bool cropY);
+        OPENGL_API TextAlign& ResetAlign();
 
         [[nodiscard]] bool IsAlignCenter()       const { return !(alignOptions & ALIGN_JUSTIFY); }
         [[nodiscard]] bool IsAlignLeft()         const { return  (alignOptions & ALIGN_LEFT) && !(alignOptions & ALIGN_RIGHT); }

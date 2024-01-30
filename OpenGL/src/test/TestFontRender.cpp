@@ -64,10 +64,10 @@ namespace Test {
         const Maths::fvec2 size = font.GetTexture().GetSize();
         float x = size.x / size.y;
         Vertex atlVertices[] = { 
-            { { -100.0f * x, -100.0f, 0 }, 1, { 0.0f, 0.0f }, 1 },
-            { { +100.0f * x, -100.0f, 0 }, 1, { 1.0f, 0.0f }, 1 },
-            { { +100.0f * x, +100.0f, 0 }, 1, { 1.0f, 1.0f }, 1 },
-            { { -100.0f * x, +100.0f, 0 }, 1, { 0.0f, 1.0f }, 1 },
+            { { -100.0f * x, -100.0f, 0 }, 1, { 0.0f, 1.0f }, 1 },
+            { { +100.0f * x, -100.0f, 0 }, 1, { 1.0f, 1.0f }, 1 },
+            { { +100.0f * x, +100.0f, 0 }, 1, { 1.0f, 0.0f }, 1 },
+            { { -100.0f * x, +100.0f, 0 }, 1, { 0.0f, 0.0f }, 1 },
         };
         
         Graphics::TriIndices atlIndices[] = {
@@ -115,13 +115,19 @@ namespace Test {
         shader.SetUniform4F("u_shadowColor", shadowColor.begin());
         shader.SetUniform1F("u_shadowSoftness", shadowSoftness);
         shader.SetUniform2F("u_shadowOffset", shadowOffset.begin());
+
+        auto& vert = meshBg.GetVertices();
+        vert[0].Position = textBox.corner(0);
+        vert[1].Position = textBox.corner(1);
+        vert[2].Position = textBox.corner(3); // yes this is correct
+        vert[3].Position = textBox.corner(2);
         
         render.ResetData();
         if (showAtlas) {
             render.AddNewMeshes(&meshAtlas, 1);
         } else {
-            meshStr.Replace(font.RenderString(string, Graphics::PointPer64::inP64((int)(fontSize * 64.0f)),
-                    Graphics::StringAlign { { -200, 200 } }
+            meshStr.Replace(font.RenderText(string, Graphics::PointPer64::inP64((int)(fontSize * 64.0f)),
+                    Graphics::TextAlign { textBox }
                     .Align({ alignX, alignY << 2, wrapMethod << 4, cropX << 6, cropY << 7 })
                     .SpaceOut(lineSpace, Graphics::PointPer64::inP64((int)(letterSpace * 64.0f)))
                 ).Convert<Vertex>([&](const Graphics::Font::Vertex& v) {
@@ -148,6 +154,9 @@ namespace Test {
         ImGui::SliderFloat("Thickness",   &thickness, 0, 1);
         ImGui::SliderFloat("Softness",    &softness,  0, 1);
 
+        ImGui::SliderFloat2("Text Bottom Left", textBox.min.begin(), -300, 300);
+        ImGui::SliderFloat2("Text Top Right",   textBox.max.begin(), -300, 300);
+
         ImGui::Combo("Alignment X", &alignX, "Center\0Left\0Right\0Justified\0\0");
         ImGui::Combo("Alignment Y", &alignY, "Center\0Top\0Bottom\0Justified\0\0");
         ImGui::Combo("Wrap Mode", &wrapMethod, "None\0Break Sentence\0Break Words\0\0");
@@ -171,7 +180,6 @@ namespace Test {
             const auto& glyph = font.GetGlyphRect(searchChar);
             meshAtlas.SetTransform(Maths::mat3D::translate_mat({ x * (1 - 2 * glyph.rect.center().x), 0, 0 }));
         }
-
     }
 
     void TestFontRender::OnDestroy(Graphics::GraphicsDevice& gdevice) {

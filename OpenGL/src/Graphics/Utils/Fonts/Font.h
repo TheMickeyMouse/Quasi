@@ -1,10 +1,9 @@
 #pragma once
 #include <string>
 
-#include "FontDevice.h"
 #include "Mesh.h"
 #include "NumTypes.h"
-#include "StringAlign.h"
+#include "TextAlign.h"
 #include "Texture.h"
 #include "Vector.h"
 
@@ -49,9 +48,9 @@ namespace Graphics {
         OPENGL_API void RenderBitmap();
 
         OPENGL_API [[nodiscard]] const Glyph& GetGlyphRect(char c) const;
-        OPENGL_API Mesh<Vertex> RenderString(
+        OPENGL_API Mesh<Vertex> RenderText(
             const std::string& string, PointPer64 size,
-            const StringAlign& align = { { 0, INFINITY } }
+            const TextAlign& align = { { 0, INFINITY } }
         ) const;
 
         Texture& GetTexture() { return atlas; }
@@ -59,5 +58,7 @@ namespace Graphics {
         
         OPENGL_API static Font LoadFile (const std::string& filename);
         OPENGL_API static Font LoadBytes(const uchar* data, uint len);
+
+        friend struct TextRenderer;
     };
 }
