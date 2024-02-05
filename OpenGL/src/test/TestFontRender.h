@@ -1,7 +1,7 @@
 #pragma once
 #include "Mesh.h"
 #include "Test.h"
-#include "Graphics/Utils/Fonts/Font.h"
+#include "Font.h"
 
 namespace Test {
     class TestFontRender : Test {
@@ -32,7 +32,12 @@ namespace Test {
         float shadowSoftness = 0.3f;
         Maths::fvec2 shadowOffset = { 5, 5 };
 
-        std::string string = "Hello, World!";
+        std::string string = R"(`Features include: <br>
+New Line with `<br>`<br>
+**bold text** with `**`<br>
+*italic text* with `*`<br>
+***bold & italic*** with `***``<br>
+~~Strike trough like dis~~ with `~~`)";
 
         Graphics::Font font;
         Maths::colorf color = 1;

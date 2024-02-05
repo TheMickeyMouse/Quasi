@@ -92,7 +92,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>GLEW_STATIC;OPENGL_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>src;src\Graphics\GLs;src\Graphics\Graphicals;src\Graphics\Primitives;src\Maths;src\Graphics\Utils\Textures;src\IO;src\vendor\imgui;src\vendor\freetype;src\vendor;src\test;$(SolutionDir)Dependencies\GLFW\include;$(SolutionDir)Dependencies\GLEW\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;src\Graphics\GLs;src\Graphics\Graphicals;src\Graphics\Primitives;src\Maths;src\Graphics\Utils\Fonts;src\Graphics\Utils\Textures;src\IO;src\vendor\imgui;src\vendor\freetype;src\vendor;src\test;$(SolutionDir)Dependencies\GLFW\include;$(SolutionDir)Dependencies\GLEW\include</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ShowIncludes>false</ShowIncludes>
@@ -100,7 +100,7 @@
       <AdditionalOptions>
       </AdditionalOptions>
       <PreprocessKeepComments>false</PreprocessKeepComments>
-      <UseStandardPreprocessor>false</UseStandardPreprocessor>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -187,12 +187,14 @@
     <ClCompile Include="src\Graphics\Utils\Fonts\FontDevice.cpp" />
     <ClCompile Include="src\Graphics\Utils\Fonts\TextAlign.cpp" />
     <ClCompile Include="src\Graphics\Utils\Fonts\TextRenderer.cpp" />
+    <ClCompile Include="src\Graphics\Utils\Fonts\TextStyle.cpp" />
     <ClCompile Include="src\Graphics\Utils\Textures\Texture.cpp" />
     <ClCompile Include="src\Graphics\Utils\Textures\TextureAtlas.cpp" />
     <ClCompile Include="src\IO\IO.cpp" />
     <ClCompile Include="src\IO\Keyboard.cpp" />
     <ClCompile Include="src\IO\Mouse.cpp" />
     <ClCompile Include="src\Maths\Matrix.cpp" />
+    <ClCompile Include="src\stdu\rich_string.cpp" />
     <ClCompile Include="src\test\TestBatchedTextured.cpp" />
     <ClCompile Include="src\test\TestClearColor.cpp" />
     <ClCompile Include="src\test\TestBatchedColored.cpp" />
@@ -243,6 +245,7 @@
     <ClInclude Include="src\Graphics\Utils\Fonts\FontDevice.h" />
     <ClInclude Include="src\Graphics\Utils\Fonts\TextAlign.h" />
     <ClInclude Include="src\Graphics\Utils\Fonts\TextRenderer.h" />
+    <ClInclude Include="src\Graphics\Utils\Fonts\TextStyle.h" />
     <ClInclude Include="src\Graphics\Utils\Textures\Texture.h" />
     <ClInclude Include="src\Graphics\Utils\Textures\TextureAtlas.h" />
     <ClInclude Include="src\IO\IO.h" />
@@ -261,6 +264,8 @@
     <ClInclude Include="src\stdu\io.h" />
     <ClInclude Include="src\stdu\macros.h" />
     <ClInclude Include="src\stdu\ref.h" />
+    <ClInclude Include="src\stdu\rich_string.h" />
+    <ClInclude Include="src\stdu\test.h" />
     <ClInclude Include="src\stdu\types.h" />
     <ClInclude Include="src\test\Test.h" />
     <ClInclude Include="src\test\TestBatchedTextured.h" />

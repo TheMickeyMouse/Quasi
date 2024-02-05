@@ -4,10 +4,11 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include "Keyboard.h"
 #include "Graphics/Utils/Fonts/Font.h"
+#include "stdu/rich_string.h"
 
 namespace Test {
     void TestFontRender::OnInit(Graphics::GraphicsDevice& gdevice) {
-        render = gdevice.CreateNewRender<Vertex>(200, 100);
+        render = gdevice.CreateNewRender<Vertex>(1024, 1024);
 
         render.UseShader(
             "#shader vertex\n"
@@ -53,8 +54,19 @@ namespace Test {
             "}"
         );
         render.SetProjection(projection);
-        
-        font = Graphics::Font::LoadFile(R"(C:\Windows\Fonts\arial.ttf)");
+
+#define USER_FONTS R"(C:\Users\User\AppData\Local\Microsoft\Windows\Fonts\)"
+#define WIN_FONTS R"(C:\Windows\Fonts\)"
+        font = Graphics::Font::LoadFile(WIN_FONTS "arial.ttf");
+        font.AddDefaultFontStyle(WIN_FONTS "arialbd.ttf", Graphics::FontStyle::BOLD);
+        font.AddDefaultFontStyle(WIN_FONTS "ariali.ttf",  Graphics::FontStyle::ITALIC);
+        font.AddDefaultFontStyle(WIN_FONTS "arialbi.ttf", Graphics::FontStyle::BOLD_ITALIC);
+        font.AddMonoFontStyle(USER_FONTS "JetBrainsMono-Medium.ttf");
+        font.AddMonoFontStyle(USER_FONTS "JetBrainsMono-Bold.ttf",       Graphics::FontStyle::BOLD);
+        font.AddMonoFontStyle(USER_FONTS "JetBrainsMono-Italic.ttf",     Graphics::FontStyle::ITALIC);
+        font.AddMonoFontStyle(USER_FONTS "JetBrainsMono-BoldItalic.ttf", Graphics::FontStyle::BOLD_ITALIC);
+#undef USERFONTS
+#undef WINFONTS
 
         font.SetSize(48);
         font.RenderBitmap();
@@ -80,11 +92,12 @@ namespace Test {
             std::vector(atlIndices, atlIndices + 2)
         );
 
+        constexpr Maths::colorf bgColor = Maths::colorf::BETTER_BLACK();
         Vertex bgVertices[] = { 
-            { { -200.0f, -200.0f, 0 }, 0.25f, { 0.0f, 0.0f }, 0 },
-            { { +200.0f, -200.0f, 0 }, 0.25f, { 0.0f, 0.0f }, 0 },
-            { { +200.0f, +200.0f, 0 }, 0.25f, { 0.0f, 0.0f }, 0 },
-            { { -200.0f, +200.0f, 0 }, 0.25f, { 0.0f, 0.0f }, 0 },
+            { { -200.0f, -200.0f, 0 }, bgColor, { 0.0f, 0.0f }, 0 },
+            { { +200.0f, -200.0f, 0 }, bgColor, { 0.0f, 0.0f }, 0 },
+            { { +200.0f, +200.0f, 0 }, bgColor, { 0.0f, 0.0f }, 0 },
+            { { -200.0f, +200.0f, 0 }, bgColor, { 0.0f, 0.0f }, 0 },
         };
         
         Graphics::TriIndices bgIndices[] = {
@@ -126,12 +139,14 @@ namespace Test {
         if (showAtlas) {
             render.AddNewMeshes(&meshAtlas, 1);
         } else {
-            meshStr.Replace(font.RenderText(string, Graphics::PointPer64::inP64((int)(fontSize * 64.0f)),
+            meshStr.Replace(font.RenderRichText(
+                    stdu::rich_string::parse_markdown(string),
+                    Graphics::PointPer64::inP64((int)(fontSize * 64.0f)),
                     Graphics::TextAlign { textBox }
                     .Align({ alignX, alignY << 2, wrapMethod << 4, cropX << 6, cropY << 7 })
                     .SpaceOut(lineSpace, Graphics::PointPer64::inP64((int)(letterSpace * 64.0f)))
                 ).Convert<Vertex>([&](const Graphics::Font::Vertex& v) {
-                    return Vertex { v.Position, color, v.TextureCoord, 1 };
+                    return Vertex { v.Position, v.RenderType ? color : v.Color, v.TextureCoord, v.RenderType };
                 }));
             render.AddNewMeshes(&meshStr, 1);
         }

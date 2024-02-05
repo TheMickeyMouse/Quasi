@@ -51,3 +51,12 @@
 \
     STDU_ENUM_SELF_UNARY_OP(E, +) \
     STDU_ENUM_SELF_UNARY_OP(E, -) \
+
+#define STDU_MATCH_ENUM(E, S) case _Enum_t::E: return S;
+#define STDU_MATCH_SEQ(SEQ) STDU_CAT(__STDU_EM_1__ SEQ, END__)
+#define __STDU_EM_1__(E, S) STDU_MATCH_ENUM(E, S) __STDU_EM_2__  // NOLINT(clang-diagnostic-reserved-macro-identifier, bugprone-reserved-identifier)
+#define __STDU_EM_2__(E, S) STDU_MATCH_ENUM(E, S) __STDU_EM_1__  // NOLINT(clang-diagnostic-reserved-macro-identifier, bugprone-reserved-identifier)
+#define __STDU_EM_1__END__  // NOLINT(clang-diagnostic-reserved-macro-identifier, bugprone-reserved-identifier)
+#define __STDU_EM_2__END__  // NOLINT(clang-diagnostic-reserved-macro-identifier, bugprone-reserved-identifier)
+#define STDU_ENUM_TOSTR(TYPE, NAME, SEQ, DEFAULT) const char* NAME(TYPE e) { \
+    using _Enum_t = TYPE; switch (e) { STDU_MATCH_SEQ(SEQ) default: return DEFAULT; } }

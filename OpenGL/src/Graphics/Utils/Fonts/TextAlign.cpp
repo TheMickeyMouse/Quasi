@@ -46,7 +46,7 @@ namespace Graphics {
         return emptySpace * (float)(!(alignOptions & VERTICAL_TOP) + !!(alignOptions & VERTICAL_BOTTOM)) / 2;
     }
 
-    float TextAlign::GetAdvance(const Font& font, char c, float scaleRatio) const {
-        return font.GetGlyphRect(c).advance.x * scaleRatio + letterSpacing.pointsf();
+    float TextAlign::GetAdvance(const Glyph& glyph, float scaleRatio) const {
+        return glyph.advance.x * scaleRatio + letterSpacing.pointsf();
     }
 }

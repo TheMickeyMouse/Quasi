@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include "stdu/rich_string.h"
 
 #include "Font.h"
 #include "TextAlign.h"
@@ -29,7 +30,8 @@ namespace Graphics {
 
         TextAlign align = { { 0, INFINITY } };
         using Vertex = Font::Vertex;
-        std::vector<Vertex> vertices;
+        std::vector<Vertex> textVertices, bgVertices;
+        std::vector<TriIndices> bgIndices;
         
         struct CharQuad {
             Vertex v0, v1, v2, v3;
@@ -69,11 +71,16 @@ namespace Graphics {
                    bool clipTop, bool clipBottom) const;
         
         void PushCharQuad(const Maths::rect2f& pos, const Maths::rect2f& tex);
+        void AddChar(std::string::const_iterator& it, std::string::const_iterator begin);
+        void AddRichChar(stdu::rich_string::const_iter& it);
         
         void TriggerNewLine();
         void TriggerSpace();
         
         std::vector<Font::Vertex> RenderText(const std::string& string);
+        std::vector<Font::Vertex> RenderRichText(const stdu::rich_string& string);
+
+        void AddRoundedRect(const Maths::rect2f& region, float roundRadius, const Maths::colorf& color);
 
         friend class Font;
     };

@@ -3,6 +3,8 @@
 #include "Vector.h"
 
 namespace Graphics {
+    struct Glyph;
+
     struct TextAlign {
         enum AlignOptions {
             ALIGN_LEFT    = 1 << 0,
@@ -56,6 +58,6 @@ namespace Graphics {
         OPENGL_API [[nodiscard]] float GetXOff(float width) const;
         OPENGL_API [[nodiscard]] float GetYOff(float height) const;
 
-        OPENGL_API [[nodiscard]] float GetAdvance(const Font& font, char c, float scaleRatio) const;
+        OPENGL_API [[nodiscard]] float GetAdvance(const Glyph& glyph, float scaleRatio) const;
     };
 }

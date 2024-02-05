@@ -102,15 +102,17 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)OpenGL\src;$(SolutionDir)OpenGL\src\Graphics\GLs;$(SolutionDir)OpenGL\src\Graphics\Graphicals;$(SolutionDir)OpenGL\src\Graphics\Meshes;$(SolutionDir)OpenGL\src\Graphics\Utils\Textures;$(SolutionDir)OpenGL\src\IO;$(SolutionDir)OpenGL\src\Maths;$(SolutionDir)OpenGL\src\vendor\imgui;$(SolutionDir)OpenGL\src\vendor\freetype;$(SolutionDir)OpenGL\src\test;$(SolutionDir)OpenGL\src\stdu;$(SolutionDir)Dependencies\GLEW\include;$(SolutionDir)Dependencies\GLFW\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)OpenGL\src;$(SolutionDir)OpenGL\src\Graphics\GLs;$(SolutionDir)OpenGL\src\Graphics\Graphicals;$(SolutionDir)OpenGL\src\Graphics\Meshes;$(SolutionDir)OpenGL\src\Graphics\Utils\Textures;$(SolutionDir)OpenGL\src\Graphics\Utils\Fonts;$(SolutionDir)OpenGL\src\IO;$(SolutionDir)OpenGL\src\Maths;$(SolutionDir)OpenGL\src\vendor\imgui;$(SolutionDir)OpenGL\src\vendor\freetype;$(SolutionDir)OpenGL\src\test;$(SolutionDir)OpenGL\src\stdu;$(SolutionDir)Dependencies\GLEW\include;$(SolutionDir)Dependencies\GLFW\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalOptions>/FS</AdditionalOptions>
+      <AdditionalOptions>
+      </AdditionalOptions>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)bin\$(Platform)\$(Configuration);$(SolutionDir)Dependencies\GLFW\lib-vc2022\$(Platform);$(SolutionDir)Dependencies\GLEW\lib\Release\$(Platform)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(SolutionDir)bin\$(Platform)\$(Configuration)\OpenGL.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OpenGL.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
@@ -194,6 +196,7 @@
     <ClCompile Include="Game.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="preview.md" />
     <Content Include="test.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

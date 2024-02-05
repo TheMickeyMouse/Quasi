@@ -68,13 +68,19 @@ namespace Maths {
     template <class T>
     concept color_t = is_color_v<T>;
 
-    template <vec_t V> struct _rect_origin_inbetween_;
-    template <vec_t V> struct _rect_size_inbetween_;
+    template <class V> struct _rect_origin_inbetween_;
+    template <class V> struct _rect_size_inbetween_;
     template <int, class> struct rect;
-    
+
+    template <class T> using range = rect<1, T>;
     template <class T> using rect2 = rect<2, T>;
     template <class T> using rect3 = rect<3, T>;
     template <class T> using rect4 = rect<4, T>;
+    using irange = range<int>;
+    using urange = range<uint>;
+    using brange = range<uchar>;
+    using rangef = range<float>;
+    using ranged = range<double>;
     using rect2f = rect2<float>;
     using rect3f = rect3<float>;
     using rect4f = rect4<float>;
@@ -142,11 +148,11 @@ namespace Maths {
 #define ARITH_T(T, U, O) typename ARITH(T, U)::O##_t
 #define ARITH_DO(U, M) ARITH(scalar, U)::M
     
-#define VEC_OP(V, M) \
+#define VEC_OP(V, M, OP) \
     template <class U> auto M(U v) const { \
         static_assert(std::is_arithmetic_v<U> || is_vec_v<U>, #V "::" #M " not supported"); /* NOLINT(bugprone-macro-parentheses) */ \
-        if constexpr (std::is_arithmetic_v<U>) return apply([=](scalar x){ return ARITH_DO(U, M)(x, v); }); /* NOLINT(bugprone-macro-parentheses) */ \
-        else if constexpr (is_vec_v<U>) return apply(ARITH_DO(SCALAR_T(U), M), v); /* NOLINT(bugprone-macro-parentheses) */ \
+        if constexpr (std::is_arithmetic_v<U>) return apply([=](scalar x){ return x OP v; }); /* NOLINT(bugprone-macro-parentheses) */ \
+        else if constexpr (is_vec_v<U>) return apply([](scalar a, scalar b) { return a OP b; }, v); /* NOLINT(bugprone-macro-parentheses) */ \
     }
     
 #define VEC_OP_OTHER(V, M) \
@@ -178,11 +184,11 @@ namespace Maths {
         STDU_IF(CEXPR, constexpr) SCALAR operator[] (uint i) const { return ((const SCALAR*)this)[i]; } /* NOLINT(bugprone-macro-parentheses) */ \
         \
         STDU_IF(DEF_OP, \
-        VEC_OP(vec2, add); \
-        VEC_OP(vec2, sub); \
-        VEC_OP(vec2, mul); \
-        VEC_OP(vec2, div); \
-        VEC_OP(vec2, mod); \
+        VEC_OP(vec2, add, +); \
+        VEC_OP(vec2, sub, -); \
+        VEC_OP(vec2, mul, *); \
+        VEC_OP(vec2, div, /); \
+        VEC_OP(vec2, mod, %); \
         \
         template <class U> auto  operator+ (U v) const { return add(v); } \
         template <class U> NAME& operator+=(U v)       { return *this = add(v); } \
@@ -258,11 +264,11 @@ namespace Maths {
         STDU_IF(CEXPR, constexpr) SCALAR operator[] (uint i) const { return ((const SCALAR*)this)[i]; } /* NOLINT(bugprone-macro-parentheses) */ \
         \
         STDU_IF(DEF_OP, \
-        VEC_OP(vec3, add); \
-        VEC_OP(vec3, sub); \
-        VEC_OP(vec3, mul); \
-        VEC_OP(vec3, div); \
-        VEC_OP(vec3, mod); \
+        VEC_OP(vec3, add, +); \
+        VEC_OP(vec3, sub, -); \
+        VEC_OP(vec3, mul, *); \
+        VEC_OP(vec3, div, /); \
+        VEC_OP(vec3, mod, %); \
         \
         template <class U> auto  operator+ (U v) const { return add(v); } \
         template <class U> NAME& operator+=(U v)       { return *this = add(v); } \
@@ -339,11 +345,11 @@ namespace Maths {
         STDU_IF(CEXPR, constexpr) SCALAR operator[] (uint i) const { return ((const SCALAR*)this)[i]; } /* NOLINT(bugprone-macro-parentheses) */ \
         \
         STDU_IF(DEF_OP, \
-        VEC_OP(vec4, add); \
-        VEC_OP(vec4, sub); \
-        VEC_OP(vec4, mul); \
-        VEC_OP(vec4, div); \
-        VEC_OP(vec4, mod); \
+        VEC_OP(vec4, add, +); \
+        VEC_OP(vec4, sub, -); \
+        VEC_OP(vec4, mul, *); \
+        VEC_OP(vec4, div, /); \
+        VEC_OP(vec4, mod, %); \
         \
         template <class U> auto  operator+ (U v) const { return add(v); } \
         template <class U> NAME& operator+=(U v)       { return *this = add(v); } \
@@ -478,6 +484,7 @@ namespace Maths {
         T angle() const F_ONLY; \
         vec2 polar() const F_ONLY; \
         vec2 cartesian() const F_ONLY; \
+        static vec2 from_polar(T r, T theta) F_ONLY { return vec2 { r, theta }.cartesian(); } \
         \
         vec2  perpend() const S_ONLY; \
         \
@@ -492,6 +499,9 @@ namespace Maths {
         vec2& reflect_uc(const vec2& normal) F_ONLY; \
         \
         vec3<T> with_z(T z) const; \
+        \
+        static vec2 unit_x(T x) { return { x, 0 }; } \
+        static vec2 unit_y(T y) { return { 0, y }; } \
     )
 #pragma endregion // vec2
 #pragma region Vec3
@@ -541,6 +551,10 @@ namespace Maths {
         color3f color() const F_ONLY; \
         \
         vec4<T> with_w(T w = 1) const; \
+        \
+        static vec3 unit_x(T x) { return { x, 0, 0 }; } \
+        static vec3 unit_y(T y) { return { 0, y, 0 }; } \
+        static vec3 unit_z(T z) { return { 0, 0, z }; } \
     );
 #pragma endregion // vec3
 #pragma region Vec4
@@ -576,6 +590,11 @@ namespace Maths {
         \
         color color() const B_ONLY; \
         colorf color() const F_ONLY; \
+        \
+        static vec4 unit_x(T x) { return { x, 0, 0, 0 }; } \
+        static vec4 unit_y(T y) { return { 0, y, 0, 0 }; } \
+        static vec4 unit_z(T z) { return { 0, 0, z, 0 }; } \
+        static vec4 unit_w(T w) { return { 0, 0, 0, w }; } \
     );
 #pragma endregion // vec4
 
@@ -736,6 +755,4 @@ namespace Maths {
 #undef S_ONLY_U
 }
 
-#define VECTOR_IMPL
 #include "VectorImpl.h"
-#undef VECTOR_IMPL

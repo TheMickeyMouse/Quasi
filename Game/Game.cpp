@@ -1,24 +1,28 @@
 #include "Graphics/Graphicals/GraphicsDevice.h"
+#include "Font.h"
 #include "test/TestingFramework.h"
 // #include "Mesh.h"
 // #include "imgui.h"
 // #include "Keyboard.h"
 // #include "Mouse.h"
 
+// #include <iostream>
+// #include "rich_string.h"
+
 int main() {
-    Graphics::GraphicsDevice GraphicsDevice = Graphics::GraphicsDevice::Initialize();
     {
+        Graphics::GraphicsDevice GraphicsDevice = Graphics::GraphicsDevice::Initialize();
         Test::TestManager testm;
-    
+
         testm.OnInit(GraphicsDevice);
         while (GraphicsDevice.WindowIsOpen()) {
             testm.OnUpdate();
-    
+
             GraphicsDevice.BeginRender();
-    
+
             testm.OnRender(GraphicsDevice);
             testm.OnImGuiRender(GraphicsDevice);
-    
+
             GraphicsDevice.EndRender();
         }
         testm.OnDestroy(GraphicsDevice);
@@ -77,8 +81,17 @@ int main() {
     //
     //     GraphicsDevice.EndRender();
     // }
-    // Maths::fvec4 x = { 1, 0, 0, 0 };
-    // auto y = x * 1.0f;
-    // std::cout << y.str() << '\n';
+
+//     using namespace stdu;
+//     const rich_string md =
+//         R"(`Features include: <br>
+// New Line with `<br>`<br>
+// **bold text** with `**`<br>
+// *italic text* with `*`<br>
+// ***bold & italic*** with `***``<br>
+// ~~Strike trough like dis~~ with `~~`)"_md;
+//
+//     std::cout << md.debug_rawstr() << '\n';
+    
     return 0;
 }

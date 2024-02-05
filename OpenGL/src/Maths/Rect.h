@@ -1,11 +1,18 @@
 #pragma once
 namespace Maths {
-    template <vec_t V> struct _rect_origin_inbetween_ {
+    template <int N, class T> struct rect;
+    
+    template <class V> struct _rect_origin_inbetween_ {
+        static auto _scalar_type_t() { if constexpr (is_vec_v<V>) return typename V::scalar {}; else return V {}; }
+        using scalar = decltype(_scalar_type_t());
+        static constexpr int _dimension_num() { if constexpr (is_vec_v<V>) return V::dimension; else return 1; }
+        static constexpr int dimension = _dimension_num();
+        using rect_t = rect<dimension, scalar>;
         V pos;
-        rect<V::dimension, typename V::scalar> rect(V size) const;
+        rect_t rect(V size) const;
     };
 
-    template <vec_t V> struct _rect_size_inbetween_ { V pos; };
+    template <class V> struct _rect_size_inbetween_ { V pos; };
 
     template <class> struct is_rect_t : std::false_type {};
     template <int N, class T> struct is_rect_t<rect<N, T>> : std::true_type {};
@@ -24,19 +31,43 @@ namespace Maths {
         else if constexpr (is_vec_v<U>) return rect<N, ARITH_T(T, typename U::scalar, M)> { min OP v, max OP v }; \
     } \
     template <class U> rect& operator OP##=(U v) { return *this = *this + v; }
+
+    template <class T>
+    _rect_size_inbetween_<T> as_size(T val) {
+        return { val };
+    }
+
+    template <class T>
+    _rect_origin_inbetween_<T> as_origin(T val) {
+        return { val };
+    }
+
+    template <class T>
+    T min_t(T a, T b) {
+        if constexpr (is_vec_v<T>) return T::min(a, b);
+        else return std::min(a, b);
+    }
+
+    template <class T>
+    T max_t(T a, T b) {
+        if constexpr (is_vec_v<T>) return T::max(a, b);
+        else return std::max(a, b);
+    }
     
     template <int N, class T>
-    struct rect { 
-        using vec = typename vecn<N, T>::type;
-        using scalar = T;
+    struct rect {
         static int constexpr dimension = N;
+        static bool constexpr is1D = N == 1;
+        using scalar = T;
+        using vec = std::conditional_t<is1D, T, typename vecn<N, T>::type>;
         vec min, max;
 
         rect() : min(0), max(0) {}
+        rect(T min, T max) requires is1D : min(min), max(max) {}
         rect(T minX, T maxX, T minY, T maxY) requires (N == 2) : min(minX, minY), max(maxX, maxY) {}
         rect(T minX, T maxX, T minY, T maxY, T minZ, T maxZ) requires (N == 3) : min(minX, minY, minZ), max(maxX, maxY, maxZ) {}
         rect(T minX, T maxX, T minY, T maxY, T minZ, T maxZ, T minW, T maxW) requires (N == 4) : min(minX, minY, minZ, minW), max(maxX, maxY, maxZ, maxW) {}
-        rect(const vec& min, const vec& max) : min(min), max(max) {}
+        rect(const vec& min, const vec& max) requires !is1D : min(min), max(max) {}
         rect(const vec& min, const _rect_size_inbetween_<vec>& size) : min(min), max(min + size.pos) {}
         rect(const _rect_origin_inbetween_<vec>& origin, const vec& size) { *this = origin.rect(size); }
 
@@ -50,13 +81,14 @@ namespace Maths {
         
         scalar n_distance(int n) const { return max[n] - min[n]; }
         scalar width()    const { return n_distance(0); }
-        scalar height()   const { return n_distance(1); }
+        scalar height()   const requires (N >= 2) { return n_distance(1); }
         scalar depth()    const requires (N >= 3) { return n_distance(2); }
         scalar duration() const requires (N >= 4) { return n_distance(3); }
 
         scalar n_volume() const {
             static_assert(2 <= N && N <= 4, "invalid dimension");
-            if constexpr (N == 2) return width() * height();
+            if constexpr (N == 1) return width();
+            else if constexpr (N == 2) return width() * height();
             else if constexpr (N == 3) return width() * height() * depth();
             else if constexpr (N == 4) return width() * height() * depth() * duration();
             else return 0;
@@ -68,14 +100,17 @@ namespace Maths {
         vec size()   const { return  max - min; }
         vec center() const { return (max + min) / 2; }
         vec corner(int i) const {
-            int b = 0;
-            return min.apply(
-                [&b, i](scalar x, scalar y) { return 1 << b++ & i ? y : x; },
-                max);
+            if constexpr (is1D) return i ? max : min;
+            else {
+                int b = 0;
+                return min.apply(
+                    [&b, i](scalar x, scalar y) { return 1 << b++ & i ? y : x; },
+                    max);
+            }
         } // each bit is a y/n decision on min or max (0 = min, 1 is max)
 
-        rect& correct() { vec m = min; min = vec::min(min, max); max = vec::max(m, max); return *this; } // fixes min max errors
-        rect corrected() { return { vec::min(min, max), vec::max(min, max) }; }
+        rect& correct() { vec m = min; min = Maths::min_t(min, max); max = Maths::max_t(m, max); return *this; } // fixes min max errors
+        rect corrected() { return { Maths::min_t(min, max), Maths::max_t(min, max) }; }
         
         bool contains(const rect& other) const { return min < other.min && other.max < max; }
         bool contains(const vec&  other) const { return min < other && other < max; }
@@ -83,8 +118,13 @@ namespace Maths {
         rect& offset  (const vec& off) { max += off; min += off; return *this; }
         rect  offseted(const vec& off) const { return { min + off, max + off }; }
 
-        rect expand(const rect& other) const { return { std::min(min, other.min), std::max(max, other.max) }; }
-        rect shrink(const rect& other) const { return { std::min(min, other.min), std::max(max, other.max) }; }
+        rect expand(const rect& other) const { return { Maths::min_t(min, other.min), Maths::max_t(max, other.max) }; }
+        rect shrink(const rect& other) const { return { Maths::min_t(min, other.min), Maths::max_t(max, other.max) }; }
+
+        rect inset(T radius)          const { return { min + radius, max - radius }; }
+        rect inset(const vec& radius) const { return { min + radius, max - radius }; }
+        rect extrude(T radius)          const { return { min - radius, max + radius }; }
+        rect extrude(const vec& radius) const { return { min - radius, max + radius }; }
 
         rect_iter<rect> begin() const;
         rect_iter<rect> end() const;
@@ -117,7 +157,12 @@ namespace Maths {
         const value_t& operator*() const { return curr; }
     };
 
-    template <vec_t V> rect<V::dimension, typename V::scalar>
+    // template <class V> rect<_rect_origin_inbetween_<V>::dimension, std::conditional_t<is_vec_v<V>, typename V::scalar, V>>
+    // _rect_origin_inbetween_<V>::rect(V size) const {
+    //     return { pos + size / 2, pos - size / 2 };
+    // }
+
+    template <class V> typename _rect_origin_inbetween_<V>::rect_t
     _rect_origin_inbetween_<V>::rect(V size) const {
         return { pos + size / 2, pos - size / 2 };
     }

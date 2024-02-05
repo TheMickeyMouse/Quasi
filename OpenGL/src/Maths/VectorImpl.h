@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef VECTOR_IMPL
-#include "Vector.h"
-#endif
 #include "Rect.h"
 
 namespace Maths {

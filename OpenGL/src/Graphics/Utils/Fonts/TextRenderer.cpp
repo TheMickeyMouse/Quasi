@@ -1,5 +1,6 @@
 #include "TextRenderer.h"
 
+#include "Constants.h"
 
 namespace Graphics {
     void TextRenderer::CharQuad::MoveY(float y) {
@@ -31,34 +32,34 @@ namespace Graphics {
         return v1.TextureCoord.x - v0.TextureCoord.x;
     }
 
-    void TextRenderer::Prepare() {
-        scaleRatio = fontSize / font.fontSize; // scaling ratio
-        lineSpacing = font.fontHeight.pointsf() * scaleRatio; // just a calculation (without * align.lineSpacing)
-        spaceAdvance = align.GetAdvance(font, ' ', scaleRatio); // this gets used alot, just here
-        
-        totalHeight = lineSpacing * (((float)lineCount - 1) * align.lineSpacing + 1);
-        pen = align.rect.corner(2);
-        pen.y -= lineSpacing;
-        pen.y -= align.IsVerticalJustified() ? 0 : align.GetYOff(totalHeight);
-    }
-
     TextRenderer::CharQuad* TextRenderer::Begin() {
-        return (CharQuad*)vertices.data();
+        return (CharQuad*)textVertices.data();
     }
     const TextRenderer::CharQuad* TextRenderer::Begin() const {
-        return (const CharQuad*)vertices.data();
+        return (const CharQuad*)textVertices.data();
     }
     TextRenderer::CharQuad* TextRenderer::End() {
-        return (CharQuad*)(vertices.data() + vertices.size());
+        return (CharQuad*)(textVertices.data() + textVertices.size());
     }
     const TextRenderer::CharQuad* TextRenderer::End() const {
-        return (const CharQuad*)(vertices.data() + vertices.size());
+        return (const CharQuad*)(textVertices.data() + textVertices.size());
     }
     TextRenderer::CharQuad& TextRenderer::CharAt(uint index) {
         return Begin()[index];
     }
     const TextRenderer::CharQuad& TextRenderer::CharAt(uint index) const {
         return Begin()[index];
+    }
+
+    void TextRenderer::Prepare() {
+        scaleRatio = fontSize / font.fontSize; // scaling ratio
+        lineSpacing = font.GetDefaultMetric().fontHeight.pointsf() * scaleRatio; // just a calculation (without * align.lineSpacing)
+        spaceAdvance = align.GetAdvance(font.GetGlyphRect(' '), scaleRatio); // this gets used alot, just here
+
+        totalHeight = lineSpacing * (((float)lineCount - 1) * align.lineSpacing + 1);
+        pen = align.rect.corner(2);
+        pen.y -= font.GetDefaultMetric().ascend.pointsf();
+        pen.y -= align.IsVerticalJustified() ? 0 : align.GetYOff(totalHeight);
     }
 
     void TextRenderer::FixAlignX() { // quick function for reusing code, aligns current line
@@ -114,8 +115,8 @@ namespace Graphics {
             if (shallCrop && !isAllVisible) {
                 visibleStart ^= -(visibleStart < 0);
                 visibleEnd ^= -(visibleEnd < 0);
-                vertices.resize(4 * (visibleEnd + 1));
-                vertices.erase(vertices.begin() + (int)lastLineIndex * 4, vertices.begin() + visibleStart * 4);
+                textVertices.resize(4 * (visibleEnd + 1));
+                textVertices.erase(textVertices.begin() + (int)lastLineIndex * 4, textVertices.begin() + visibleStart * 4);
                 // m - (vs - l) - (m - ve) -> m - vs + l - m + ve -> ve - vs + l
                 const uint removed = visibleStart - lastLineIndex + meshIndex - visibleEnd - 1;
                 meshIndex -= removed;
@@ -130,7 +131,7 @@ namespace Graphics {
             auto backUntilSpace       = it - 1; // new iterator for looping until we reach a space
             const float originalWidth = lineWidth; // keeps track if the word is too long and will always overflow without breaking the word
             do { // man the first time ive use do while
-                lineWidth -= align.GetAdvance(font, *backUntilSpace, scaleRatio); // dementia, remove line width with overflowed word
+                lineWidth -= align.GetAdvance(font.GetGlyphRect(*backUntilSpace), scaleRatio); // dementia, remove line width with overflowed word
                 if (lineWidth <= 0) { // if word is still too long, then abort and just render it on a single line
                     lineWidth = originalWidth; // reset width
                     return false; // abort
@@ -140,7 +141,7 @@ namespace Graphics {
             lineWidth -= spaceAdvance; // remember to remove the space as well
             if (align.IsAlignJustified()) lineWords.pop_back(); // and delete this overflowed word 
 
-            vertices.resize(4 * lastSpaceIndex); // forget about mesh data; re-render the word
+            textVertices.resize(4 * lastSpaceIndex); // forget about mesh data; re-render the word
             meshIndex = lastSpaceIndex; // reset everything back to before the overflowed word
             lastSpaceIndex = 0;
             TriggerNewLine(); // make new line
@@ -181,11 +182,98 @@ namespace Graphics {
     }
 
     void TextRenderer::PushCharQuad(const Maths::rect2f& pos, const Maths::rect2f& tex) {
-        vertices.push_back({ pos.corner(0), tex.corner(0 ^ 2 /* flip Y with xor */) }); // y flipped cuz opengl textures are flipped
-        vertices.push_back({ pos.corner(1), tex.corner(1 ^ 2 /* flip Y with xor */) });
+        textVertices.emplace_back(pos.corner(0), tex.corner(0 ^ 2 /* flip Y with xor */), 1.0f, Vertex::RENDER_TEXT); // y flipped cuz opengl textures are flipped
+        textVertices.emplace_back(pos.corner(1), tex.corner(1 ^ 2 /* flip Y with xor */), 1.0f, Vertex::RENDER_TEXT);
         // ReSharper disable once CppIdenticalOperandsInBinaryExpression
-        vertices.push_back({ pos.corner(2), tex.corner(2 ^ 2 /* flip Y with xor */) }); // NOLINT(clang-diagnostic-xor-used-as-pow)
-        vertices.push_back({ pos.corner(3), tex.corner(3 ^ 2 /* flip Y with xor */) });
+        textVertices.emplace_back(pos.corner(2), tex.corner(2 ^ 2 /* flip Y with xor */), 1.0f, Vertex::RENDER_TEXT); // NOLINT(clang-diagnostic-xor-used-as-pow)
+        textVertices.emplace_back(pos.corner(3), tex.corner(3 ^ 2 /* flip Y with xor */), 1.0f, Vertex::RENDER_TEXT);
+    }
+
+    void TextRenderer::AddChar(std::string::const_iterator& it, std::string::const_iterator begin) {
+        using namespace Maths;
+        const char glyph = *it;
+        if (glyph == '\n') {
+            TriggerNewLine(); // new line
+        }
+        if (glyph == ' ') { // space means new word
+            TriggerSpace();
+            return;
+        }
+        if (glyph < 32 || glyph >= 127) return; // bounds check for render-able character
+
+        const bool wouldClipTop    = pen.y + font.GetDefaultMetric().fontHeight.pointsf() > align.rect.max.y,
+                   wouldClipBottom = pen.y < align.rect.min.y,
+                   isVisible       = align.rect.min.y <= pen.y + font.GetDefaultMetric().fontHeight.pointsf() && pen.y <= align.rect.max.y;
+        
+        if (align.IsCropY() && !isVisible) return;
+
+        const Glyph& rect = font.GetGlyphRect(glyph); // the information for glyphs
+        const float advance = align.GetAdvance(rect, scaleRatio); // pre-check if word will overflow
+        if (align.IsLetterWrap() && lineWidth + advance > align.rect.width()) { // if too long then wrap this character
+            TriggerNewLine(); // new line for wrapping
+        }
+
+        const fvec2 rsize = rect.rect.size() * font.textureSize.as<float>(); // real-scale size of the quad
+        rect2f texture = rect.rect;
+        rect2f pos = rect.offset.as<float>().to(fvec2 { rsize.x, -rsize.y }.as_size()) * scaleRatio + pen;
+
+        if (align.IsCropY() && !align.IsVerticalJustified()) {
+            ClipY(pos, texture, wouldClipTop, wouldClipBottom);
+        }
+
+        PushCharQuad(pos, texture);
+        if (WordWrap(advance, it, begin)) return;
+            
+        ++meshIndex; // meshIndex is not always index, could encounter \n
+        pen.x += advance; // move pen
+        lineWidth += advance; // incr line width
+        if (align.IsAlignJustified()) lineWords.back().width += advance; // the current word also has to be updated}
+    }
+
+    void TextRenderer::AddRichChar(stdu::rich_string::const_iter& it) {
+        using namespace Maths;
+        const auto [glyph, style] = *it;
+        if (glyph == '\n') {
+            TriggerNewLine(); // new line
+        }
+        if (glyph == ' ') { // space means new word
+            TriggerSpace();
+            return;
+        }
+        if (glyph < 32 || glyph >= 127) return; // bounds check for render-able character
+
+        const bool isMono = style.codeLang;
+        const int fntID = isMono ? Font::MONOSPACE_FONT_ID : Font::DEFAULT_FONT_ID;
+        const FontStyle fntStyle = (FontStyle)(style.styleFlags & 3);
+        const Font::FontMetrics& metric = font.GetMetric(fntID, fntStyle);
+
+        const bool wouldClipTop    = pen.y + metric.fontHeight.pointsf() > align.rect.max.y,
+                   wouldClipBottom = pen.y < align.rect.min.y,
+                   isVisible       = align.rect.min.y <= pen.y + metric.fontHeight.pointsf() && pen.y <= align.rect.max.y;
+        
+        if (align.IsCropY() && !isVisible) return;
+
+        const Glyph& rect = font.GetGlyphRect(glyph, fntStyle, fntID); // the information for glyphs
+        const float advance = align.GetAdvance(rect, scaleRatio); // pre-check if word will overflow
+        if (align.IsLetterWrap() && lineWidth + advance > align.rect.width()) { // if too long then wrap this character
+            TriggerNewLine(); // new line for wrapping
+        }
+
+        const fvec2 rsize = rect.rect.size() * font.textureSize.as<float>(); // real-scale size of the quad
+        rect2f texture = rect.rect;
+        rect2f pos = rect.offset.as<float>().to(fvec2 { rsize.x, -rsize.y }.as_size()) * scaleRatio + pen;
+
+        if (align.IsCropY() && !align.IsVerticalJustified()) {
+            ClipY(pos, texture, wouldClipTop, wouldClipBottom);
+        }
+        
+        PushCharQuad(pos, texture);
+        // TODO: if (WordWrap(advance, it, begin)) return;
+            
+        ++meshIndex; // meshIndex is not always index, could encounter \n
+        pen.x += advance; // move pen
+        lineWidth += advance; // incr line width
+        if (align.IsAlignJustified()) lineWords.back().width += advance; // the current word also has to be updated}
     }
 
     void TextRenderer::TriggerNewLine() {
@@ -213,53 +301,124 @@ namespace Graphics {
         using namespace Maths;
         lineCount = std::ranges::count(string, '\n') + 1; //line count for vertical alignment
         Prepare();
-            
-        bool wouldClipTop    = pen.y + font.fontHeight.pointsf() > align.rect.max.y,
-             wouldClipBottom = pen.y < align.rect.min.y,
-             isVisible       = align.rect.min.y <= pen.y + font.fontHeight.pointsf() && pen.y <= align.rect.max.y;
+        
         if (align.IsAlignJustified()) lineWords.emplace_back(0, 0.0f); // add new beginning 'word'
 
         for (auto it = string.begin(); it != string.end(); ++it) { // loop each char in string (keep in mind not ranged for loop)
-            const char glyph = *it;
-            if (glyph == '\n') {
-                TriggerNewLine(); // new line
-                wouldClipTop    = pen.y + font.fontHeight.pointsf() > align.rect.max.y;
-                wouldClipBottom = pen.y < align.rect.min.y;
-                isVisible       = align.rect.min.y <= pen.y + font.fontHeight.pointsf() && pen.y <= align.rect.max.y;
-            }
-            if (glyph == ' ') { // space means new word
-                TriggerSpace();
-                continue;
-            }
-            if (glyph < 32 || glyph >= 127) continue; // bounds check for render-able characters
-            
-            if (align.IsCropY() && !isVisible) continue;
-
-            const Font::Glyph& rect = font.GetGlyphRect(glyph); // the information for glyphs
-            const float advance = align.GetAdvance(font, glyph, scaleRatio); // pre-check if word will overflow
-            if (align.IsLetterWrap() && lineWidth + advance > align.rect.width()) { // if too long then wrap this character
-                TriggerNewLine(); // new line for wrapping
-            }
-
-            const fvec2 rsize = rect.rect.size() * font.textureSize; // real-scale size of the quad
-            rect2f texture = rect.rect;
-            rect2f pos = rect.offset.as<float>().to(fvec2 { rsize.x, -rsize.y }.as_size()) * scaleRatio + pen;
-
-            if (align.IsCropY() && !align.IsVerticalJustified()) {
-                ClipY(pos, texture, wouldClipTop, wouldClipBottom);
-            }
-
-            PushCharQuad(pos, texture);
-            if (WordWrap(advance, it, string.begin())) continue;
-            
-            ++meshIndex; // meshIndex is not always index, could encounter \n
-            pen.x += advance; // move pen
-            lineWidth += advance; // incr line width
-            if (align.IsAlignJustified()) lineWords.back().width += advance; // the current word also has to be updated
+            AddChar(it, string.begin());
         }
         FixAlignX(); // dont forget to fix the last line
         FixAlignY();
         
-        return vertices;
+        return textVertices;
+    }
+
+    std::vector<Font::Vertex> TextRenderer::RenderRichText(const stdu::rich_string& string) {
+        using namespace Maths;
+        lineCount = string.lines(); //line count for vertical alignment
+        Prepare();
+        
+        if (align.IsAlignJustified()) lineWords.emplace_back(0, 0.0f); // add new beginning 'word'
+
+        std::vector<rangef> monos;
+        uint monoNum = 0;
+        const float monoPadding = fontSize.pointsf() * 0.33f;
+        auto it = string.begin();
+        for (; it != string.end(); ++it) { // loop each char in string (keep in mind not ranged for loop)
+            if (it.currentState.codeLang && monos.size() == monoNum) {
+                monos.emplace_back(pen.x, INFINITY);
+                pen.x += monoPadding;
+            } else if (!it.currentState.codeLang && monos.size() != monoNum) {
+                pen.x += monoPadding;
+                monos.back().max = pen.x;
+                ++monoNum;
+            }
+            if (*it.iter == '\n') {
+                if (it.currentState.codeLang) {
+                    pen.x += monoPadding;
+                    monos.back().max = pen.x;
+                }
+                const float restWidth = align.GetXOff(lineWidth - align.letterSpacing.pointsf());
+                for (const rangef monoSpan : monos) {
+                    const auto [_, ascend, descent] = font.GetDefaultMetric();
+                    AddRoundedRect(
+                        { monoSpan.min + restWidth, monoSpan.max + restWidth,
+                          pen.y + descent.pointsf() * scaleRatio, pen.y + ascend.pointsf() * scaleRatio },
+                        fontSize.pointsf() * 0.3f, "#27303d"
+                    );
+                }
+                monos.clear();
+                monoNum = 0;
+            }
+            AddRichChar(it);
+        }
+        FixAlignX(); // dont forget to fix the last line
+        FixAlignY();
+
+        if (!it.currentState.codeLang && monos.size() != monoNum) {
+            pen.x += monoPadding;
+            monos.back().max = pen.x;
+        }
+        const float restWidth = align.GetXOff(lineWidth - align.letterSpacing.pointsf());
+        for (const rangef monoSpan : monos) {
+            const auto [_, ascend, descent] = font.GetDefaultMetric();
+            AddRoundedRect(
+                { monoSpan.min + restWidth, monoSpan.max + restWidth,
+                  pen.y + descent.pointsf() * scaleRatio, pen.y + ascend.pointsf() * scaleRatio },
+                fontSize.pointsf() * 0.3f, "#27303d"
+            );
+        }
+        
+        return textVertices;
+    }
+
+    void TextRenderer::AddRoundedRect(const Maths::rect2f& region, float roundRadius, const Maths::colorf& color) {
+        using namespace Maths;
+        // rectangle
+        const fvec2 y = fvec2::unit_y(roundRadius);
+        constexpr int renderType = Vertex::RENDER_FILL;
+        const uint off = bgVertices.size();
+        bgVertices.push_back(Vertex { region.corner(0) + y, 0, color, renderType });
+        bgVertices.push_back(Vertex { region.corner(1) + y, 0, color, renderType });
+        bgVertices.push_back(Vertex { region.corner(2) - y, 0, color, renderType });
+        bgVertices.push_back(Vertex { region.corner(3) - y, 0, color, renderType });
+
+        const fvec2 x = fvec2::unit_x(roundRadius);
+        bgVertices.push_back(Vertex { region.corner(2) + x,     0, color, renderType });
+        bgVertices.push_back(Vertex { region.corner(2) + x - y, 0, color, renderType });
+        bgVertices.push_back(Vertex { region.corner(3) - x,     0, color, renderType });
+        bgVertices.push_back(Vertex { region.corner(3) - x - y, 0, color, renderType });
+
+        bgVertices.push_back(Vertex { region.corner(0) + x,     0, color, renderType });
+        bgVertices.push_back(Vertex { region.corner(0) + x + y, 0, color, renderType });
+        bgVertices.push_back(Vertex { region.corner(1) - x,     0, color, renderType });
+        bgVertices.push_back(Vertex { region.corner(1) - x + y, 0, color, renderType });
+
+        bgIndices.push_back(TriIndices { 0,  1,  2 } + off);
+        bgIndices.push_back(TriIndices { 1,  2,  3 } + off);
+        bgIndices.push_back(TriIndices { 4,  5,  6 } + off);
+        bgIndices.push_back(TriIndices { 5,  6,  7 } + off);
+        bgIndices.push_back(TriIndices { 8,  9, 10 } + off);
+        bgIndices.push_back(TriIndices { 9, 10, 11 } + off);
+
+        constexpr int cuts = 3, map = 0x00'01'03'02; // just flips 3 with 2
+        constexpr float angle = HALF_PI / (float)cuts;
+        uint ind = 12 + off;
+        for (int corner = 0; corner < 4; ++corner) {
+            fvec2 origin = region.inset(roundRadius).corner(corner);
+            bgVertices.push_back(Vertex { origin, 0, color, renderType });
+            for (int i = 0; i < cuts; ++i) {
+                bgVertices.push_back(Vertex { 
+                    fvec2::from_polar(roundRadius,
+                        angle * (float)i + HALF_PI * (float)(map >> corner * 8 & 255))
+                    + origin, 0, color, renderType });
+                bgIndices.emplace_back(ind, ind + 1 + i, ind + 2 + i );
+            }
+            bgVertices.push_back(Vertex { 
+                fvec2::from_polar(roundRadius,
+                    HALF_PI * (float)(1 + (map >> corner * 8 & 255)))
+                + origin, 0, color, renderType });
+            ind += cuts + 2;
+        }
     }
 }
