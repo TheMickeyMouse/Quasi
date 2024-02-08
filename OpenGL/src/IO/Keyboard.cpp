@@ -132,38 +132,38 @@
 */
 
 namespace IO {
-    OPENGL_API KeyboardT Keyboard { nullptr };
+    OPENGL_API KeyboardType Keyboard { nullptr };
     
-    GLFWwindow* KeyboardT::inputWindow() { return graphicsDevice->GetWindow(); }
-    const GLFWwindow* KeyboardT::inputWindow() const { return graphicsDevice->GetWindow(); }
+    GLFWwindow* KeyboardType::inputWindow() { return graphicsDevice->GetWindow(); }
+    const GLFWwindow* KeyboardType::inputWindow() const { return graphicsDevice->GetWindow(); }
     
-    KeyboardT::KeyboardT(Graphics::GraphicsDevice& gd) : graphicsDevice(gd) {
+    KeyboardType::KeyboardType(Graphics::GraphicsDevice& gd) : graphicsDevice(gd) {
         glfwSetKeyCallback(inputWindow(),
             // clever hack >:)
             [](auto... args) { Keyboard.OnGlfwKeyCallback(args...); } );
     }
 
-    void KeyboardT::Update() {
+    void KeyboardType::Update() {
         prevKeySet = currKeySet;
-        for (KeyIndex ki : unadded) setKeyStatusOf(currKeySet, ki & 127, ki & 128);
-        unadded.clear();
+        for (KeyIndex ki : queuedKeys) setKeyStatusOf(currKeySet, ki & 127, ki & 128);
+        queuedKeys.clear();
     }
 
-    bool KeyboardT::getKeyStatusOf(const Keyset& ks, KeyIndex ki)     { return ks[ki / 64ULL] & 1ULL << (ki & 63); }
-    void KeyboardT::setKeyStatusOf(Keyset& ks, KeyIndex ki, bool val) { ks[ki / 64ULL] = (ks[ki / 64ULL] & ~(1ULL << (ki & 63))) | (uint64)val << (ki & 63); }
+    bool KeyboardType::getKeyStatusOf(const Keyset& ks, KeyIndex ki)     { return ks[ki / 64ULL] & 1ULL << (ki & 63); }
+    void KeyboardType::setKeyStatusOf(Keyset& ks, KeyIndex ki, bool val) { ks[ki / 64ULL] = (ks[ki / 64ULL] & ~(1ULL << (ki & 63))) | (uint64)val << (ki & 63); }
 
-    void KeyboardT::OnGlfwKeyCallback(GLFWwindow* window, int key, int positionCode, int action, int modifierBits) {
+    void KeyboardType::OnGlfwKeyCallback(GLFWwindow* window, int key, int positionCode, int action, int modifierBits) {
         const bool isPress = action != GLFW_RELEASE;
-        unadded.push_back((uchar)((isPress << 7) | ToKeyIndex((Key)key)));
+        queuedKeys.push_back((uchar)((isPress << 7) | ToKeyIndex((Key)key)));
     }
 
-    bool KeyboardT::KeyPressed(Key key)   const { return getCurrKeyStatus(key); }
-    bool KeyboardT::KeyOnPress(Key key)   const { return !getPrevKeyStatus(key) && getCurrKeyStatus(key); }
-    bool KeyboardT::KeyOnRelease(Key key) const { return !getCurrKeyStatus(key) && getPrevKeyStatus(key); }
-    bool KeyboardT::AnyPressed()  const { return std::ranges::any_of (currKeySet, [](auto x){ return x != 0; }); }
-    bool KeyboardT::NonePressed() const { return std::ranges::none_of(currKeySet, [](auto x){ return x != 0; }); }
+    bool KeyboardType::KeyPressed(Key key)   const { return getCurrKeyStatus(key); }
+    bool KeyboardType::KeyOnPress(Key key)   const { return !getPrevKeyStatus(key) && getCurrKeyStatus(key); }
+    bool KeyboardType::KeyOnRelease(Key key) const { return !getCurrKeyStatus(key) && getPrevKeyStatus(key); }
+    bool KeyboardType::AnyPressed()  const { return std::ranges::any_of (currKeySet, [](auto x){ return x != 0; }); }
+    bool KeyboardType::NonePressed() const { return std::ranges::none_of(currKeySet, [](auto x){ return x != 0; }); }
     
-    std::vector<Key> KeyboardT::KeysPressed() const {
+    std::vector<Key> KeyboardType::KeysPressed() const {
         std::vector<Key> keys = {};
         uchar chunki = 0;
         for (const auto chunk64 : currKeySet) {
@@ -175,14 +175,14 @@ namespace IO {
         return keys;
     }
 
-    bool KeyboardT::IsValidKey(Key key) {
+    bool KeyboardType::IsValidKey(Key key) {
         return ToKeyIndex(key) != 255;
         // idk man prob not the best but whatev
     }
 
     // this is the worst code ive ever written
     // but i dont see any other option
-    KeyIndex KeyboardT::ToKeyIndex(Key key) {
+    KeyIndex KeyboardType::ToKeyIndex(Key key) {
         using enum Key;
         int offset = 0;
 #define RANGE_MATCH(S, E) if ((S) <= key && key <= (E)) return (int)(key - (S)) + offset; offset += (int)(((E) - (S)) + 1)
@@ -217,7 +217,7 @@ namespace IO {
     }
 #undef RANGE_MATCH
 
-    Key KeyboardT::FromKeyIndex(KeyIndex ki) {
+    Key KeyboardType::FromKeyIndex(KeyIndex ki) {
         using enum Key;
 
 #define RANGE_MATCH(S, E) if (ToKeyIndex((S)) <= ki && ki <= ToKeyIndex((E))) return ki - ToKeyIndex((S)) + (S)
@@ -253,7 +253,7 @@ namespace IO {
     }
 #undef RANGE_MATCH
 
-    Key KeyboardT::FromModBits(ModifierKey mod) {
+    Key KeyboardType::FromModBits(ModifierKey mod) {
 #define MOD_KEY_CASE(M) case ModifierKey::M: return Key::L##M
         switch (mod) {
             MOD_KEY_CASE(SHIFT);
@@ -267,11 +267,11 @@ namespace IO {
 #undef MOD_KEY_CASE
     }
 
-    KeyIndex KeyboardT::IndexFromModBits(ModifierKey mod) {
+    KeyIndex KeyboardType::IndexFromModBits(ModifierKey mod) {
         return ToKeyIndex(FromModBits(mod));
     }
     
-    const char* KeyboardT::KeyToStr(Key key) {
+    const char* KeyboardType::KeyToStr(Key key) {
 #define BASIC_KEY_CASE(K) case Key::K: return #K
 #define PS_KEY_CASE(PK, PN, K) case Key::PK##K: return #PN#K
 #define SPECIAL_KEY_CASE(K, N) case Key::K: return N

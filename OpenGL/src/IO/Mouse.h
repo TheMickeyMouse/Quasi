@@ -11,11 +11,11 @@ namespace Graphics {
 }
 
 namespace IO {
-    struct MouseT;
-    OPENGL_API extern MouseT Mouse;
+    struct MouseType;
+    OPENGL_API extern MouseType Mouse;
     
     // TODO: USE INTERFERE INSTEAD OF POLLING WITH GLFWMOSUECALLBACK
-    struct MouseT {
+    struct MouseType {
         static constexpr int LEFT_MOUSE   = 0;
         static constexpr int RIGHT_MOUSE  = 1;
         static constexpr int MIDDLE_MOUSE = 2;
@@ -26,8 +26,8 @@ namespace IO {
 
         stdu::ref<Graphics::GraphicsDevice> graphicsDevice;
 
-        OPENGL_API explicit MouseT(Graphics::GraphicsDevice& gd);
-        explicit MouseT(std::nullptr_t) {}
+        OPENGL_API explicit MouseType(Graphics::GraphicsDevice& gd);
+        explicit MouseType(std::nullptr_t) {}
 
         OPENGL_API void Update();
 

@@ -181,6 +181,7 @@ namespace Graphics {
     namespace MeshUtils {
         using Vec3 = const Maths::fvec3&;
         OPENGL_API Mesh<VertexColor3D> CubeMesh(Vec3 origin, float x, float y, float z);
+        OPENGL_API Mesh<Maths::fvec2> CircleMesh(float radius, int subdivisions);
         // TODO: MeshObject CubeMesh(Vec3 origin, Vec3 x, Vec3 y, Vec3 z);
     }
 }

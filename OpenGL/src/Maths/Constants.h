@@ -1,4 +1,6 @@
 #pragma once
+#include <limits>
+
 #include "NumTypes.h"
 
 namespace Maths {

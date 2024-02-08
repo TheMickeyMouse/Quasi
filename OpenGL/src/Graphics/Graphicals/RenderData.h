@@ -79,7 +79,7 @@ namespace Graphics {
 		OPENGL_API void Render();
 		template <class T> void AddNewMeshes(const Mesh<T>* meshes, uint count);
 		template <class T> void AddNewMeshes(const T& arr) { AddNewMeshes(arr.begin(), (uint)arr.size()); }
-		template <class T> void AddBoundMeshes() { AddNewMeshes(&meshes.begin()->As<T>(), meshes.size()); }
+		template <class T> void AddBoundMeshes() { for (GenericMesh& m : meshes) m.As<T>().AddTo(vbo, ibo); }
 		template <class T> void ResetData(bool shallowClear = true) { ClearData(shallowClear); AddBoundMeshes<T>(); }
 		OPENGL_API void UnbindMesh(int index);
 		OPENGL_API void UnbindMeshes(int indexStart, int indexEnd);

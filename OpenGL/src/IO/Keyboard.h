@@ -97,13 +97,12 @@ namespace IO {
 
     using KeyIndex = uchar;
 
-    struct KeyboardT;
-    OPENGL_API extern KeyboardT Keyboard;
+    struct KeyboardType;
+    OPENGL_API extern KeyboardType Keyboard;
 
-
-    struct KeyboardT {
-        OPENGL_API explicit KeyboardT(Graphics::GraphicsDevice& gd);
-        explicit KeyboardT(std::nullptr_t) {}
+    struct KeyboardType {
+        OPENGL_API explicit KeyboardType(Graphics::GraphicsDevice& gd);
+        explicit KeyboardType(std::nullptr_t) {}
 
         OPENGL_API static bool IsValidKey(Key key);
         // ordering: alphabet chars -> nums -> punc -> keypad -> func -> util -> other
@@ -134,7 +133,7 @@ namespace IO {
         using Keyset = std::array<uint64, KEYSET_SIZE>;
         Keyset currKeySet = {};
         Keyset prevKeySet = {};
-        std::vector<KeyIndex> unadded = {};
+        std::vector<KeyIndex> queuedKeys = {};
 
         OPENGL_API GLFWwindow* inputWindow();
         OPENGL_API [[nodiscard]] const GLFWwindow* inputWindow() const;

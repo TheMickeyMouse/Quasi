@@ -13,6 +13,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "..\..\IO\Time.h"
 
 namespace Graphics {
     GraphicsDevice::GraphicsDevice(GLFWwindow* window, Maths::ivec2 winSize) : 
@@ -134,7 +135,7 @@ namespace Graphics {
 
         if (!enabled) goto skipDebugs; // i know goto is not great but its more readable imo  // NOLINT(cppcoreguidelines-avoid-goto, hicpp-avoid-goto)
         
-        ImGui::Text("Application Averages %fms/frame (~%f FPS)", 1000.0 / (double)ImGui::GetIO().Framerate, (double)ImGui::GetIO().Framerate);
+        ImGui::Text("Application Averages %fms/frame (~%f FPS)", 1000.0 * IO::Time.deltaTime, IO::Time.Framerate());
         if (ImGui::Button(useWireRender ? "Draw Fill" : "Draw Wireframe")) { useWireRender = !useWireRender; }
 
         if (ImGui::CollapsingHeader("Mouse Input")) {
@@ -153,23 +154,23 @@ namespace Graphics {
 
             if (ImGui::TreeNode("Advanced")) {
                 ImGui::Text("Pressed: ");
-                for (int i = 0; i < IO::MouseT::LAST_MOUSE; ++i) {
+                for (int i = 0; i < IO::MouseType::LAST_MOUSE; ++i) {
                     if (!IO::Mouse.ButtonPressed(i)) continue;
-                    ImGui::Text("   %s", IO::MouseT::MouseButtonToStr(i));
+                    ImGui::Text("   %s", IO::MouseType::MouseButtonToStr(i));
                 }
 
                 ImGui::TextDisabled("// The following below actually works, you just can't see it.");
 
                 ImGui::Text("On Pressed: ");
-                for (int i = 0; i < IO::MouseT::LAST_MOUSE; ++i) {
+                for (int i = 0; i < IO::MouseType::LAST_MOUSE; ++i) {
                     if (!IO::Mouse.ButtonOnPress(i)) continue;
-                    ImGui::Text("   %s", IO::MouseT::MouseButtonToStr(i));
+                    ImGui::Text("   %s", IO::MouseType::MouseButtonToStr(i));
                 }
 
                 ImGui::Text("On Release: ");
-                for (int i = 0; i < IO::MouseT::LAST_MOUSE; ++i) {
+                for (int i = 0; i < IO::MouseType::LAST_MOUSE; ++i) {
                     if (!IO::Mouse.ButtonOnRelease(i)) continue;
-                    ImGui::Text("   %s", IO::MouseT::MouseButtonToStr(i));
+                    ImGui::Text("   %s", IO::MouseType::MouseButtonToStr(i));
                 }
                 
                 ImGui::TreePop();
@@ -180,7 +181,7 @@ namespace Graphics {
             ImGui::Text("Keys Pressed Are:");
 
             for (const auto key : IO::Keyboard.KeysPressed()) {
-                ImGui::Text("   %s", IO::KeyboardT::KeyToStr(key));
+                ImGui::Text("   %s", IO::KeyboardType::KeyToStr(key));
             }
         }
 

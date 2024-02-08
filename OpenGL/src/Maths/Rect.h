@@ -126,6 +126,8 @@ namespace Maths {
         rect extrude(T radius)          const { return { min - radius, max + radius }; }
         rect extrude(const vec& radius) const { return { min - radius, max + radius }; }
 
+        bool overlaps(const rect& other) const { return (min < other.max) && (max > other.min); }
+
         rect_iter<rect> begin() const;
         rect_iter<rect> end() const;
     };

@@ -1,5 +1,7 @@
 ﻿#include "Mesh.h"
 
+#include "Constants.h"
+
 namespace Graphics::MeshUtils {
     Mesh<VertexColor3D> CubeMesh(Vec3 origin, float x, float y, float z) {
         float hx = x / 2;
@@ -33,5 +35,21 @@ namespace Graphics::MeshUtils {
                   { 3, 5, 7 } }
             )
         );
+    }
+
+    Mesh<Maths::fvec2> CircleMesh(float radius, int subdivisions) {
+        const float angle = Maths::TAU / (float)subdivisions;
+        std::vector<Maths::fvec2> vert;
+        std::vector<TriIndices> ind;
+        vert.reserve(subdivisions + 1);
+        ind.reserve(subdivisions);
+
+        vert.emplace_back(0, 0);
+        for (int i = 0; i < subdivisions; ++i) {
+            vert.push_back(Maths::fvec2::from_polar(radius, angle * (float)i));
+            ind.emplace_back(0, i + 1, (i + 1) % subdivisions + 1);
+        }
+
+        return { std::move(vert), std::move(ind) };
     }
 }

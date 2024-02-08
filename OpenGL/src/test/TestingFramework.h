@@ -12,6 +12,8 @@
 #include "TestCubeRender.h"
 #include "TestFontRender.h"
 
+#include "DemoFlappyBird.h"
+
 namespace Test {
     class TestManager : public Test {
     private:
@@ -38,6 +40,7 @@ namespace Test {
             menu->RegisterTest<TestDynamicTris>          ("Dynamic Tris Test           ");
             menu->RegisterTest<TestCubeRender>           ("Cube 3D Rendering Test      ");
             menu->RegisterTest<TestFontRender>           ("Font Rendering Test         ");
+            menu->RegisterTest<DemoFlappyBird>           ("Flappy Bird Demo            ");
         }
     }
 

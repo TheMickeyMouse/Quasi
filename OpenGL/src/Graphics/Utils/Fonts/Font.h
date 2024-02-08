@@ -8,6 +8,9 @@
 #include "Texture.h"
 #include "Vector.h"
 
+#define GL_USER_FONTS R"(C:\Users\User\AppData\Local\Microsoft\Windows\Fonts\)"
+#define GL_WIN_FONTS R"(C:\Windows\Fonts\)"
+
 namespace stdu {
     struct rich_string;
 }

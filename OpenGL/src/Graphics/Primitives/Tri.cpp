@@ -1,6 +1,10 @@
 #include "Tri.h"
 
 namespace Graphics::Primitives {
+    Tri Tri::FromGeometry(Maths::Geometry::ftriangle3d geom) {
+        return { geom.p1, geom.p2, geom.p3 };
+    }
+
     std::array<Maths::fvec3, 3> Tri::GetVertices() const {
         return std::array { a, b, c };
     }

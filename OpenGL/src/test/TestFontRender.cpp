@@ -55,18 +55,14 @@ namespace Test {
         );
         render.SetProjection(projection);
 
-#define USER_FONTS R"(C:\Users\User\AppData\Local\Microsoft\Windows\Fonts\)"
-#define WIN_FONTS R"(C:\Windows\Fonts\)"
-        font = Graphics::Font::LoadFile(WIN_FONTS "arial.ttf");
-        font.AddDefaultFontStyle(WIN_FONTS "arialbd.ttf", Graphics::FontStyle::BOLD);
-        font.AddDefaultFontStyle(WIN_FONTS "ariali.ttf",  Graphics::FontStyle::ITALIC);
-        font.AddDefaultFontStyle(WIN_FONTS "arialbi.ttf", Graphics::FontStyle::BOLD_ITALIC);
-        font.AddMonoFontStyle(USER_FONTS "JetBrainsMono-Medium.ttf");
-        font.AddMonoFontStyle(USER_FONTS "JetBrainsMono-Bold.ttf",       Graphics::FontStyle::BOLD);
-        font.AddMonoFontStyle(USER_FONTS "JetBrainsMono-Italic.ttf",     Graphics::FontStyle::ITALIC);
-        font.AddMonoFontStyle(USER_FONTS "JetBrainsMono-BoldItalic.ttf", Graphics::FontStyle::BOLD_ITALIC);
-#undef USERFONTS
-#undef WINFONTS
+        font = Graphics::Font::LoadFile(GL_WIN_FONTS "arial.ttf");
+        font.AddDefaultFontStyle(GL_WIN_FONTS "arialbd.ttf", Graphics::FontStyle::BOLD);
+        font.AddDefaultFontStyle(GL_WIN_FONTS "ariali.ttf",  Graphics::FontStyle::ITALIC);
+        font.AddDefaultFontStyle(GL_WIN_FONTS "arialbi.ttf", Graphics::FontStyle::BOLD_ITALIC);
+        font.AddMonoFontStyle(GL_USER_FONTS "JetBrainsMono-Medium.ttf");
+        font.AddMonoFontStyle(GL_USER_FONTS "JetBrainsMono-Bold.ttf",       Graphics::FontStyle::BOLD);
+        font.AddMonoFontStyle(GL_USER_FONTS "JetBrainsMono-Italic.ttf",     Graphics::FontStyle::ITALIC);
+        font.AddMonoFontStyle(GL_USER_FONTS "JetBrainsMono-BoldItalic.ttf", Graphics::FontStyle::BOLD_ITALIC);
 
         font.SetSize(48);
         font.RenderBitmap();
@@ -74,7 +70,7 @@ namespace Test {
 
 
         const Maths::fvec2 size = font.GetTexture().GetSize();
-        float x = size.x / size.y;
+        const float x = size.x / size.y;
         Vertex atlVertices[] = { 
             { { -100.0f * x, -100.0f, 0 }, 1, { 0.0f, 1.0f }, 1 },
             { { +100.0f * x, -100.0f, 0 }, 1, { 1.0f, 1.0f }, 1 },

@@ -34,6 +34,7 @@ namespace Graphics {
         PointPer64(int points, int /* very nice hack to have 2 constructors */) : pp64(points) {}
     public:
         PointPer64(int points) : pp64(points * 64) {}
+        PointPer64(float points) : pp64((int)(points * 64.0f)) {}
         static PointPer64 inP64(int pointsPer64) { return { pointsPer64, 0 }; }
         operator int() const { return pp64; }
         int points() const { return pp64 >> 6; }
@@ -47,5 +48,13 @@ namespace Graphics {
     
     inline PointPer64 operator ""_p64(uint64 p64) {
         return PointPer64::inP64((int)p64);
+    }
+
+    inline PointPer64 operator ""_points(uint64 points) {
+        return { (int)points };
+    }
+
+    inline PointPer64 operator ""_points(quadf points) {
+        return { (float)points };
     }
 }

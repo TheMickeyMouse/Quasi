@@ -52,8 +52,9 @@ namespace Graphics {
         [[nodiscard]] const RenderData& GetRenderData() const { return *rd; }
 
 		void ClearData(bool shallowClear = true) { rd->ClearData(shallowClear); }
-        
+
 		void BindMeshes(Mesh<T>* meshes, uint count) { rd->BindMeshes<T>(meshes, count); }
+        void BindMeshes(std::initializer_list<Mesh<T>*> meshes) { for (auto* m : meshes) BindMeshes(m, 1); }
 		template <class U> void BindMeshes(U& ms) { BindMeshes(ms.begin(), (uint)ms.size()); }
         
 		void Render() { rd->Render(); }

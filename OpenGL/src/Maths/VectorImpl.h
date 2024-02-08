@@ -60,6 +60,8 @@ namespace Maths {
     VEC2_IMPL(vec2<T>,  reflected_uc)(const vec2& normal) const F_ONLY { return *this - 2 * dot(normal) * normal; } /* this assumes normal is normalized */
     VEC2_IMPL(vec2<T>&, reflect_uc  )(const vec2& normal)       F_ONLY { return *this = reflected_uc(normal); } /* this assumes normal is normalized */
 
+    VEC2_IMPL(vec2<T>,  project)(const vec2& axis) const F_ONLY { return axis * (dot(axis) / axis.lensq()); }
+
     VEC2_IMPL(vec3<T>, with_z)(T z) const { return { x, y, z }; }
     
     VEC2_IMPL(_rect_origin_inbetween_<vec2<T>>, as_origin)() const { return { *this }; }
@@ -298,3 +300,56 @@ namespace Maths {
 #undef ARITH
 #undef ARITH_T
 }
+
+#pragma region Structured Bindings
+#define IMPL_SB_VEC_T(V) \
+    template <class T> struct tuple_size<Maths::V<T>> : integral_constant<size_t, Maths::V<T>::dimension> {}; \
+    template <size_t I, class T> struct tuple_element<I, Maths::V<T>> { \
+        using type = T; \
+        static_assert(I < Maths::V<T>::dimension, "structured bindings out of bounds for " #V); }; \
+    template <size_t I, class T> T   get(const Maths::V<T>& v) { return Maths::vec_get_i<I, Maths::V<T>>(v); } \
+    template <size_t I, class T> T&  get(Maths::V<T>& v)  { return Maths::vec_get_i<I, Maths::V<T>>(v); } \
+    template <size_t I, class T> T&& get(Maths::V<T>&& v) { return Maths::vec_get_i<I, Maths::V<T>>(std::move(v)); } \
+
+#define IMPL_SB_VEC(V) \
+    template <> struct tuple_size<Maths::V> : integral_constant<size_t, Maths::V::dimension> {}; \
+    template <size_t I> struct tuple_element<I, Maths::V> { \
+        using type = typename Maths::V::scalar; \
+        static_assert(I < Maths::V::dimension, "structured bindings out of bounds for " #V); }; \
+    template <size_t I> typename Maths::V::scalar   get(const Maths::V& v) { return Maths::vec_get_i<I, Maths::V>(v); } \
+    template <size_t I> typename Maths::V::scalar&  get(Maths::V& v)  { return Maths::vec_get_i<I, Maths::V>(v); } \
+    template <size_t I> typename Maths::V::scalar&& get(Maths::V&& v) { return Maths::vec_get_i<I, Maths::V>(std::move(v)); } \
+
+namespace Maths {
+    template<std::size_t I, class T>
+    typename T::scalar vec_get_i(const T& v) {
+        static_assert(I < T::dimension, "structured bindings out of bounds");
+        return v.scalars[I];
+    }
+
+    template<std::size_t I, class T>
+    typename T::scalar& vec_get_i(T& v) {
+        static_assert(I < T::dimension, "structured bindings out of bounds");
+        return v.scalars[I];
+    }
+
+    template<std::size_t I, class T>
+    typename T::scalar&& vec_get_i(T&& v) {
+        static_assert(I < T::dimension, "structured bindings out of bounds");
+        return std::move(v.scalars[I]);
+    }
+}
+
+namespace std {
+    IMPL_SB_VEC_T(vec2)
+    IMPL_SB_VEC_T(vec3)
+    IMPL_SB_VEC_T(vec4)
+    IMPL_SB_VEC(color3)
+    IMPL_SB_VEC(color3f)
+    IMPL_SB_VEC(color)
+    IMPL_SB_VEC(colorf)
+}
+
+#undef IMPL_SB_VEC_T
+#undef IMPL_SB_VEC
+#pragma endregion

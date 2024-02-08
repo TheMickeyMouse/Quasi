@@ -11,7 +11,7 @@
 
 int main() {
     {
-        Graphics::GraphicsDevice GraphicsDevice = Graphics::GraphicsDevice::Initialize();
+        Graphics::GraphicsDevice GraphicsDevice = Graphics::GraphicsDevice::Initialize({ 1200, 900 });
         Test::TestManager testm;
 
         testm.OnInit(GraphicsDevice);

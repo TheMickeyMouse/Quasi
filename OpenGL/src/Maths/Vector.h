@@ -177,11 +177,15 @@ namespace Maths {
         using scalar = SCALAR; \
         static constexpr int dimension = 2; \
         \
-        SCALAR _X, _Y; \
+        union { \
+            SCALAR scalars[dimension]; \
+            struct { SCALAR _X, _Y; }; \
+        }; \
+        \
         STDU_IF(CEXPR, constexpr) NAME (SCALAR s = 0) : _X(s), _Y(s) {} \
         STDU_IF(CEXPR, constexpr) NAME (SCALAR _X, SCALAR _Y) : _X(_X), _Y(_Y) {} \
         \
-        STDU_IF(CEXPR, constexpr) SCALAR operator[] (uint i) const { return ((const SCALAR*)this)[i]; } /* NOLINT(bugprone-macro-parentheses) */ \
+        STDU_IF(CEXPR, constexpr) SCALAR operator[] (uint i) const { return scalars[i]; } /* NOLINT(bugprone-macro-parentheses) */ \
         \
         STDU_IF(DEF_OP, \
         VEC_OP(vec2, add, +); \
@@ -224,11 +228,11 @@ namespace Maths {
         STDU_IF(VECTOR_SWIZZLING, \
         static constexpr vector_swizzle_data<2> params = #_X#_Y; \
         template <swizzle<2, params> S> \
-        typename vecn<S.N, SCALAR>::type get() { return swizzle_impl<SCALAR, 2, params, S>((SCALAR*)this); } \
+        typename vecn<S.N, SCALAR>::type swizzle() { return swizzle_impl<SCALAR, 2, params, S>(scalars); } \
         ) \
         \
-        SCALAR* begin() { return &_X; } \
-        const SCALAR* begin() const { return &_X; } \
+        SCALAR* begin() { return scalars; } \
+        const SCALAR* begin() const { return scalars; } \
         SCALAR* end() { return begin() + 2; } \
         const SCALAR* end() const { return begin() + 2; } \
         \
@@ -257,11 +261,14 @@ namespace Maths {
         using scalar = SCALAR; \
         static constexpr int dimension = 3; \
         \
-        SCALAR _X, _Y, _Z; \
+        union { \
+            SCALAR scalars[dimension]; \
+            struct { SCALAR _X, _Y, _Z; }; \
+        }; \
         STDU_IF(CEXPR, constexpr) NAME (SCALAR s = 0) : _X(s), _Y(s), _Z(s) {} \
         STDU_IF(CEXPR, constexpr) NAME (SCALAR _X, SCALAR _Y, SCALAR _Z) : _X(_X), _Y(_Y), _Z(_Z) {} \
         \
-        STDU_IF(CEXPR, constexpr) SCALAR operator[] (uint i) const { return ((const SCALAR*)this)[i]; } /* NOLINT(bugprone-macro-parentheses) */ \
+        STDU_IF(CEXPR, constexpr) SCALAR operator[] (uint i) const { return scalars[i]; } /* NOLINT(bugprone-macro-parentheses) */ \
         \
         STDU_IF(DEF_OP, \
         VEC_OP(vec3, add, +); \
@@ -304,11 +311,11 @@ namespace Maths {
         STDU_IF(VECTOR_SWIZZLING, \
         static constexpr vector_swizzle_data<3> params = #_X#_Y#_Z; \
         template <swizzle<3, params> S> \
-        STDU_IF(CEXPR, constexpr) typename vecn<S.N, SCALAR>::type get() { return swizzle_impl<SCALAR, 3, params, S>((SCALAR*)this); } \
+        STDU_IF(CEXPR, constexpr) typename vecn<S.N, SCALAR>::type swizzle() { return swizzle_impl<SCALAR, 3, params, S>(scalars); } \
         ) \
         \
-        SCALAR* begin() { return &_X; } \
-        const SCALAR* begin() const { return &_X; } \
+        SCALAR* begin() { return scalars; } \
+        const SCALAR* begin() const { return scalars; } \
         SCALAR* end() { return begin() + 3; } \
         const SCALAR* end() const { return begin() + 3; } \
         \
@@ -337,12 +344,15 @@ namespace Maths {
         using scalar = SCALAR; \
         static constexpr int dimension = 4; \
         \
-        SCALAR _X, _Y, _Z, _W; \
+        union { \
+        SCALAR scalars[dimension]; \
+        struct { SCALAR _X, _Y, _Z, _W; }; \
+        }; \
         STDU_IF(CEXPR, constexpr) NAME () : _X(0), _Y(0), _Z(0), _W(0) {} \
         STDU_IF(CEXPR, constexpr) NAME (SCALAR s, SCALAR _W = DEF_W_VAL) : _X(s), _Y(s), _Z(s), _W(_W) {} \
         STDU_IF(CEXPR, constexpr) NAME (SCALAR _X, SCALAR _Y, SCALAR _Z, SCALAR _W = DEF_W_VAL) : _X(_X), _Y(_Y), _Z(_Z), _W(_W) {} \
         \
-        STDU_IF(CEXPR, constexpr) SCALAR operator[] (uint i) const { return ((const SCALAR*)this)[i]; } /* NOLINT(bugprone-macro-parentheses) */ \
+        STDU_IF(CEXPR, constexpr) SCALAR operator[] (uint i) const { return scalars[i]; } /* NOLINT(bugprone-macro-parentheses) */ \
         \
         STDU_IF(DEF_OP, \
         VEC_OP(vec4, add, +); \
@@ -385,11 +395,11 @@ namespace Maths {
         STDU_IF(VECTOR_SWIZZLING, \
         static constexpr vector_swizzle_data<4> params = #_X#_Y#_Z#_W; \
         template <swizzle<4, params> S> \
-        STDU_IF(CEXPR, constexpr) typename vecn<S.N, SCALAR>::type get() { return swizzle_impl<SCALAR, 4, params, S>((SCALAR*)this); } \
+        STDU_IF(CEXPR, constexpr) typename vecn<S.N, SCALAR>::type swizzle() { return swizzle_impl<SCALAR, 4, params, S>(scalars); } \
         ) \
         \
-        SCALAR* begin() { return &_X; } \
-        const SCALAR* begin() const { return &_X; } \
+        SCALAR* begin() { return scalars; } \
+        const SCALAR* begin() const { return scalars; } \
         SCALAR* end() { return begin() + 4; } \
         const SCALAR* end() const { return begin() + 4; } \
         \
@@ -498,6 +508,8 @@ namespace Maths {
         vec2  reflected_uc(const vec2& normal) const F_ONLY; \
         vec2& reflect_uc(const vec2& normal) F_ONLY; \
         \
+        vec2 project(const vec2& axis) const F_ONLY; \
+        \
         vec3<T> with_z(T z) const; \
         \
         static vec2 unit_x(T x) { return { x, 0 }; } \
@@ -515,7 +527,7 @@ namespace Maths {
         template <vec_t V> requires (V::dimension == dimension) \
         operator V() const { return { (SCALAR_T(V))x, (SCALAR_T(V))y, (SCALAR_T(V))z }; } \
         template <class U> operator vec2<U>() const { return { (U)x, (U)y }; } \
-        template <class U> operator vec4<U>() const { return { (U)x, (U)y, (U)z, 0 }; } \
+        template <class U> operator vec4<U>() const { return { (U)x, (U)y, (U)z, 1 }; } \
         template <class U> vec3<U> as() const { return vec3<U>(*this); } \
         \
         static constexpr vec3           RIGHT() { return {  1,  0,  0 }; }
