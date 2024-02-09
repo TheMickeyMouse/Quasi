@@ -1,25 +1,21 @@
 #pragma once
+#include "GLObject.h"
 #include "NumTypes.h"
 #include "opengl.h"
 #include "Texture.h"
 
 namespace Graphics {
-    class RenderBuffer {
-    private:
-        glID rendererID = GL_NULL;
+    struct RenderBufferHandler : GLObjectHandler<RenderBufferHandler> {
+        OPENGL_API glID Create() const;
+        OPENGL_API void Destroy(glID id) const;
+        OPENGL_API void Bind(glID id) const;
+        OPENGL_API void Unbind() const;
+    };
+
+    class RenderBuffer : public GLObject<RenderBufferHandler> {
     public:
         RenderBuffer() = default;
         OPENGL_API RenderBuffer(TextureInternalFormat format, Maths::ivec2 size);
-        OPENGL_API ~RenderBuffer();
-
-        RenderBuffer(const RenderBuffer&) = delete;
-        RenderBuffer& operator=(const RenderBuffer&) = delete;
-        OPENGL_API static void Transfer(RenderBuffer& dest, RenderBuffer&& from);
-        RenderBuffer(RenderBuffer&& rbo) noexcept { Transfer(*this, std::move(rbo)); }
-        RenderBuffer& operator=(RenderBuffer&& fbo) noexcept { Transfer(*this, std::move(fbo)); return *this; }
-
-        OPENGL_API void Bind() const;
-        OPENGL_API void Unbind() const;
 
         friend class FrameBuffer;
     };

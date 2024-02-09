@@ -1,6 +1,6 @@
 #pragma once
-#include <algorithm>
 
+#include "GLObject.h"
 #include "NumTypes.h"
 #include "opengl.h"
 
@@ -30,22 +30,17 @@ namespace Graphics {
         DEPTH_STENCIL = 0x821A,
     };
 
-    class FrameBuffer {
-    private:
-        glID rendererID = GL_NULL;
+    struct FrameBufferHandler : GLObjectHandler<FrameBufferHandler> {
+        OPENGL_API glID Create() const;
+        OPENGL_API void Destroy(glID id) const;
+        OPENGL_API void Bind(glID id) const;
+        OPENGL_API void Unbind() const;
+    };
+
+    class FrameBuffer : public GLObject<FrameBufferHandler> {
     public:
         FrameBuffer() = default;
-        OPENGL_API FrameBuffer(int);
-        OPENGL_API ~FrameBuffer();
-
-        FrameBuffer(const FrameBuffer&) = delete;
-        FrameBuffer& operator=(const FrameBuffer&) = delete;
-        OPENGL_API static void Transfer(FrameBuffer& dest, FrameBuffer&& from);
-        FrameBuffer(FrameBuffer&& fbo) noexcept { Transfer(*this, std::move(fbo)); }
-        FrameBuffer& operator=(FrameBuffer&& fbo) noexcept { Transfer(*this, std::move(fbo)); return *this; }
-
-        OPENGL_API void Bind() const;
-        OPENGL_API void Unbind() const;
+        FrameBuffer(stdu::empty) : GLObject({}) {}
 
         OPENGL_API void Attach(const Texture& tex) const;
         OPENGL_API void Attach(const RenderBuffer& rbo, AttachmentType type) const;

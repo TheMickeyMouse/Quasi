@@ -11,7 +11,7 @@ namespace Graphics {
 	class RenderObject;
     
 	class RenderData {
-		VertexArray varray;
+		VertexArray varray { {} };
 		DynamicVertexBuffer vbo;
 		DynamicIndexBuffer ibo;
 

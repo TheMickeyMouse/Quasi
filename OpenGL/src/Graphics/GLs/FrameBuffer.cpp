@@ -5,25 +5,21 @@
 #include "RenderBuffer.h"
 
 namespace Graphics {
-    FrameBuffer::FrameBuffer(int) {
-        GLCALL(glGenFramebuffers(1, &rendererID));
+    glID FrameBufferHandler::Create() const {
+        glID id;
+        GLCALL(glGenFramebuffers(1, &id));
+        return id;
     }
 
-    FrameBuffer::~FrameBuffer() {
-        GLCALL(glDeleteFramebuffers(1, &rendererID));
-        rendererID = GL_NULL;
+    void FrameBufferHandler::Destroy(glID id) const {
+        GLCALL(glDeleteFramebuffers(1, &id));
     }
 
-    void FrameBuffer::Transfer(FrameBuffer& dest, FrameBuffer&& from) {
-        dest.rendererID = from.rendererID;
-        from.rendererID = GL_NULL;
+    void FrameBufferHandler::Bind(glID id) const {
+        GLCALL(glBindFramebuffer(GL_FRAMEBUFFER, id));
     }
 
-    void FrameBuffer::Bind() const {
-        GLCALL(glBindFramebuffer(GL_FRAMEBUFFER, rendererID));
-    }
-
-    void FrameBuffer::Unbind() const {
+    void FrameBufferHandler::Unbind() const {
         GLCALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
     }
 

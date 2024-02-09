@@ -64,7 +64,7 @@ namespace Maths {
     CONSTANT uint64 MAX_U64 = NUM_LIMITS(uint64, max);
 
     inline float operator ""_deg(quadf deg) {
-        return (float)(deg * 180.0 / PI128);
+        return (float)(deg / 180.0 * PI128);
     }
 #undef MATH_CONSTANT
 #undef CONSTANT

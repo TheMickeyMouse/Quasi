@@ -39,38 +39,38 @@ namespace Graphics {
     };
     
     class VertexBufferLayout {
-        private:
-            std::vector<VertexBufferComponent> _components;
-            uint stride = 0;
-        public:
-            OPENGL_API VertexBufferLayout() = default;
-            OPENGL_API VertexBufferLayout(std::initializer_list<VertexBufferComponent> comps);
+    private:
+        std::vector<VertexBufferComponent> _components;
+        uint stride = 0;
+    public:
+        OPENGL_API VertexBufferLayout() = default;
+        OPENGL_API VertexBufferLayout(std::initializer_list<VertexBufferComponent> comps);
 
-            template <class T> void Push(uint count, bool normalized = false);
-            OPENGL_API void Push(VertexBufferComponent comp);
-            OPENGL_API void PushLayout(const VertexBufferLayout& layout);
+        template <class T> void Push(uint count, bool normalized = false);
+        OPENGL_API void Push(VertexBufferComponent comp);
+        OPENGL_API void PushLayout(const VertexBufferLayout& layout);
 
-            OPENGL_API VertexBufferLayout& Join(VertexBufferComponent comp);
+        OPENGL_API VertexBufferLayout& Join(VertexBufferComponent comp);
 
 #define VBE VertexBufferComponent::
         
-            void PushFloat()      { Push(VBE Float());  }
-            void PushDouble()     { Push(VBE Double()); }
-            void PushInt()        { Push(VBE Int());    }
-            void PushUInt()       { Push(VBE Uint());   }
-            void PushChar()       { Push(VBE SByte());  }
-            void PushByte()       { Push(VBE Byte());   }
-            void PushVector2()    { Push(VBE Vec2());   }
-            void PushVector3()    { Push(VBE Vec3());   }
-            void PushVector4()    { Push(VBE Vec4());   }
-            void PushVector2Int() { Push(VBE IVec2());  }
-            void PushVector3Int() { Push(VBE IVec3());  }
-            void PushVector4Int() { Push(VBE IVec4());  }
+        void PushFloat()      { Push(VBE Float());  }
+        void PushDouble()     { Push(VBE Double()); }
+        void PushInt()        { Push(VBE Int());    }
+        void PushUInt()       { Push(VBE Uint());   }
+        void PushChar()       { Push(VBE SByte());  }
+        void PushByte()       { Push(VBE Byte());   }
+        void PushVector2()    { Push(VBE Vec2());   }
+        void PushVector3()    { Push(VBE Vec3());   }
+        void PushVector4()    { Push(VBE Vec4());   }
+        void PushVector2Int() { Push(VBE IVec2());  }
+        void PushVector3Int() { Push(VBE IVec3());  }
+        void PushVector4Int() { Push(VBE IVec4());  }
 
 #undef VBE
 
-            [[nodiscard]] const std::vector<VertexBufferComponent>& GetComponents() const { return _components; }
-            [[nodiscard]] uint GetStride() const { return stride; }
+        [[nodiscard]] const std::vector<VertexBufferComponent>& GetComponents() const { return _components; }
+        [[nodiscard]] uint GetStride() const { return stride; }
     };
 
     template <class T>

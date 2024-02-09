@@ -3,17 +3,22 @@
 #include "../Debugging.h"
 
 namespace Graphics {
-    VertexArray::VertexArray() {
-        GLCALL(glGenVertexArrays(1, &rendererID));
+    glID VertexArrayHandler::Create() const {
+        glID id;
+        GLCALL(glGenVertexArrays(1, &id));
+        return id;
     }
 
-    VertexArray::~VertexArray() {
-        GLCALL(glDeleteVertexArrays(1, &rendererID));
+    void VertexArrayHandler::Destroy(const glID id) const {
+        GLCALL(glDeleteVertexArrays(1, &id));
     }
 
-    void VertexArray::Transfer(VertexArray& dest, VertexArray&& from) {
-        dest.rendererID = from.rendererID;
-        from.rendererID = 0;
+    void VertexArrayHandler::Bind(const glID id) const {
+        GLCALL(glBindVertexArray(id));
+    }
+
+    void VertexArrayHandler::Unbind() const {
+        GLCALL(glBindVertexArray(0));
     }
 
     void VertexArray::AddBuffer(const VertexBufferLayout& layout) {
@@ -37,13 +42,5 @@ namespace Graphics {
         Bind();
         vb.Bind();
         AddBuffer(layout);
-    }
-
-    void VertexArray::Bind() const {
-        GLCALL(glBindVertexArray(rendererID));
-    }
-
-    void VertexArray::Unbind() const {
-        GLCALL(glBindVertexArray(0));
     }
 }

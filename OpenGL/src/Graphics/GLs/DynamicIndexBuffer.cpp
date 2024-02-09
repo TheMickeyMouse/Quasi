@@ -5,31 +5,8 @@
 #include <GL/glew.h>
 
 namespace Graphics {
-    DynamicIndexBuffer::DynamicIndexBuffer(uint size) : bufferSize(size) {
-        glGenBuffers(1, &rendererID);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, rendererID);
+    DynamicIndexBuffer::DynamicIndexBuffer(uint size) : GLObject({}), bufferSize(size) {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint) * size, nullptr, GL_DYNAMIC_DRAW);  // NOLINT(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
-    }
-
-    DynamicIndexBuffer::~DynamicIndexBuffer() {
-        glDeleteBuffers(1, &rendererID);
-    }
-
-    void DynamicIndexBuffer::Transfer(DynamicIndexBuffer& dest, DynamicIndexBuffer&& from) {
-        dest.rendererID = from.rendererID;
-        from.rendererID = GL_NULL;
-
-        dest.bufferSize = from.bufferSize;
-        dest.dataOffset = from.dataOffset;
-        dest.indexOffset = from.indexOffset;
-    }
-
-    void DynamicIndexBuffer::Bind() const {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, rendererID);
-    }
-
-    void DynamicIndexBuffer::Unbind() const {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
     void DynamicIndexBuffer::SetData(const uint* data, uint size) {

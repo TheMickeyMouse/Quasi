@@ -172,6 +172,7 @@
     <ClCompile Include="src\Graphics\GLs\DynamicIndexBuffer.cpp" />
     <ClCompile Include="src\Graphics\GLs\DynamicVertexBuffer.cpp" />
     <ClCompile Include="src\Graphics\GLs\FrameBuffer.cpp" />
+    <ClCompile Include="src\Graphics\GLs\GLObject.cpp" />
     <ClCompile Include="src\Graphics\GLs\IndexBuffer.cpp" />
     <ClCompile Include="src\Graphics\GLs\RenderBuffer.cpp">
       <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
@@ -391,6 +392,7 @@
     <ClInclude Include="src\Graphics\GLs\DynamicIndexBuffer.h" />
     <ClInclude Include="src\Graphics\GLs\DynamicVertexBuffer.h" />
     <ClInclude Include="src\Graphics\GLs\FrameBuffer.h" />
+    <ClInclude Include="src\Graphics\GLs\GLObject.h" />
     <ClInclude Include="src\Graphics\GLs\GLTypeID.h" />
     <ClInclude Include="src\Graphics\GLs\IndexBuffer.h" />
     <ClInclude Include="src\Graphics\GLs\RenderBuffer.h" />

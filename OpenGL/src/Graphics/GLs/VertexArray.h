@@ -4,25 +4,20 @@
 #include "VertexBufferLayout.h"
 
 namespace Graphics {
-    class VertexArray {
-        private:
-            glID rendererID = GL_NULL;
-        public:
-            OPENGL_API VertexArray();
-            OPENGL_API ~VertexArray();
+    struct VertexArrayHandler : GLObjectHandler<VertexArrayHandler> {
+        glID Create() const;
+        void Destroy(glID id) const;
+        void Bind(glID id) const;
+        void Unbind() const;
+    };
 
-            VertexArray(const VertexArray&) = delete;
-            VertexArray& operator=(const VertexArray&) = delete;
-            OPENGL_API static void Transfer(VertexArray& dest, VertexArray&& from);
-            VertexArray(VertexArray&& va) noexcept { Transfer(*this, std::move(va)); }
-            VertexArray& operator=(VertexArray&& va) noexcept { Transfer(*this, std::move(va)); return *this; }
+    class VertexArray : public GLObject<VertexArrayHandler> {
+    public:
+        VertexArray() = default;
+        VertexArray(stdu::empty) : GLObject({}) {}
 
-            OPENGL_API void AddBuffer(const VertexBufferLayout& layout);
-            OPENGL_API void AddBuffer(const VertexBuffer& vb, const VertexBufferLayout& layout);
-            OPENGL_API void AddBuffer(const DynamicVertexBuffer& vb, const VertexBufferLayout& layout);
-
-            OPENGL_API void Bind() const;
-            OPENGL_API void Unbind() const;
-
+        OPENGL_API void AddBuffer(const VertexBufferLayout& layout);
+        OPENGL_API void AddBuffer(const VertexBuffer& vb, const VertexBufferLayout& layout);
+        OPENGL_API void AddBuffer(const DynamicVertexBuffer& vb, const VertexBufferLayout& layout);
     };
 }

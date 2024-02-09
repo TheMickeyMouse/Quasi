@@ -2,32 +2,8 @@
 
 namespace Graphics {
     DynamicVertexBuffer::DynamicVertexBuffer(uint size, uint typeSize, std::type_index type)
-        : bufferSize(size), vertSize(typeSize), vertType(type) {
-        GLCALL(glGenBuffers(1, &rendererID));
-        GLCALL(glBindBuffer(GL_ARRAY_BUFFER, rendererID));
+        : GLObject({}), bufferSize(size), vertSize(typeSize), vertType(type) {
         GLCALL(glBufferData(GL_ARRAY_BUFFER, typeSize * size, nullptr, GL_DYNAMIC_DRAW));
-    }
-
-    DynamicVertexBuffer::~DynamicVertexBuffer() {
-        GLCALL(glDeleteBuffers(1, &rendererID));
-    }
-
-    void DynamicVertexBuffer::Transfer(DynamicVertexBuffer& dest, DynamicVertexBuffer&& from) {
-        dest.rendererID = from.rendererID;
-        from.rendererID = GL_NULL;
-        dest.dataOffset = from.dataOffset;
-        dest.bufferSize = from.bufferSize;
-
-        dest.vertSize = from.vertSize;
-        dest.vertType = from.vertType;
-    }
-
-    void DynamicVertexBuffer::Bind() const {
-        GLCALL(glBindBuffer(GL_ARRAY_BUFFER, rendererID));
-    }
-
-    void DynamicVertexBuffer::Unbind() const {
-        GLCALL(glBindBuffer(GL_ARRAY_BUFFER, 0));
     }
     
     void DynamicVertexBuffer::SetDataUnchecked(const void* data, uint vertexSize, uint count) {

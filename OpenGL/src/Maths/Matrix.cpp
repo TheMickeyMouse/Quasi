@@ -43,7 +43,7 @@ namespace Maths {
     mat4x4 mat4x4::rotate_identity(const fvec3& rotation) {
         // https://en.wikipedia.org/wiki/Rotation_matrix
         // not most efficient but i hate math so...
-        return rotate_z(rotation.z) * rotate_y(rotation.y) * rotate_x(rotation.x);
+        return rotate_y(rotation.y) * rotate_x(rotation.x) * rotate_z(rotation.z);
     }
 
     mat4x4 mat4x4::rotate_x(float roll) {

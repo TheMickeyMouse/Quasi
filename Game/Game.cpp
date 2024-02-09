@@ -92,6 +92,16 @@ int main() {
 // ~~Strike trough like dis~~ with `~~`)"_md;
 //
 //     std::cout << md.debug_rawstr() << '\n';
-    
+
+    // Maths::mat3D a { { 1, 0, 0, 1 }, { 0, 0, 1, 0 }, { 0, 1, 0, 0 }, { 1, 0, 0, 1 } },
+    //              b { { 0, 0, 1, 0 }, { 0, 1, 0, 0 }, { 1, 0, 0, 0 }, { 0, 0, 0, 1 } };
+    // std::cout << a << "\n\n" << b << "\n\n" << a * b << std::endl;
+
+    // using namespace Maths;
+    // mat4x4 x = mat4x4::rotate_x(15.0_deg), y = mat4x4::rotate_y(30.0_deg), z = mat4x4::rotate_z(45.0_deg);
+    // std::cout << x << "\n\n" << y << "\n\n" << z << "\n\n" << std::endl;
+    // std::cout << z*x*y << "\n\n" << y*x*z << "\n\n" << x*z*y << "\n\n" << std::endl;
+    // std::cout << z*y*x << "\n\n" << y*z*x << "\n\n" << x*y*z << "\n\n" << std::endl;
+
     return 0;
 }

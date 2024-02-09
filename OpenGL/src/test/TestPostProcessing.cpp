@@ -38,7 +38,7 @@ namespace Test {
         scene.SetProjection(projection);
 
         const auto [winX, winY] = gdevice.GetWindowSize();
-        fbo = Graphics::FrameBuffer { 0 };
+        fbo = Graphics::FrameBuffer {{}};
         fbo.Bind();
 
         renderResult = Graphics::Texture {

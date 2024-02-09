@@ -1,19 +1,15 @@
 #pragma once
+#include "GLObject.h"
 #include "NumTypes.h"
 #include "opengl.h"
 
 namespace Graphics {
-	class IndexBuffer {
-		private:
-			glID rendererID = GL_NULL;
-			uint length = 0;
-		public:
-			OPENGL_API IndexBuffer(const void* data, uint length);
-			OPENGL_API ~IndexBuffer();
+	class IndexBuffer : public GLObject<BufferHandler<BufferType::INDEX>> {
+	private:
+		uint length = 0;
+	public:
+		OPENGL_API IndexBuffer(const void* data, uint length);
 
-			OPENGL_API void Bind() const;
-			OPENGL_API void Unbind() const;
-
-			[[nodiscard]] uint GetLength() const { return length; }
+		[[nodiscard]] uint GetLength() const { return length; }
 	};
 }

@@ -24,11 +24,10 @@ namespace Maths {
 #define ARITH(T, U) stdu::arithmetic_t<T, U>
 #define ARITH_T(T, U, O) typename ARITH(T, U)::O##_t
 
-#define RECT_OP(M, OP) \
+#define RECT_OP(OP) \
     template <class U> auto operator OP(U v) const { \
-        static_assert(std::is_arithmetic_v<U> || is_vec_v<U>, "rect::" #M  " not supported"); \
-        if constexpr (std::is_arithmetic_v<U>) return rect<N, ARITH_T(T, U, M)> { min OP v, max OP v }; \
-        else if constexpr (is_vec_v<U>) return rect<N, ARITH_T(T, typename U::scalar, M)> { min OP v, max OP v }; \
+        static_assert(std::is_arithmetic_v<U> || is_vec_v<U>, "rect::operator" #OP " not supported"); \
+        return rect<N, decltype((min OP v).x)> { min OP v, max OP v }; \
     } \
     template <class U> rect& operator OP##=(U v) { return *this = *this + v; }
 
@@ -74,10 +73,10 @@ namespace Maths {
         bool operator==(const rect& other) const { return min == other.min && max == other.max; }
         bool operator[](const int i) const { return corner(i); }
         
-        RECT_OP(add, +)
-        RECT_OP(sub, -)
-        RECT_OP(mul, *)
-        RECT_OP(div, /)
+        RECT_OP(+)
+        RECT_OP(-)
+        RECT_OP(*)
+        RECT_OP(/)
         
         scalar n_distance(int n) const { return max[n] - min[n]; }
         scalar width()    const { return n_distance(0); }

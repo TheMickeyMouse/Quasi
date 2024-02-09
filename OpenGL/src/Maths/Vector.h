@@ -425,7 +425,6 @@ namespace Maths {
 
 #define BOOL_ONLY requires std::is_same_v<scalar, bool>
 #define B_ONLY requires std::is_same_v<scalar, uchar>
-#define S_ONLY_U(U) std::conditional_t<std::is_signed_v<scalar>, U, stdu::empty>
 #define F_ONLY requires std::is_floating_point_v<scalar>
 #define COMMON_VEC_MATH(T) \
     auto len() const; \
@@ -479,12 +478,12 @@ namespace Maths {
         template <class U> operator vec4<U>() const { return { (U)x, (U)y, 0, 0 }; } \
         template <class U> vec2<U> as() const { return vec2<U>(*this); } \
         \
-        static constexpr vec2           RIGHT() { return {  1,  0 }; } /* constexpr vars dont work with templates */ \
-        static constexpr S_ONLY_U(vec2) LEFT()  { return { -1,  0 }; } \
-        static constexpr vec2           UP()    { return {  0,  1 }; } \
-        static constexpr S_ONLY_U(vec2) DOWN()  { return {  0, -1 }; } \
-        static constexpr vec2           ZERO()  { return {  0,  0 }; } \
-        static constexpr vec2           ONE()   { return {  1,  1 }; } \
+        static constexpr vec2 RIGHT()       { return {  1,  0 }; } /* constexpr vars dont work with templates */ \
+        static constexpr vec2 LEFT() S_ONLY { return { -1,  0 }; } \
+        static constexpr vec2 UP()          { return {  0,  1 }; } \
+        static constexpr vec2 DOWN() S_ONLY { return {  0, -1 }; } \
+        static constexpr vec2 ZERO()        { return {  0,  0 }; } \
+        static constexpr vec2 ONE()         { return {  1,  1 }; } \
         \
         COMMON_VEC_MATH(vec2) \
         \
@@ -530,14 +529,14 @@ namespace Maths {
         template <class U> operator vec4<U>() const { return { (U)x, (U)y, (U)z, 1 }; } \
         template <class U> vec3<U> as() const { return vec3<U>(*this); } \
         \
-        static constexpr vec3           RIGHT() { return {  1,  0,  0 }; }
-        static constexpr S_ONLY_U(vec3) LEFT()  { return { -1,  0,  0 }; }
-        static constexpr vec3           UP()    { return {  0,  1,  0 }; }
-        static constexpr S_ONLY_U(vec3) DOWN()  { return {  0, -1,  0 }; }
-        static constexpr vec3           FRONT() { return {  0,  0,  1 }; }
-        static constexpr S_ONLY_U(vec3) BACK()  { return {  0,  0, -1 }; }
-        static constexpr vec3           ZERO()  { return {  0,  0,  0 }; }
-        static constexpr vec3           ONE()   { return {  1,  1,  1 }; }
+        static constexpr vec3 RIGHT()       { return {  1,  0,  0 }; }
+        static constexpr vec3 LEFT() S_ONLY { return { -1,  0,  0 }; }
+        static constexpr vec3 UP()          { return {  0,  1,  0 }; }
+        static constexpr vec3 DOWN() S_ONLY { return {  0, -1,  0 }; }
+        static constexpr vec3 FRONT()       { return {  0,  0,  1 }; }
+        static constexpr vec3 BACK() S_ONLY { return {  0,  0, -1 }; }
+        static constexpr vec3 ZERO()        { return {  0,  0,  0 }; }
+        static constexpr vec3 ONE()         { return {  1,  1,  1 }; }
         \
         COMMON_VEC_MATH(vec3) \
         vec2<T> xy() const; \
@@ -583,16 +582,16 @@ namespace Maths {
         template <class U> operator vec3<U>() const { return { (U)x, (U)y, (U)z }; } \
         template <class U> vec4<U> as() const { return vec4<U>(*this); } \
         \
-        static constexpr vec4           RIGHT() { return {  1,  0,  0,  0 }; }
-        static constexpr S_ONLY_U(vec4) LEFT()  { return { -1,  0,  0,  0 }; }
-        static constexpr vec4           UP()    { return {  0,  1,  0,  0 }; }
-        static constexpr S_ONLY_U(vec4) DOWN()  { return {  0, -1,  0,  0 }; }
-        static constexpr vec4           FRONT() { return {  0,  0,  1,  0 }; }
-        static constexpr S_ONLY_U(vec4) BACK()  { return {  0,  0, -1,  0 }; }
-        static constexpr vec4           IN()    { return {  0,  0,  0,  1 }; }
-        static constexpr S_ONLY_U(vec4) OUT()   { return {  0,  0,  0, -1 }; }
-        static constexpr vec4           ZERO()  { return {  0,  0,  0,  0 }; }
-        static constexpr vec4           ONE()   { return {  1,  1,  1,  1 }; }
+        static constexpr vec4 RIGHT()       { return {  1,  0,  0,  0 }; }
+        static constexpr vec4 LEFT() S_ONLY { return { -1,  0,  0,  0 }; }
+        static constexpr vec4 UP()          { return {  0,  1,  0,  0 }; }
+        static constexpr vec4 DOWN() S_ONLY { return {  0, -1,  0,  0 }; }
+        static constexpr vec4 FRONT()       { return {  0,  0,  1,  0 }; }
+        static constexpr vec4 BACK() S_ONLY { return {  0,  0, -1,  0 }; }
+        static constexpr vec4 IN()          { return {  0,  0,  0,  1 }; }
+        static constexpr vec4 OUT()  S_ONLY { return {  0,  0,  0, -1 }; }
+        static constexpr vec4 ZERO()        { return {  0,  0,  0,  0 }; }
+        static constexpr vec4 ONE()         { return {  1,  1,  1,  1 }; }
         \
         COMMON_VEC_MATH(vec4) \
         vec3<T> xyz() const; \

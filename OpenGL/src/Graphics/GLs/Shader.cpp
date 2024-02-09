@@ -7,6 +7,22 @@
 #include "Texture.h"
 
 namespace Graphics {
+    glID ShaderHandler::Create() const {
+        return GL_NULL;
+    }
+
+    void ShaderHandler::Destroy(glID id) const {
+        GLCALL(glDeleteProgram(id));
+    }
+
+    void ShaderHandler::Bind(glID id) const {
+        GLCALL(glUseProgram(id));
+    }
+
+    void ShaderHandler::Unbind() const {
+        GLCALL(glUseProgram(0));
+    }
+
     Shader::Shader(const std::string& program) {
         ShaderProgramSource shadersrc = ParseShader(program);
         rendererID = CreateShader(shadersrc.vertexShader, shadersrc.fragmentShader);
@@ -14,26 +30,6 @@ namespace Graphics {
 
     Shader::Shader(const std::string& vert, const std::string& frag) {
         rendererID = CreateShader(vert, frag);
-    }
-
-    Shader::~Shader() {
-        if (rendererID) {
-            GLCALL(glDeleteProgram(rendererID));
-        }
-    }
-
-    void Shader::Transfer(Shader& dest, Shader&& from) {
-        dest.rendererID = from.rendererID;
-        from.rendererID = 0;
-        dest.uniformCache = std::move(from.uniformCache);
-    }
-
-    void Shader::Bind() const {
-        GLCALL(glUseProgram(rendererID));
-    }
-
-    void Shader::Unbind() const {
-        GLCALL(glUseProgram(0));
     }
 
     uint Shader::GetUniformLocation(stringr name) {
