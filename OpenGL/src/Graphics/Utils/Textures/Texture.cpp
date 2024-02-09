@@ -4,10 +4,11 @@
 #include "../vendor/stb_image/stb_image.h"
 
 namespace Graphics {
-    Texture::Texture(const uchar* raw, uint w, uint h, bool useLinear, int format, int alignment)
+    Texture::Texture(const uchar* raw, uint w, uint h, bool useLinear,
+        TextureFormat format, TextureInternalFormat iformat, int alignment)
         : rendererID(0), size { w, h } {
         //flips texture
-        LoadTexture(raw, useLinear, format, alignment);
+        LoadTexture(raw, useLinear, format, iformat, alignment);
     }
 
     Texture::Texture(const std::string& filePath, bool useLinear)
@@ -23,7 +24,8 @@ namespace Graphics {
         Destroy();
     }
 
-    void Texture::LoadTexture(const uchar* img, bool useLinear, int format, int alignment) {
+    void Texture::LoadTexture(const uchar* img, bool useLinear,
+        TextureFormat format, TextureInternalFormat iformat, int alignment) {
         GLCALL(glGenTextures(1, &rendererID));
         GLCALL(glBindTexture(GL_TEXTURE_2D, rendererID));
 
@@ -33,7 +35,7 @@ namespace Graphics {
         GLCALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
 
         GLCALL(glPixelStorei(GL_UNPACK_ALIGNMENT, alignment));
-        GLCALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, size.x, size.y, 0, format, GL_UNSIGNED_BYTE, img));
+        GLCALL(glTexImage2D(GL_TEXTURE_2D, 0, (int)iformat, size.x, size.y, 0, (int)format, (int)GLTypeID::UBYTE, img));
         GLCALL(glBindTexture(GL_TEXTURE_2D, 0));
     }
 
@@ -84,9 +86,9 @@ namespace Graphics {
         rendererID = GL_NULL;
     }
 
-    void Texture::SetSubTexture(const uchar* data, Maths::rect2u rect, int format) {
+    void Texture::SetSubTexture(const uchar* data, Maths::rect2u rect, TextureFormat format) {
         GLCALL(glTexSubImage2D(GL_TEXTURE_2D, 0,
             rect.min.x, rect.min.y, rect.width(), rect.height(),
-            format, GL_UNSIGNED_BYTE, data));
+            (int)format, (int)GLTypeID::UBYTE, data));
     }
 }

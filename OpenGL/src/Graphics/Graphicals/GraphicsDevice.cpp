@@ -13,7 +13,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include "..\..\IO\Time.h"
+#include "..\..\IO\TimeType.h"
 
 namespace Graphics {
     GraphicsDevice::GraphicsDevice(GLFWwindow* window, Maths::ivec2 winSize) : 
@@ -78,22 +78,22 @@ namespace Graphics {
     }
 
     void GraphicsDevice::DeleteRender(uint index) {
-        renders[index].device = nullptr;
+        renders[index]->device = nullptr;
         renders.erase(renders.begin() + (int)index);
     }
 
     void GraphicsDevice::DeleteAllRenders() {
-        std::ranges::for_each(renders, [](RenderData& r){ r.device = nullptr; });
+        std::ranges::for_each(renders, [](RenderHandle& r){ r->device = nullptr; });
         renders.clear();
     }
 
     RenderData& GraphicsDevice::GetRender(uint index) {
-        return renders[index];
+        return *renders[index];
     }
 
     void GraphicsDevice::Render(RenderData& r) {
         r.EnableShader();
-        Render::Draw(r, r.shader);
+        Render::Draw(r);
     }
 
     void GraphicsDevice::BindTexture(Texture& texture, int slot) {

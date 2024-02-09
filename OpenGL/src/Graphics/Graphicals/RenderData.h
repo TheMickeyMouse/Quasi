@@ -42,6 +42,7 @@ namespace Graphics {
 		OPENGL_API ~RenderData();
 
 		template <class T> static RenderData Create(uint vsize, uint isize);
+	    template <class T> static std::unique_ptr<RenderData> CreateHeap(uint vsize, uint isize);
 
 		OPENGL_API void Bind() const;
 		OPENGL_API void Unbind() const;
@@ -74,10 +75,10 @@ namespace Graphics {
 		[[nodiscard]] const std::vector<GenericMesh>& GetMeshes() const { return meshes; }
 
 		OPENGL_API void ClearData(bool shallowClear = true);
-		template <class T> void BindMeshes(Mesh<T>* meshes, uint count);
+		template <class T> void BindMeshes(Mesh<T>* newMeshes, uint count);
 		template <class T> void BindMeshes(T& ms) { BindMeshes(ms.begin(), (uint)ms.size()); }
 		OPENGL_API void Render();
-		template <class T> void AddNewMeshes(const Mesh<T>* meshes, uint count);
+		template <class T> void AddNewMeshes(const Mesh<T>* newMeshes, uint count);
 		template <class T> void AddNewMeshes(const T& arr) { AddNewMeshes(arr.begin(), (uint)arr.size()); }
 		template <class T> void AddBoundMeshes() { for (GenericMesh& m : meshes) m.As<T>().AddTo(vbo, ibo); }
 		template <class T> void ResetData(bool shallowClear = true) { ClearData(shallowClear); AddBoundMeshes<T>(); }
@@ -105,16 +106,22 @@ namespace Graphics {
 		return RenderData(vsize, isize * 3, sizeof(T), typeid(T), GL_VERTEX_LAYOUT_OF(T));
 	}
 
+    template <class T>
+    std::unique_ptr<RenderData> RenderData::CreateHeap(uint vsize, uint isize) {
+	    // times 3 to account for triangles
+	    return std::make_unique<RenderData>(vsize, isize * 3, sizeof(T), typeid(T), GL_VERTEX_LAYOUT_OF(T));
+	}
+
 	template <class T>
-	void RenderData::BindMeshes(Mesh<T>* meshes, uint count) {
+	void RenderData::BindMeshes(Mesh<T>* newMeshes, const uint count) {
 		for (uint i = 0; i < count; ++i) {
-			meshes[i].Bind(*this);
+			newMeshes[i].Bind(*this);
 		}
 	}
 
 	template<class T>
-	void RenderData::AddNewMeshes(const Mesh<T>* meshes, uint count) {
+	void RenderData::AddNewMeshes(const Mesh<T>* newMeshes, const uint count) {
 		for (uint i = 0; i < count; ++i)
-			meshes[i].AddTo(vbo, ibo);
+			newMeshes[i].AddTo(vbo, ibo);
 	}
 }

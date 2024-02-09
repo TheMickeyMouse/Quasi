@@ -55,12 +55,12 @@ namespace Graphics {
 
 		void BindMeshes(Mesh<T>* meshes, uint count) { rd->BindMeshes<T>(meshes, count); }
         void BindMeshes(std::initializer_list<Mesh<T>*> meshes) { for (auto* m : meshes) BindMeshes(m, 1); }
-		template <class U> void BindMeshes(U& ms) { BindMeshes(ms.begin(), (uint)ms.size()); }
+		template <class U> void BindMeshes(U& ms) { BindMeshes(ms.data(), (uint)ms.size()); }
         
 		void Render() { rd->Render(); }
         
 		void AddNewMeshes(const Mesh<T>* meshes, uint count) { rd->AddNewMeshes<T>(meshes, count); }
-		template <class U> void AddNewMeshes(const U& arr) { AddNewMeshes(arr.begin(), (uint)arr.size()); }
+		template <class U> void AddNewMeshes(const U& arr) { AddNewMeshes(arr.data(), (uint)arr.size()); }
 		void AddBoundMeshes() { rd->AddBoundMeshes<T>(); }
         
 		void ResetData(bool shallowClear = true) { rd->ResetData<T>(shallowClear); }

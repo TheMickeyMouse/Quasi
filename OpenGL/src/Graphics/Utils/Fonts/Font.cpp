@@ -58,8 +58,8 @@ namespace Graphics {
             textureSize.x = std::max(textureSize.x, x);
             textureSize.y += y;
         }
-        
-        atlas = Texture(nullptr, textureSize.x, textureSize.y, true, GL_RED, 1); // create blank texture
+
+        atlas = Texture(nullptr, textureSize.x, textureSize.y, true, TextureFormat::RED, TextureInternalFormat::RGBA_8, 1); // create blank texture
         atlas.SetActive(0); // set this texture to the active one
         glyphs.resize(NUM_GLYPHS * faceHandles.size()); // amt of glyphs
         metrics.reserve(faceHandles.size());
@@ -78,7 +78,7 @@ namespace Graphics {
                 }
             
                 const uvec2 size = { glyphHandle->bitmap.width, glyphHandle->bitmap.rows }; // construct size in pixels of the texture
-                atlas.SetSubTexture(glyphHandle->bitmap.buffer, uvec2 { pen, heights[i] }.to(size.as_size()), GL_RED); // draw the sub texture
+                atlas.SetSubTexture(glyphHandle->bitmap.buffer, uvec2 { pen, heights[i] }.to(size.as_size()), TextureFormat::RED); // draw the sub texture
 
                 Glyph& glyph = glyphs[charCode - 32 + i * NUM_GLYPHS]; // write rendering memory
                 glyph.rect = fvec2 { pen, heights[i] }.to(size.as<float>().as_size()) / textureSize.as<float>(); // rect of texture in atlas

@@ -12,8 +12,10 @@ namespace Graphics {
     class GraphicsDevice {
         static constexpr unsigned int MAX_VERTEX_COUNT = 1000;
         static constexpr unsigned int MAX_INDEX_COUNT = 1000;
+
+        using RenderHandle = std::unique_ptr<RenderData>;
     private:
-        std::vector<RenderData> renders;
+        std::vector<RenderHandle> renders;
         std::vector<Texture*> textures;
         // Maths::Matrix3D::PerspectiveProjectionFOV(45.0f, 4.0f / 3, 0.1f, 100.0f);
 
@@ -75,8 +77,8 @@ namespace Graphics {
 
     template <class T>
     RenderObject<T> GraphicsDevice::CreateNewRender(uint vsize, uint isize) {
-        renders.push_back(RenderData::Create<T>(vsize, isize));
-        BindRender(renders.back());
-        return renders.back();
+        renders.push_back(RenderData::CreateHeap<T>(vsize, isize));
+        BindRender(*renders.back());
+        return *renders.back();
     }
 }

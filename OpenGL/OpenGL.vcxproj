@@ -171,7 +171,88 @@
   <ItemGroup>
     <ClCompile Include="src\Graphics\GLs\DynamicIndexBuffer.cpp" />
     <ClCompile Include="src\Graphics\GLs\DynamicVertexBuffer.cpp" />
+    <ClCompile Include="src\Graphics\GLs\FrameBuffer.cpp" />
     <ClCompile Include="src\Graphics\GLs\IndexBuffer.cpp" />
+    <ClCompile Include="src\Graphics\GLs\RenderBuffer.cpp">
+      <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <Optimization>Disabled</Optimization>
+      <SupportJustMyCode>true</SupportJustMyCode>
+      <AssemblerOutput>NoListing</AssemblerOutput>
+      <AssemblerListingLocation>C:\Users\User\RiderProjects\OpenGL\bin\intermediates\Win32\Debug\</AssemblerListingLocation>
+      <UndefineAllPreprocessorDefinitions>false</UndefineAllPreprocessorDefinitions>
+      <BrowseInformation>false</BrowseInformation>
+      <BrowseInformationFile>C:\Users\User\RiderProjects\OpenGL\bin\intermediates\Win32\Debug\</BrowseInformationFile>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <ConformanceMode>true</ConformanceMode>
+      <DiagnosticsFormat>Column</DiagnosticsFormat>
+      <DisableLanguageExtensions>false</DisableLanguageExtensions>
+      <ErrorReporting>Prompt</ErrorReporting>
+      <ExpandAttributedSource>false</ExpandAttributedSource>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <EnableASAN>false</EnableASAN>
+      <EnableFuzzer>false</EnableFuzzer>
+      <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Precise</FloatingPointModel>
+      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
+      <GenerateModuleDependencies>false</GenerateModuleDependencies>
+      <GenerateSourceDependencies>false</GenerateSourceDependencies>
+      <GenerateXMLDocumentationFiles>false</GenerateXMLDocumentationFiles>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+      <MinimalRebuild>false</MinimalRebuild>
+      <ModuleDependenciesFile>C:\Users\User\RiderProjects\OpenGL\bin\intermediates\Win32\Debug\</ModuleDependenciesFile>
+      <ModuleOutputFile>C:\Users\User\RiderProjects\OpenGL\bin\intermediates\Win32\Debug\</ModuleOutputFile>
+      <OmitDefaultLibName>false</OmitDefaultLibName>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <ObjectFileName>C:\Users\User\RiderProjects\OpenGL\bin\intermediates\Win32\Debug\</ObjectFileName>
+      <CallingConvention>Cdecl</CallingConvention>
+      <ProgramDataBaseFileName>C:\Users\User\RiderProjects\OpenGL\bin\intermediates\Win32\Debug\vc143.pdb</ProgramDataBaseFileName>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>C:\Users\User\RiderProjects\OpenGL\bin\intermediates\Win32\Debug\OpenGL.pch</PrecompiledHeaderOutputFile>
+      <PreprocessToFile>false</PreprocessToFile>
+      <PreprocessKeepComments>false</PreprocessKeepComments>
+      <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
+      <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+      <ShowIncludes>false</ShowIncludes>
+      <SourceDependenciesFile>C:\Users\User\RiderProjects\OpenGL\bin\intermediates\Win32\Debug\</SourceDependenciesFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <SmallerTypeCheck>false</SmallerTypeCheck>
+      <SpectreMitigation>false</SpectreMitigation>
+      <StructMemberAlignment>Default</StructMemberAlignment>
+      <TrackerLogDirectory>C:\Users\User\RiderProjects\OpenGL\bin\intermediates\Win32\Debug\OpenGL.tlog\</TrackerLogDirectory>
+      <TranslateIncludes>false</TranslateIncludes>
+      <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level3</WarningLevel>
+      <XMLDocumentationFileName>C:\Users\User\RiderProjects\OpenGL\bin\intermediates\Win32\Debug\</XMLDocumentationFileName>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <IntelJCCErratum>false</IntelJCCErratum>
+      <BuildStlModules>false</BuildStlModules>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <ExternalWarningLevel>InheritWarningLevel</ExternalWarningLevel>
+      <TreatExternalTemplatesAsInternal>true</TreatExternalTemplatesAsInternal>
+      <DisableAnalyzeExternal>false</DisableAnalyzeExternal>
+      <PreprocessorDefinitions>GLEW_STATIC;OPENGL_EXPORTS</PreprocessorDefinitions>
+      <EnablePREfast>false</EnablePREfast>
+      <OmitFramePointers>false</OmitFramePointers>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>src;src\Graphics\GLs;src\Graphics\Graphicals;src\Graphics\Primitives;src\Maths;src\Graphics\Utils\Fonts;src\Graphics\Utils\Textures;src\IO;src\vendor\imgui;src\vendor\freetype;src\vendor;src\test;C:\Users\User\RiderProjects\OpenGL\Dependencies\GLFW\include;C:\Users\User\RiderProjects\OpenGL\Dependencies\GLEW\include</AdditionalIncludeDirectories>
+      <AdditionalOptions>
+      </AdditionalOptions>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <LinkCompiled>true</LinkCompiled>
+    </ClCompile>
     <ClCompile Include="src\Graphics\Graphicals\GenericMesh.cpp" />
     <ClCompile Include="src\Graphics\Graphicals\RenderData.cpp" />
     <ClCompile Include="src\Graphics\GLs\Render.cpp" />
@@ -193,7 +274,7 @@
     <ClCompile Include="src\IO\IO.cpp" />
     <ClCompile Include="src\IO\Keyboard.cpp" />
     <ClCompile Include="src\IO\Mouse.cpp" />
-    <ClCompile Include="src\IO\Time.cpp">
+    <ClCompile Include="src\IO\TimeType.cpp">
       <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <Optimization>Disabled</Optimization>
@@ -286,6 +367,7 @@
     <ClCompile Include="src\test\TestDynamicVertexGeometry.cpp" />
     <ClCompile Include="src\test\TestFontRender.cpp" />
     <ClCompile Include="src\test\TestMenu.cpp" />
+    <ClCompile Include="src\test\TestPostProcessing.cpp" />
     <ClCompile Include="src\test\TestTexturedSquare.cpp" />
     <ClCompile Include="src\vendor\imgui\imgui.cpp" />
     <ClCompile Include="src\vendor\imgui\imgui_demo.cpp" />
@@ -308,7 +390,10 @@
     <ClInclude Include="src\Debugging.h" />
     <ClInclude Include="src\Graphics\GLs\DynamicIndexBuffer.h" />
     <ClInclude Include="src\Graphics\GLs\DynamicVertexBuffer.h" />
+    <ClInclude Include="src\Graphics\GLs\FrameBuffer.h" />
+    <ClInclude Include="src\Graphics\GLs\GLTypeID.h" />
     <ClInclude Include="src\Graphics\GLs\IndexBuffer.h" />
+    <ClInclude Include="src\Graphics\GLs\RenderBuffer.h" />
     <ClInclude Include="src\Graphics\Graphicals\GenericMesh.h" />
     <ClInclude Include="src\Graphics\Graphicals\RenderData.h" />
     <ClInclude Include="src\Graphics\GLs\Render.h" />
@@ -333,7 +418,7 @@
     <ClInclude Include="src\IO\IO.h" />
     <ClInclude Include="src\IO\Keyboard.h" />
     <ClInclude Include="src\IO\Mouse.h" />
-    <ClInclude Include="src\IO\Time.h" />
+    <ClInclude Include="src\IO\TimeType.h" />
     <ClInclude Include="src\Maths\Constants.h" />
     <ClInclude Include="src\Maths\Corner.h" />
     <ClInclude Include="src\Maths\Direction.h" />
@@ -363,6 +448,7 @@
     <ClInclude Include="src\test\TestDynamicVertexGeometry.h" />
     <ClInclude Include="src\test\TestFontRender.h" />
     <ClInclude Include="src\test\TestingFramework.h" />
+    <ClInclude Include="src\test\TestPostProcessing.h" />
     <ClInclude Include="src\test\TestTexturedSquare.h" />
     <ClInclude Include="src\stdu\sorted_vector.h" />
     <ClInclude Include="src\vendor\freetype\freetype\config\ftconfig.h" />

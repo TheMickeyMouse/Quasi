@@ -92,8 +92,10 @@ namespace Test {
         Maths::mat3D mat = Maths::mat3D::transform(modelTranslation,
                                                    modelScale,
                                                    modelRotation);
+        const int slots[] = { textures[0].Slot(), textures[1].Slot(), };
         render.SetCamera(mat);
-
+        render.GetShader().Bind();
+        render.GetShader().SetUniform1IVec("u_Texture", slots, 2);
         render.ResetData();
         render.Render();
     }

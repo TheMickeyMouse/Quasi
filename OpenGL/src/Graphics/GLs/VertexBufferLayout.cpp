@@ -7,7 +7,7 @@ namespace Graphics {
 
     void VertexBufferLayout::Push(VertexBufferComponent comp) {
         _components.push_back(comp);
-        stride += comp.count * GLSizeOf(comp.type);
+        stride += comp.count * SizeOf(comp.type);
     }
 
     void VertexBufferLayout::PushLayout(const VertexBufferLayout& layout) {

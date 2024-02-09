@@ -14,6 +14,6 @@ namespace Graphics {
 			OPENGL_API void Bind() const;
 			OPENGL_API void Unbind() const;
 
-			OPENGL_API [[nodiscard]] uint GetLength() const { return length; }
+			[[nodiscard]] uint GetLength() const { return length; }
 	};
 }

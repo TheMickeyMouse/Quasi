@@ -13,6 +13,7 @@
 #include "TestFontRender.h"
 
 #include "DemoFlappyBird.h"
+#include "TestPostProcessing.h"
 
 namespace Test {
     class TestManager : public Test {
@@ -31,16 +32,17 @@ namespace Test {
     inline TestManager::TestManager() {
         currentTest = menu.get();
         {
-            menu->RegisterTest<TestClearColor>           ("Clear Color Test            ");
-            menu->RegisterTest<TestTexturedSquare>       ("Texture Square Test         ");
-            menu->RegisterTest<TestBatchedColored>       ("Colored Batching Test       ");
-            menu->RegisterTest<TestBatchedTextured>      ("Texture Batching Test       ");
-            menu->RegisterTest<TestDynamicVertexGeometry>("Dynamic Vertex Geometry Test");
-            menu->RegisterTest<TestDynamicQuadGeometry>  ("Dynamic Quad Geometry Test  ");
-            menu->RegisterTest<TestDynamicTris>          ("Dynamic Tris Test           ");
-            menu->RegisterTest<TestCubeRender>           ("Cube 3D Rendering Test      ");
-            menu->RegisterTest<TestFontRender>           ("Font Rendering Test         ");
-            menu->RegisterTest<DemoFlappyBird>           ("Flappy Bird Demo            ");
+            menu->RegisterTest<TestClearColor>           ("Clear Color Test        ");
+            menu->RegisterTest<TestTexturedSquare>       ("Texture Square Test     ");
+            menu->RegisterTest<TestBatchedColored>       ("Colored Batching Test   ");
+            menu->RegisterTest<TestBatchedTextured>      ("Texture Batching Test   ");
+            menu->RegisterTest<TestDynamicVertexGeometry>("Dyn Vertex Geometry Test");
+            menu->RegisterTest<TestDynamicQuadGeometry>  ("Dyn Quad Geometry Test  ");
+            menu->RegisterTest<TestDynamicTris>          ("Dyn Tris Test           ");
+            menu->RegisterTest<TestCubeRender>           ("Cube 3D Rendering Test  ");
+            menu->RegisterTest<TestFontRender>           ("Font Rendering Test     ");
+            menu->RegisterTest<TestPostProcessing>       ("Post Processing Test    ");
+            menu->RegisterTest<DemoFlappyBird>           ("Flappy Bird Demo        ");
         }
     }
 

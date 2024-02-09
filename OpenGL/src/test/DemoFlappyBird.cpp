@@ -4,7 +4,7 @@
 #include "Keyboard.h"
 #include "Quad.h"
 #include "Random.h"
-#include "..\IO\Time.h"
+#include "..\IO\TimeType.h"
 #include "Tri.h"
 
 namespace Test {

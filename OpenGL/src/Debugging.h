@@ -27,7 +27,7 @@ static void GLClearError() {
 static bool GLCheckErrorSimple() {
     bool t = true;
     while (GLenum err = glGetError()) {
-        std::cout << "ERR: (OPENGL) with error code " << err << " (" << IntToErrCode(err) << ")" << '\n';
+        std::cout << "ERR: (OPENGL) with error code " << err << " (" << IntToErrCode(err) << ")" << std::endl;
         t = false;
     }
     return t;
@@ -36,7 +36,7 @@ static bool GLCheckErrorSimple() {
 static bool GLCheckErrorDetailed(const char* fun, const char* file, int line) {
     bool t = true;
     while (GLenum err = glGetError()) {
-        std::cout << "ERR: (OPENGL) with error code " << err << " (" << IntToErrCode(err) << ") when calling function " << fun << " at line " << line << " in " << file << '\n';
+        std::cout << "ERR: (OPENGL) with error code " << err << " (" << IntToErrCode(err) << ") when calling function " << fun << " at line " << line << " in " << file << std::endl;
         t = false;
     }
     return t;

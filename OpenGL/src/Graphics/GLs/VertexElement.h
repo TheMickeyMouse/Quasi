@@ -38,6 +38,19 @@ struct VertexColorTexture3D {
     GL_VERTEX_TRANSFORM_FIELDS((Position))
 };
 
+struct VertexTexture2D {
+    Maths::fvec2 Position;
+    Maths::fvec2 TextureCoordinate;
+
+    GL_VERTEX_T(VertexTexture2D);
+    GL_VERTEX_FIELD((Position)(TextureCoordinate));
+    GL_VERTEX_CUSTOM_TRANSFORM(mat) {
+        VertexTexture2D v = *this;
+        v.Position = mat * (Maths::fvec3)Position;
+        return v;
+    }
+};
+
 struct VertexColorTextureAtlas3D {
     Maths::fvec3  Position;
     Maths::colorf Color;

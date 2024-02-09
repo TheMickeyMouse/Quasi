@@ -1,7 +1,7 @@
 #include "IO.h"
 #include "Mouse.h"
 #include "Keyboard.h"
-#include "Time.h"
+#include "TimeType.h"
 
 namespace IO {
     void Init(Graphics::GraphicsDevice& gd) {
