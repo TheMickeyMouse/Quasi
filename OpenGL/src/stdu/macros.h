@@ -26,3 +26,6 @@
 #define __EXPAND2__(...) __EXPAND3__(__EXPAND3__(__EXPAND3__(__EXPAND3__(__VA_ARGS__)))) // NOLINT(clang-diagnostic-reserved-macro-identifier, bugprone-reserved-identifier)
 #define __EXPAND3__(...) __EXPAND4__(__EXPAND4__(__EXPAND4__(__EXPAND4__(__VA_ARGS__)))) // NOLINT(clang-diagnostic-reserved-macro-identifier, bugprone-reserved-identifier)
 #define __EXPAND4__(...) __VA_ARGS__ // NOLINT(clang-diagnostic-reserved-macro-identifier, bugprone-reserved-identifier)
+
+#define STDU_INTERNAL_TOSTR(X) #X
+#define STDU_TOSTR(X) STDU_INTERNAL_TOSTR(X)

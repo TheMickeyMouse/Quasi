@@ -93,7 +93,7 @@ namespace Graphics {
 	    Shader& GetShader() { return shader; }
 	    [[nodiscard]] const Shader& GetShader() const { return shader; }
 	    
-	    void UseShader(const std::string& code) { shader = Shader { code }; }
+	    void UseShader(std::string_view code) { shader = Shader { code }; }
 	    void UseShaderFromFile(const std::string& file) { shader = Shader::FromFile(file); }
 	    OPENGL_API void EnableShader();
 	    OPENGL_API void DisableShader();

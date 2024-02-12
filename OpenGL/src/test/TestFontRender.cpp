@@ -11,48 +11,59 @@ namespace Test {
         render = gdevice.CreateNewRender<Vertex>(1024, 1024);
 
         render.UseShader(
-            "#shader vertex\n"
-            "#version 330 core\n"
-            "layout(location = 0) in vec4 position;\n"
-            "layout(location = 1) in vec4 color;\n"
-            "layout(location = 2) in vec2 texCoord;\n"
-            "layout(location = 3) in int isText;\n"
-            "out vec4 v_color;\n"
-            "out vec2 v_texCoord;\n"
-            "flat out int v_isText;\n"
-            "uniform mat4 u_projection;\n"
-            "uniform mat4 u_view;\n"
-            "void main(){\n"
-            "    gl_Position = u_projection * u_view * position;\n"
-            "    v_color = color;\n"
-            "    v_texCoord = texCoord;\n"
-            "    v_isText = isText;\n"
-            "}\n"
-            "#shader fragment\n"
-            "#version 330 core\n"
-            "layout(location = 0) out vec4 color;\n"
-            "in vec4 v_color;\n"
-            "in vec2 v_texCoord;\n"
-            "flat in int v_isText;\n"
-            "uniform sampler2D u_font;\n"
-            "uniform float u_thickness;\n"
-            "uniform float u_softness;\n"
-            "uniform vec2  u_shadowOffset;\n"
-            "uniform float u_shadowSoftness;\n"
-            "uniform vec4  u_shadowColor;\n"
-            "void main(){\n"
-            "    color = v_color;\n"
-            "    if (v_isText == 1) {\n"
-            "       float alpha = texture(u_font, v_texCoord).r;\n"
-            "       vec4 shadow = u_shadowColor;\n"
-            "       vec2 shadowCoord = v_texCoord - u_shadowOffset / vec2(textureSize(u_font, 0));\n"
-            "       float shadowAlpha = texture(u_font, shadowCoord).r;\n"
-            "       shadow.a = shadow.a * smoothstep(0.5 - u_shadowSoftness, 0.5 + u_shadowSoftness, shadowAlpha);\n"
-            "       alpha = smoothstep(1.0 - u_thickness - u_softness, 1.0 - u_thickness + u_softness, alpha);\n"
-            "       color = mix(shadow, color, alpha);\n"
-            "    }\n"
-            "}"
-        );
+            GLSL_SHADER(
+                330,
+                (
+                    layout(location = 0) in vec4 position;
+                    layout(location = 1) in vec4 color;
+                    layout(location = 2) in vec2 texCoord;
+                    layout(location = 3) in int isText;
+
+                    out vec4 v_color;
+                    out vec2 v_texCoord;
+                    flat out int v_isText;
+
+                    uniform mat4 u_projection;
+                    uniform mat4 u_view;
+
+                    void main() {
+                        gl_Position = u_projection * u_view * position;
+                        v_color = color;
+                        v_texCoord = texCoord;
+                        v_isText = isText;
+                    }
+                ),
+                (
+                    layout(location = 0) out vec4 color;
+
+                    in vec4 v_color;
+                    in vec2 v_texCoord;
+                    flat in int v_isText;
+
+                    uniform sampler2D u_font;
+                    uniform float u_thickness;
+                    uniform float u_softness;
+                    uniform vec2  u_shadowOffset;
+                    uniform float u_shadowSoftness;
+                    uniform vec4  u_shadowColor;
+
+                    void main() {
+                        color = v_color;
+                        if (v_isText == 1) {
+                           float alpha = texture(u_font, v_texCoord).r;
+
+                           vec4 shadow = u_shadowColor;
+                           vec2 shadowCoord = v_texCoord - u_shadowOffset / vec2(textureSize(u_font, 0));
+                           float shadowAlpha = texture(u_font, shadowCoord).r;
+
+                           shadow.a = shadow.a * smoothstep(0.5 - u_shadowSoftness, 0.5 + u_shadowSoftness, shadowAlpha);
+                           alpha = smoothstep(1.0 - u_thickness - u_softness, 1.0 - u_thickness + u_softness, alpha);
+
+                           color = mix(shadow, color, alpha);
+                        }
+                    }
+                )
+            ));
         render.SetProjection(projection);
 
         font = Graphics::Font::LoadFile(GL_WIN_FONTS "arial.ttf");

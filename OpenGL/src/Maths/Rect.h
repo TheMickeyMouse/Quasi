@@ -78,11 +78,11 @@ namespace Maths {
         RECT_OP(*)
         RECT_OP(/)
         
-        scalar n_distance(int n) const { return max[n] - min[n]; }
-        scalar width()    const { return n_distance(0); }
-        scalar height()   const requires (N >= 2) { return n_distance(1); }
-        scalar depth()    const requires (N >= 3) { return n_distance(2); }
-        scalar duration() const requires (N >= 4) { return n_distance(3); }
+        [[nodiscard]] scalar n_distance(int n) const { if constexpr (is1D) return max - min; else return max[n] - min[n]; }
+        [[nodiscard]] scalar width()    const { return n_distance(0); }
+        [[nodiscard]] scalar height()   const requires (N >= 2) { return n_distance(1); }
+        [[nodiscard]] scalar depth()    const requires (N >= 3) { return n_distance(2); }
+        [[nodiscard]] scalar duration() const requires (N >= 4) { return n_distance(3); }
 
         scalar n_volume() const {
             static_assert(1 <= N && N <= 4, "invalid dimension");

@@ -74,7 +74,7 @@ namespace Graphics {
 	    void SetCamera(const Maths::mat3D& cam) { rd->SetCamera(cam); }
 	    void SetProjection(const Maths::mat3D& proj) { rd->SetProjection(proj); }
 	    
-	    void UseShader(const std::string& code) { rd->UseShader(code); }
+	    void UseShader(std::string_view code) { rd->UseShader(code); }
 	    void UseShaderFromFile(const std::string& file) { rd->UseShaderFromFile(file); }
 	    void EnableShader()  { rd->EnableShader();  }
 	    void DisableShader() { rd->DisableShader(); }

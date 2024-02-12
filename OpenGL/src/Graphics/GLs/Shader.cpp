@@ -23,12 +23,12 @@ namespace Graphics {
         GLCALL(glUseProgram(0));
     }
 
-    Shader::Shader(const std::string& program) {
+    Shader::Shader(std::string_view program) {
         ShaderProgramSource shadersrc = ParseShader(program);
         rendererID = CreateShader(shadersrc.vertexShader, shadersrc.fragmentShader);
     }
 
-    Shader::Shader(const std::string& vert, const std::string& frag) {
+    Shader::Shader(std::string_view vert, std::string_view frag) {
         rendererID = CreateShader(vert, frag);
     }
 
@@ -42,30 +42,31 @@ namespace Graphics {
         return location;
     }
 
-    ShaderProgramSource Shader::ParseShader(stringr program) {
-        enum class ShaderType {
-            NONE = -1, VERTEX = 0, FRAGMENT
-        };
+    ShaderProgramSource Shader::ParseShader(std::string_view program) {
+        uint lastLine = 0;
+        Maths::urange ssv, ssf, *ss = nullptr;
+        for (uint i = 0; i < program.size(); ++i) {
+            if (program[i] != '\n') continue;
+            std::string_view line = std::string_view { program }.substr(lastLine, i - lastLine);
+            lastLine = i + 1;
 
-        std::stringstream prog { program };
-        ShaderType type = ShaderType::NONE;
-        std::string line;
-        std::stringstream ss[2];
-        while (std::getline(prog, line)) {
             if (line.find("#shader") != std::string::npos) {
+                if (ss) ss->max = line.data() - program.data();
                 if (line.find("vertex") != std::string::npos) {
-                    type = ShaderType::VERTEX;
-                }
-                else if (line.find("fragment") != std::string::npos) {
-                    type = ShaderType::FRAGMENT;
-                }
-            }
-            else {
-                ss[(int)type] << line << "\n";
+                    ss = &ssv;
+                } else if (line.find("fragment") != std::string::npos) {
+                    ss = &ssf;
+                } else continue;
+                ss->min = i + 1;
             }
         }
+        ss->max = program.size();
 
-        return { ss[0].str(), ss[1].str() };
+        const ShaderProgramSource s = {
+            std::string_view(program).substr(ssv.min, ssv.width()),
+            std::string_view(program).substr(ssf.min, ssf.width())
+        };
+        return s;
     }
 
 
@@ -84,10 +85,11 @@ namespace Graphics {
         return s;
     }
     
-    uint Shader::CompileShader(stringr source, uint type) {
+    uint Shader::CompileShader(std::string_view source, uint type) {
         const uint id = glCreateShader(type);
-        const char* src = source.c_str();
-        glShaderSource(id, 1, &src, nullptr);
+        const char* src = source.data();
+        const int length = (int)source.length();
+        glShaderSource(id, 1, &src, &length);
         glCompileShader(id);
 
         int result;
@@ -107,7 +109,7 @@ namespace Graphics {
         return id;
     }
 
-    uint Shader::CreateShader(stringr vtx, stringr frg) {
+    uint Shader::CreateShader(std::string_view vtx, std::string_view frg) {
         const uint program = glCreateProgram();
         const uint vs = CompileShaderVert(vtx);
         const uint fs = CompileShaderFrag(frg);

@@ -35,30 +35,37 @@ namespace Test {
         render.BindMeshes(&cube, 1);
 
         render.UseShader(
-            "#shader vertex\n"
-            "#version 330 core\n"
-            "layout(location = 0) in vec4 position;\n"
-            "layout(location = 1) in vec4 color;\n"
-            "out vec4 v_color;\n"
-            "out float v_alpha;\n"
-            "uniform mat4 u_projection;\n"
-            "uniform mat4 u_view;\n"
-            "uniform float u_alpha;\n"
-            "void main(){\n"
-            "    gl_Position = u_projection * u_view * position;\n"
-            "    v_color = color;\n"
-            "    v_alpha = u_alpha;\n"
-            "}\n"
-            "#shader fragment\n"
-            "#version 330 core\n"
-            "layout(location = 0) out vec4 color;\n"
-            "in vec4 v_color;\n"
-            "in float v_alpha;\n"
-            "void main(){\n"
-            "    color = v_color;\n"
-            "    color.a = v_alpha;\n"
-            "}"
-        );
+            GLSL_SHADER(
+                330,
+                (
+                    layout(location = 0) in vec4 position;
+                    layout(location = 1) in vec4 color;
+
+                    out vec4 v_color;
+                    out float v_alpha;
+
+                    uniform mat4 u_projection;
+                    uniform mat4 u_view;
+                    uniform float u_alpha;
+
+                    void main() {
+                        gl_Position = u_projection * u_view * position;
+                        v_color = color;
+                        v_alpha = u_alpha;
+                    }
+                ),
+                (
+                    layout(location = 0) out vec4 color;
+
+                    in vec4 v_color;
+                    in float v_alpha;
+
+                    void main() {
+                        color = v_color;
+                        color.a = v_alpha;
+                    }
+                )
+            ));
         render.SetProjection(projection);
     }
 
@@ -66,9 +73,7 @@ namespace Test {
         Test::OnRender(gdevice);
 
         Maths::mat3D mat = Maths::mat3D::transform(modelTranslation, modelScale, modelRotation);
-        
-        // std::sort(faceOrder, faceOrder + 6,
-        // [&](unsigned int face1, unsigned int face2){ return (mat * faceAxis[face1]).z < (mat * faceAxis[face2]).z; });
+
         render.SetCamera(mat);
         render.GetShader().Bind();
         render.GetShader().SetUniform1F("u_alpha", alpha);

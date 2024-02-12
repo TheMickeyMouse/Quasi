@@ -9,8 +9,8 @@
 
 namespace Graphics {
     struct ShaderProgramSource {
-        std::string vertexShader;
-        std::string fragmentShader;
+        std::string_view vertexShader;
+        std::string_view fragmentShader;
     };
 
     struct ShaderHandler : GLObjectHandler<ShaderHandler> {
@@ -25,8 +25,8 @@ namespace Graphics {
         std::unordered_map<std::string, int> uniformCache;
     public:
         Shader() = default;
-        OPENGL_API explicit Shader(const std::string& program);
-        OPENGL_API explicit Shader(const std::string& vert, const std::string& frag);
+        OPENGL_API explicit Shader(std::string_view program);
+        OPENGL_API explicit Shader(std::string_view vert, std::string_view frag);
 
         using stringr = const std::string&; // the 'r' stands for reference
         using intptr = const int*;
@@ -107,61 +107,67 @@ namespace Graphics {
 #pragma endregion
         OPENGL_API void SetUniformTex(stringr name, const class Texture& texture);
 
+#define GLSL_SHADER(VERSION, V, F) "#shader vertex\n" "#version " #VERSION " core\n" STDU_TOSTR(STDU_REMOVE_SCOPE(V)) "\n#shader fragment\n" "#version " #VERSION " core\n" STDU_TOSTR(STDU_REMOVE_SCOPE(F))
+
         inline const static std::string StdColored =
-            "#shader vertex\n"
-            "#version 330 core\n"
-            "layout(location = 0) in vec4 position;\n"
-            "layout(location = 1) in vec4 color;\n"
-            "out vec4 v_color;\n"
-            "uniform mat4 u_projection;\n"
-            "uniform mat4 u_view;\n"
-            "void main(){\n"
-            "    gl_Position = u_projection * u_view * position;\n"
-            "    v_color = color;\n"
-            "}\n"
-            "#shader fragment\n"
-            "#version 330 core\n"
-            "layout(location = 0) out vec4 color;\n"
-            "in vec4 v_color;\n"
-            "void main(){\n"
-            "    color = v_color;\n"
-            "}\n";
+            GLSL_SHADER(330,
+                (
+                    layout(location = 0) in vec4 position;
+                    layout(location = 1) in vec4 color;
+                    out vec4 v_color;
+                    uniform mat4 u_projection;
+                    uniform mat4 u_view;
+                    void main() {
+                        gl_Position = u_projection * u_view * position;
+                        v_color = color;
+                    }
+                ),
+                (
+                    layout(location = 0) out vec4 color;
+                    in vec4 v_color;
+                    void main() {
+                        color = v_color;
+                    }
+                )
+            );
 
         inline const static std::string StdTextured =
-            "#shader vertex\n"
-            "#version 330 core\n"
-            "layout(location = 0) in vec4 position;\n"
-            "layout(location = 1) in vec4 color;\n"
-            "layout(location = 2) in vec2 texCoord;\n"
-            "out vec2 v_TexCoord;\n"
-            "out vec4 v_color;\n"
-            "uniform mat4 u_projection;\n"
-            "uniform mat4 u_view;\n"
-            "void main(){\n"
-            "    gl_Position = u_projection * u_view * position;\n"
-            "    v_color = color;\n"
-            "    v_TexCoord = texCoord;\n"
-            "}\n"
-            "#shader fragment\n"
-            "#version 330 core\n"
-            "layout(location = 0) out vec4 color;\n"
-            "in vec2 v_TexCoord;\n"
-            "in vec4 v_color;\n"
-            "uniform sampler2D u_Texture;\n"
-            "void main(){\n"
-            "    vec4 texColor = texture(u_Texture, v_TexCoord);\n"
-            "    color = v_color * texColor;\n"
-            "}";
+            GLSL_SHADER(330,
+                (
+                    layout(location = 0) in vec4 position;
+                    layout(location = 1) in vec4 color;
+                    layout(location = 2) in vec2 texCoord;
+                    out vec2 v_TexCoord;
+                    out vec4 v_color;
+                    uniform mat4 u_projection;
+                    uniform mat4 u_view;
+                    void main() {
+                        gl_Position = u_projection * u_view * position;
+                        v_color = color;
+                        v_TexCoord = texCoord;
+                    }
+                ),
+                (
+                    layout(location = 0) out vec4 color;
+                    in vec2 v_TexCoord;
+                    in vec4 v_color;
+                    uniform sampler2D u_Texture;
+                    void main() {
+                        vec4 texColor = texture(u_Texture, v_TexCoord);
+                        color = v_color * texColor;
+                    }
+                )
+            );
 
         OPENGL_API static Shader FromFile(stringr filepath);
 
     private:
         OPENGL_API uint GetUniformLocation(stringr name);
-        OPENGL_API static ShaderProgramSource ParseShader(stringr program);
-        OPENGL_API static ShaderProgramSource ParseFromFile(stringr filepath);
-        OPENGL_API static uint CompileShader(stringr source, uint type);
-        OPENGL_API static uint CompileShaderVert(stringr source) { return CompileShader(source, GL_VERTEX_SHADER); }
-        OPENGL_API static uint CompileShaderFrag(stringr source) { return CompileShader(source, GL_FRAGMENT_SHADER); }
-        OPENGL_API static uint CreateShader(stringr vtx, stringr frg);
+        OPENGL_API static ShaderProgramSource ParseShader(std::string_view program);
+        OPENGL_API static ShaderProgramSource ParseFromFile(const std::string& filepath);
+        OPENGL_API static uint CompileShader(std::string_view source, uint type);
+        OPENGL_API static uint CompileShaderVert(std::string_view source) { return CompileShader(source, GL_VERTEX_SHADER); }
+        OPENGL_API static uint CompileShaderFrag(std::string_view source) { return CompileShader(source, GL_FRAGMENT_SHADER); }
+        OPENGL_API static uint CreateShader(std::string_view vtx, std::string_view frg);
     };
 }

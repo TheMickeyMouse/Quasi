@@ -83,34 +83,43 @@ namespace Test {
         render.BindMeshes(&mesh, 1);
         render.SetProjection(projection);
 
-        render.UseShader("#shader vertex\n"
-            "#version 330 core\n"
-            "layout(location = 0) in vec4 position;\n"
-            "layout(location = 1) in vec4 color;\n"
-            "layout(location = 2) in vec2 texCoord;\n"
-            "layout(location = 3) in int textureID;\n"
-            "out vec2 v_TexCoord;\n"
-            "out vec4 v_color;\n"
-            "flat out int v_index;\n"
-            "uniform mat4 u_projection;\n"
-            "uniform mat4 u_view;\n"
-            "void main(){\n"
-            "    gl_Position = u_projection * u_view * position;\n"
-            "    v_color = color;\n"
-            "    v_TexCoord = texCoord;\n"
-            "    v_index = textureID;\n"
-            "}\n"
-            "#shader fragment\n"
-            "#version 330 core\n"
-            "layout(location = 0) out vec4 color;\n"
-            "in vec2 v_TexCoord;\n"
-            "in vec4 v_color;\n"
-            "flat in int v_index;\n"
-            "uniform sampler2D u_textures[2];\n"
-            "void main(){\n"
-            "    vec4 texColor = texture(u_textures[v_index], v_TexCoord);\n"
-            "    color = v_color * texColor;\n"
-            "}");
+        render.UseShader(
+            GLSL_SHADER(330,
+                (
+                    layout(location = 0) in vec4 position;
+                    layout(location = 1) in vec4 color;
+                    layout(location = 2) in vec2 texCoord;
+                    layout(location = 3) in int textureID;
+
+                    out vec2 v_TexCoord;
+                    out vec4 v_color;
+                    flat out int v_index;
+
+                    uniform mat4 u_projection;
+                    uniform mat4 u_view;
+
+                    void main() {
+                        gl_Position = u_projection * u_view * position;
+                        v_color = color;
+                        v_TexCoord = texCoord;
+                        v_index = textureID;
+                    }
+                ),
+                (
+                    layout(location = 0) out vec4 color;
+
+                    in vec2 v_TexCoord;
+                    in vec4 v_color;
+                    flat in int v_index;
+
+                    uniform sampler2D u_textures[2];
+
+                    void main(){
+                        vec4 texColor = texture(u_textures[v_index], v_TexCoord);
+                        color = v_color * texColor;
+                    }
+                )
+            ));
 
         const int slots[] = { textures[0].Slot(), textures[1].Slot(), };
         render.GetShader().Bind();

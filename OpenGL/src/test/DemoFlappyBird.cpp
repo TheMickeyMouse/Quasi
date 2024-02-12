@@ -13,38 +13,47 @@ namespace Test {
 
         render = gdevice.CreateNewRender<Vertex>(128, 128);
         render.UseShader(
-            "#shader vertex\n"
-            "#version 330 core\n"
-            "layout(location = 0) in vec4 position;\n"
-            "layout(location = 1) in vec4 color;\n"
-            "layout(location = 2) in vec2 texCoord;\n"
-            "layout(location = 3) in int rtype;\n"
-            "out vec4 v_color;\n"
-            "out vec2 v_TexCoord;\n"
-            "flat out int v_rtype;\n"
-            "uniform mat4 u_projection;\n"
-            "uniform mat4 u_view;\n"
-            "void main() {\n"
-            "   gl_Position = u_projection * u_view * position;\n"
-            "   v_rtype = rtype;\n"
-            "   v_TexCoord = texCoord;\n"
-            "   v_color = color;\n"
-            "}\n"
-            "#shader fragment\n"
-            "#version 330 core\n"
-            "layout(location = 0) out vec4 color;\n"
-            "in vec4 v_color;\n"
-            "in vec2 v_TexCoord;\n"
-            "flat in int v_rtype;\n"
-            "uniform sampler2D u_font;\n"
-            "void main() {\n"
-            "   color = v_color;\n"
-            "   if (v_rtype == 1) {\n"
-            "       float alpha = texture(u_font, v_TexCoord).r;\n"
-            "       alpha = smoothstep(0.492, 0.508, alpha);\n"
-            "       color.a = alpha;\n"
-            "   }\n"
-            "}\n"
+            GLSL_SHADER(
+                330,
+                (
+                    layout(location = 0) in vec4 position;
+                    layout(location = 1) in vec4 color;
+                    layout(location = 2) in vec2 texCoord;
+                    layout(location = 3) in int rtype;
+
+                    out vec4 v_color;
+                    out vec2 v_TexCoord;
+                    flat out int v_rtype;
+
+                    uniform mat4 u_projection;
+                    uniform mat4 u_view;
+
+                    void main() {
+                       gl_Position = u_projection * u_view * position;
+                       v_rtype = rtype;
+                       v_TexCoord = texCoord;
+                       v_color = color;
+                    }
+                ),
+                (
+                    layout(location = 0) out vec4 color;
+
+                    in vec4 v_color;
+                    in vec2 v_TexCoord;
+                    flat in int v_rtype;
+
+                    uniform sampler2D u_font;
+
+                    void main() {
+                       color = v_color;
+                       if (v_rtype == 1) {
+                           float alpha = texture(u_font, v_TexCoord).r;
+                           alpha = smoothstep(0.492, 0.508, alpha);
+                           color.a = alpha;
+                       }
+                    }
+                )
+            )
         );
         render.SetProjection(Maths::mat3D::ortho_projection({ -320.0f, 320.0f, -240.0f, 240.0f, -1.0f, 1.0f }));
 
