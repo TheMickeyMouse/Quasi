@@ -60,7 +60,7 @@ namespace Graphics {
         }
 
         atlas = Texture(nullptr, textureSize.x, textureSize.y, true, TextureFormat::RED, TextureInternalFormat::RGBA_8, 1); // create blank texture
-        atlas.SetActive(0); // set this texture to the active one
+        atlas.Bind(); // set this texture to the active one
         glyphs.resize(NUM_GLYPHS * faceHandles.size()); // amt of glyphs
         metrics.reserve(faceHandles.size());
         for (uint i = 0; i < faceHandles.size(); ++i) {

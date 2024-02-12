@@ -16,7 +16,7 @@ namespace Test {
             "layout(location = 0) in vec4 position;\n"
             "layout(location = 1) in vec4 color;\n"
             "layout(location = 2) in vec2 texCoord;\n"
-            "layout(location = 3) in float isText;\n"
+            "layout(location = 3) in int isText;\n"
             "out vec4 v_color;\n"
             "out vec2 v_texCoord;\n"
             "flat out int v_isText;\n"
@@ -26,7 +26,7 @@ namespace Test {
             "    gl_Position = u_projection * u_view * position;\n"
             "    v_color = color;\n"
             "    v_texCoord = texCoord;\n"
-            "    v_isText = int(isText);\n"
+            "    v_isText = isText;\n"
             "}\n"
             "#shader fragment\n"
             "#version 330 core\n"
@@ -66,8 +66,7 @@ namespace Test {
 
         font.SetSize(48);
         font.RenderBitmap();
-        gdevice.BindTexture(font.GetTexture());
-
+        font.GetTexture().Activate();
 
         const Maths::fvec2 size = font.GetTexture().GetSize();
         const float x = size.x / size.y;

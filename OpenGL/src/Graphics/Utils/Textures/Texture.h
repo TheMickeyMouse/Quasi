@@ -1,9 +1,13 @@
 ﻿#pragma once
 #include <string>
+#include <vector>
+
+#include "GLObject.h"
 #include "opengl.h"
 
 #include "NumTypes.h"
 #include "Vector.h"
+#include "stdu/unique.h"
 
 namespace Graphics {
     // * from glew.h or https://javagl.github.io/GLConstantsTranslator/GLConstantsTranslator.html
@@ -51,44 +55,52 @@ namespace Graphics {
         DEPTH_32F_STENCIL_8 = 0x8CAD,          DEPTH_24_STENCIL_8 = 0x88F0
     };
 
-    class Texture {
+    struct TextureHandler : GLObjectHandler<TextureHandler> {
+        OPENGL_API glID Create() const;
+        OPENGL_API void Destroy(glID id) const;
+        OPENGL_API void Bind(glID id) const;
+        OPENGL_API void Unbind() const;
+    };
+
+    struct TextureSlotHandler {
+        constexpr int operator()() const { return -1; }
+        OPENGL_API void operator()(int slot) const;
+    };
+
+    class Texture : public GLObject<TextureHandler> {
+    public:
+        inline static int SlotCount = -1;
+        inline static std::vector<Texture*> Slots {};
+        OPENGL_API static void Init();
     private:
-        glID rendererID = GL_NULL;
         Maths::uvec2 size;
-        int BPPixel = 0; //stands for bits per pixel
-        
-        class GraphicsDevice* device = nullptr;
-        uint textureSlot = 0;
+        int BPPixel = 0; //stands for bits per pixel'
+        using slot_t = stdu::unique<int, TextureSlotHandler>;
+        slot_t textureSlot = -1;
 
         OPENGL_API void LoadTexture(const uchar* img, bool useLinear = true,
             TextureFormat format = TextureFormat::RGBA,
             TextureInternalFormat iformat = TextureInternalFormat::RGBA_8,
             int alignment = 4 /* see https://registry.khronos.org/OpenGL-Refpages/gl4/html/glPixelStore.xhtml */);
      public:
-        OPENGL_API Texture() = default;
+        Texture() = default;
         OPENGL_API explicit Texture(const uchar* raw, uint w, uint h, bool useLinear = true,
             TextureFormat format = TextureFormat::RGBA,
             TextureInternalFormat iformat = TextureInternalFormat::RGBA_8,
             int alignment = 4);
         OPENGL_API explicit Texture(const std::string& filePath, bool useLinear = true);
-        OPENGL_API ~Texture();
-
-        Texture(const Texture&) = delete;
-        Texture& operator=(const Texture&) = delete;
-        OPENGL_API static void Transfer(Texture& dest, Texture&& from);
-        Texture(Texture&& tex) noexcept { Transfer(*this, std::move(tex)); }
-        Texture& operator=(Texture&& tex) noexcept { Transfer(*this, std::move(tex)); return *this; }
 
         OPENGL_API static Texture LoadPNGBytes(const uchar* png, int len, bool useLinear = true);
 
-        OPENGL_API void Bind(uint slot, GraphicsDevice* gdevice);
-        OPENGL_API void SetActive(uint slot) const;
-        OPENGL_API void Unbind();
-        OPENGL_API void Destroy();
+        OPENGL_API void Activate(int slot = -1);
+        OPENGL_API void Deactivate();
+        OPENGL_API static void DeactivateAll();
+        OPENGL_API static int FindEmptySlot();
 
         OPENGL_API void SetSubTexture(const uchar* data, Maths::rect2u rect, TextureFormat format = TextureFormat::RGBA);
 
-        [[nodiscard]] int Slot() const { return (int)textureSlot; }
+        [[nodiscard]] int Slot() const { return *textureSlot; }
+        [[nodiscard]] float Slotf() const { return (float)*textureSlot; }
 
         [[nodiscard]] Maths::uvec2 GetSize() const { return size; }
 

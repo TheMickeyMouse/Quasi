@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "Render.h"
-#include "Texture.h"
 
 #include <GLFW/glfw3.h>
 
@@ -16,8 +15,6 @@ namespace Graphics {
         using RenderHandle = std::unique_ptr<RenderData>;
     private:
         std::vector<RenderHandle> renders;
-        std::vector<Texture*> textures;
-        // Maths::Matrix3D::PerspectiveProjectionFOV(45.0f, 4.0f / 3, 0.1f, 100.0f);
 
         Maths::ivec2 windowSize;
         GLFWwindow* mainWindow;
@@ -31,6 +28,7 @@ namespace Graphics {
         using stringr = const std::string&;
 
         OPENGL_API void Quit();
+        OPENGL_API void Terminate();
         OPENGL_API ~GraphicsDevice();
         
         OPENGL_API void BeginRender();
@@ -44,13 +42,9 @@ namespace Graphics {
         OPENGL_API void Render(RenderData& r);
         void Render(uint index) { Render(GetRender(index)); }
 
-        OPENGL_API void BindTexture(Texture& texture, int slot = -1);
-        OPENGL_API void UnbindTexture(int slot);
-        OPENGL_API void UnbindAllTextures();
-
         OPENGL_API void ClearColor(const Maths::colorf& color);
 
-        [[nodiscard]] bool IsClosed() const { return !mainWindow; } // quit() sets mainwindow to nullptr 
+        [[nodiscard]] bool IsClosed() const { return !mainWindow; }
         OPENGL_API [[nodiscard]] bool WindowIsOpen() const;
     
         [[nodiscard]] Maths::ivec2 GetWindowSize() const { return windowSize; }
@@ -60,15 +54,13 @@ namespace Graphics {
         FontDevice& GetFontDevice() { return fontDevice; }
         [[nodiscard]] const FontDevice& GetFontDevice() const { return fontDevice; }
 
-        static void SetRenderWireframe(bool usewire) { Render::SetRenderWireframe(usewire); }
+        OPENGL_API void SetWireframe(bool usewire);
+        OPENGL_API static void DrawWireframe(bool usewire);
 
-        // WARNING! this may close the application, so be prepared to handle that situation
         OPENGL_API void DebugMenu();
 
         static GraphicsDevice& GetDeviceInstance() { return *Instance; }
         static GLFWwindow* GetMainWindow() { return Instance->mainWindow; }
-
-        //void Render(bool autoSort = true);
 
         OPENGL_API static GraphicsDevice Initialize(Maths::ivec2 winSize = { 640, 480 });
 

@@ -13,7 +13,8 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include "..\..\IO\TimeType.h"
+#include "Texture.h"
+#include "IO/TimeType.h"
 
 namespace Graphics {
     GraphicsDevice::GraphicsDevice(GLFWwindow* window, Maths::ivec2 winSize) : 
@@ -21,16 +22,16 @@ namespace Graphics {
         Instance = *this;
         IO::Init(*this);
 
-        int textureCount = 0;
-        glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &textureCount);
-        LOG("Texture Count: " << textureCount);
-        textures.resize(textureCount, nullptr);
+        Texture::Init();
     }
 
     void GraphicsDevice::Quit() {
         DeleteAllRenders(); // delete gl objects
-        UnbindAllTextures(); // delete textures
-        
+        // UnbindAllTextures(); // delete textures
+        glfwSetWindowShouldClose(mainWindow, true);
+    }
+
+    void GraphicsDevice::Terminate() {
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
@@ -42,8 +43,9 @@ namespace Graphics {
     }
 
     GraphicsDevice::~GraphicsDevice() {
-        if (!IsClosed())
-            Quit();
+        if (IsClosed()) return;
+        Quit();
+        Terminate();
     }
 
     void GraphicsDevice::BeginRender() {
@@ -54,7 +56,7 @@ namespace Graphics {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        SetRenderWireframe(useWireRender);
+        DrawWireframe(useWireRender);
 
         IO::Update();
     }
@@ -63,7 +65,6 @@ namespace Graphics {
         if (IsClosed()) return;
         
         ImGui::Render();
-        // glClear(GL_COLOR_BUFFER_BIT);
         
         glfwPollEvents();
             
@@ -96,37 +97,44 @@ namespace Graphics {
         Render::Draw(r);
     }
 
-    void GraphicsDevice::BindTexture(Texture& texture, int slot) {
-        if (slot == -1) {
-            const auto free = std::ranges::find_if(textures, [](Texture* t) { return t == nullptr; });
-            slot = free - textures.begin();
-        }
-        texture.Bind(slot, this);
-        textures[slot] = &texture;
-    }
+    // void GraphicsDevice::BindTexture(Texture& texture, int slot) {
+    //     if (slot == -1) {
+    //         const auto free = std::ranges::find_if(textures, [](Texture* t) { return t == nullptr; });
+    //         slot = free - textures.begin();
+    //     }
+    //     texture.Register(slot, this);
+    //     textures[slot] = &texture;
+    // }
 
-    void GraphicsDevice::UnbindTexture(int slot) {
-        Texture* t = textures[slot];
-        textures[slot] = nullptr;
-        if (t)
-            t->Unbind();
-    }
-
-    void GraphicsDevice::UnbindAllTextures() {
-        for (Texture*& t : textures) {
-            if (!t) continue;
-            t->Destroy();
-            t = nullptr;
-        }
-    }
+    // void GraphicsDevice::UnbindTexture(int slot) {
+    //     Texture* t = textures[slot];
+    //     textures[slot] = nullptr;
+    //     if (t)
+    //         t->Remove();
+    // }
+    //
+    // void GraphicsDevice::UnbindAllTextures() {
+    //     for (Texture*& t : textures) {
+    //         if (!t) continue;
+    //         t->Destroy();
+    //         t = nullptr;
+    //     }
+    // }
 
     void GraphicsDevice::ClearColor(const Maths::colorf& color) {
         Render::SetClearColor(color);
     }
 
     bool GraphicsDevice::WindowIsOpen() const {
-        if (mainWindow) return !glfwWindowShouldClose(mainWindow);
-        return false;
+        return mainWindow && !glfwWindowShouldClose(mainWindow);
+    }
+
+    void GraphicsDevice::SetWireframe(bool usewire) {
+        useWireRender = usewire;
+    }
+
+    void GraphicsDevice::DrawWireframe(bool usewire) {
+        Render::SetRenderWireframe(usewire);
     }
 
     void GraphicsDevice::DebugMenu() {

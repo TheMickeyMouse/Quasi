@@ -5,9 +5,20 @@
 
 namespace Test {
     class TestBatchedTextured : public Test {
+    public:
+        struct Vertex {
+            Maths::fvec3  Position;
+            Maths::colorf Color;
+            Maths::fvec2  TextureCoordinate;
+            int TextureID;
+
+            GL_VERTEX_T(Vertex);
+            GL_VERTEX_FIELD((Position)(Color)(TextureCoordinate)(TextureID));
+            GL_VERTEX_TRANSFORM_FIELDS((Position))
+        };
     private:
-        Graphics::RenderObject<VertexColorTexture3D> render;
-        Graphics::Mesh<VertexColorTexture3D> mesh;
+        Graphics::RenderObject<Vertex> render;
+        Graphics::Mesh<Vertex> mesh;
         Graphics::Texture textures[2];
 
         Maths::mat3D projection = Maths::mat3D::ortho_projection({ -320.0f, 320.0f, -240.0f, 240.0f, -1.0f, 1.0f });

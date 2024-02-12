@@ -82,7 +82,7 @@ uniform sampler2D screenTexture;
 void main() {
     FragColor = vec4(1.0 - texture(screenTexture, TexCoords).rgb, 1.0);
 })");
-        gdevice.BindTexture(renderResult);
+        renderResult.Activate(0);
     }
 
     void TestPostProcessing::OnUpdate(float deltaTime) {

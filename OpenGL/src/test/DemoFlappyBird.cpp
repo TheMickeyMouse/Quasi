@@ -18,7 +18,7 @@ namespace Test {
             "layout(location = 0) in vec4 position;\n"
             "layout(location = 1) in vec4 color;\n"
             "layout(location = 2) in vec2 texCoord;\n"
-            "layout(location = 3) in float rtype;\n"
+            "layout(location = 3) in int rtype;\n"
             "out vec4 v_color;\n"
             "out vec2 v_TexCoord;\n"
             "flat out int v_rtype;\n"
@@ -26,7 +26,7 @@ namespace Test {
             "uniform mat4 u_view;\n"
             "void main() {\n"
             "   gl_Position = u_projection * u_view * position;\n"
-            "   v_rtype = int(rtype);\n"
+            "   v_rtype = rtype;\n"
             "   v_TexCoord = texCoord;\n"
             "   v_color = color;\n"
             "}\n"
@@ -51,7 +51,7 @@ namespace Test {
         font = Graphics::Font::LoadFile(GL_WIN_FONTS "consolab.ttf");
         font.SetSize(48);
         font.RenderBitmap();
-        gdevice.BindTexture(font.GetTexture());
+        font.GetTexture().Activate(0);
 
         mPlayer = Graphics::MeshUtils::CircleMesh(30.0f, 32)
                  .Convert<Vertex>([](const Maths::fvec2 pos) -> Vertex {
@@ -161,7 +161,6 @@ namespace Test {
     void DemoFlappyBird::CheckPlayerCollisions() {
         if (yPos <= -190.0f || 190.0f <= yPos) goto die; // NOLINT(cppcoreguidelines-avoid-goto, hicpp-avoid-goto)
         for (const Spike& spike : spikes) {
-            if (-120.0f < spike.collider.p2.x + spike.xOff) break;
             for (int i = 1; i < 3; ++i) {
                 const Maths::Geometry::fline2d line = spike.collider.line(i) + Maths::fvec2::unit_x(spike.xOff);
                 const Maths::fvec2 center           = Maths::fvec2 { -150, yPos },

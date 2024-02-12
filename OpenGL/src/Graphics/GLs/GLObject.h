@@ -24,7 +24,7 @@ namespace Graphics {
 
         explicit GLObject() = default;
         GLObject(stdu::empty) : rendererID(handler.Create()) {}
-        ~GLObject() { handler.Destroy(rendererID); rendererID = GL_NULL; }
+        ~GLObject() { Delete(); }
 
         GLObject(const GLObject&) = delete;
         GLObject& operator=(const GLObject&) = delete;
@@ -33,6 +33,10 @@ namespace Graphics {
 
         void Bind() const { handler.Bind(rendererID); }
         void Unbind() const { handler.Unbind(); }
+
+        void Delete() { handler.Destroy(rendererID); rendererID = GL_NULL; }
+
+        [[nodiscard]] bool IsNull() const { return rendererID == GL_NULL; }
 
         [[nodiscard]] operator glID() const { return rendererID; }
     };

@@ -81,9 +81,6 @@ namespace Test {
         ImGui::Separator();
         gdevice.DebugMenu();
 
-        if (gdevice.IsClosed())
-            return;
-
         ImGui::End();
     }
 }

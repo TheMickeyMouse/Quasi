@@ -358,6 +358,7 @@
     <ClCompile Include="src\Maths\Matrix.cpp" />
     <ClCompile Include="src\Maths\Random.cpp" />
     <ClCompile Include="src\stdu\rich_string.cpp" />
+    <ClCompile Include="src\stdu\unique.cpp" />
     <ClCompile Include="src\test\DemoFlappyBird.cpp" />
     <ClCompile Include="src\test\TestBatchedTextured.cpp" />
     <ClCompile Include="src\test\TestClearColor.cpp" />
@@ -439,6 +440,7 @@
     <ClInclude Include="src\stdu\rich_string.h" />
     <ClInclude Include="src\stdu\test.h" />
     <ClInclude Include="src\stdu\types.h" />
+    <ClInclude Include="src\stdu\unique.h" />
     <ClInclude Include="src\test\DemoFlappyBird.h" />
     <ClInclude Include="src\test\Test.h" />
     <ClInclude Include="src\test\TestBatchedTextured.h" />

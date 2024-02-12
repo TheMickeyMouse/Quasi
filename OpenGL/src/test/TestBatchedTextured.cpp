@@ -6,7 +6,7 @@
 
 namespace Test {
     void TestBatchedTextured::OnInit(Graphics::GraphicsDevice& gdevice) {
-        render = gdevice.CreateNewRender<VertexColorTexture3D>(8, 4);
+        render = gdevice.CreateNewRender<Vertex>(8, 4);
 
         // because i couldn't get rc files working and 
         // dlls/libs dont pack things like pngs into itself, im using these bytes instead
@@ -55,19 +55,19 @@ namespace Test {
         textures[1] = Graphics::Texture::LoadPNGBytes(tex1, sizeof(tex1) / sizeof(uchar), false);
 #pragma endregion
 
-        gdevice.BindTexture(textures[0]);
-        gdevice.BindTexture(textures[1]);
+        textures[0].Activate();
+        textures[1].Activate();
 
-        VertexColorTexture3D vertices[] = {
-            { { -240.0f, -80.0f, 0 }, 1, { 0.0f, 0.0f }, textures[0].Slot() },
-            { { -80.00f, -80.0f, 0 }, 1, { 1.0f, 0.0f }, textures[0].Slot() },
-            { { -80.00f, +80.0f, 0 }, 1, { 1.0f, 1.0f }, textures[0].Slot() },
-            { { -240.0f, +80.0f, 0 }, 1, { 0.0f, 1.0f }, textures[0].Slot() },
+        Vertex vertices[] = {
+            { { -240.0f, -80.0f, 0 }, 1, { 0.0f, 0.0f }, 0 },
+            { { -80.00f, -80.0f, 0 }, 1, { 1.0f, 0.0f }, 0 },
+            { { -80.00f, +80.0f, 0 }, 1, { 1.0f, 1.0f }, 0 },
+            { { -240.0f, +80.0f, 0 }, 1, { 0.0f, 1.0f }, 0 },
 
-            { { +80.00f, -80.0f, 0 }, 1, { 0.0f, 0.0f }, textures[1].Slot() },
-            { { +240.0f, -80.0f, 0 }, 1, { 1.0f, 0.0f }, textures[1].Slot() },
-            { { +240.0f, +80.0f, 0 }, 1, { 1.0f, 1.0f }, textures[1].Slot() },
-            { { +80.00f, +80.0f, 0 }, 1, { 0.0f, 1.0f }, textures[1].Slot() },
+            { { +80.00f, -80.0f, 0 }, 1, { 0.0f, 0.0f }, 1 },
+            { { +240.0f, -80.0f, 0 }, 1, { 1.0f, 0.0f }, 1 },
+            { { +240.0f, +80.0f, 0 }, 1, { 1.0f, 1.0f }, 1 },
+            { { +80.00f, +80.0f, 0 }, 1, { 0.0f, 1.0f }, 1 },
         };
 
         Graphics::TriIndices indices[] = {
@@ -83,19 +83,47 @@ namespace Test {
         render.BindMeshes(&mesh, 1);
         render.SetProjection(projection);
 
-        render.UseShader(Graphics::Shader::StdTextured);
+        render.UseShader("#shader vertex\n"
+            "#version 330 core\n"
+            "layout(location = 0) in vec4 position;\n"
+            "layout(location = 1) in vec4 color;\n"
+            "layout(location = 2) in vec2 texCoord;\n"
+            "layout(location = 3) in int textureID;\n"
+            "out vec2 v_TexCoord;\n"
+            "out vec4 v_color;\n"
+            "flat out int v_index;\n"
+            "uniform mat4 u_projection;\n"
+            "uniform mat4 u_view;\n"
+            "void main(){\n"
+            "    gl_Position = u_projection * u_view * position;\n"
+            "    v_color = color;\n"
+            "    v_TexCoord = texCoord;\n"
+            "    v_index = textureID;\n"
+            "}\n"
+            "#shader fragment\n"
+            "#version 330 core\n"
+            "layout(location = 0) out vec4 color;\n"
+            "in vec2 v_TexCoord;\n"
+            "in vec4 v_color;\n"
+            "flat in int v_index;\n"
+            "uniform sampler2D u_textures[2];\n"
+            "void main(){\n"
+            "    vec4 texColor = texture(u_textures[v_index], v_TexCoord);\n"
+            "    color = v_color * texColor;\n"
+            "}");
+
+        const int slots[] = { textures[0].Slot(), textures[1].Slot(), };
+        render.GetShader().Bind();
+        render.GetShader().SetUniform1IVec("u_textures", slots, 2);
+        render.GetShader().Unbind();
     }
 
     void TestBatchedTextured::OnRender(Graphics::GraphicsDevice& gdevice) {
         Test::OnRender(gdevice);
-        //shader.SetUniform4F("u_Color", color);
         Maths::mat3D mat = Maths::mat3D::transform(modelTranslation,
                                                    modelScale,
                                                    modelRotation);
-        const int slots[] = { textures[0].Slot(), textures[1].Slot(), };
         render.SetCamera(mat);
-        render.GetShader().Bind();
-        render.GetShader().SetUniform1IVec("u_Texture", slots, 2);
         render.ResetData();
         render.Render();
     }

@@ -85,7 +85,7 @@ namespace Maths {
         scalar duration() const requires (N >= 4) { return n_distance(3); }
 
         scalar n_volume() const {
-            static_assert(2 <= N && N <= 4, "invalid dimension");
+            static_assert(1 <= N && N <= 4, "invalid dimension");
             if constexpr (N == 1) return width();
             else if constexpr (N == 2) return width() * height();
             else if constexpr (N == 3) return width() * height() * depth();

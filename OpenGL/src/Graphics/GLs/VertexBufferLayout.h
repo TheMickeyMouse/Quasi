@@ -11,11 +11,13 @@ namespace Graphics {
     struct VertexBufferComponent {
         GLTypeID type;
         uint count;
-        uchar normalized;
+        uchar flags;
+        static constexpr uchar NORMALIZED_FLAG = 1;
+        static constexpr uchar INTEGER_FLAG = 2;
 
         VertexBufferComponent() = default;
-        VertexBufferComponent(GLTypeID type, uint count, uchar norm = false)
-            : type(type), count(count), normalized(norm) {}
+        VertexBufferComponent(GLTypeID type, uint count, bool norm = false, bool integral = false)
+            : type(type), count(count), flags((integral * INTEGER_FLAG) | (norm * NORMALIZED_FLAG)) {}
         
         static VertexBufferComponent Float()  { return { GLTypeIDOf<float>,  1 }; }
         static VertexBufferComponent Double() { return { GLTypeIDOf<double>, 1 }; }
@@ -31,7 +33,8 @@ namespace Graphics {
         static VertexBufferComponent IVec4()  { return { GLTypeIDOf<int>,    4 }; }
 
         template <class T> static VertexBufferComponent Type() {
-            if constexpr (std::is_arithmetic_v<T>) return { GLTypeIDOf<T>, 1 };
+            if constexpr (std::is_floating_point_v<T>) return { GLTypeIDOf<T>, 1 };
+            if constexpr (std::is_integral_v<T>) return { GLTypeIDOf<T>, 1, false, true };
             if constexpr (Maths::is_vec_v<T> || Maths::is_color_v<T>)
                 return { GLTypeIDOf<typename T::scalar>, T::dimension };
             return { GLTypeID::UNDEFINED, 0 };
@@ -46,7 +49,7 @@ namespace Graphics {
         OPENGL_API VertexBufferLayout() = default;
         OPENGL_API VertexBufferLayout(std::initializer_list<VertexBufferComponent> comps);
 
-        template <class T> void Push(uint count, bool normalized = false);
+        template <class T> void Push(uint count, bool normalized = false, bool integral = false);
         OPENGL_API void Push(VertexBufferComponent comp);
         OPENGL_API void PushLayout(const VertexBufferLayout& layout);
 
@@ -74,9 +77,9 @@ namespace Graphics {
     };
 
     template <class T>
-    void VertexBufferLayout::Push(uint count, bool normalized) {
+    void VertexBufferLayout::Push(uint count, bool normalized, bool integral) {
         constexpr GLTypeID type = GLTypeIDOf<T>;
-        _components.emplace_back(type, count, normalized);
+        _components.emplace_back(type, count, normalized, integral);
         stride += count * SizeOf(type);
     }
 }

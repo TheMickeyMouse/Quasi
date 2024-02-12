@@ -27,7 +27,11 @@ namespace Graphics {
         for (uint i = 0; i < elements.size(); i++) {
             const auto& elem = elements[i];
             GLCALL(glEnableVertexAttribArray(i));
-            GLCALL(glVertexAttribPointer(i, elem.count, (int)elem.type, elem.normalized, layout.GetStride(), (const void*)offset));  // NOLINT(performance-no-int-to-ptr)
+            if (elem.flags & VertexBufferComponent::INTEGER_FLAG) {
+                GLCALL(glVertexAttribIPointer(i, elem.count, (int)elem.type, layout.GetStride(), (const void*)offset));  // NOLINT(performance-no-int-to-ptr)
+            } else {
+                GLCALL(glVertexAttribPointer(i, elem.count, (int)elem.type, elem.flags & elem.NORMALIZED_FLAG, layout.GetStride(), (const void*)offset));  // NOLINT(performance-no-int-to-ptr)
+            }
             offset += elem.count * SizeOf(elem.type);
         }
     }

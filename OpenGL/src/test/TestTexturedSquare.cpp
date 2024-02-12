@@ -75,13 +75,13 @@ namespace Test {
 #pragma endregion
         
         texture = Graphics::Texture::LoadPNGBytes(tex, sizeof(tex) / sizeof(uchar), false);
-        gdevice.BindTexture(texture);
+        texture.Activate();
 
         VertexColorTexture3D vertices[] = { 
-            { { -50.0f, -50.0f, 0 }, 1, { 0.0f, 0.0f }, texture.Slot() },
-            { { +50.0f, -50.0f, 0 }, 1, { 1.0f, 0.0f }, texture.Slot() },
-            { { +50.0f, +50.0f, 0 }, 1, { 1.0f, 1.0f }, texture.Slot() },
-            { { -50.0f, +50.0f, 0 }, 1, { 0.0f, 1.0f }, texture.Slot() },
+            { { -50.0f, -50.0f, 0 }, 1, { 0.0f, 0.0f } },
+            { { +50.0f, -50.0f, 0 }, 1, { 1.0f, 0.0f } },
+            { { +50.0f, +50.0f, 0 }, 1, { 1.0f, 1.0f } },
+            { { -50.0f, +50.0f, 0 }, 1, { 0.0f, 1.0f } },
         };
 
         Graphics::TriIndices indices[] = {
@@ -103,6 +103,8 @@ namespace Test {
                                                    modelScale,
                                                    modelRotation);
         render.SetCamera(mat);
+        render.GetShader().Bind();
+        render.GetShader().SetUniformTex("u_Texture", texture);
         mesh.ApplyMaterial(&VertexColorTexture3D::Color, color);
         //LOG(mat);
         render.ResetData();

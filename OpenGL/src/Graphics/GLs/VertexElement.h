@@ -31,10 +31,9 @@ struct VertexColorTexture3D {
     Maths::fvec3  Position;
     Maths::colorf Color;
     Maths::fvec2  TextureCoordinate;
-    int TextureID = 0;
 
     GL_VERTEX_T(VertexColorTexture3D);
-    GL_VERTEX_FIELD((Position)(Color)(TextureCoordinate)(TextureID));
+    GL_VERTEX_FIELD((Position)(Color)(TextureCoordinate));
     GL_VERTEX_TRANSFORM_FIELDS((Position))
 };
 
