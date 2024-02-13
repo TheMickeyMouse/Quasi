@@ -14,6 +14,7 @@
 
 #include "DemoFlappyBird.h"
 #include "TestPostProcessing.h"
+#include "TimeType.h"
 
 namespace Test {
     class TestManager : public Test {
@@ -24,7 +25,7 @@ namespace Test {
         TestManager();
         ~TestManager() override;
         
-        void OnUpdate(float deltaTime = -1) override;
+        void OnUpdate(float deltaTime = IO::Time.DeltaTimef()) override;
         void OnRender(Graphics::GraphicsDevice& gdevice) override;
         void OnImGuiRender(Graphics::GraphicsDevice& gdevice) override;
     };

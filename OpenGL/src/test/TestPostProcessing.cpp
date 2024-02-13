@@ -1,8 +1,22 @@
 #include "TestPostProcessing.h"
 
+#include "Constants.h"
 #include "imgui.h"
 #include "Mesh.h"
 #include "Quad.h"
+
+#define POST_VERTEX_SHADER \
+( \
+    layout (location = 0) in vec2 aPos; \
+    layout (location = 1) in vec2 aTexCoords; \
+    \
+    out vec2 TexCoords; \
+    \
+    void main() { \
+        TexCoords = aTexCoords; \
+        gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0); \
+    } \
+)
 
 namespace Test {
     void TestPostProcessing::OnInit(Graphics::GraphicsDevice& gdevice) {
@@ -64,20 +78,29 @@ namespace Test {
                         return VertexTexture2D { v.Position, (v.Position + 1) * 0.5f };
                      });
         postProcessingQuad.BindMeshes(&screenQuad, 1);
+
         postProcessingQuad.UseShader(
             GLSL_SHADER(
                 330,
+                POST_VERTEX_SHADER,
                 (
-                    layout (location = 0) in vec2 aPos;
-                    layout (location = 1) in vec2 aTexCoords;
+                    layout (location = 0) out vec4 FragColor;
 
-                    out vec2 TexCoords;
+                    in vec2 TexCoords;
+
+                    uniform sampler2D screenTexture;
 
                     void main() {
-                        TexCoords = aTexCoords;
-                        gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);
+                        FragColor = texture(screenTexture, TexCoords);
                     }
-                ),
+                )
+            )
+        );
+        // inv shader
+        {
+            shaderInv = Graphics::Shader { GLSL_SHADER(
+                330,
+                POST_VERTEX_SHADER,
                 (
                     layout (location = 0) out vec4 FragColor;
 
@@ -89,13 +112,105 @@ namespace Test {
                         FragColor = vec4(1.0 - texture(screenTexture, TexCoords).rgb, 1.0);
                     }
                 )
-            ));
+            )};
+        }
+        // hsl shader
+        {
+            shaderHsv = Graphics::Shader { GLSL_SHADER(
+                330,
+                POST_VERTEX_SHADER,
+                (
+                    layout (location = 0) out vec4 FragColor;
 
+                    in vec2 TexCoords;
+
+                    uniform sampler2D screenTexture;
+                    uniform float dh, ds, dv;
+
+                    vec3 rgb2hsv(vec3 c) {
+                        vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+                        vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+                        vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+
+                        float d = q.x - min(q.w, q.y);
+                        float e = 1.0e-10;
+                        return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+                    }
+
+                    vec3 hsv2rgb(vec3 c) {
+                        vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+                        vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+                        return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+                    }
+
+                    void main() {
+                        vec3 hsv = rgb2hsv(texture(screenTexture, TexCoords).rgb);
+                        hsv = vec3(fract(hsv.x + dh), clamp(hsv.y * ds, 0, 1), clamp(hsv.z + dv, 0, 1));
+                        FragColor = vec4(hsv2rgb(hsv), 1.0);
+                    }
+                )
+            )};
+        }
+        // blur shader
+        {
+            shaderBlur = Graphics::Shader { GLSL_SHADER(
+                330,
+                POST_VERTEX_SHADER,
+                (
+                    layout (location = 0) out vec4 FragColor;
+
+                    in vec2 TexCoords;
+
+                    uniform sampler2D screenTexture;
+                    uniform vec2 blurOff;
+
+                    void main() {
+                        vec2 off = blurOff / vec2(textureSize(screenTexture, 0));
+                        vec3 total = vec3(0.0);
+                        for (int i = -4; i < 5; ++i) {
+                            float multiplier = float(1 << ((i & 1) + 2 * int(i == 0))) / 16.0;
+                            vec2 offset = off * vec2(float((i + 4) % 3) - 1.0, float((i + 4) / 3) - 1.0);
+                            total += multiplier * texture(screenTexture, TexCoords + offset).rgb;
+                        }
+                        FragColor = vec4(total, 1.0);
+                    }
+                )
+            )};
+        }
+        // edge detect shader
+        {
+            shaderEdgeDetect = Graphics::Shader { GLSL_SHADER(
+                330,
+                POST_VERTEX_SHADER,
+                (
+                    layout (location = 0) out vec4 FragColor;
+
+                    in vec2 TexCoords;
+
+                    uniform sampler2D screenTexture;
+                    uniform vec2 detectOff;
+
+                    void main() {
+                        vec2 off = detectOff / vec2(textureSize(screenTexture, 0));
+                        vec3 total = vec3(0.0);
+                        for (int i = 0; i < 9; ++i) {
+                            vec2 offset = off * vec2(float(i % 3) - 1.0, float(i / 3) - 1.0);
+                            total += (i == 4 ? -8.0 : 1.0) * texture(screenTexture, TexCoords + offset).rgb;
+                        }
+                        FragColor = vec4(total, 1.0);
+                    }
+                )
+            )};
+        }
+
+        currShader = &postProcessingQuad.GetShader();
         renderResult.Activate(0);
     }
 
     void TestPostProcessing::OnUpdate(float deltaTime) {
         Test::OnUpdate(deltaTime);
+        modelRotation += turnSpeed * deltaTime;
+        modelRotation = modelRotation.apply([](const float f) -> float { return std::fmod(f, Maths::TAU); });
     }
 
     void TestPostProcessing::OnRender(Graphics::GraphicsDevice& gdevice) {
@@ -124,11 +239,20 @@ namespace Test {
             // Graphics::Render::SetClearColor(1);
             Graphics::Render::ClearColorBit();
 
-            postProcessingQuad.GetShader().Bind();
-            postProcessingQuad.GetShader().SetUniformTex("screenTexture", renderResult);
+            currShader->Bind();
+            currShader->SetUniformTex("screenTexture", renderResult);
+            if (currShader == &shaderBlur) {
+                currShader->SetUniform2F("blurOff", effectOff.begin());
+            } else if (currShader == &shaderEdgeDetect) {
+                currShader->SetUniform2F("detectOff", effectOff.begin());
+            } else if (currShader == &shaderHsv) {
+                currShader->SetUniform1F("dh", hueShift);
+                currShader->SetUniform1F("ds", satMul);
+                currShader->SetUniform1F("dv", valShift);
+            }
 
             postProcessingQuad.ResetData();
-            Graphics::Render::Draw(postProcessingQuad.GetRenderData());
+            Graphics::Render::Draw(postProcessingQuad.GetRenderData(), *currShader);
         }
     }
 
@@ -138,7 +262,25 @@ namespace Test {
         ImGui::DragFloat3("Scale"       , modelScale.begin(),       0.01f);
         ImGui::DragFloat3("Rotation"    , modelRotation.begin(),    0.01f);
 
+        ImGui::DragFloat3("Spin Speed", turnSpeed.begin(), 0.01f, -10, 10);
+
+        ImGui::Separator();
+
         ImGui::Checkbox("Use Post Processing", &usePostProcessing);
+
+#define TAB_ITEM(X, N, P, C) if (ImGui::BeginTabItem(N)) { currShader = &(P); ImGui::EndTabItem(); C }
+        if (ImGui::BeginTabBar("Post Processing Shader")) {
+            TAB_ITEM(NONE, "None", postProcessingQuad.GetShader(), )
+            TAB_ITEM(COLOR_INVERT, "Color Invert", shaderInv, )
+            TAB_ITEM(COLOR_HSL, "Color Hue", shaderHsv,
+                ImGui::DragFloat("Hue Shift", &hueShift, 0.01f, 0, 1);
+                ImGui::DragFloat("Saturation Multiplier", &satMul, 0.01f, 0);
+                ImGui::DragFloat("Value Shift", &valShift, 0.01f, -1, 1);)
+            TAB_ITEM(BLUR, "Blur", shaderBlur, ImGui::DragFloat2("Blur Offset", effectOff.begin(), 0.1f); )
+            TAB_ITEM(EDGE_DETECT, "Edge Detection", shaderEdgeDetect, ImGui::DragFloat2("Detect Offset", effectOff.begin(), 0.1f); )
+            ImGui::EndTabBar();
+        }
+#undef TAB_ITEM
     }
 
     void TestPostProcessing::OnDestroy(Graphics::GraphicsDevice& gdevice) {
@@ -147,3 +289,5 @@ namespace Test {
         Graphics::Render::EnableDepth();
     }
 }
+
+#undef POST_VERTEX_SHADER

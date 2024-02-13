@@ -89,8 +89,8 @@ namespace Test {
                 velocityY = 250;
             }
 
-            yPos += velocityY * IO::Time.DeltaTimef();
-            velocityY -= 400 * IO::Time.DeltaTimef();
+            yPos += velocityY * deltaTime;
+            velocityY -= 400 * deltaTime;
             score = (int)(IO::Time.currentTime - time);
         }
 

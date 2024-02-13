@@ -14,10 +14,10 @@ namespace Graphics {
     };
 
     struct ShaderHandler : GLObjectHandler<ShaderHandler> {
-        glID Create() const;
-        void Destroy(glID id) const;
-        void Bind(glID id) const;
-        void Unbind() const;
+        OPENGL_API glID Create() const;
+        OPENGL_API void Destroy(glID id) const;
+        OPENGL_API void Bind(glID id) const;
+        OPENGL_API void Unbind() const;
     };
 
     class Shader : public GLObject<ShaderHandler> {

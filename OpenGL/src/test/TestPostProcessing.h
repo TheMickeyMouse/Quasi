@@ -23,6 +23,13 @@ namespace Test {
         Maths::fvec3 modelScale       = 1;
         Maths::fvec3 modelRotation    = 0;
 
+        Maths::fvec2 effectOff = 3;
+        float hueShift = 0, satMul = 0, valShift = 0;
+
+        Maths::fvec3 turnSpeed = 1;
+
+        Graphics::Shader shaderInv, shaderHsv, shaderBlur, shaderEdgeDetect, *currShader;
+
         bool usePostProcessing = true;
     public:
         TestPostProcessing() = default;
