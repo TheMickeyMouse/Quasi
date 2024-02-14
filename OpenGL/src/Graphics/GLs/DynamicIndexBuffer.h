@@ -6,6 +6,7 @@
 #include "opengl.h"
 
 #include "NumTypes.h"
+#include "TriIndices.h"
 
 namespace Graphics {
     struct TriIndices;
@@ -19,8 +20,8 @@ namespace Graphics {
         DynamicIndexBuffer() = default;
         OPENGL_API explicit DynamicIndexBuffer(uint size);
 
-        OPENGL_API void SetData(const uint* data, uint size);
-        OPENGL_API void SetData(const TriIndices* data, uint size) { SetData((const uint*)data, size * 3); }
+        OPENGL_API void SetData(std::span<const uint> data);
+        OPENGL_API void SetData(std::span<const TriIndices> data) { SetData(stdu::span_cast<const uint>(data)); }
         template <class T> void SetData(const T& arr) { SetData(arr.data(), arr.size()); }
 
         OPENGL_API void SetDataWhole(const uint* data);
@@ -29,9 +30,9 @@ namespace Graphics {
 
         OPENGL_API void ClearData(bool shallowClear = true);
 
-        OPENGL_API void AddData(const uint* data, uint size, int maxIndex = INT_MIN);
-        OPENGL_API void AddData(const TriIndices* data, uint size, int maxIndex = INT_MIN) { AddData((const uint*)data, size * 3, maxIndex); }
-        template <class T> void AddData(const T& arr, int maxIndex = -1) { AddData(arr.data(), arr.size(), maxIndex); }
+        OPENGL_API void AddData(std::span<const uint> data, int maxIndex = INT_MIN);
+        OPENGL_API void AddData(std::span<const TriIndices> data, int maxIndex = INT_MIN) { AddData(stdu::span_cast<const uint>(data), maxIndex); }
+        template <stdu::array_like T> void AddData(const T& arr, int maxIndex = -1) { AddData(stdu::to_cspan(arr), maxIndex); }
 
         [[nodiscard]] uint GetLength() const { return bufferSize; }
         [[nodiscard]] uint GetUsedLength() const { return dataOffset; }

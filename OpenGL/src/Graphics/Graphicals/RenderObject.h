@@ -1,5 +1,6 @@
 #pragma once
 #include "RenderData.h"
+
 #include "stdu/ref.h"
 
 namespace Graphics {
@@ -53,14 +54,16 @@ namespace Graphics {
 
 		void ClearData(bool shallowClear = true) { rd->ClearData(shallowClear); }
 
-		void BindMeshes(Mesh<T>* meshes, uint count) { rd->BindMeshes<T>(meshes, count); }
-        void BindMeshes(std::initializer_list<Mesh<T>*> meshes) { for (auto* m : meshes) BindMeshes(m, 1); }
-		template <class U> void BindMeshes(U& ms) { BindMeshes(ms.data(), (uint)ms.size()); }
+		void BindMeshes(Mesh<T>& mesh) { rd->BindMeshes<T>(std::span { &mesh, 1 }); }
+		void BindMeshes(std::span<Mesh<T>> meshes) { rd->BindMeshes<T>(meshes); }
+        void BindMeshes(std::initializer_list<Mesh<T>*> meshes) { for (auto* m : meshes) BindMeshes(*m); }
+		template <stdu::array_like U> void BindMeshes(U& ms) { BindMeshes(stdu::to_span(ms)); }
         
 		void Render() { rd->Render(); }
         
-		void AddNewMeshes(const Mesh<T>* meshes, uint count) { rd->AddNewMeshes<T>(meshes, count); }
-		template <class U> void AddNewMeshes(const U& arr) { AddNewMeshes(arr.data(), (uint)arr.size()); }
+		void AddNewMeshes(const Mesh<T>& mesh) { rd->AddNewMeshes<T>(std::span { &mesh, 1 }); }
+		void AddNewMeshes(std::span<const Mesh<T>> meshes) { rd->AddNewMeshes<T>(meshes); }
+		template <stdu::array_like U> void AddNewMeshes(const U& arr) { AddNewMeshes(stdu::to_cspan(arr)); }
 		void AddBoundMeshes() { rd->AddBoundMeshes<T>(); }
         
 		void ResetData(bool shallowClear = true) { rd->ResetData<T>(shallowClear); }

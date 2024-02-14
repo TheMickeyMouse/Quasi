@@ -114,8 +114,8 @@ namespace Test {
 
         render.ClearData();
         render.AddBoundMeshes();
-        for (const Spike& spike : spikes) render.AddNewMeshes(&spike.mesh, 1);
-        render.AddNewMeshes(&mText, 1);
+        for (const Spike& spike : spikes) render.AddNewMeshes(spike.mesh);
+        render.AddNewMeshes(mText);
         render.Render();
     }
 

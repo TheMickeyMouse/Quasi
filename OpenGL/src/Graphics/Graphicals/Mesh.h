@@ -75,7 +75,7 @@ namespace Graphics {
         transformed.resize(vertices.size());
         std::transform(vertices.begin(), vertices.end(), transformed.begin(), [&](auto v) { return GL_VERTEX_MATMUL(v, modelTransform); });
         vbuffer.AddData(transformed);
-        ibuffer.AddData((const uint*)indices.data(), indices.size() * 3, vertices.size() - 1);
+        ibuffer.AddData(stdu::span_cast<const uint>(std::span { indices }), vertices.size() - 1);
     }
 
     template <class T>

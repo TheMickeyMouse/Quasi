@@ -6,6 +6,6 @@
 namespace Graphics {
 	class VertexBuffer : public GLObject<BufferHandler<BufferType::VERTEX>> {
 	public:
-		OPENGL_API VertexBuffer(const void* data, uint size);
+		OPENGL_API VertexBuffer(stdu::cbyte_span data);
 	};
 }

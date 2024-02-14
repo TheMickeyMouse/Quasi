@@ -1,14 +1,16 @@
 #include "DynamicVertexBuffer.h"
 
+#include <vector>
+
 namespace Graphics {
     DynamicVertexBuffer::DynamicVertexBuffer(uint size, uint typeSize, std::type_index type)
         : GLObject({}), bufferSize(size), vertSize(typeSize), vertType(type) {
         GLCALL(glBufferData(GL_ARRAY_BUFFER, typeSize * size, nullptr, GL_DYNAMIC_DRAW));
     }
     
-    void DynamicVertexBuffer::SetDataUnchecked(const void* data, uint vertexSize, uint count) {
+    void DynamicVertexBuffer::SetDataUnchecked(stdu::cbyte_span data) {
         Bind();
-        glBufferSubData(GL_ARRAY_BUFFER, 0, (int)(count * vertexSize), data);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, (int)data.size_bytes(), data.data());
     }
 
     void DynamicVertexBuffer::ClearData(bool shallowClear) {
@@ -19,8 +21,8 @@ namespace Graphics {
         glBufferSubData(GL_ARRAY_BUFFER, 0, (int)(bufferSize * vertSize), clear.data());
     }
 
-    void DynamicVertexBuffer::AddDataUnchecked(const void* data, uint vertexSize, uint count) {
-        glBufferSubData(GL_ARRAY_BUFFER, (int)(dataOffset * vertexSize), (int)(count * vertexSize), data);
-        dataOffset += count;
+    void DynamicVertexBuffer::AddDataUnchecked(stdu::cbyte_span data) {
+        glBufferSubData(GL_ARRAY_BUFFER, (int)(dataOffset * vertSize), (int)data.size_bytes(), data.data());
+        dataOffset += data.size_bytes() / vertSize;
     }
 }

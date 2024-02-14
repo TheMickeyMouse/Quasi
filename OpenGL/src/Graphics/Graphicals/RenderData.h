@@ -49,17 +49,17 @@ namespace Graphics {
 
 		[[nodiscard]] std::type_index GetType() const { return vbo.GetType(); }
 
-		template <class T> void SetVert(const T* data, uint count) { vbo.SetData(data, count); }
-		template <class T> void SetVert(const T& arr)              { vbo.SetData(arr); }
-		template <class T> void AddVert(const T* data, uint count) { vbo.AddData(data, count); }
-		template <class T> void AddVert(const T& arr)              { vbo.AddData(arr); }
+		template <class T> void SetVert(std::span<const T> data) { vbo.SetData(data); }
+		template <stdu::array_like T> void SetVert(const T& arr) { vbo.SetData(arr); }
+		template <class T> void AddVert(std::span<const T> data) { vbo.AddData(data); }
+		template <stdu::array_like T> void AddVert(const T& arr) { vbo.AddData(arr); }
 		void ClearVert(bool shallowClear = true) { vbo.ClearData(shallowClear); }
 		[[nodiscard]] uint GetVertLength() const { return vbo.GetLength(); }
 	    
-		void SetInd(const uint* data, uint count)    { ibo.SetData(data, count); }
-		template <class T> void SetInd(const T& arr) { ibo.SetData(arr); }
-		void AddInd(const uint* data, uint count)    { ibo.AddData(data, count); }
-		template <class T> void AddInd(const T& arr) { ibo.AddData(arr); }
+		void SetInd(std::span<const uint> data) { ibo.SetData(data); }
+		template <stdu::array_like T> void SetInd(const T& arr) { ibo.SetData(arr); }
+		void AddInd(std::span<const uint> data) { ibo.AddData(data); }
+		template <stdu::array_like T> void AddInd(const T& arr) { ibo.AddData(arr); }
 		void ClearInd(bool shallowClear = true) { ibo.ClearData(shallowClear); }
 		[[nodiscard]] uint GetIndLength() const { return ibo.GetLength(); }
 
@@ -75,11 +75,11 @@ namespace Graphics {
 		[[nodiscard]] const std::vector<GenericMesh>& GetMeshes() const { return meshes; }
 
 		OPENGL_API void ClearData(bool shallowClear = true);
-		template <class T> void BindMeshes(Mesh<T>* newMeshes, uint count);
-		template <class T> void BindMeshes(T& ms) { BindMeshes(ms.begin(), (uint)ms.size()); }
+		template <class T> void BindMeshes(std::span<Mesh<T>> newMeshes);
+		template <stdu::array_like T> void BindMeshes(T& ms) { BindMeshes(stdu::to_span(ms)); }
 		OPENGL_API void Render();
-		template <class T> void AddNewMeshes(const Mesh<T>* newMeshes, uint count);
-		template <class T> void AddNewMeshes(const T& arr) { AddNewMeshes(arr.begin(), (uint)arr.size()); }
+		template <class T> void AddNewMeshes(std::span<const Mesh<T>> newMeshes);
+		template <stdu::array_like T> void AddNewMeshes(const T& arr) { AddNewMeshes(stdu::to_cspan(arr)); }
 		template <class T> void AddBoundMeshes() { for (GenericMesh& m : meshes) m.As<T>().AddTo(vbo, ibo); }
 		template <class T> void ResetData(bool shallowClear = true) { ClearData(shallowClear); AddBoundMeshes<T>(); }
 		OPENGL_API void UnbindMesh(int index);
@@ -113,15 +113,15 @@ namespace Graphics {
 	}
 
 	template <class T>
-	void RenderData::BindMeshes(Mesh<T>* newMeshes, const uint count) {
-		for (uint i = 0; i < count; ++i) {
-			newMeshes[i].Bind(*this);
+	void RenderData::BindMeshes(std::span<Mesh<T>> newMeshes) {
+		for (Mesh<T>& m : newMeshes) {
+			m.Bind(*this);
 		}
 	}
 
 	template<class T>
-	void RenderData::AddNewMeshes(const Mesh<T>* newMeshes, const uint count) {
-		for (uint i = 0; i < count; ++i)
-			newMeshes[i].AddTo(vbo, ibo);
+	void RenderData::AddNewMeshes(std::span<const Mesh<T>> newMeshes) {
+		for (const Mesh<T>& m : newMeshes)
+			m.AddTo(vbo, ibo);
 	}
 }

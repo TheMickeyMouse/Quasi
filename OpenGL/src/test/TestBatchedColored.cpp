@@ -28,7 +28,7 @@ namespace Test {
             std::vector(indices,  indices  + 4)
         };
 
-        render.BindMeshes(&mesh, 1);
+        render.BindMeshes(mesh);
 
         render.UseShader(Graphics::Shader::StdColored);
         render.SetProjection(projection);

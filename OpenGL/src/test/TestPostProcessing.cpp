@@ -77,7 +77,7 @@ namespace Test {
                     .Convert<VertexTexture2D>([](const VertexTexture2D& v) {
                         return VertexTexture2D { v.Position, (v.Position + 1) * 0.5f };
                      });
-        postProcessingQuad.BindMeshes(&screenQuad, 1);
+        postProcessingQuad.BindMeshes(screenQuad);
 
         postProcessingQuad.UseShader(
             GLSL_SHADER(

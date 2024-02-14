@@ -1,5 +1,8 @@
 #pragma once
 #include <concepts>
+#include <span>
+
+#include "Debugging.h"
 
 namespace stdu {
     struct empty {
@@ -33,4 +36,25 @@ namespace stdu {
 
     template <class T, class U>
     concept convertible_to = std::is_convertible_v<T, U>;
+
+    template <class R>
+    concept array_like = std::ranges::contiguous_range<R> && std::ranges::sized_range<R>;
+
+    template <class R>
+    using element_t = std::ranges::range_value_t<R>;
+
+    template <array_like R> // from https://stackoverflow.com/questions/77097857/conversion-of-stdvector-to-stdspant
+    std::span<element_t<R>> to_span(R& r) { return std::span<std::ranges::range_value_t<R>>(r); }
+
+    template <array_like R>
+    std::span<const element_t<R>> to_cspan(const R& r) { return std::span<const std::ranges::range_value_t<R>>(r); }
+
+    template <class T, class U>
+    concept divides = sizeof(U) % sizeof(T) == 0;
+
+    template <class U, class T> requires divides<T, U> || divides<U, T>
+    std::span<U> span_cast(std::span<T> span) { return { (U*)span.data(), span.size_bytes() / sizeof(U) }; }
+
+    using byte_span = std::span<uchar>;
+    using cbyte_span = std::span<const uchar>;
 }

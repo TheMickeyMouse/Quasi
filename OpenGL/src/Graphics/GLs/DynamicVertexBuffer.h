@@ -4,7 +4,7 @@
 #include "opengl.h"
 
 #include <typeindex>
-#include <vector>
+#include <span>
 
 #include "GLObject.h"
 
@@ -33,24 +33,24 @@ namespace Graphics {
         [[nodiscard]] uint GetLength() const { return bufferSize; }
         [[nodiscard]] std::type_index GetType() const { return vertType; }
 
-        OPENGL_API void SetDataUnchecked(const void* data, uint vertexSize, uint count);
-        template <class T> void SetData(const T* data, uint size);
-        template <class T> void SetData(const T& arr) { SetData(arr.data(), (uint)(arr.size())); }
+        OPENGL_API void SetDataUnchecked(stdu::cbyte_span data);
+        template <class T> void SetData(std::span<const T> data);
+        template <stdu::array_like T> void SetData(const T& arr) { SetData(stdu::to_cspan(arr)); }
 
         OPENGL_API void ClearData(bool shallowClear = true);
 
-        OPENGL_API void AddDataUnchecked(const void* data, uint vertexSize, uint count);
-        template <class T> void AddData(const T* data, uint size = 1);
-        template <class T> void AddData(const T& arr) { AddData(arr.data(), (uint)(arr.size())); }
+        OPENGL_API void AddDataUnchecked(stdu::cbyte_span data);
+        template <class T> void AddData(std::span<const T> data);
+        template <stdu::array_like T> void AddData(const T& arr) { AddData(stdu::to_cspan(arr)); }
     };
 
     template <class T>
-    void DynamicVertexBuffer::SetData(const T* data, uint size) {
-        if (IsValidVert<T>()) SetDataUnchecked((const void*)data, sizeof(T), size);
+    void DynamicVertexBuffer::SetData(std::span<const T> data) {
+        if (IsValidVert<T>()) SetDataUnchecked(stdu::span_cast<const uchar>(data));
     }
 
     template <class T>
-    void DynamicVertexBuffer::AddData(const T* data, uint size) {
-        if (IsValidVert<T>()) AddDataUnchecked((const void*)data, sizeof(T), size);
+    void DynamicVertexBuffer::AddData(std::span<const T> data) {
+        if (IsValidVert<T>()) AddDataUnchecked(stdu::span_cast<const uchar>(data));
     }
 }

@@ -116,7 +116,7 @@ namespace Test {
             std::vector(bgIndices, bgIndices + 2)
         );
 
-        render.BindMeshes(&meshBg, 1);
+        render.BindMeshes(meshBg);
     }
 
     void TestFontRender::OnRender(Graphics::GraphicsDevice& gdevice) {
@@ -143,7 +143,7 @@ namespace Test {
         
         render.ResetData();
         if (showAtlas) {
-            render.AddNewMeshes(&meshAtlas, 1);
+            render.AddNewMeshes(meshAtlas);
         } else {
             meshStr.Replace(font.RenderRichText(
                     stdu::rich_string::parse_markdown(string),
@@ -154,7 +154,7 @@ namespace Test {
                 ).Convert<Vertex>([&](const Graphics::Font::Vertex& v) {
                     return Vertex { v.Position, v.RenderType ? color : v.Color, v.TextureCoord, v.RenderType };
                 }));
-            render.AddNewMeshes(&meshStr, 1);
+            render.AddNewMeshes(meshStr);
         }
         render.Render();
     }

@@ -32,7 +32,7 @@ namespace Test {
                 }
             );
 
-        render.BindMeshes(&cube, 1);
+        render.BindMeshes(cube);
 
         render.UseShader(
             GLSL_SHADER(

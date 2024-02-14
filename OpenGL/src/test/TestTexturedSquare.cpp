@@ -94,7 +94,7 @@ namespace Test {
             std::vector(indices, indices + 2)
         );
 
-        render.BindMeshes(&mesh, 1);
+        render.BindMeshes(mesh);
     }
 
     void TestTexturedSquare::OnRender(Graphics::GraphicsDevice& gdevice) {

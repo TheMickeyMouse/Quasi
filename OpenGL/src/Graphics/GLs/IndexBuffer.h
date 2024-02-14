@@ -8,7 +8,7 @@ namespace Graphics {
 	private:
 		uint length = 0;
 	public:
-		OPENGL_API IndexBuffer(const void* data, uint length);
+		OPENGL_API IndexBuffer(std::span<const uint> data);
 
 		[[nodiscard]] uint GetLength() const { return length; }
 	};

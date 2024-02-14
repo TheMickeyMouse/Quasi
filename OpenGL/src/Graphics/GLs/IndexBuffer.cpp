@@ -2,7 +2,7 @@
 #include "Debugging.h"
 
 namespace Graphics {
-    IndexBuffer::IndexBuffer(const void* data, uint length) : GLObject({}), length(length) {
-        GLCALL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, length * sizeof(uint), data, GL_STATIC_DRAW));
+    IndexBuffer::IndexBuffer(std::span<const uint> data) : GLObject({}), length(data.size()) {
+        GLCALL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.size_bytes(), data.data(), GL_STATIC_DRAW));
     }
 }
