@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <type_traits>
-#include <cmath>
+#include <array>
 #include <string>
 #include <format>
 
@@ -171,7 +171,7 @@ namespace Maths {
     template <class U, class T> \
     requires (std::is_arithmetic_v<U> && requires (U u, V<T> t) { t M u; }) /* NOLINT(bugprone-macro-parentheses) */ \
     bool operator M(U u, const V<T>& t) { return t N_M u; }
-    
+
 #define VEC2DEF(NAME, SCALAR, _X, _Y, DEF_OP, DEF_CMP, CEXPR, ...) \
     struct NAME { \
         using scalar = SCALAR; \
@@ -184,8 +184,10 @@ namespace Maths {
         \
         STDU_IF(CEXPR, constexpr) NAME (SCALAR s = 0) : _X(s), _Y(s) {} \
         STDU_IF(CEXPR, constexpr) NAME (SCALAR _X, SCALAR _Y) : _X(_X), _Y(_Y) {} \
+        NAME (std::array<SCALAR, dimension> arr) : _X(arr[0]), _Y(arr[1]) {} \
         \
-        STDU_IF(CEXPR, constexpr) SCALAR operator[] (uint i) const { return scalars[i]; } /* NOLINT(bugprone-macro-parentheses) */ \
+        STDU_IF(CEXPR, constexpr) SCALAR operator[] (uint i) const { return scalars[i]; } \
+        SCALAR& operator[] (uint i) { return scalars[i]; } \
         \
         STDU_IF(DEF_OP, \
         VEC_OP(vec2, add, +); \
@@ -267,8 +269,10 @@ namespace Maths {
         }; \
         STDU_IF(CEXPR, constexpr) NAME (SCALAR s = 0) : _X(s), _Y(s), _Z(s) {} \
         STDU_IF(CEXPR, constexpr) NAME (SCALAR _X, SCALAR _Y, SCALAR _Z) : _X(_X), _Y(_Y), _Z(_Z) {} \
+        NAME (std::array<SCALAR, dimension> arr) : _X(arr[0]), _Y(arr[1]), _Z(arr[2]) {} \
         \
         STDU_IF(CEXPR, constexpr) SCALAR operator[] (uint i) const { return scalars[i]; } /* NOLINT(bugprone-macro-parentheses) */ \
+        SCALAR& operator[] (uint i) { return scalars[i]; } \
         \
         STDU_IF(DEF_OP, \
         VEC_OP(vec3, add, +); \
@@ -351,8 +355,10 @@ namespace Maths {
         STDU_IF(CEXPR, constexpr) NAME () : _X(0), _Y(0), _Z(0), _W(0) {} \
         STDU_IF(CEXPR, constexpr) NAME (SCALAR s, SCALAR _W = DEF_W_VAL) : _X(s), _Y(s), _Z(s), _W(_W) {} \
         STDU_IF(CEXPR, constexpr) NAME (SCALAR _X, SCALAR _Y, SCALAR _Z, SCALAR _W = DEF_W_VAL) : _X(_X), _Y(_Y), _Z(_Z), _W(_W) {} \
+        NAME (std::array<SCALAR, dimension> arr) : _X(arr[0]), _Y(arr[1]), _Z(arr[2]), _W(arr[3]) {} \
         \
         STDU_IF(CEXPR, constexpr) SCALAR operator[] (uint i) const { return scalars[i]; } /* NOLINT(bugprone-macro-parentheses) */ \
+        SCALAR& operator[] (uint i) { return scalars[i]; } \
         \
         STDU_IF(DEF_OP, \
         VEC_OP(vec4, add, +); \

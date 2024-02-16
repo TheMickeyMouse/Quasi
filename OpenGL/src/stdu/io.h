@@ -16,4 +16,13 @@ namespace stdu {
         }
         return "";
     }
+
+    inline std::tuple<std::string_view, std::string_view> getfolder(const std::string& fname) {
+        using namespace std::literals;
+        const size_t pos = fname.find_last_of("\\/");
+        return std::string::npos == pos ?
+            std::tuple { ""sv, fname } :
+            std::tuple { std::string_view { fname }.substr(0, pos),
+                         std::string_view { fname }.substr(pos + 1) };
+    }
 }

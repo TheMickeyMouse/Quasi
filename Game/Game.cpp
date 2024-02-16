@@ -1,5 +1,6 @@
 #include "Graphics/Graphicals/GraphicsDevice.h"
 #include "Font.h"
+#include "Graphics/Utils/Model Loading/OBJModelLoader.h"
 #include "test/TestingFramework.h"
 // #include "Mesh.h"
 // #include "imgui.h"
@@ -10,23 +11,23 @@
 // #include "rich_string.h"
 
 int main() {
-    {
-        Graphics::GraphicsDevice GraphicsDevice = Graphics::GraphicsDevice::Initialize({ 1200, 900 });
-        Test::TestManager testm;
-
-        testm.OnInit(GraphicsDevice);
-        while (GraphicsDevice.WindowIsOpen()) {
-            testm.OnUpdate();
-
-            GraphicsDevice.BeginRender();
-
-            testm.OnRender(GraphicsDevice);
-            testm.OnImGuiRender(GraphicsDevice);
-
-            GraphicsDevice.EndRender();
-        }
-        testm.OnDestroy(GraphicsDevice);
-    }
+    // {
+    //     Graphics::GraphicsDevice GraphicsDevice = Graphics::GraphicsDevice::Initialize({ 1200, 900 });
+    //     Test::TestManager testm;
+    //
+    //     testm.OnInit(GraphicsDevice);
+    //     while (GraphicsDevice.WindowIsOpen()) {
+    //         testm.OnUpdate();
+    //
+    //         GraphicsDevice.BeginRender();
+    //
+    //         testm.OnRender(GraphicsDevice);
+    //         testm.OnImGuiRender(GraphicsDevice);
+    //
+    //         GraphicsDevice.EndRender();
+    //     }
+    //     testm.OnDestroy(GraphicsDevice);
+    // }
     // using namespace Maths;
     // using namespace IO;
     // fvec3 trans = { 0, 0, -2 }, scale = 1, rot;
@@ -102,6 +103,10 @@ int main() {
     // std::cout << x << "\n\n" << y << "\n\n" << z << "\n\n" << std::endl;
     // std::cout << z*x*y << "\n\n" << y*x*z << "\n\n" << x*z*y << "\n\n" << std::endl;
     // std::cout << z*y*x << "\n\n" << y*z*x << "\n\n" << x*y*z << "\n\n" << std::endl;
+
+    Graphics::OBJModelLoader loader;
+    loader.LoadFile("untitled.obj");
+    std::cout << loader.DebugStr();
 
     return 0;
 }

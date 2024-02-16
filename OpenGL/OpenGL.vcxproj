@@ -270,6 +270,9 @@
     <ClCompile Include="src\Graphics\Utils\Fonts\TextAlign.cpp" />
     <ClCompile Include="src\Graphics\Utils\Fonts\TextRenderer.cpp" />
     <ClCompile Include="src\Graphics\Utils\Fonts\TextStyle.cpp" />
+    <ClCompile Include="src\Graphics\Utils\Model Loading\MTLMaterialLoader.cpp" />
+    <ClCompile Include="src\Graphics\Utils\Model Loading\OBJModel.cpp" />
+    <ClCompile Include="src\Graphics\Utils\Model Loading\OBJModelLoader.cpp" />
     <ClCompile Include="src\Graphics\Utils\Textures\Texture.cpp" />
     <ClCompile Include="src\Graphics\Utils\Textures\TextureAtlas.cpp" />
     <ClCompile Include="src\IO\IO.cpp" />
@@ -416,6 +419,9 @@
     <ClInclude Include="src\Graphics\Utils\Fonts\TextAlign.h" />
     <ClInclude Include="src\Graphics\Utils\Fonts\TextRenderer.h" />
     <ClInclude Include="src\Graphics\Utils\Fonts\TextStyle.h" />
+    <ClInclude Include="src\Graphics\Utils\Model Loading\MTLMaterialLoader.h" />
+    <ClInclude Include="src\Graphics\Utils\Model Loading\OBJModel.h" />
+    <ClInclude Include="src\Graphics\Utils\Model Loading\OBJModelLoader.h" />
     <ClInclude Include="src\Graphics\Utils\Textures\Texture.h" />
     <ClInclude Include="src\Graphics\Utils\Textures\TextureAtlas.h" />
     <ClInclude Include="src\IO\IO.h" />
@@ -427,6 +433,7 @@
     <ClInclude Include="src\Maths\Direction.h" />
     <ClInclude Include="src\Maths\Geometry.h" />
     <ClInclude Include="src\Maths\NumTypes.h" />
+    <ClInclude Include="src\Maths\Parser.h" />
     <ClInclude Include="src\Maths\Random.h" />
     <ClInclude Include="src\Maths\Rect.h" />
     <ClInclude Include="src\Maths\Vector.h" />
@@ -436,9 +443,9 @@
     <ClInclude Include="src\stdu\enum_utils.h" />
     <ClInclude Include="src\stdu\io.h" />
     <ClInclude Include="src\stdu\macros.h" />
+    <ClInclude Include="src\stdu\parsing.h" />
     <ClInclude Include="src\stdu\ref.h" />
     <ClInclude Include="src\stdu\rich_string.h" />
-    <ClInclude Include="src\stdu\test.h" />
     <ClInclude Include="src\stdu\types.h" />
     <ClInclude Include="src\stdu\unique.h" />
     <ClInclude Include="src\test\DemoFlappyBird.h" />
