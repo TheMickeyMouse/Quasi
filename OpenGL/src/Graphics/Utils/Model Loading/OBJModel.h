@@ -10,12 +10,12 @@ namespace Graphics {
         Maths::fvec3 Normal;
 
         GL_VERTEX_T(OBJVertex);
-        GL_VERTEX_FIELD((Position)(Normal)(TextureCoordinate));
+        GL_VERTEX_FIELD((Position)(TextureCoordinate)(Normal));
         GL_VERTEX_CUSTOM_TRANSFORM(mat) {
             return {
                 .Position = mat * Position,
                 .TextureCoordinate = TextureCoordinate,
-                .Normal = mat * Normal.with_w(0),
+                .Normal = mat.inv().transpose() * Normal.with_w(0),
             };
         }
     };

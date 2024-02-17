@@ -1,7 +1,6 @@
 #pragma once
 #include <vector>
 #include <variant>
-#include <unordered_set>
 
 #include "MTLMaterialLoader.h"
 #include "OBJModel.h"
@@ -76,6 +75,8 @@ namespace Graphics {
         OPENGL_API void CreateModel();
         OPENGL_API void CreateObject(std::span<const OBJProperty> objprop);
         OPENGL_API void ResolveObjectIndices(OBJObject& obj);
+
+        OPENGL_API OBJModel&& RetrieveModel();
 
         OPENGL_API std::string DebugStr() const;
     };

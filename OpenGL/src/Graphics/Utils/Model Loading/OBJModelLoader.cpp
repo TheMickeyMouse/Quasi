@@ -20,7 +20,7 @@ namespace Graphics {
     }
 
     void OBJModelLoader::LoadMaterialFile(std::string_view filepath) {
-        mats.LoadFile(folder + std::string { filepath });
+        mats.LoadFile(folder + '\\' + std::string { filepath });
         model.materials = std::move(mats.materials);
     }
 
@@ -140,7 +140,7 @@ namespace Graphics {
     }
 
     void OBJModelLoader::CreateObject(std::span<const OBJProperty> objprop) {
-        if (objprop.front().type != OBJPropertyType::Object) return;
+        if (objprop.empty() || objprop.front().type != OBJPropertyType::Object) return;
 
         model.objects.emplace_back();
         OBJObject& object = model.objects.back();
@@ -152,9 +152,9 @@ namespace Graphics {
                 case OBJPropertyType::UseMaterial: {
                     const auto& matName = std::get<std::string>(prop.data);
                     object.materialIndex =
-                        std::ranges::find_if(mats.materials,
+                        std::ranges::find_if(model.materials,
                             [&](const MTLMaterial& m) { return m.name == matName; })
-                        - mats.materials.begin();
+                        - model.materials.begin();
                     break;
                 }
                 case OBJPropertyType::Vertex:
@@ -220,6 +220,10 @@ namespace Graphics {
         }
 
         faces.clear();
+    }
+
+    OBJModel&& OBJModelLoader::RetrieveModel() {
+        return std::move(model);
     }
 
     std::string OBJModelLoader::DebugStr() const {

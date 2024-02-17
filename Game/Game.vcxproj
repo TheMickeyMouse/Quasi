@@ -198,8 +198,6 @@
   <ItemGroup>
     <Content Include="preview.md" />
     <Content Include="test.glsl" />
-    <Content Include="untitled.mtl" />
-    <Content Include="untitled.obj" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -10,15 +10,15 @@ namespace Graphics {
     class CameraController {
     public:
         Maths::fvec3 trans = { 0, 0, -2 }, scale = 1, rot;
-        float speed = 0.75f, sensitivity = 0.3f;
+        float speed = 1.5f, sensitivity = 0.002f;
 
-        bool lock = true;
+        bool enabled = true;
 
-        void Update(GraphicsDevice& gd, float dt);
-        void Toggle(GraphicsDevice& gd);
+        OPENGL_API void Update(GraphicsDevice& gd, float dt);
+        OPENGL_API void Toggle(GraphicsDevice& gd);
 
-        [[nodiscard]] Maths::mat3D GetViewMat() const;
+        OPENGL_API [[nodiscard]] Maths::mat3D GetViewMat() const;
 
-        void ImGuiEdit(const char* title = "Camera Controller");
+        OPENGL_API void ImGuiEdit(const char* title = "Camera Controller");
     };
 }

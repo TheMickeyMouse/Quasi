@@ -78,7 +78,7 @@ namespace Graphics {
     }
 
     void MTLMaterialLoader::CreateMaterial(std::span<const MTLProperty> matprop) {
-        if (matprop.front().type != MTLPropertyType::NewMaterial) return;
+        if (matprop.empty() || matprop.front().type != MTLPropertyType::NewMaterial) return;
 
         materials.emplace_back();
         MTLMaterial& mat = materials.back();

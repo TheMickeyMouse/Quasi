@@ -11,21 +11,22 @@ namespace Graphics {
         auto& Mouse = gd.GetIO().Mouse;
         if(Keyboard.KeyOnPress(Key::ESCAPE)) Toggle(gd);
 
-        if (lock) return;
+        if (!enabled) return;
         const mat3D rotation = mat3D::rotate_y(rot.y);
-        if (Keyboard.KeyPressed(Key::W))      trans += rotation * fvec3::FRONT() * -speed * dt;
-        if (Keyboard.KeyPressed(Key::S))      trans += rotation * fvec3::BACK()  * -speed * dt;
-        if (Keyboard.KeyPressed(Key::D))      trans += rotation * fvec3::LEFT()  *  speed * dt;
-        if (Keyboard.KeyPressed(Key::A))      trans += rotation * fvec3::RIGHT() *  speed * dt;
-        if (Keyboard.KeyPressed(Key::SPACE))  trans += fvec3::UP()    * -speed * dt;
-        if (Keyboard.KeyPressed(Key::LSHIFT)) trans += fvec3::DOWN()  * -speed * dt;
+        if (Keyboard.KeyPressed(Key::W))      trans += rotation * fvec3::FRONT() * speed * dt;
+        if (Keyboard.KeyPressed(Key::S))      trans += rotation * fvec3::BACK()  * speed * dt;
+        if (Keyboard.KeyPressed(Key::D))      trans += rotation * fvec3::LEFT()  * speed * dt;
+        if (Keyboard.KeyPressed(Key::A))      trans += rotation * fvec3::RIGHT() * speed * dt;
+        if (Keyboard.KeyPressed(Key::SPACE))  trans += fvec3::UP()    * speed * dt;
+        if (Keyboard.KeyPressed(Key::LSHIFT)) trans += fvec3::DOWN()  * speed * dt;
 
-        rot = Mouse.GetMousePosPx().perpend() * -sensitivity * dt;
+        const dvec2 mouse = Mouse.GetMousePosPx();
+        rot = dvec2 { mouse.y, mouse.x } * -sensitivity;
     }
 
     void CameraController::Toggle(GraphicsDevice& gd) {
-        lock ^= true;
-        if (lock) {
+        enabled ^= true;
+        if (enabled) {
             gd.GetIO().Mouse.Lock();
         } else {
             gd.GetIO().Mouse.Show();
