@@ -44,5 +44,8 @@ namespace Graphics {
     struct OBJModel {
         std::vector<OBJObject> objects;
         std::vector<MTLMaterial> materials;
+
+        OPENGL_API void BindMeshes(RenderObject<OBJVertex>& scene);
+        OPENGL_API void AddMeshes(RenderObject<OBJVertex>& scene);
     };
 }

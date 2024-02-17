@@ -19,8 +19,13 @@ namespace Graphics {
         CreateModel();
     }
 
-    void OBJModelLoader::LoadMaterials(std::string_view string) {
-        mats.LoadFile(folder + string);
+    void OBJModelLoader::LoadMaterialFile(std::string_view filepath) {
+        mats.LoadFile(folder + filepath);
+        model.materials = std::move(mats.materials);
+    }
+
+    void OBJModelLoader::LoadMaterial(std::string_view string) {
+        mats.Load(string);
         model.materials = std::move(mats.materials);
     }
 
@@ -122,7 +127,7 @@ namespace Graphics {
         uint lastObj = 0;
         for (uint i = 0; i < properties.size(); ++i) {
             if (properties[i].type == OBJPropertyType::MaterialLib) {
-                LoadMaterials(std::get<std::string>(properties[i].data));
+                LoadMaterialFile(std::get<std::string>(properties[i].data));
                 continue;
             }
 

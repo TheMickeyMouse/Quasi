@@ -66,7 +66,8 @@ namespace Graphics {
 
         OPENGL_API void LoadFile(const std::string& filepath);
         OPENGL_API void Load(std::string_view string);
-        OPENGL_API void LoadMaterials(std::string_view string);
+        OPENGL_API void LoadMaterialFile(std::string_view filepath);
+        OPENGL_API void LoadMaterial(std::string_view string);
 
         OPENGL_API void ParseProperty(std::string_view line);
         OPENGL_API void ParseProperties(std::string_view string);

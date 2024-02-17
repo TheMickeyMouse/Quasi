@@ -254,6 +254,7 @@
       <UseStandardPreprocessor>true</UseStandardPreprocessor>
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
+    <ClCompile Include="src\Graphics\Graphicals\CameraController.cpp" />
     <ClCompile Include="src\Graphics\Graphicals\GenericMesh.cpp" />
     <ClCompile Include="src\Graphics\Graphicals\RenderData.cpp" />
     <ClCompile Include="src\Graphics\GLs\Render.cpp" />
@@ -363,6 +364,7 @@
     <ClCompile Include="src\stdu\rich_string.cpp" />
     <ClCompile Include="src\stdu\unique.cpp" />
     <ClCompile Include="src\test\DemoFlappyBird.cpp" />
+    <ClCompile Include="src\test\TestAdvancedLighting.cpp" />
     <ClCompile Include="src\test\TestBatchedTextured.cpp" />
     <ClCompile Include="src\test\TestClearColor.cpp" />
     <ClCompile Include="src\test\TestBatchedColored.cpp" />
@@ -400,6 +402,7 @@
     <ClInclude Include="src\Graphics\GLs\GLTypeID.h" />
     <ClInclude Include="src\Graphics\GLs\IndexBuffer.h" />
     <ClInclude Include="src\Graphics\GLs\RenderBuffer.h" />
+    <ClInclude Include="src\Graphics\Graphicals\CameraController.h" />
     <ClInclude Include="src\Graphics\Graphicals\GenericMesh.h" />
     <ClInclude Include="src\Graphics\Graphicals\RenderData.h" />
     <ClInclude Include="src\Graphics\GLs\Render.h" />
@@ -443,6 +446,7 @@
     <ClInclude Include="src\stdu\enum_utils.h" />
     <ClInclude Include="src\stdu\io.h" />
     <ClInclude Include="src\stdu\macros.h" />
+    <ClInclude Include="src\stdu\multiline_string.h" />
     <ClInclude Include="src\stdu\parsing.h" />
     <ClInclude Include="src\stdu\ref.h" />
     <ClInclude Include="src\stdu\rich_string.h" />
@@ -450,6 +454,7 @@
     <ClInclude Include="src\stdu\unique.h" />
     <ClInclude Include="src\test\DemoFlappyBird.h" />
     <ClInclude Include="src\test\Test.h" />
+    <ClInclude Include="src\test\TestAdvancedLighting.h" />
     <ClInclude Include="src\test\TestBatchedTextured.h" />
     <ClInclude Include="src\test\TestClearColor.h" />
     <ClInclude Include="src\test\TestBatchedColored.h" />

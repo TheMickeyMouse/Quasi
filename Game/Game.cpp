@@ -104,9 +104,9 @@ int main() {
     // std::cout << z*x*y << "\n\n" << y*x*z << "\n\n" << x*z*y << "\n\n" << std::endl;
     // std::cout << z*y*x << "\n\n" << y*z*x << "\n\n" << x*y*z << "\n\n" << std::endl;
 
-    Graphics::OBJModelLoader loader;
-    loader.LoadFile("untitled.obj");
-    std::cout << loader.DebugStr();
+    // Graphics::OBJModelLoader loader;
+    // loader.LoadFile("untitled.obj");
+    // std::cout << loader.DebugStr();
 
     return 0;
 }
