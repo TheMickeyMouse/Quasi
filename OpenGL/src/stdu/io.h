@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <string>
 #include <fstream>
 
@@ -24,5 +25,12 @@ namespace stdu {
             std::tuple { ""sv, fname } :
             std::tuple { std::string_view { fname }.substr(0, pos),
                          std::string_view { fname }.substr(pos + 1) };
+    }
+
+    inline std::string tolower(std::string_view string) {
+        std::string lower;
+        lower.resize(string.size());
+        std::ranges::transform(string, lower.begin(), [](const char c) { return std::tolower(c); });
+        return lower;
     }
 }

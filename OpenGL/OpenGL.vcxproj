@@ -429,7 +429,6 @@
     <ClInclude Include="src\stdu\enum_utils.h" />
     <ClInclude Include="src\stdu\io.h" />
     <ClInclude Include="src\stdu\macros.h" />
-    <ClInclude Include="src\stdu\multiline_string.h" />
     <ClInclude Include="src\stdu\parsing.h" />
     <ClInclude Include="src\stdu\ref.h" />
     <ClInclude Include="src\stdu\rich_string.h" />
