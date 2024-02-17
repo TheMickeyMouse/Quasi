@@ -10,6 +10,10 @@
 
 struct GLFWwindow;
 
+namespace Graphics {
+    class GraphicsDevice;
+}
+
 namespace IO {
     #define KEY_IMPL_GLFW(K, NAME_PRE, GLFW_PRE) NAME_PRE##K = GLFW_KEY_##GLFW_PRE##K
     // DO NOT CHANGE ORDER!
@@ -98,7 +102,6 @@ namespace IO {
     using KeyIndex = uchar;
 
     struct KeyboardType;
-    OPENGL_API extern KeyboardType Keyboard;
 
     struct KeyboardType {
         OPENGL_API explicit KeyboardType(Graphics::GraphicsDevice& gd);

@@ -79,6 +79,7 @@ namespace Graphics {
 	    
 	    void UseShader(std::string_view code) { rd->UseShader(code); }
 	    void UseShaderFromFile(const std::string& file) { rd->UseShaderFromFile(file); }
+	    void UseShaderFromFile(const std::string& vert, const std::string& frag) { rd->UseShaderFromFile(vert, frag); }
 	    void EnableShader()  { rd->EnableShader();  }
 	    void DisableShader() { rd->DisableShader(); }
     };

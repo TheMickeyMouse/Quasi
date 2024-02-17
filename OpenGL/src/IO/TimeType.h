@@ -4,7 +4,6 @@
 
 namespace IO {
     class TimeType;
-    OPENGL_API extern TimeType Time;
 
     class TimeType {
     public:

@@ -108,6 +108,4 @@ namespace Maths {
             return arr + geti<std::size_t>(0, N);
         }
     };
-
-    OPENGL_API extern random_gen rand;
 }

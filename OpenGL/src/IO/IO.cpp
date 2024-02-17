@@ -1,15 +1,15 @@
-#include "IO.h"
 #include "Mouse.h"
 #include "Keyboard.h"
 #include "TimeType.h"
+#include "IO.h"
 
 namespace IO {
-    void Init(Graphics::GraphicsDevice& gd) {
-        Mouse = MouseType { gd };
-        Keyboard = KeyboardType { gd };
-    }
+    IO::IO(Graphics::GraphicsDevice& gd) :
+        Keyboard(gd),
+        Mouse(gd),
+        Time() {}
 
-    void Update() {
+    void IO::Update() {
         Mouse.Update();
         Keyboard.Update();
         Time.Update();

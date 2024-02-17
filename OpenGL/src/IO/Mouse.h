@@ -12,7 +12,6 @@ namespace Graphics {
 
 namespace IO {
     struct MouseType;
-    OPENGL_API extern MouseType Mouse;
     
     // TODO: USE INTERFERE INSTEAD OF POLLING WITH GLFWMOSUECALLBACK
     struct MouseType {
@@ -35,9 +34,9 @@ namespace IO {
         OPENGL_API void Hide();
         OPENGL_API void Show(); // will also unlock the cursor
 
-        OPENGL_API Maths::dvec2 GetMousePosPx();
-        OPENGL_API Maths::dvec2 GetMousePos();
-        OPENGL_API bool IsInWindow();
+        OPENGL_API [[nodiscard]] Maths::dvec2 GetMousePosPx();
+        OPENGL_API [[nodiscard]] Maths::dvec2 GetMousePos();
+        OPENGL_API [[nodiscard]] bool IsInWindow();
         
         OPENGL_API [[nodiscard]] int  PressedState()         const;
         OPENGL_API [[nodiscard]] bool LeftPressed()          const;

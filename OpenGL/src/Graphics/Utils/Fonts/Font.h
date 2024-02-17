@@ -93,13 +93,13 @@ namespace Graphics {
         FT_Face DefaultFont(FontStyle style = FontStyle::NONE) const { return DefaultFontUnchecked(style) ? DefaultFontUnchecked(style) : DefaultFontUnchecked(); }
         FT_Face GetFont(int id = 0, FontStyle style = FontStyle::NONE) const { return GetFontUnchecked(id, style) ? GetFontUnchecked(id, style) : DefaultFont(style); }
 
-        void ReserveFont();
+        OPENGL_API void ReserveFont();
         void AddDefaultFontStyle(const std::string& filePath, FontStyle style = FontStyle::NONE) { AddFontStyle(DEFAULT_FONT_ID, filePath, style); }
         void AddMonoFontStyle(const std::string& filePath, FontStyle style = FontStyle::NONE) { AddFontStyle(MONOSPACE_FONT_ID, filePath, style); }
-        void AddFontStyle(int id, const std::string& filePath, FontStyle style = FontStyle::NONE);
+        OPENGL_API void AddFontStyle(int id, const std::string& filePath, FontStyle style = FontStyle::NONE);
         void SetDefaultFontStyle(FT_Face face, FontStyle style = FontStyle::NONE) { SetFontStyle(DEFAULT_FONT_ID, face, style); }
         void SetMonoFontStyle(FT_Face face, FontStyle style = FontStyle::NONE) { SetFontStyle(MONOSPACE_FONT_ID, face, style); }
-        void SetFontStyle(int id, FT_Face face, FontStyle style = FontStyle::NONE);
+        OPENGL_API void SetFontStyle(int id, FT_Face face, FontStyle style = FontStyle::NONE);
 
         [[nodiscard]] const FontMetrics& GetMetric(int id, FontStyle style = FontStyle::NONE) const { return metrics[id * 4 + (int)style]; }
         [[nodiscard]] const FontMetrics& GetDefaultMetric(FontStyle style = FontStyle::NONE) const { return GetMetric(DEFAULT_FONT_ID, style); }

@@ -16,7 +16,7 @@ namespace Graphics::Primitives {
         Tri() = default;
         Tri(fvec3 a, fvec3 b, fvec3 c) : a(a), b(b), c(c) {}
 
-        static Tri FromGeometry(Maths::Geometry::ftriangle3d geom);
+        OPENGL_API static Tri FromGeometry(Maths::Geometry::ftriangle3d geom);
 
         OPENGL_API std::array<fvec3, 3> GetVertices() const;
 

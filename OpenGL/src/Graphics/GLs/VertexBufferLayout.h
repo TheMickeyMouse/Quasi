@@ -46,7 +46,7 @@ namespace Graphics {
         std::vector<VertexBufferComponent> _components;
         uint stride = 0;
     public:
-        OPENGL_API VertexBufferLayout() = default;
+        VertexBufferLayout() = default;
         OPENGL_API VertexBufferLayout(std::initializer_list<VertexBufferComponent> comps);
 
         template <class T> void Push(uint count, bool normalized = false, bool integral = false);

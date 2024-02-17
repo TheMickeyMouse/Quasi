@@ -3,8 +3,6 @@
 #include "Mouse.h"
 
 namespace IO {
-    OPENGL_API MouseType Mouse { nullptr };
-    
     GLFWwindow* MouseType::inputWindow() { return graphicsDevice->GetWindow(); }
     const GLFWwindow* MouseType::inputWindow() const { return graphicsDevice->GetWindow(); }
 

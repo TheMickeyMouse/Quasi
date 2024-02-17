@@ -95,6 +95,7 @@ namespace Graphics {
 	    
 	    void UseShader(std::string_view code) { shader = Shader { code }; }
 	    void UseShaderFromFile(const std::string& file) { shader = Shader::FromFile(file); }
+	    void UseShaderFromFile(const std::string& vert, const std::string& frag) { shader = Shader::FromFile(vert, frag); }
 	    OPENGL_API void EnableShader();
 	    OPENGL_API void DisableShader();
 

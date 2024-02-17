@@ -3,7 +3,8 @@
 #include <algorithm>
 #include <vector>
 
-namespace stdu {
+namespace stdu::multiline {
+    using namespace std::literals;
     // !!! BIG DISCLAIMER: this code was NOT written by me !!!
     // !!! the multi-line string literal, all credits to TurtleFight !!!
     // !!! and adapted from this stack overflow solution: https://stackoverflow.com/a/75104910 !!!
@@ -16,15 +17,15 @@ namespace stdu {
     template<class char_type>
     constexpr string_view<char_type> space_chars = std::declval<string_view<char_type>>();
     template<>
-    constexpr string_view space_chars<char> = " \f\n\r\t\v";
+    constexpr string_view space_chars<char> = " \f\n\r\t\v"sv;
     template<>
-    constexpr string_view space_chars<wchar_t> = L" \f\n\r\t\v";
+    constexpr string_view space_chars<wchar_t> = L" \f\n\r\t\v"sv;
     template<>
-    constexpr string_view space_chars<char8_t> = u8" \f\n\r\t\v";
+    constexpr string_view space_chars<char8_t> = u8" \f\n\r\t\v"sv;
     template<>
-    constexpr string_view space_chars<char16_t> = u" \f\n\r\t\v";
+    constexpr string_view space_chars<char16_t> = u" \f\n\r\t\v"sv;
     template<>
-    constexpr string_view space_chars<char32_t> = U" \f\n\r\t\v";
+    constexpr string_view space_chars<char32_t> = U" \f\n\r\t\v"sv;
 
 
     // list of all potential line endings that could be encountered
@@ -32,33 +33,33 @@ namespace stdu {
     constexpr string_view<char_type> potential_line_endings[] = std::declval<string_view<char_type>[]>();
     template<>
     constexpr string_view<char> potential_line_endings<char>[] = {
-        "\r\n",
-        "\r",
-        "\n"
+        "\r\n"sv,
+        "\r"sv,
+        "\n"sv
     };
     template<>
     constexpr string_view<wchar_t> potential_line_endings<wchar_t>[] = {
-        L"\r\n",
-        L"\r",
-        L"\n"
+        L"\r\n"sv,
+        L"\r"sv,
+        L"\n"sv
     };
     template<>
     constexpr string_view<char8_t> potential_line_endings<char8_t>[] = {
-        u8"\r\n",
-        u8"\r",
-        u8"\n"
+        u8"\r\n"sv,
+        u8"\r"sv,
+        u8"\n"sv
     };
     template<>
     constexpr string_view<char16_t> potential_line_endings<char16_t>[] = {
-        u"\r\n",
-        u"\r",
-        u"\n"
+        u"\r\n"sv,
+        u"\r"sv,
+        u"\n"sv
     };
     template<>
     constexpr string_view<char32_t> potential_line_endings<char32_t>[] = {
-        U"\r\n",
-        U"\r",
-        U"\n"
+        U"\r\n"sv,
+        U"\r"sv,
+        U"\n"sv
     };
 
     // null-terminator for the different character types
@@ -228,8 +229,8 @@ namespace stdu {
     template<string_wrapper sw>
     struct unindented_string_wrapper {
         using char_type = typename decltype(sw)::char_type;
-        static constexpr std::size_t buffer_size = unindent_string_size<char_type>(sw.str);
-        using array_ref = const char_type (&)[buffer_size];
+        static constexpr unsigned BUF_SIZE = unindent_string_size<char_type>(sw.str);
+        using array_ref = const char_type (&)[BUF_SIZE];
 
         consteval unindented_string_wrapper(int) {
             auto newstr = unindent_string<char_type>(sw.str);
@@ -240,7 +241,7 @@ namespace stdu {
             return buffer;
         }
 
-        char_type buffer[buffer_size];
+        char_type buffer[BUF_SIZE];
     };
 
     // uses a defaulted template argument that depends on the str

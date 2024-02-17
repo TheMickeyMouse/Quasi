@@ -132,15 +132,16 @@
 */
 
 namespace IO {
-    OPENGL_API KeyboardType Keyboard { nullptr };
-    
     GLFWwindow* KeyboardType::inputWindow() { return graphicsDevice->GetWindow(); }
     const GLFWwindow* KeyboardType::inputWindow() const { return graphicsDevice->GetWindow(); }
     
     KeyboardType::KeyboardType(Graphics::GraphicsDevice& gd) : graphicsDevice(gd) {
+        glfwSetWindowUserPointer(inputWindow(), this);
         glfwSetKeyCallback(inputWindow(),
             // clever hack >:)
-            [](auto... args) { Keyboard.OnGlfwKeyCallback(args...); } );
+            [](GLFWwindow* win, auto... args) {
+                ((KeyboardType*)glfwGetWindowUserPointer(win))->OnGlfwKeyCallback(win, args...);
+            } );
     }
 
     void KeyboardType::Update() {

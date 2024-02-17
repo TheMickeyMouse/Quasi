@@ -20,7 +20,7 @@ namespace Graphics {
     }
 
     void OBJModelLoader::LoadMaterialFile(std::string_view filepath) {
-        mats.LoadFile(folder + filepath);
+        mats.LoadFile(folder + std::string { filepath });
         model.materials = std::move(mats.materials);
     }
 

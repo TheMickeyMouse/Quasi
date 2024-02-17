@@ -1,4 +1,6 @@
 #pragma once
+#include <algorithm>
+
 #include "ft2build.h"
 #include "NumTypes.h"
 #include "opengl.h"
@@ -8,22 +10,24 @@
 namespace Graphics {
     class Font;
     
-    class FontDevice {
+    class OPENGL_API FontDevice {
         FT_Library libHandle = nullptr;
         uint dpi = 96; // default value
     public:
-        OPENGL_API FontDevice();
-        OPENGL_API ~FontDevice();
+        FontDevice();
+        ~FontDevice();
 
         FontDevice(const FontDevice&) = delete;
         FontDevice& operator=(const FontDevice&) = delete;
         static void Transfer(FontDevice& dest, FontDevice&& from);
+        FontDevice(FontDevice&& fd) noexcept { Transfer(*this, std::move(fd)); }
+        FontDevice& operator=(FontDevice&& fd) noexcept { Transfer(*this, std::move(fd)); return *this; }
 
         void SetDPI(uint newDpi) { dpi = newDpi; }
         
-        inline static FontDevice* Instance = nullptr;
-        static FT_Library Library() { return Instance->libHandle; }
-        static uint DPI() { return Instance->dpi; }
+        static FontDevice* Instance;
+        static FT_Library Library();
+        static uint DPI();
 
         friend Font;
     };

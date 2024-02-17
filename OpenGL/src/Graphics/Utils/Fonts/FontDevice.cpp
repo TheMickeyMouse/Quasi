@@ -3,6 +3,8 @@
 #include "Debugging.h"
 
 namespace Graphics {
+    OPENGL_API FontDevice* FontDevice::Instance = nullptr;
+
     FontDevice::FontDevice() {
         if (Instance) return;
         if (const int error = FT_Init_FreeType(&libHandle)) {
@@ -23,4 +25,7 @@ namespace Graphics {
 
         dest.dpi = from.dpi;
     }
+
+    FT_Library FontDevice::Library() { return Instance->libHandle; }
+    uint FontDevice::DPI() { return Instance->dpi; }
 }

@@ -4,6 +4,8 @@
 
 #include <GLFW/glfw3.h>
 
+#include "IO.h"
+#include "Random.h"
 #include "Graphics/Utils/Fonts/FontDevice.h"
 #include "stdu/ref.h"
 
@@ -21,6 +23,8 @@ namespace Graphics {
         bool useWireRender = false;
         
         FontDevice fontDevice = {};
+        IO::IO ioDevice {};
+        Maths::random_gen randDevice {};
 
         inline static stdu::ref<GraphicsDevice> Instance = nullptr;
     public:
@@ -30,7 +34,13 @@ namespace Graphics {
         OPENGL_API void Quit();
         OPENGL_API void Terminate();
         OPENGL_API ~GraphicsDevice();
-        
+
+        GraphicsDevice(const GraphicsDevice&) = delete;
+        GraphicsDevice& operator=(const GraphicsDevice&) = delete;
+        OPENGL_API static void Transfer(GraphicsDevice& dest, GraphicsDevice&& from);
+        GraphicsDevice(GraphicsDevice&& gd) noexcept { Transfer(*this, std::move(gd)); }
+        GraphicsDevice& operator=(GraphicsDevice&& gd) noexcept { Transfer(*this, std::move(gd)); return *this; }
+
         OPENGL_API void BeginRender();
         OPENGL_API void EndRender();
 
@@ -61,6 +71,11 @@ namespace Graphics {
 
         static GraphicsDevice& GetDeviceInstance() { return *Instance; }
         static GLFWwindow* GetMainWindow() { return Instance->mainWindow; }
+
+        IO::IO& GetIO() { return ioDevice; }
+        [[nodiscard]] const IO::IO& GetIO() const { return ioDevice; }
+        Maths::random_gen& GetRand() { return randDevice; }
+        [[nodiscard]] const Maths::random_gen& GetRand() const { return randDevice; }
 
         OPENGL_API static GraphicsDevice Initialize(Maths::ivec2 winSize = { 640, 480 });
 

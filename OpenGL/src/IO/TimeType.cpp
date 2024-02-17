@@ -3,8 +3,6 @@
 #include <GLFW/glfw3.h>
 
 namespace IO {
-    OPENGL_API TimeType Time {};
-
     void TimeType::Update() {
         ++currentFrame;
         const double newTime = glfwGetTime();

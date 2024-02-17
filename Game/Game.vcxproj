@@ -75,8 +75,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)out\$(Configuration)\$(Platform)\out\</OutDir>
-    <IntDir>$(SolutionDir)out\$(Configuration)\$(Platform)\int\</IntDir>
+    <OutDir>$(SolutionDir)out\$(Configuration)\$(Platform)\out\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)out\$(Configuration)\$(Platform)\int\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -102,7 +102,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)OpenGL\src;$(SolutionDir)OpenGL\src\Graphics\GLs;$(SolutionDir)OpenGL\src\Graphics\Graphicals;$(SolutionDir)OpenGL\src\Graphics\Meshes;$(SolutionDir)OpenGL\src\Graphics\Utils\Textures;$(SolutionDir)OpenGL\src\Graphics\Utils\Fonts;$(SolutionDir)OpenGL\src\IO;$(SolutionDir)OpenGL\src\Maths;$(SolutionDir)OpenGL\src\vendor\imgui;$(SolutionDir)OpenGL\src\vendor\freetype;$(SolutionDir)OpenGL\src\test;$(SolutionDir)OpenGL\src\stdu;$(SolutionDir)Dependencies\GLEW\include;$(SolutionDir)Dependencies\GLFW\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)OpenGL\src;$(SolutionDir)OpenGL\src\Graphics\GLs;$(SolutionDir)OpenGL\src\Graphics\Graphicals;$(SolutionDir)OpenGL\src\Graphics\Meshes;$(SolutionDir)OpenGL\src\Graphics\Utils\Textures;$(SolutionDir)OpenGL\src\Graphics\Utils\Fonts;$(SolutionDir)OpenGL\src\Graphics\Utils\Model Loading;$(SolutionDir)OpenGL\src\IO;$(SolutionDir)OpenGL\src\Maths;$(SolutionDir)OpenGL\src\vendor\imgui;$(SolutionDir)OpenGL\src\vendor\freetype;$(SolutionDir)OpenGL\src\stdu;$(SolutionDir)Dependencies\GLEW\include;$(SolutionDir)Dependencies\GLFW\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>
       </AdditionalOptions>
@@ -111,7 +111,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)bin\$(Platform)\$(Configuration);$(SolutionDir)Dependencies\GLFW\lib-vc2022\$(Platform);$(SolutionDir)Dependencies\GLEW\lib\Release\$(Platform)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)bin\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
       <AdditionalDependencies>OpenGL.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ProjectReference>

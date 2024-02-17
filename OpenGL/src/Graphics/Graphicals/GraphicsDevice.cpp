@@ -14,13 +14,11 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "Texture.h"
-#include "IO/TimeType.h"
 
 namespace Graphics {
     GraphicsDevice::GraphicsDevice(GLFWwindow* window, Maths::ivec2 winSize) : 
-        windowSize(winSize), mainWindow{ window } {
+        windowSize(winSize), mainWindow{ window }, ioDevice(*this) {
         Instance = *this;
-        IO::Init(*this);
 
         Texture::Init();
     }
@@ -48,6 +46,25 @@ namespace Graphics {
         Terminate();
     }
 
+    void GraphicsDevice::Transfer(GraphicsDevice& dest, GraphicsDevice&& from) {
+        dest.renders = std::move(from.renders);
+        for (const RenderHandle& h : dest.renders)
+            h->device = &dest;
+
+        dest.windowSize = from.windowSize;
+
+        dest.mainWindow = from.mainWindow;
+        from.mainWindow = nullptr;
+
+        dest.useWireRender = from.useWireRender;
+
+        dest.fontDevice = std::move(from.fontDevice);
+        dest.ioDevice = std::move(from.ioDevice);
+        dest.randDevice = from.randDevice;
+
+        Instance = dest;
+    }
+
     void GraphicsDevice::BeginRender() {
         if (IsClosed()) return;
         
@@ -58,7 +75,7 @@ namespace Graphics {
 
         DrawWireframe(useWireRender);
 
-        IO::Update();
+        ioDevice.Update();
     }
 
     void GraphicsDevice::EndRender() {
@@ -143,27 +160,27 @@ namespace Graphics {
 
         if (!enabled) goto skipDebugs; // i know goto is not great but its more readable imo  // NOLINT(cppcoreguidelines-avoid-goto, hicpp-avoid-goto)
         
-        ImGui::Text("Application Averages %fms/frame (~%f FPS)", 1000.0 * IO::Time.deltaTime, IO::Time.Framerate());
+        ImGui::Text("Application Averages %fms/frame (~%f FPS)", 1000.0 * ioDevice.Time.deltaTime, ioDevice.Time.Framerate());
         if (ImGui::Button(useWireRender ? "Draw Fill" : "Draw Wireframe")) { useWireRender = !useWireRender; }
 
         if (ImGui::CollapsingHeader("Mouse Input")) {
             ImGui::Text("Mouse Position is at: (%f, %f),",
-                IO::Mouse.GetMousePosPx().x,
-                IO::Mouse.GetMousePosPx().y);
+                ioDevice.Mouse.GetMousePosPx().x,
+                ioDevice.Mouse.GetMousePosPx().y);
             ImGui::Text("   relative at: (%f, %f),",
-                IO::Mouse.GetMousePos().x,
-                IO::Mouse.GetMousePos().y);
-            ImGui::Text("which is%s in the window", IO::Mouse.IsInWindow() ? "" : " not");
+                ioDevice.Mouse.GetMousePos().x,
+                ioDevice.Mouse.GetMousePos().y);
+            ImGui::Text("which is%s in the window", ioDevice.Mouse.IsInWindow() ? "" : " not");
             ImGui::NewLine();
             
-            ImGui::Text("Left Mouse Pressed: %s",   IO::Mouse.LeftPressed()   ? "True" : "False");
-            ImGui::Text("Right Mouse Pressed: %s",  IO::Mouse.RightPressed()  ? "True" : "False");
-            ImGui::Text("Middle Mouse Pressed: %s", IO::Mouse.MiddlePressed() ? "True" : "False");
+            ImGui::Text("Left Mouse Pressed: %s",   ioDevice.Mouse.LeftPressed()   ? "True" : "False");
+            ImGui::Text("Right Mouse Pressed: %s",  ioDevice.Mouse.RightPressed()  ? "True" : "False");
+            ImGui::Text("Middle Mouse Pressed: %s", ioDevice.Mouse.MiddlePressed() ? "True" : "False");
 
             if (ImGui::TreeNode("Advanced")) {
                 ImGui::Text("Pressed: ");
                 for (int i = 0; i < IO::MouseType::LAST_MOUSE; ++i) {
-                    if (!IO::Mouse.ButtonPressed(i)) continue;
+                    if (!ioDevice.Mouse.ButtonPressed(i)) continue;
                     ImGui::Text("   %s", IO::MouseType::MouseButtonToStr(i));
                 }
 
@@ -171,13 +188,13 @@ namespace Graphics {
 
                 ImGui::Text("On Pressed: ");
                 for (int i = 0; i < IO::MouseType::LAST_MOUSE; ++i) {
-                    if (!IO::Mouse.ButtonOnPress(i)) continue;
+                    if (!ioDevice.Mouse.ButtonOnPress(i)) continue;
                     ImGui::Text("   %s", IO::MouseType::MouseButtonToStr(i));
                 }
 
                 ImGui::Text("On Release: ");
                 for (int i = 0; i < IO::MouseType::LAST_MOUSE; ++i) {
-                    if (!IO::Mouse.ButtonOnRelease(i)) continue;
+                    if (!ioDevice.Mouse.ButtonOnRelease(i)) continue;
                     ImGui::Text("   %s", IO::MouseType::MouseButtonToStr(i));
                 }
                 
@@ -188,7 +205,7 @@ namespace Graphics {
         if (ImGui::CollapsingHeader("Keyboard Input")) {
             ImGui::Text("Keys Pressed Are:");
 
-            for (const auto key : IO::Keyboard.KeysPressed()) {
+            for (const auto key : ioDevice.Keyboard.KeysPressed()) {
                 ImGui::Text("   %s", IO::KeyboardType::KeyToStr(key));
             }
         }
@@ -209,8 +226,10 @@ namespace Graphics {
             ASSERT(false);
 
         /* Create a windowed mode window and its OpenGL context */
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         GLFWwindow* window = glfwCreateWindow(winSize.x, winSize.y, "Hello World", nullptr, nullptr);
-        
+
         if (!window) {
             glfwTerminate();
             ASSERT(false);
@@ -224,6 +243,7 @@ namespace Graphics {
         /* SETTING UP GLEW W/ GLEWINIT*/
         if (glewInit() != GLEW_OK) {
             LOG("ERR: ERROR SETTING UP glewInit()");
+            ASSERT(false);
         }
 
         LOG(glGetString(GL_VERSION));

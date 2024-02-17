@@ -1,16 +1,17 @@
 #include "CameraController.h"
+#include "GraphicsDevice.h"
 
 #include "imgui.h"
-#include "Keyboard.h"
-#include "Mouse.h"
 
 namespace Graphics {
-    void CameraController::Update(const float dt) {
-
-
-        if (lock) return;
+    void CameraController::Update(GraphicsDevice& gd, const float dt) {
         using namespace Maths;
         using namespace IO;
+        const auto& Keyboard = gd.GetIO().Keyboard;
+        auto& Mouse = gd.GetIO().Mouse;
+        if(Keyboard.KeyOnPress(Key::ESCAPE)) Toggle(gd);
+
+        if (lock) return;
         const mat3D rotation = mat3D::rotate_y(rot.y);
         if (Keyboard.KeyPressed(Key::W))      trans += rotation * fvec3::FRONT() * -speed * dt;
         if (Keyboard.KeyPressed(Key::S))      trans += rotation * fvec3::BACK()  * -speed * dt;
@@ -22,12 +23,12 @@ namespace Graphics {
         rot = Mouse.GetMousePosPx().perpend() * -sensitivity * dt;
     }
 
-    void CameraController::Toggle() {
+    void CameraController::Toggle(GraphicsDevice& gd) {
         lock ^= true;
         if (lock) {
-            IO::Mouse.Lock();
+            gd.GetIO().Mouse.Lock();
         } else {
-            IO::Mouse.Show();
+            gd.GetIO().Mouse.Show();
         }
     }
 
