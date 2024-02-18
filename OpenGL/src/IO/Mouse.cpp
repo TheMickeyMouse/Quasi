@@ -2,18 +2,51 @@
 
 #include "Mouse.h"
 
-namespace IO {
-    GLFWwindow* MouseType::inputWindow() { return graphicsDevice->GetWindow(); }
-    const GLFWwindow* MouseType::inputWindow() const { return graphicsDevice->GetWindow(); }
+#include "imgui_impl_glfw.h"
 
-    MouseType::MouseType(Graphics::GraphicsDevice& gd) : graphicsDevice(gd) {}
+namespace IO {
+    GLFWwindow* MouseType::inputWindow() { return io->gdevice->GetWindow(); }
+    const GLFWwindow* MouseType::inputWindow() const { return io->gdevice->GetWindow(); }
+
+    MouseType::MouseType(IO& io) : io(io) {
+        glfwSetMouseButtonCallback(inputWindow(),
+            [](GLFWwindow* window, int button, int action, int mods) {
+                IO::GetIOPtr(window)->Mouse.OnGlfwMouseCallback(window, button, action, mods);
+            });
+
+        glfwSetScrollCallback(inputWindow(),
+            [](GLFWwindow* window, double xOff, double yOff) {
+                IO::GetIOPtr(window)->Mouse.OnGlfwScrollCallback(window, xOff, yOff);
+            });
+    }
 
     void MouseType::Update() {
         prevMouseStates = mouseStates;
-        mouseStates = 0;
-        for (int i = 0; i <= LAST_MOUSE; ++i) {
-            mouseStates |= glfwGetMouseButton(inputWindow(), i) << i;
+        while (!queuedMouseEvents.empty()) {
+            const char event = queuedMouseEvents.front();
+            const bool state = event >= 0;
+            const int btn = state ? event : ~event;
+            mouseStates = (mouseStates & ~(1 << btn)) | (state << btn);
+            queuedMouseEvents.pop();
         }
+
+        scrollDelta = 0;
+        while (!queuedScrolls.empty()) {
+            const Maths::dvec2 scrollEvent = queuedScrolls.front();
+            scrollDelta += scrollEvent;
+            scroll += scrollEvent;
+            queuedScrolls.pop();
+        }
+    }
+
+    void MouseType::OnGlfwMouseCallback(GLFWwindow* window, int mouse, int action, int mods) {
+        ImGui_ImplGlfw_MouseButtonCallback(window, mouse, action, mods);
+        queuedMouseEvents.emplace(action == GLFW_PRESS ? mouse : ~mouse);
+    }
+
+    void MouseType::OnGlfwScrollCallback(GLFWwindow* window, double xOff, double yOff) {
+        ImGui_ImplGlfw_ScrollCallback(window, xOff, yOff);
+        queuedScrolls.emplace(xOff, yOff);
     }
 
     void MouseType::Lock() {
@@ -35,15 +68,23 @@ namespace IO {
     }
 
     Maths::dvec2 MouseType::GetMousePos() {
-        auto r01 = GetMousePosPx() / graphicsDevice->GetWindowSize(); // range 0 - 1
+        const auto r01 = GetMousePosPx() / io->gdevice->GetWindowSize(); // range 0 - 1
         return r01 * 2.0 - 1.0;
     }
 
     bool MouseType::IsInWindow() {
         auto [mouseX,  mouseY ] = GetMousePosPx();
-        auto [borderX, borderY] = graphicsDevice->GetWindowSize();
+        auto [borderX, borderY] = io->gdevice->GetWindowSize();
         return 0 <= mouseX && mouseX <= borderX &&
                0 <= mouseY && mouseY <= borderY;
+    }
+
+    Maths::dvec2 MouseType::GetMouseScroll() const {
+        return scroll;
+    }
+
+    Maths::dvec2 MouseType::GetMouseScrollDelta() const {
+        return scrollDelta;
     }
 
     int  MouseType::PressedState()         const { return mouseStates; }

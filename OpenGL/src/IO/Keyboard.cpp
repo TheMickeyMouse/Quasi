@@ -4,6 +4,9 @@
 
 #include "Keyboard.h"
 
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+
 /*
 * reference *
 * #define GLFW_KEY_UNKNOWN            -1
@@ -132,30 +135,34 @@
 */
 
 namespace IO {
-    GLFWwindow* KeyboardType::inputWindow() { return graphicsDevice->GetWindow(); }
-    const GLFWwindow* KeyboardType::inputWindow() const { return graphicsDevice->GetWindow(); }
+    GLFWwindow* KeyboardType::inputWindow() { return io->gdevice->GetWindow(); }
+    const GLFWwindow* KeyboardType::inputWindow() const { return io->gdevice->GetWindow(); }
     
-    KeyboardType::KeyboardType(Graphics::GraphicsDevice& gd) : graphicsDevice(gd) {
-        glfwSetWindowUserPointer(inputWindow(), this);
+    KeyboardType::KeyboardType(IO& io) : io(io) {
         glfwSetKeyCallback(inputWindow(),
             // clever hack >:)
             [](GLFWwindow* win, auto... args) {
-                ((KeyboardType*)glfwGetWindowUserPointer(win))->OnGlfwKeyCallback(win, args...);
+                IO::GetIOPtr(win)->Keyboard.OnGlfwKeyCallback(win, args...);
             } );
     }
 
     void KeyboardType::Update() {
         prevKeySet = currKeySet;
-        for (KeyIndex ki : queuedKeys) setKeyStatusOf(currKeySet, ki & 127, ki & 128);
-        queuedKeys.clear();
+        while (!queuedKeys.empty()) {
+            const KeyIndex ki = queuedKeys.front();
+            setKeyStatusOf(currKeySet, ki & 127, ki & 128);
+            queuedKeys.pop();
+        }
     }
 
     bool KeyboardType::getKeyStatusOf(const Keyset& ks, KeyIndex ki)     { return ks[ki / 64ULL] & 1ULL << (ki & 63); }
     void KeyboardType::setKeyStatusOf(Keyset& ks, KeyIndex ki, bool val) { ks[ki / 64ULL] = (ks[ki / 64ULL] & ~(1ULL << (ki & 63))) | (uint64)val << (ki & 63); }
 
     void KeyboardType::OnGlfwKeyCallback(GLFWwindow* window, int key, int positionCode, int action, int modifierBits) {
+        ImGui_ImplGlfw_KeyCallback(window, key, positionCode, action, modifierBits);
         const bool isPress = action != GLFW_RELEASE;
-        queuedKeys.push_back((uchar)((isPress << 7) | ToKeyIndex((Key)key)));
+        queuedKeys.push((uchar)((isPress << 7) | ToKeyIndex((Key)key)));
+
     }
 
     bool KeyboardType::KeyPressed(Key key)   const { return getCurrKeyStatus(key); }

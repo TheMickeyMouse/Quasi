@@ -58,7 +58,7 @@ namespace Graphics {
 
         totalHeight = lineSpacing * (((float)lineCount - 1) * align.lineSpacing + 1);
         pen = align.rect.corner(2);
-        pen.y -= font.GetDefaultMetric().ascend.pointsf();
+        pen.y -= font.GetDefaultMetric().ascend.pointsf() * scaleRatio;
         pen.y -= align.IsVerticalJustified() ? 0 : align.GetYOff(totalHeight);
     }
 

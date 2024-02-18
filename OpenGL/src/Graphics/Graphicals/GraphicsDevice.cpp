@@ -17,9 +17,10 @@
 
 namespace Graphics {
     GraphicsDevice::GraphicsDevice(GLFWwindow* window, Maths::ivec2 winSize) : 
-        windowSize(winSize), mainWindow{ window }, ioDevice(*this) {
-        Instance = *this;
+        windowSize(winSize), mainWindow{ window }, ioDevice(*this),
+        randDevice(std::make_unique<Maths::random_gen>()) {
 
+        Instance = *this;
         Texture::Init();
     }
 
@@ -60,7 +61,7 @@ namespace Graphics {
 
         dest.fontDevice = std::move(from.fontDevice);
         dest.ioDevice = std::move(from.ioDevice);
-        dest.randDevice = from.randDevice;
+        dest.randDevice = std::move(from.randDevice);
 
         Instance = dest;
     }
@@ -176,6 +177,13 @@ namespace Graphics {
             ImGui::Text("Left Mouse Pressed: %s",   ioDevice.Mouse.LeftPressed()   ? "True" : "False");
             ImGui::Text("Right Mouse Pressed: %s",  ioDevice.Mouse.RightPressed()  ? "True" : "False");
             ImGui::Text("Middle Mouse Pressed: %s", ioDevice.Mouse.MiddlePressed() ? "True" : "False");
+
+            ImGui::Text("Mouse Scroll is: (%f, %f),",
+                ioDevice.Mouse.GetMouseScroll().x,
+                ioDevice.Mouse.GetMouseScroll().y);
+            ImGui::Text("       delta is: (%f, %f)",
+                ioDevice.Mouse.GetMouseScrollDelta().x,
+                ioDevice.Mouse.GetMouseScrollDelta().y);
 
             if (ImGui::TreeNode("Advanced")) {
                 ImGui::Text("Pressed: ");

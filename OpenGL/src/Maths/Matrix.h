@@ -33,6 +33,7 @@ namespace Maths {
         OPENGL_API static mat4x4 perspective_projection(const rect3f& box);
         OPENGL_API static mat4x4 perspective_fov(float fovDeg, float aspect, float near, float far);
         OPENGL_API static mat4x4 transform(const fvec3& translate, const fvec3& scale, const fvec3& rotate);
+        OPENGL_API static mat4x4 look_at(const fvec3& eye, const fvec3& center, const fvec3& worldUp);
 
         OPENGL_API [[nodiscard]] mat4x4 transpose() const;
         OPENGL_API [[nodiscard]] float det() const; // determinate

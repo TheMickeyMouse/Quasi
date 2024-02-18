@@ -1,6 +1,6 @@
 #pragma once
 #include <array>
-#include <vector>
+#include <queue>
 #include <GLFW/glfw3.h>
 #include "opengl.h"
 
@@ -101,10 +101,10 @@ namespace IO {
 
     using KeyIndex = uchar;
 
-    struct KeyboardType;
+    class IO;
 
     struct KeyboardType {
-        OPENGL_API explicit KeyboardType(Graphics::GraphicsDevice& gd);
+        OPENGL_API explicit KeyboardType(IO& io);
         explicit KeyboardType(std::nullptr_t) {}
 
         OPENGL_API static bool IsValidKey(Key key);
@@ -130,13 +130,12 @@ namespace IO {
 
         static const char* KeyToStr(Key key);
 
-        stdu::ref<Graphics::GraphicsDevice> graphicsDevice;
-
+        stdu::ref<IO> io;
     private:
         using Keyset = std::array<uint64, KEYSET_SIZE>;
         Keyset currKeySet = {};
         Keyset prevKeySet = {};
-        std::vector<KeyIndex> queuedKeys = {};
+        std::queue<KeyIndex> queuedKeys = {};
 
         OPENGL_API GLFWwindow* inputWindow();
         OPENGL_API [[nodiscard]] const GLFWwindow* inputWindow() const;

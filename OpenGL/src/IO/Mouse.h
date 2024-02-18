@@ -1,4 +1,6 @@
 #pragma once
+#include <queue>
+
 #include "opengl.h"
 
 #include "Vector.h"
@@ -11,7 +13,7 @@ namespace Graphics {
 }
 
 namespace IO {
-    struct MouseType;
+    class IO;
     
     // TODO: USE INTERFERE INSTEAD OF POLLING WITH GLFWMOSUECALLBACK
     struct MouseType {
@@ -22,13 +24,20 @@ namespace IO {
 
         int mouseStates = 0;
         int prevMouseStates = 0;
+        std::queue<char> queuedMouseEvents;
 
-        stdu::ref<Graphics::GraphicsDevice> graphicsDevice;
+        Maths::dvec2 scroll, scrollDelta;
+        std::queue<Maths::dvec2> queuedScrolls;
 
-        OPENGL_API explicit MouseType(Graphics::GraphicsDevice& gd);
+        stdu::ref<IO> io;
+
+        OPENGL_API explicit MouseType(IO& io);
         explicit MouseType(std::nullptr_t) {}
 
         OPENGL_API void Update();
+
+        OPENGL_API void OnGlfwMouseCallback(GLFWwindow* window, int mouse, int action, int mods);
+        OPENGL_API void OnGlfwScrollCallback(GLFWwindow* window, double xOff, double yOff);
 
         OPENGL_API void Lock();
         OPENGL_API void Hide();
@@ -37,7 +46,10 @@ namespace IO {
         OPENGL_API [[nodiscard]] Maths::dvec2 GetMousePosPx();
         OPENGL_API [[nodiscard]] Maths::dvec2 GetMousePos();
         OPENGL_API [[nodiscard]] bool IsInWindow();
-        
+
+        OPENGL_API [[nodiscard]] Maths::dvec2 GetMouseScroll() const;
+        OPENGL_API [[nodiscard]] Maths::dvec2 GetMouseScrollDelta() const;
+
         OPENGL_API [[nodiscard]] int  PressedState()         const;
         OPENGL_API [[nodiscard]] bool LeftPressed()          const;
         OPENGL_API [[nodiscard]] bool RightPressed()         const;

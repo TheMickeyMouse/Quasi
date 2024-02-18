@@ -110,6 +110,22 @@ namespace Maths {
         return translate_mat(translate) * rotate_identity(rotate) * scale_mat(scale);
     }
 
+    mat4x4 mat4x4::look_at(const fvec3& eye, const fvec3& center, const fvec3& worldUp) {
+        // from this answer: https://stackoverflow.com/a/21830596
+        // z is front
+        const fvec3 viewZ = (eye - center).norm();
+        // getting the vector perpendicular to the plane (eye -> center) and worldUp
+        const fvec3 viewX = worldUp.cross(viewZ).norm();
+        // getting localUp from viewX and viewZ
+        const fvec3 viewY = viewZ.cross(viewX);
+        return {
+            { viewX.x,          viewY.x,         viewZ.x,        0 },
+            { viewX.y,          viewY.y,         viewZ.y,        0 },
+            { viewX.z,          viewY.z,         viewZ.z,        0 },
+            { -viewX.dot(eye), -viewY.dot(eye), -viewZ.dot(eye), 1 },
+        };
+    }
+
     // * warning! LOTS OF MACROS AHEAD!
 #define MROW4(U) { x.U, y.U, z.U, w.U }
     mat4x4 mat4x4::transpose() const {

@@ -108,6 +108,8 @@ namespace Maths {
             }
         } // each bit is a y/n decision on min or max (0 = min, 1 is max)
 
+        vec clamp(const vec& val) const { return Maths::max_t(Maths::min_t(val, max), min); }
+
         rect& correct() { vec m = min; min = Maths::min_t(min, max); max = Maths::max_t(m, max); return *this; } // fixes min max errors
         rect corrected() { return { Maths::min_t(min, max), Maths::max_t(min, max) }; }
         

@@ -3,7 +3,6 @@
 #include <chrono>
 
 #include "NumTypes.h"
-#include "opengl.h"
 
 namespace Maths {
     // man why doesnt c++ just have a standard random library thats actually easy to use

@@ -24,7 +24,7 @@ namespace Graphics {
         
         FontDevice fontDevice = {};
         IO::IO ioDevice {};
-        Maths::random_gen randDevice {};
+        std::unique_ptr<Maths::random_gen> randDevice {};
 
         inline static stdu::ref<GraphicsDevice> Instance = nullptr;
     public:
@@ -74,8 +74,8 @@ namespace Graphics {
 
         IO::IO& GetIO() { return ioDevice; }
         [[nodiscard]] const IO::IO& GetIO() const { return ioDevice; }
-        Maths::random_gen& GetRand() { return randDevice; }
-        [[nodiscard]] const Maths::random_gen& GetRand() const { return randDevice; }
+        Maths::random_gen& GetRand() { return *randDevice; }
+        [[nodiscard]] const Maths::random_gen& GetRand() const { return *randDevice; }
 
         OPENGL_API static GraphicsDevice Initialize(Maths::ivec2 winSize = { 640, 480 });
 

@@ -129,7 +129,7 @@ namespace Maths {
     // swizzles a vecD<T> into a vec{S.N}<T> with reflection data V and of swizzle S 
     template <class T, uchar D, vector_swizzle_data<D> V, swizzle<D, V> S>
     // ReSharper disable once CppNotAllPathsReturnValue
-    typename vecn<S.N, T>::type swizzle_impl(T* v) {
+    typename vecn<S.N, T>::type swizzle_impl(const T* v) {
         if constexpr (S.N == 2) return { v[S[0]], v[S[1]] };
         if constexpr (S.N == 3) return { v[S[0]], v[S[1]], v[S[2]] };
         if constexpr (S.N == 4) return { v[S[0]], v[S[1]], v[S[2]], v[S[3]] };
@@ -230,7 +230,7 @@ namespace Maths {
         STDU_IF(VECTOR_SWIZZLING, \
         static constexpr vector_swizzle_data<2> params = #_X#_Y; \
         template <swizzle<2, params> S> \
-        typename vecn<S.N, SCALAR>::type swizzle() { return swizzle_impl<SCALAR, 2, params, S>(scalars); } \
+        STDU_IF(CEXPR, constexpr) typename vecn<S.N, SCALAR>::type swizzle() const { return swizzle_impl<SCALAR, 2, params, S>(scalars); } \
         ) \
         \
         SCALAR* begin() { return scalars; } \
@@ -315,7 +315,7 @@ namespace Maths {
         STDU_IF(VECTOR_SWIZZLING, \
         static constexpr vector_swizzle_data<3> params = #_X#_Y#_Z; \
         template <swizzle<3, params> S> \
-        STDU_IF(CEXPR, constexpr) typename vecn<S.N, SCALAR>::type swizzle() { return swizzle_impl<SCALAR, 3, params, S>(scalars); } \
+        STDU_IF(CEXPR, constexpr) typename vecn<S.N, SCALAR>::type swizzle() const { return swizzle_impl<SCALAR, 3, params, S>(scalars); } \
         ) \
         \
         SCALAR* begin() { return scalars; } \
@@ -401,7 +401,7 @@ namespace Maths {
         STDU_IF(VECTOR_SWIZZLING, \
         static constexpr vector_swizzle_data<4> params = #_X#_Y#_Z#_W; \
         template <swizzle<4, params> S> \
-        STDU_IF(CEXPR, constexpr) typename vecn<S.N, SCALAR>::type swizzle() { return swizzle_impl<SCALAR, 4, params, S>(scalars); } \
+        STDU_IF(CEXPR, constexpr) typename vecn<S.N, SCALAR>::type swizzle() const { return swizzle_impl<SCALAR, 4, params, S>(scalars); } \
         ) \
         \
         SCALAR* begin() { return scalars; } \
