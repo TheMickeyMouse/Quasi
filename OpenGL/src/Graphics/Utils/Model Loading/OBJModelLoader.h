@@ -76,6 +76,9 @@ namespace Graphics {
         OPENGL_API void CreateObject(std::span<const OBJProperty> objprop);
         OPENGL_API void ResolveObjectIndices(OBJObject& obj);
 
+        OBJModel& GetModel() { return model; }
+        [[nodiscard]] const OBJModel& GetModel() const { return model; }
+
         OPENGL_API OBJModel&& RetrieveModel();
 
         OPENGL_API std::string DebugStr() const;

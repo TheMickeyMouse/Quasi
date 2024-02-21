@@ -47,5 +47,7 @@ namespace Graphics {
 
         OPENGL_API void BindMeshes(RenderObject<OBJVertex>& scene);
         OPENGL_API void AddMeshes(RenderObject<OBJVertex>& scene);
+
+        OPENGL_API std::vector<Mesh<OBJVertex>> RetrieveMeshes();
     };
 }
