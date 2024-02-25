@@ -6,9 +6,8 @@
 
 #include "Corner.h"
 #include "Direction.h"
-#include "NumTypes.h"
 #include "opengl.h"
-#include "Debugging.h"
+#include "NumTypes.h"
 #include <stdu/macros.h>
 #include <stdu/types.h>
 
@@ -551,10 +550,11 @@ namespace Maths {
         \
         T angle_signed(const vec3& other, const vec3& normal) const F_ONLY; /* normal should be normalized */ \
         \
-        T altitude() const F_ONLY; \
-        T azimuth() const F_ONLY; \
+        T yaw() const F_ONLY; \
+        T pitch() const F_ONLY; \
         vec3 spheric() const F_ONLY; /* 3d polar coordinates, (x,y,z) into (r,theta,phi) */ \
         vec3 cartesian() const F_ONLY; /* converts (r,theta,phi) into (x,y,z) */ \
+        static vec3 from_polar(T r, T yaw, T pitch) F_ONLY { return vec3 { r, yaw, pitch }.cartesian(); } \
         \
         vec2<T> projected() const F_ONLY;
         vec3  reflected(const vec3& normal) const F_ONLY; \

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Rect.h"
+#include "Debugging.h"
 
 namespace Maths {
 #pragma region Implementation
@@ -121,10 +122,10 @@ namespace Maths {
     
     VEC3_IMPL(vec3<T>,  cross)(const vec3& other) const { return { (T)(y * other.z - z * other.y), (T)(z * other.x - x * other.z), (T)(x * other.y - y * other.x) }; }
 
-    VEC3_IMPL(T,       altitude )() const F_ONLY { return std::acos(z / len()); }
-    VEC3_IMPL(T,       azimuth  )() const F_ONLY { return xy().angle(); }
-    VEC3_IMPL(vec3<T>, spheric  )() const F_ONLY { return { len(), altitude(), azimuth() }; }
-    VEC3_IMPL(vec3<T>, cartesian)() const F_ONLY { auto sin = std::sin(y); return x * vec3 { sin * std::cos(z), sin * std::sin(z), std::cos(y) }; }
+    VEC3_IMPL(T,       yaw  )() const F_ONLY { return std::atan2(x, z); }
+    VEC3_IMPL(T,       pitch)() const F_ONLY { return std::asin(y / len()); }
+    VEC3_IMPL(vec3<T>, spheric  )() const F_ONLY { return { len(), yaw(), pitch() }; }
+    VEC3_IMPL(vec3<T>, cartesian)() const F_ONLY { return x * vec3 { std::sin(y) * std::cos(z), std::sin(z), std::cos(y) * std::cos(z) }; }
 
     VEC3_IMPL(T, angle       )(const vec3& other) const F_ONLY { return std::acos(dot(other) / (len() * other.len())); }
     VEC3_IMPL(T, angle_signed)(const vec3& other, const vec3& normal) const F_ONLY { return std::atan2(cross(other).dot(normal), dot(other)); }

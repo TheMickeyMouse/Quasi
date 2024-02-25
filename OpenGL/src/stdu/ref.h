@@ -33,7 +33,8 @@ namespace stdu {
         bool operator==(const ref& r) const { return this->equals(r); }
 
         [[nodiscard]] operator bool() const { return obj != nullptr; }
-        [[nodiscard]] operator T() const { return *obj; }
+        [[nodiscard]] operator const T&() const { return *obj; }
+        [[nodiscard]] operator T&() { return *obj; }
     };
 
     template <class T> using cref = ref<const T>;

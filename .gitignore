@@ -1,6 +1,10 @@
 ﻿bin/
 OpenGL/src/vendor/include/
-OpenGL/src/vendor/imgui-1.60/
+OpenGL/src/vendor/imgui/misc
+OpenGL/src/vendor/imgui/examples
+OpenGL/src/vendor/imgui/.github
+OpenGL/src/vendor/imgui/backends
+OpenGL/src/vendor/imgui/docs
 .idea/
 .vs/
 out/

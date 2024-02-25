@@ -4,6 +4,7 @@
 #pragma once
 #include "NumTypes.h"
 #include "stdu/macros.h"
+#include "stdu/types.h"
 
 namespace Graphics {
     enum class GLTypeID {
@@ -18,23 +19,13 @@ namespace Graphics {
         USHORT = 0x1403,
     };
 
-    template <GLTypeID> struct GLTypeOf { using type = void; };
-    template <GLTypeID T> using GLTypeOfT = typename GLTypeOf<T>::type;
-    template <class T> constexpr GLTypeID GLTypeIDOf         = GLTypeID::UNDEFINED;
+    using GLTypeMap = stdu::typemap<
+        stdu::typelist           <float,           double,           int,           uint,           char,           uchar,           int16,           uint16>,
+        stdu::valuelist<GLTypeID, GLTypeID::FLOAT, GLTypeID::DOUBLE, GLTypeID::INT, GLTypeID::UINT, GLTypeID::BYTE, GLTypeID::UBYTE, GLTypeID::SHORT, GLTypeID::USHORT>
+    >;
 
-#define GL_TYPE_CONVERSION(T, ID) template <> inline constexpr GLTypeID GLTypeIDOf<T>  = GLTypeID::ID; \
-                       template <> struct GLTypeOf<GLTypeID::ID> { using type = T; }
-
-    GL_TYPE_CONVERSION(float,  FLOAT);
-    GL_TYPE_CONVERSION(double, DOUBLE);
-    GL_TYPE_CONVERSION(int,    INT);
-    GL_TYPE_CONVERSION(uint,   UINT);
-    GL_TYPE_CONVERSION(char,   BYTE);
-    GL_TYPE_CONVERSION(uchar,  UBYTE);
-    GL_TYPE_CONVERSION(int16,  SHORT);
-    GL_TYPE_CONVERSION(uint16, USHORT);
-
-#undef GL_TYPE_CONVERSION
+    template <class T> constexpr GLTypeID GLTypeIDOf = stdu::query_map<T, GLTypeMap>;
+    template <GLTypeID T> using GLTypeOfT = stdu::reverse_query_map<T, GLTypeMap>;
 
 #define GL_SIZEOF_DECL(SEQ) constexpr int SizeOf(const GLTypeID type) { switch(type) { GL_SIZEOF_SEQ(SEQ) default: return 0; } }
 #define GL_SIZEOF_SEQ(SEQ) STDU_CAT(__GL_SIZE_T1__ SEQ, END__)

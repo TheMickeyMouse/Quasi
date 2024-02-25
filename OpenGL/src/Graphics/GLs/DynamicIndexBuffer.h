@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include <limits.h>
-#include <utility>
 
 #include "GLObject.h"
 #include "opengl.h"

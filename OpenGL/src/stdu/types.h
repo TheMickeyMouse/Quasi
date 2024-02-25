@@ -1,8 +1,7 @@
 #pragma once
-#include <concepts>
 #include <span>
-
-#include "Debugging.h"
+#include <tuple>
+#include <utility>
 
 namespace stdu {
     struct empty {
@@ -57,4 +56,69 @@ namespace stdu {
 
     using byte_span = std::span<uchar>;
     using cbyte_span = std::span<const uchar>;
+
+
+
+    // adapted from https://stackoverflow.com/a/66422428
+    template <bool... Bs>
+    constexpr bool all_of = (Bs && ...);
+
+    template <bool... Bs>
+    constexpr bool any_of = (Bs || ...);
+
+    template <class... Ts> struct typelist { static constexpr std::size_t size = sizeof...(Ts); };
+    template <class> struct typelist_instance_t : std::false_type { };
+    template <class... T> struct typelist_instance_t<typelist<T...>> : std::true_type { };
+    template <class T> concept typelist_instance = typelist_instance_t<T>::value;
+
+    template <class T, T ...V> struct valuelist { using type = T; static constexpr std::size_t size = sizeof...(V); };
+    template <class> struct valuelist_instance_t : std::false_type { };
+    template <class T, T ...V> struct valuelist_instance_t<valuelist<T, V...>> : std::true_type { };
+    template <class T> concept valuelist_instance = valuelist_instance_t<T>::value;
+
+    template <typelist_instance K, valuelist_instance V> requires (K::size == V::size)
+    struct typemap { using value_type = typename V::type; };
+
+    template <class U, class T>
+    constexpr bool is_in = false;
+
+    template <class U, class... Ts>
+    constexpr bool is_in<U, typelist<Ts...>> = (std::is_same_v<U, Ts> || ...);
+
+    template <class I, class T>
+    constexpr int index_of_t = -1;
+
+    template <class I, class... T>
+    constexpr int index_of_t<I, typelist<I, T...>> = 0;
+
+    template <class I, class U, class... Ts>
+    constexpr int index_of_t<I, typelist<U, Ts...>> = 1 + index_of_t<I, typelist<Ts...>>;
+
+    template <auto I, class T>
+    constexpr int index_of_v = -1;
+
+    template <class V, V I, V... T>
+    constexpr int index_of_v<I, valuelist<V, I, T...>> = 0;
+
+    template <class V, V I, V J, V... T>
+    constexpr int index_of_v<I, valuelist<V, J, T...>> = 1 + index_of_v<I, valuelist<V, T...>>;
+
+    template <class Q, class M>
+    constexpr typename M::value_type query_map = {};
+
+    template <class Q, class ...Ts, class V, V ...Vs>
+    constexpr V query_map<Q, typemap<typelist<Ts...>, valuelist<V, Vs...>>>
+        = std::get<index_of_t<Q, typelist<Ts...>>>(std::make_tuple(Vs...));
+
+    template <auto Q, class M>
+    struct reverse_query_map_t { using type = void; };
+
+    template <class V, V Q, class... Ts, V... Vs>
+    struct reverse_query_map_t<Q, typemap<typelist<Ts...>, valuelist<V, Vs...>>> {
+        using type = decltype(std::get<index_of_v<Q, valuelist<V, Vs...>>>(
+            std::make_tuple(std::declval<Ts>()...)));
+    };
+
+    template <auto Q, class M>
+    using reverse_query_map = typename reverse_query_map_t<Q, M>::type;
 }

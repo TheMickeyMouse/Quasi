@@ -15,6 +15,12 @@ namespace Graphics {
         auto& Mouse = gd.GetIO().Mouse;
         if(Keyboard.KeyOnPress(Key::ESCAPE)) Toggle(gd);
 
+        if (UsesSmoothZoom()) {
+            viewFov = std::lerp(viewFov, fov, std::exp2f(-smoothZoom * dt));
+        } else {
+            viewFov = fov;
+        }
+
         if (!enabled) { return; }
         const fvec3 localFront = Right() * std::cos(yaw) + worldFront * std::sin(yaw);
         const fvec3 localRight = localFront.cross(worldUp);
@@ -34,12 +40,6 @@ namespace Graphics {
         if (Keyboard.KeyPressed(Key::CAPS_LOCK)) {
             fov -= (float)Mouse.GetMouseScrollDelta().y;
             fov = fovRange.clamp(fov);
-        }
-
-        if (UsesSmoothZoom()) {
-            viewFov = std::lerp(viewFov, fov, std::exp2f(-smoothZoom * dt));
-        } else {
-            viewFov = fov;
         }
 
         const dvec2 mouse = Mouse.GetMousePosPx();

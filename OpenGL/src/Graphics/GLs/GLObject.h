@@ -6,7 +6,8 @@
 #include "stdu/types.h"
 
 namespace Graphics {
-
+    using glID = uint;
+    constexpr glID GL_NULL = 0;
 
     template <class H>
     struct GLObjectHandler {
