@@ -619,6 +619,7 @@ namespace Maths {
 #define COLOR_COMMON(T, HAS_A, C) \
     constexpr T(const char (&hex)[1+6+1]); \
     STDU_IF(HAS_A, constexpr T(const char (&hex)[1+8+1]);) \
+    std::string hexcode() const; \
     \
     bool eq(const T& other) const; \
     bool loose_eq(const T& other) const; \
@@ -653,6 +654,8 @@ namespace Maths {
     \
     OPENGL_API \
     STDU_IF_ELSE(HAS_A, (operator without_alpha_t() const;), (operator with_alpha_t() const;)) \
+    \
+    OPENGL_API static T color_id(int id); \
     \
     static constexpr T BLACK()      { return "#000000"; } /* solid black: rgb(000, 000, 000) or #000000 */ \
     static constexpr T DARK_GRAY()  { return "#404040"; } /*   25% white: rgb(064, 064, 064) or #404040 */ \

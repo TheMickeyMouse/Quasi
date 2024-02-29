@@ -172,7 +172,7 @@ namespace Maths {
         if (cor < 0 || cor > BACK_BOTTOM_LEFT) return;
         x = (int)(cor & SIDE_LEFT  ) ? ARITH_DO(int, clamped_neg)(scale) : scale;
         y = (int)(cor & SIDE_BOTTOM) ? ARITH_DO(int, clamped_neg)(scale) : scale;
-        y = (int)(cor & SIDE_BACK  ) ? ARITH_DO(int, clamped_neg)(scale) : scale;
+        z = (int)(cor & SIDE_BACK  ) ? ARITH_DO(int, clamped_neg)(scale) : scale;
     }
     
 #undef VEC3_IMPL
@@ -246,43 +246,45 @@ namespace Maths {
 #pragma endregion // vec4
 #pragma region Color Constructors
     // 'a'-10 = W, '9'+1 = ':'
-    static constexpr uchar hexcode(char D0, char D1) {
-        return (uchar)((D0 - (D0 < ':' ? '0' : 'W')) << 4 | (D1 - (D1 < ':' ? '0' : 'W')));
+    namespace Color {
+        static constexpr uchar from_hexcode(char D0, char D1) {
+            return (uchar)((D0 - (D0 < ':' ? '0' : 'W')) << 4 | (D1 - (D1 < ':' ? '0' : 'W')));
+        }
     }
 
     constexpr color::color(const char (&hex)[10])
-        : r(hexcode(hex[1], hex[2])), g(hexcode(hex[3], hex[4])),
-          b(hexcode(hex[5], hex[6])), a(hexcode(hex[7], hex[8])) {
+        : r(Color::from_hexcode(hex[1], hex[2])), g(Color::from_hexcode(hex[3], hex[4])),
+          b(Color::from_hexcode(hex[5], hex[6])), a(Color::from_hexcode(hex[7], hex[8])) {
         ASSERT(hex[0] == '#');
     }
 
     constexpr color::color(const char (&hex)[8])
-        : r(hexcode(hex[1], hex[2])), g(hexcode(hex[3], hex[4])),
-          b(hexcode(hex[5], hex[6])), a(255) {
+        : r(Color::from_hexcode(hex[1], hex[2])), g(Color::from_hexcode(hex[3], hex[4])),
+          b(Color::from_hexcode(hex[5], hex[6])), a(255) {
         ASSERT(hex[0] == '#');
     }
 
     constexpr colorf::colorf(const char (&hex)[10])
-        : r((float)hexcode(hex[1], hex[2]) / 255.0f), g((float)hexcode(hex[3], hex[4]) / 255.0f),
-          b((float)hexcode(hex[5], hex[6]) / 255.0f), a((float)hexcode(hex[7], hex[8]) / 255.0f) {
+        : r((float)Color::from_hexcode(hex[1], hex[2]) / 255.0f), g((float)Color::from_hexcode(hex[3], hex[4]) / 255.0f),
+          b((float)Color::from_hexcode(hex[5], hex[6]) / 255.0f), a((float)Color::from_hexcode(hex[7], hex[8]) / 255.0f) {
         ASSERT(hex[0] == '#');
     }
 
     constexpr colorf::colorf(const char (&hex)[8])
-        : r((float)hexcode(hex[1], hex[2]) / 255.0f), g((float)hexcode(hex[3], hex[4]) / 255.0f),
-          b((float)hexcode(hex[5], hex[6]) / 255.0f), a(1) {
+        : r((float)Color::from_hexcode(hex[1], hex[2]) / 255.0f), g((float)Color::from_hexcode(hex[3], hex[4]) / 255.0f),
+          b((float)Color::from_hexcode(hex[5], hex[6]) / 255.0f), a(1) {
         ASSERT(hex[0] == '#');
     }
 
     constexpr color3::color3(const char (&hex)[8])
-        : r(hexcode(hex[1], hex[2])), g(hexcode(hex[3], hex[4])),
-          b(hexcode(hex[5], hex[6])) {
+        : r(Color::from_hexcode(hex[1], hex[2])), g(Color::from_hexcode(hex[3], hex[4])),
+          b(Color::from_hexcode(hex[5], hex[6])) {
         ASSERT(hex[0] == '#');
     }
 
     constexpr color3f::color3f(const char (&hex)[8])
-        : r((float)hexcode(hex[1], hex[2]) / 255.0f), g((float)hexcode(hex[3], hex[4]) / 255.0f),
-          b((float)hexcode(hex[5], hex[6]) / 255.0f) {
+        : r((float)Color::from_hexcode(hex[1], hex[2]) / 255.0f), g((float)Color::from_hexcode(hex[3], hex[4]) / 255.0f),
+          b((float)Color::from_hexcode(hex[5], hex[6]) / 255.0f) {
         ASSERT(hex[0] == '#');
     }
 #pragma endregion // color constructors

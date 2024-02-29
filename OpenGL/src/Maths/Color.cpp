@@ -100,6 +100,10 @@ namespace Maths {
         bool color_eq(const float* a, const float* b) {
             return channel_eq(a[0], b[0]) && channel_eq(a[1], b[1]) && channel_eq(a[2], b[2]);
         }
+
+        char channel_hex(const char i) {
+            return (i < 10) ? (char)('0' + i) : (char)('a' + i - 10);
+        }
     }
     
 #define CM(F) STDU_IF_ELSE(F, (255.0f), (1))
@@ -107,6 +111,20 @@ namespace Maths {
 #define A(HAS_A) STDU_IF_ELSE(HAS_A, (a), (1))
 #define S scalar
 #define COLOR_IMPL(T, HAS_A, F) \
+    std::string T::hexcode() const { \
+        return std::format(STDU_IF_ELSE(HAS_A, ("#{}{}{}{}{}{}{}{}"), ("#{}{}{}{}{}{}")), \
+            Color::channel_hex((char)(r * CM(F)) / 16), \
+            Color::channel_hex((char)(r * CM(F)) % 16), \
+            Color::channel_hex((char)(g * CM(F)) / 16), \
+            Color::channel_hex((char)(g * CM(F)) % 16), \
+            Color::channel_hex((char)(b * CM(F)) / 16), \
+            Color::channel_hex((char)(b * CM(F)) % 16) \
+            STDU_IF(HAS_A, , \
+                Color::channel_hex((int)(a * CM(F)) / 16), \
+                Color::channel_hex((int)(a * CM(F)) % 16)) \
+        ); \
+    } \
+    \
     bool T::eq(const T& other) const { return r == other.r && g == other.g && b == other.b STDU_IF(HAS_A, && r == other.r); } \
     bool T::loose_eq(const T& other) const { \
         return STDU_IF_ELSE(F, \
@@ -176,6 +194,19 @@ namespace Maths {
                                          (T::operator colorf()  const { return { (float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f, (float)a / 255.0f }; } ))), \
                         (STDU_IF_ELSE(F, (T::operator color3()  const { return { (uchar)(r * 255), (uchar)(g * 255), (uchar)(b * 255) }; }), \
                                          (T::operator color3f() const { return { (float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f }; } )))) \
+    T T::color_id(const int id) { \
+        switch (id) { \
+            case  0: return BETTER_BLACK(); \
+            case  1: return BETTER_RED(); \
+            case  2: return BETTER_GREEN(); \
+            case  3: return BETTER_YELLOW(); \
+            case  4: return BETTER_BLUE(); \
+            case  5: return BETTER_PURPLE(); \
+            case  6: return BETTER_CYAN(); \
+            case  7: return BETTER_WHITE(); \
+            default: return BLACK(); \
+        } \
+    } \
 
     COLOR_IMPL(color3f, 0, 1);
     COLOR_IMPL(color3,  0, 0);
