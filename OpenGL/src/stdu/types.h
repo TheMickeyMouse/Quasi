@@ -1,7 +1,9 @@
 #pragma once
 #include <span>
+#include <string_view>
 #include <tuple>
 #include <utility>
+#include "NumTypes.h"
 
 namespace stdu {
     struct empty {
@@ -121,4 +123,38 @@ namespace stdu {
 
     template <auto Q, class M>
     using reverse_query_map = typename reverse_query_map_t<Q, M>::type;
+
+    // adapted from https://stackoverflow.com/a/59522794/19968422
+    namespace impl {
+        template <class T>
+        [[nodiscard]] constexpr std::string_view raw_typename() {
+#ifndef _MSC_VER
+            return __PRETTY_FUNCTION__;
+#else
+            return __FUNCSIG__;  // NOLINT(clang-diagnostic-language-extension-token)
+#endif
+        }
+
+        constexpr std::size_t type_junk_prefix = raw_typename<int>().find("int");
+        constexpr std::size_t type_junk_size = raw_typename<int>().size() - 3;
+        static_assert(type_junk_prefix != std::string::npos, "cannot determine type signature in this compiler");
+    }
+
+    template <typename T>
+    [[nodiscard]] constexpr std::string_view nameof() {
+        const std::string_view fullname = impl::raw_typename<T>();
+        return fullname.substr(impl::type_junk_prefix, fullname.size() - impl::type_junk_size);
+    }
+
+    template <typename T>
+    struct is_complete_helper {
+        template <typename U>
+        static auto test(U*)  -> std::integral_constant<bool, sizeof(U) == sizeof(U)>;
+        static auto test(...) -> std::false_type;
+        using type = decltype(test((T*)nullptr));
+    };
+
+    template <typename T>
+    struct is_complete : is_complete_helper<T>::type {};
+    template <class T> constexpr bool is_complete_v = is_complete<T>::value;
 }

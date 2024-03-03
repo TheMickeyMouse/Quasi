@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <string>
 #include <fstream>
+#include "NumTypes.h"
 
 namespace stdu {
     inline std::string readfile(const std::string& fname) {
@@ -18,13 +19,13 @@ namespace stdu {
         return "";
     }
 
-    inline std::tuple<std::string_view, std::string_view> getfolder(const std::string& fname) {
+    inline std::tuple<std::string_view, std::string_view> getfolder(std::string_view fname) {
         using namespace std::literals;
         const size_t pos = fname.find_last_of("\\/");
         return std::string::npos == pos ?
             std::tuple { ""sv, fname } :
-            std::tuple { std::string_view { fname }.substr(0, pos),
-                         std::string_view { fname }.substr(pos + 1) };
+            std::tuple { fname.substr(0, pos),
+                         fname.substr(pos + 1) };
     }
 
     inline std::string tolower(std::string_view string) {
