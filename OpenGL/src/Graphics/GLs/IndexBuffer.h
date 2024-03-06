@@ -1,7 +1,7 @@
 #pragma once
 #include "GLObject.h"
 #include "NumTypes.h"
-#include "opengl.h"
+#include <core.h>
 
 namespace Graphics {
 	class IndexBuffer : public GLObject<BufferHandler<BufferType::INDEX>> {

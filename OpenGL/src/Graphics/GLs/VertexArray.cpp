@@ -1,24 +1,25 @@
 ﻿#include "VertexArray.h"
 
-#include "../Debugging.h"
+#include <GL/glew.h>
+#include "GLDebug.h"
 
 namespace Graphics {
     glID VertexArrayHandler::Create() const {
         glID id;
-        GLCALL(glGenVertexArrays(1, &id));
+        GL_CALL(glGenVertexArrays(1, &id));
         return id;
     }
 
     void VertexArrayHandler::Destroy(const glID id) const {
-        GLCALL(glDeleteVertexArrays(1, &id));
+        GL_CALL(glDeleteVertexArrays(1, &id));
     }
 
     void VertexArrayHandler::Bind(const glID id) const {
-        GLCALL(glBindVertexArray(id));
+        GL_CALL(glBindVertexArray(id));
     }
 
     void VertexArrayHandler::Unbind() const {
-        GLCALL(glBindVertexArray(0));
+        GL_CALL(glBindVertexArray(0));
     }
 
     void VertexArray::AddBuffer(const VertexBufferLayout& layout) {
@@ -26,12 +27,11 @@ namespace Graphics {
         size_t offset = 0;
         for (uint i = 0; i < elements.size(); i++) {
             const auto& elem = elements[i];
-            GLCALL(glEnableVertexAttribArray(i));
-            if (elem.flags & VertexBufferComponent::INTEGER_FLAG) {
-                GLCALL(glVertexAttribIPointer(i, elem.count, (int)elem.type, layout.GetStride(), (const void*)offset));  // NOLINT(performance-no-int-to-ptr)
-            } else {
-                GLCALL(glVertexAttribPointer(i, elem.count, (int)elem.type, elem.flags & elem.NORMALIZED_FLAG, layout.GetStride(), (const void*)offset));  // NOLINT(performance-no-int-to-ptr)
-            }
+            GL_CALL(glEnableVertexAttribArray(i));
+            if (elem.flags & VertexBufferComponent::INTEGER_FLAG)
+                GL_CALL(glVertexAttribIPointer(i, elem.count, (int)elem.type, layout.GetStride(), (const void*)offset));  // NOLINT(performance-no-int-to-ptr)
+            else
+                GL_CALL(glVertexAttribPointer(i, elem.count, (int)elem.type, elem.flags & elem.NORMALIZED_FLAG, layout.GetStride(), (const void*)offset));  // NOLINT(performance-no-int-to-ptr)
             offset += elem.count * SizeOf(elem.type);
         }
     }

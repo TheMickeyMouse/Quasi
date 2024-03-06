@@ -2,7 +2,7 @@
 #include <array>
 #include <queue>
 #include <GLFW/glfw3.h>
-#include "opengl.h"
+#include <core.h>
 
 #include "NumTypes.h"
 #include "stdu/enum_utils.h"

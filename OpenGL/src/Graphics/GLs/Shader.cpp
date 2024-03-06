@@ -3,7 +3,8 @@
 #include <fstream>
 #include "stdu/io.h"
 
-#include "Debugging.h"
+#include "GL/glew.h"
+#include "GLDebug.h"
 #include "Texture.h"
 
 namespace Graphics {
@@ -12,15 +13,15 @@ namespace Graphics {
     }
 
     void ShaderHandler::Destroy(glID id) const {
-        GLCALL(glDeleteProgram(id));
+        GL_CALL(glDeleteProgram(id));
     }
 
     void ShaderHandler::Bind(glID id) const {
-        GLCALL(glUseProgram(id));
+        GL_CALL(glUseProgram(id));
     }
 
     void ShaderHandler::Unbind() const {
-        GLCALL(glUseProgram(0));
+        GL_CALL(glUseProgram(0));
     }
 
     Shader::Shader(std::string_view program) {
@@ -35,9 +36,9 @@ namespace Graphics {
     uint Shader::GetUniformLocation(stringr name) {
         if (uniformCache.contains(name))
             return uniformCache[name];
-    
-        GLCALL(const int location = glGetUniformLocation(rendererID, name.c_str()));
-        ASSERT(location != -1);
+
+        const int location = GL_CALL(glGetUniformLocation(rendererID, name.c_str()));
+        GLLogger().AssertFmt(location != -1, {"Uniform location for '{}' was -1"}, name);
         uniformCache[name] = location;
         return location;
     }
@@ -75,7 +76,7 @@ namespace Graphics {
     }
 
     void Shader::SetUniformTex(stringr name, const Texture& texture) {
-        GLCALL(glUniform1i(GetUniformLocation(name), texture.Slot()));
+        GL_CALL(glUniform1i(GetUniformLocation(name), texture.Slot()));
     }
 
     Shader Shader::FromFile(stringr filepath) {
@@ -91,8 +92,8 @@ namespace Graphics {
         return s;
     }
 
-    uint Shader::CompileShader(std::string_view source, uint type) {
-        const uint id = glCreateShader(type);
+    uint Shader::CompileShader(std::string_view source, ShaderType type) {
+        const uint id = glCreateShader((int)type);
         const char* src = source.data();
         const int length = (int)source.length();
         glShaderSource(id, 1, &src, &length);
@@ -106,7 +107,7 @@ namespace Graphics {
             glGetShaderiv(id, GL_INFO_LOG_LENGTH, &len);
             char* msg = (char*)_malloca(len * sizeof(char));
             glGetShaderInfoLog(id, len, &len, msg);
-            DEBUGFUN(std::cout << "ERR: ERR WHEN COMPILING " << (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << "shader." << msg << '\n');
+            GLLogger().Error({"Compiling {} shader yielded compiler errors:\n{}"}, type, msg);
 
             glDeleteShader(id);
             return 0;
@@ -120,19 +121,19 @@ namespace Graphics {
         const uint vs = CompileShaderVert(vtx);
         const uint fs = CompileShaderFrag(frg);
 
-        GLCALL(glAttachShader(program, vs));
-        GLCALL(glAttachShader(program, fs));
-        GLCALL(glLinkProgram(program));
-        GLCALL(glValidateProgram(program));
+        GL_CALL(glAttachShader(program, vs));
+        GL_CALL(glAttachShader(program, fs));
+        GL_CALL(glLinkProgram(program));
+        GL_CALL(glValidateProgram(program));
         
-        GLCALL(glDeleteShader(vs));
-        GLCALL(glDeleteShader(fs));
+        GL_CALL(glDeleteShader(vs));
+        GL_CALL(glDeleteShader(fs));
 
         return program;
     }
 
     #pragma region Uniform Ints
-#define SHADER_UNIF_I(n, ...) GLCALL(glUniform##n##i(GetUniformLocation(name), __VA_ARGS__))
+#define SHADER_UNIF_I(n, ...) GL_CALL(glUniform##n##i(GetUniformLocation(name), __VA_ARGS__))
         void Shader::SetUniform1I(stringr name, int val)                        { SHADER_UNIF_I(1, val); }
         void Shader::SetUniform2I(stringr name, int v0, int v1)                 { SHADER_UNIF_I(2, v0, v1); }
         void Shader::SetUniform2I(stringr name, intptr vals)                    { SHADER_UNIF_I(2, vals[0], vals[1]); }
@@ -143,7 +144,7 @@ namespace Graphics {
 #undef SHADER_UNIF_I
 #pragma endregion
 #pragma region Uniform Unsigned Ints
-#define SHADER_UNIF_UI(n, ...) GLCALL(glUniform##n##ui(GetUniformLocation(name), __VA_ARGS__))
+#define SHADER_UNIF_UI(n, ...) GL_CALL(glUniform##n##ui(GetUniformLocation(name), __VA_ARGS__))
         void Shader::SetUniform1IUnsigned(stringr name, uint val)                           { SHADER_UNIF_UI(1, val); }
         void Shader::SetUniform2IUnsigned(stringr name, uint v0, uint v1)                   { SHADER_UNIF_UI(2, v0, v1); }
         void Shader::SetUniform2IUnsigned(stringr name, uintptr vals)                       { SHADER_UNIF_UI(2, vals[0], vals[1]); }
@@ -154,7 +155,7 @@ namespace Graphics {
 #undef SHADER_UNIF_UI
 #pragma endregion
 #pragma region Uniform Int Vecs
-#define SHADER_UNIF_IV(n, d, c) GLCALL(glUniform##n##iv(GetUniformLocation(name), c, d))
+#define SHADER_UNIF_IV(n, d, c) GL_CALL(glUniform##n##iv(GetUniformLocation(name), c, d))
         void Shader::SetUniform1IVec(stringr name, intptr vals, uint count) { SHADER_UNIF_IV(1, vals, count); }
         void Shader::SetUniform2IVec(stringr name, intptr vals, uint count) { SHADER_UNIF_IV(2, vals, count); }
         void Shader::SetUniform3IVec(stringr name, intptr vals, uint count) { SHADER_UNIF_IV(3, vals, count); }
@@ -162,7 +163,7 @@ namespace Graphics {
 #undef SHADER_UNIF_IV
 #pragma endregion
 #pragma region Uniform Unsigned Int Vecs
-#define SHADER_UNIF_UIV(n, d, c) GLCALL(glUniform##n##uiv(GetUniformLocation(name), c, d))
+#define SHADER_UNIF_UIV(n, d, c) GL_CALL(glUniform##n##uiv(GetUniformLocation(name), c, d))
         void Shader::SetUniform1UIVec(stringr name, uintptr vals, uint count) { SHADER_UNIF_UIV(1, vals, count); }
         void Shader::SetUniform2UIVec(stringr name, uintptr vals, uint count) { SHADER_UNIF_UIV(2, vals, count); }
         void Shader::SetUniform3UIVec(stringr name, uintptr vals, uint count) { SHADER_UNIF_UIV(3, vals, count); }
@@ -170,7 +171,7 @@ namespace Graphics {
 #undef SHADER_UNIF_UIV
 #pragma endregion
 #pragma region Uniform Floats
-#define SHADER_UNIF_F(n, ...) GLCALL(glUniform##n##f(GetUniformLocation(name), __VA_ARGS__))
+#define SHADER_UNIF_F(n, ...) GL_CALL(glUniform##n##f(GetUniformLocation(name), __VA_ARGS__))
         void Shader::SetUniform1F(stringr name, float val)                              { SHADER_UNIF_F(1, val); }
         void Shader::SetUniform2F(stringr name, float v0, float v1)                     { SHADER_UNIF_F(2, v0, v1); }
         void Shader::SetUniform2F(stringr name, floatptr vals)                          { SHADER_UNIF_F(2, vals[0], vals[1]); }
@@ -181,7 +182,7 @@ namespace Graphics {
 #undef SHADER_UNIF_F
 #pragma endregion
 #pragma region Uniform Float Vecs
-#define SHADER_UNIF_FV(n, d, c) GLCALL(glUniform##n##fv(GetUniformLocation(name), c, d))
+#define SHADER_UNIF_FV(n, d, c) GL_CALL(glUniform##n##fv(GetUniformLocation(name), c, d))
         void Shader::SetUniform1FVec(stringr name, floatptr vals, uint count) { SHADER_UNIF_FV(1, vals, count); }
         void Shader::SetUniform2FVec(stringr name, floatptr vals, uint count) { SHADER_UNIF_FV(2, vals, count); }
         void Shader::SetUniform3FVec(stringr name, floatptr vals, uint count) { SHADER_UNIF_FV(3, vals, count); }
@@ -189,7 +190,7 @@ namespace Graphics {
 #undef SHADER_UNIF_FV
 #pragma endregion
 #pragma region Uniform Matricies
-#define SHADER_UNIF_MAT(s, m) GLCALL(glUniformMatrix##s##fv(GetUniformLocation(name), 1, GL_FALSE, m)) // column major
+#define SHADER_UNIF_MAT(s, m) GL_CALL(glUniformMatrix##s##fv(GetUniformLocation(name), 1, GL_FALSE, m)) // column major
         void Shader::SetUniformMatrix2x2(stringr name, floatptr mat) { SHADER_UNIF_MAT(2, mat); }
         void Shader::SetUniformMatrix3x3(stringr name, floatptr mat) { SHADER_UNIF_MAT(3, mat); }
 

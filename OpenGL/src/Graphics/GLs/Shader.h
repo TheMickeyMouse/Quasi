@@ -1,13 +1,23 @@
 ﻿#pragma once
 #include <string>
 #include <unordered_map>
-#include "opengl.h"
+#include <core.h>
 
-#include "Debugging.h"
 #include "GLObject.h"
 #include "Matrix.h"
 
 namespace Graphics {
+    enum class ShaderType {
+        VERTEX = 0x8B31,
+        FRAGMENT = 0x8B30,
+        GEOMETRY = 0x8DD9,
+        // all below requires OpenGL 4.3 above
+        COMPUTE = 0x91B9,
+        TESS_CONTROL = 0x8E88,
+        TESS_EVALUATION = 0x8E87,
+    };
+
+
     struct ShaderProgramSource {
         std::string_view vertexShader;
         std::string_view fragmentShader;
@@ -33,6 +43,14 @@ namespace Graphics {
         using uintptr = const uint*;
         using floatptr = const float*;
 
+        static STDU_ENUM_TOSTR(ShaderType, ShaderTypeName,
+            (VERTEX,          "Vertex")
+            (FRAGMENT,        "Fragment")
+            (GEOMETRY,        "Geometry")
+            (COMPUTE,         "Compute")
+            (TESS_CONTROL,    "Tesselation Control")
+            (TESS_EVALUATION, "Tesselation Eval"),
+            "Undefined")
         OPENGL_API void SetUniform1I(stringr name, int val);
         OPENGL_API void SetUniform2I(stringr name, int v0, int v1);
         OPENGL_API void SetUniform2I(stringr name, intptr vals);
@@ -137,9 +155,16 @@ namespace Graphics {
         OPENGL_API uint GetUniformLocation(stringr name);
         OPENGL_API static ShaderProgramSource ParseShader(std::string_view program);
         OPENGL_API static ShaderProgramSource ParseFromFile(const std::string& filepath);
-        OPENGL_API static uint CompileShader(std::string_view source, uint type);
-        OPENGL_API static uint CompileShaderVert(std::string_view source) { return CompileShader(source, GL_VERTEX_SHADER); }
-        OPENGL_API static uint CompileShaderFrag(std::string_view source) { return CompileShader(source, GL_FRAGMENT_SHADER); }
+        OPENGL_API static uint CompileShader(std::string_view source, ShaderType type);
+        static uint CompileShaderVert(std::string_view source) { return CompileShader(source, ShaderType::VERTEX); }
+        static uint CompileShaderFrag(std::string_view source) { return CompileShader(source, ShaderType::FRAGMENT); }
         OPENGL_API static uint CreateShader(std::string_view vtx, std::string_view frg);
     };
 }
+
+template <>
+struct std::formatter<Graphics::ShaderType> : std::formatter<std::string> {
+    auto format(Graphics::ShaderType s, std::format_context& ctx) const {
+        return std::formatter<std::string>::format(Graphics::Shader::ShaderTypeName(s), ctx);
+    }
+};

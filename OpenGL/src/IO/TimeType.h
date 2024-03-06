@@ -1,6 +1,6 @@
 #pragma once
 #include "NumTypes.h"
-#include "opengl.h"
+#include <core.h>
 
 namespace IO {
     class TimeType;

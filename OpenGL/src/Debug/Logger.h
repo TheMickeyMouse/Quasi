@@ -9,12 +9,16 @@
 #include <array>
 
 #include "ConsoleColor.h"
-#include "opengl.h"
+#include <core.h>
+#include "freetype/internal/ftobjs.h"
 #include "stdu/macros.h"
 #include "stdu/ref.h"
 #include "stdu/types.h"
+#include <cassert>
 
 namespace Debug {
+    OPENGL_API void DebugBreak();
+
     enum class Severity {
         OFF,
         TRACE,
@@ -24,7 +28,8 @@ namespace Debug {
         ERROR,
         CRITICAL,
 
-        SEVERITY_NUM
+        SEVERITY_NUM,
+        NEVER = SEVERITY_NUM
     };
 
     inline STDU_ENUM_TOSTR(Severity, SeverityName,
@@ -63,26 +68,37 @@ namespace Debug {
         std::source_location fileLoc;
     };
 
+
     class Logger {
         stdu::ref<std::ostream> logOut;
         ColoredText name = { ConsoleColor::RESET, "LOG" };
-        Severity filterLevel = Severity::OFF;
+        Severity filterLevel = Severity::OFF, breakLevel = Severity::NEVER;
         std::vector<LogEntry> logs;
 
         bool shortenFileNames : 1 = true;
         bool includeFunction : 1 = true;
+        bool alwaysFlush : 1 = false;
         int lPad = 50;
+
+        OPENGL_API static Logger InternalLog;
     public:
+#ifdef NDEBUG
+        static constexpr bool DEBUG = false;
+#else
+        static constexpr bool DEBUG = true;
+#endif
         explicit Logger(std::ostream& out = std::clog) : logOut(out) {}
 
         static bool Overrides(Severity filter, Severity log) { return (int)log >= (int)filter; }
         [[nodiscard]] bool Overrides(Severity s) const { return Overrides(filterLevel, s); }
         void SetFilter(Severity s) { filterLevel = s; }
+        void SetBreakLevel(Severity s) { breakLevel = s; }
 
         void SetName(const std::string& newName) { name.string = newName; }
         void SetNameColor(const ConsoleColor col) { name.color = col; }
         void SetShortenFile(const bool flag) { shortenFileNames = flag; }
         void SetIncludeFunc(const bool flag) { includeFunction = flag; }
+        void SetAlwaysFlush(const bool flag) { alwaysFlush = flag; }
         void SetLocPad(const int pad) { lPad = pad; }
 
         OPENGL_API static DateTime Now();
@@ -114,6 +130,14 @@ namespace Debug {
             );
         }
 
+        template <class T>
+        void AssertNeq(const T& val, const T& cmp, const SourceLoc& loc = SourceLoc::current()) {
+            this->AssertFmt(val != cmp,
+                { "Left operand {0}({1}) is equal to Right Operand {0}({2})", loc },
+                stdu::nameof<T>(), val, cmp
+            );
+        }
+
         template <class ...Ts> void Trace   (FmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::TRACE,    fmt, std::forward<Ts>(args)...); }
         template <class ...Ts> void Debug   (FmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::DEBUG,    fmt, std::forward<Ts>(args)...); }
         template <class ...Ts> void Info    (FmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::INFO,     fmt, std::forward<Ts>(args)...); }
@@ -122,8 +146,47 @@ namespace Debug {
         template <class ...Ts> void Critical(FmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::CRITICAL, fmt, std::forward<Ts>(args)...); }
 
         OPENGL_API void Flush();
-        OPENGL_API void DebugBreak() const;
+
+        OPENGL_API static Logger& GetInternalLog();
     };
+
+    inline void SetFilter(Severity s) { Logger::GetInternalLog().SetFilter(s); }
+    inline void SetBreakLevel(Severity s) { Logger::GetInternalLog().SetBreakLevel(s); }
+
+    inline void SetName(const std::string& newName) { Logger::GetInternalLog().SetName(newName); }
+    inline void SetNameColor(const ConsoleColor col) { Logger::GetInternalLog().SetNameColor(col); }
+    inline void SetShortenFile(const bool flag) { Logger::GetInternalLog().SetShortenFile(flag); }
+    inline void SetIncludeFunc(const bool flag) { Logger::GetInternalLog().SetIncludeFunc(flag); }
+    inline void SetLocPad(const int pad) { Logger::GetInternalLog().SetLocPad(pad); }
+
+    inline void Log(Severity sv, const std::string& s, const SourceLoc& loc = SourceLoc::current()) { Logger::GetInternalLog().Log(sv, s, loc); }
+
+    inline void Assert(bool assert, const std::string& msg, const SourceLoc& loc = SourceLoc::current()) { Logger::GetInternalLog().Assert(assert, msg, loc); }
+
+    inline void Write(std::ostream& out, Severity filter = Severity::SEVERITY_NUM) { Logger::GetInternalLog().Write(out, filter); }
+
+    template <class ...Ts> void LogFmt(Severity s, FmtStr<Ts...> fmt, Ts&&... args) {
+        Logger::GetInternalLog().LogFmt(s, fmt, std::forward<Ts>(args)...);
+    }
+
+    template <class ...Ts> void AssertFmt(bool assert, FmtStr<Ts...> fmt, Ts&&... args) {
+        Logger::GetInternalLog().Assert(assert, fmt, std::forward<Ts>(args)...);
+    }
+
+    template <class T>
+    void AssertEq(const T& val, const T& cmp, const SourceLoc& loc = SourceLoc::current()) { Logger::GetInternalLog().AssertEq(val, cmp, loc); }
+
+    template <class T>
+    void AssertNeq(const T& val, const T& cmp, const SourceLoc& loc = SourceLoc::current()) { Logger::GetInternalLog().AssertNeq(val, cmp, loc); }
+
+    template <class ...Ts> void Trace   (FmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Trace   (fmt, std::forward<Ts>(args)...); }
+    template <class ...Ts> void Debug   (FmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Debug   (fmt, std::forward<Ts>(args)...); }
+    template <class ...Ts> void Info    (FmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Info    (fmt, std::forward<Ts>(args)...); }
+    template <class ...Ts> void Warn    (FmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Warn    (fmt, std::forward<Ts>(args)...); }
+    template <class ...Ts> void Error   (FmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Error   (fmt, std::forward<Ts>(args)...); }
+    template <class ...Ts> void Critical(FmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Critical(fmt, std::forward<Ts>(args)...); }
+
+    OPENGL_API void Flush();
 }
 
 template <>

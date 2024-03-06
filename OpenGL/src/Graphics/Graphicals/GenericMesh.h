@@ -1,7 +1,7 @@
 #pragma once
 #include "NumTypes.h"
 #include <utility>
-#include "opengl.h"
+#include <core.h>
 
 namespace Graphics {
 	template <class T> class Mesh;

@@ -6,7 +6,7 @@
 
 #include "Corner.h"
 #include "Direction.h"
-#include "opengl.h"
+#include <core.h>
 #include "NumTypes.h"
 #include <stdu/macros.h>
 #include <stdu/types.h>

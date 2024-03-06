@@ -3,7 +3,7 @@
 
 #include "ft2build.h"
 #include "NumTypes.h"
-#include "opengl.h"
+#include <core.h>
 
 #include FT_FREETYPE_H
 

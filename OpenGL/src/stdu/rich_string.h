@@ -6,7 +6,7 @@
 
 #include "enum_utils.h"
 #include "NumTypes.h"
-#include "opengl.h"
+#include <core.h>
 
 namespace stdu {
     bool matches(std::string::const_iterator iter, std::string::const_iterator end, const char* matchExpr);

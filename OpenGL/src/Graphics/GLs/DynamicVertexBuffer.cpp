@@ -1,11 +1,14 @@
 #include "DynamicVertexBuffer.h"
 
 #include <vector>
+#include <GL/glew.h>
+
+#include "GLDebug.h"
 
 namespace Graphics {
     DynamicVertexBuffer::DynamicVertexBuffer(uint size, uint typeSize, std::type_index type)
         : GLObject({}), bufferSize(size), vertSize(typeSize), vertType(type) {
-        GLCALL(glBufferData(GL_ARRAY_BUFFER, typeSize * size, nullptr, GL_DYNAMIC_DRAW));
+        GL_CALL(glBufferData(GL_ARRAY_BUFFER, typeSize * size, nullptr, GL_DYNAMIC_DRAW));
     }
     
     void DynamicVertexBuffer::SetDataUnchecked(stdu::cbyte_span data) {

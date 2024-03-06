@@ -29,3 +29,5 @@
 
 #define STDU_INTERNAL_TOSTR(...) #__VA_ARGS__
 #define STDU_TOSTR(...) STDU_INTERNAL_TOSTR(__VA_ARGS__)
+
+#define STDU_DO(...) do { __VA_ARGS__ } while (false)

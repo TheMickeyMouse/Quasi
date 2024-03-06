@@ -4,7 +4,7 @@
 
 #include "MTLMaterialLoader.h"
 #include "OBJModel.h"
-#include "opengl.h"
+#include <core.h>
 #include "Vector.h"
 
 namespace Graphics {

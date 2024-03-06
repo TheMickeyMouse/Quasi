@@ -1,9 +1,35 @@
 #include "Logger.h"
 
+#include <cassert>
+
 #include "internal_debug_break.h"
 #include "stdu/io.h"
 
 namespace Debug {
+    OPENGL_API Logger Logger::InternalLog = [] {
+        Logger log { std::cout };
+        log.SetName("Internal");
+
+        log.SetBreakLevel(Severity::ERROR);
+        log.SetShortenFile(true);
+        log.SetIncludeFunc(false);
+        log.SetAlwaysFlush(DEBUG);
+        log.SetLocPad(0);
+        return log;
+    }();
+
+    Logger& Logger::GetInternalLog() {
+        return InternalLog;
+    }
+
+    void DebugBreak() {
+#ifdef NDEBUG
+        throw std::runtime_error("assertion failed.");
+#else
+        debug_break();
+#endif
+    }
+
     DateTime Logger::Now() {
         return std::chrono::system_clock::now();
     }
@@ -36,11 +62,16 @@ namespace Debug {
 
     void Logger::ConsoleLog(const Severity sv, const std::string& s, const SourceLoc& loc) {
         *logOut << FmtLog({ s, sv, Now(), loc });
+        if (alwaysFlush) Flush();
     }
 
     void Logger::Log(const Severity sv, const std::string& s, const SourceLoc& loc) {
         LogNoOut(sv, s, loc);
         ConsoleLog(sv, s, loc);
+        if (Overrides(breakLevel, sv)) {
+            Flush();
+            DebugBreak();
+        }
     }
 
     void Logger::Assert(const bool assert, const std::string& msg, const SourceLoc& loc) {
@@ -61,9 +92,5 @@ namespace Debug {
 
     void Logger::Flush() {
         std::flush(*logOut);
-    }
-
-    void Logger::DebugBreak() const {
-        debug_break();
     }
 }

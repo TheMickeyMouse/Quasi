@@ -1,6 +1,6 @@
 #include "FontDevice.h"
 
-#include "Debugging.h"
+#include "GLDebug.h"
 
 namespace Graphics {
     OPENGL_API FontDevice* FontDevice::Instance = nullptr;
@@ -8,7 +8,7 @@ namespace Graphics {
     FontDevice::FontDevice() {
         if (Instance) return;
         if (const int error = FT_Init_FreeType(&libHandle)) {
-            LOG("[ERR]: freetype init failed with error code " << error);
+            GLLogger().Error({"Freetype Init failed with err code {}"}, error);
             return;
         }
         Instance = this;

@@ -1,7 +1,7 @@
 #pragma once
 #include <queue>
 
-#include "opengl.h"
+#include <core.h>
 
 #include "Vector.h"
 #include "stdu/ref.h"

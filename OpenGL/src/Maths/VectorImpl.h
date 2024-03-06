@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Rect.h"
-#include "Debugging.h"
+#include "Logger.h"
 
 namespace Maths {
 #pragma region Implementation
@@ -255,37 +255,37 @@ namespace Maths {
     constexpr color::color(const char (&hex)[10])
         : r(Color::from_hexcode(hex[1], hex[2])), g(Color::from_hexcode(hex[3], hex[4])),
           b(Color::from_hexcode(hex[5], hex[6])), a(Color::from_hexcode(hex[7], hex[8])) {
-        ASSERT(hex[0] == '#');
+        if (hex[0] != '#') Debug::Warn({"Color code {} doesn't start with '#'"}, hex);
     }
 
     constexpr color::color(const char (&hex)[8])
         : r(Color::from_hexcode(hex[1], hex[2])), g(Color::from_hexcode(hex[3], hex[4])),
           b(Color::from_hexcode(hex[5], hex[6])), a(255) {
-        ASSERT(hex[0] == '#');
+        if (hex[0] != '#') Debug::Warn({"Color code {} doesn't start with '#'"}, hex);
     }
 
     constexpr colorf::colorf(const char (&hex)[10])
         : r((float)Color::from_hexcode(hex[1], hex[2]) / 255.0f), g((float)Color::from_hexcode(hex[3], hex[4]) / 255.0f),
           b((float)Color::from_hexcode(hex[5], hex[6]) / 255.0f), a((float)Color::from_hexcode(hex[7], hex[8]) / 255.0f) {
-        ASSERT(hex[0] == '#');
+        if (hex[0] != '#') Debug::Warn({"Color code {} doesn't start with '#'"}, hex);
     }
 
     constexpr colorf::colorf(const char (&hex)[8])
         : r((float)Color::from_hexcode(hex[1], hex[2]) / 255.0f), g((float)Color::from_hexcode(hex[3], hex[4]) / 255.0f),
           b((float)Color::from_hexcode(hex[5], hex[6]) / 255.0f), a(1) {
-        ASSERT(hex[0] == '#');
+        if (hex[0] != '#') Debug::Warn({"Color code {} doesn't start with '#'"}, hex);
     }
 
     constexpr color3::color3(const char (&hex)[8])
         : r(Color::from_hexcode(hex[1], hex[2])), g(Color::from_hexcode(hex[3], hex[4])),
           b(Color::from_hexcode(hex[5], hex[6])) {
-        ASSERT(hex[0] == '#');
+        if (hex[0] != '#') Debug::Warn({"Color code {} doesn't start with '#'"}, hex);
     }
 
     constexpr color3f::color3f(const char (&hex)[8])
         : r((float)Color::from_hexcode(hex[1], hex[2]) / 255.0f), g((float)Color::from_hexcode(hex[3], hex[4]) / 255.0f),
           b((float)Color::from_hexcode(hex[5], hex[6]) / 255.0f) {
-        ASSERT(hex[0] == '#');
+        if (hex[0] != '#') Debug::Warn({"Color code {} doesn't start with '#'"}, hex);
     }
 #pragma endregion // color constructors
 #pragma endregion // implementation

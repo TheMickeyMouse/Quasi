@@ -1,7 +1,6 @@
 #pragma once
 #include "GLObject.h"
-#include "NumTypes.h"
-#include "opengl.h"
+#include <core.h>
 #include "Texture.h"
 
 namespace Graphics {

@@ -1,25 +1,26 @@
 ﻿#include "Texture.h"
-#include "Debugging.h"
+#include "GL/glew.h"
+#include "GLDebug.h"
 #include "GraphicsDevice.h"
 #include "../vendor/stb_image/stb_image.h"
 
 namespace Graphics {
     glID TextureHandler::Create() const {
         glID id;
-        GLCALL(glGenTextures(1, &id));
+        GL_CALL(glGenTextures(1, &id));
         return id;
     }
 
     void TextureHandler::Destroy(const glID id) const {
-        GLCALL(glDeleteTextures(1, &id));
+        GL_CALL(glDeleteTextures(1, &id));
     }
 
     void TextureHandler::Bind(glID id) const {
-        GLCALL(glBindTexture(GL_TEXTURE_2D, id));
+        GL_CALL(glBindTexture(GL_TEXTURE_2D, id));
     }
 
     void TextureHandler::Unbind() const {
-        GLCALL(glBindTexture(GL_TEXTURE_2D, 0));
+        GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
     }
 
     void TextureSlotHandler::operator()(int slot) const {
@@ -30,7 +31,7 @@ namespace Graphics {
     void Texture::Init() {
         int textureCount = 0;
         glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &textureCount);
-        LOG("Texture Count: " << textureCount);
+        GLLogger().Info({"Texture count: {}"}, textureCount);
 
         SlotCount = textureCount;
         Slots.resize(textureCount, nullptr);
@@ -55,13 +56,13 @@ namespace Graphics {
     void Texture::LoadTexture(const uchar* img, bool useLinear,
                               TextureFormat format, TextureInternalFormat iformat, int alignment) {
         Bind();
-        GLCALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, useLinear ? GL_LINEAR : GL_NEAREST));
-        GLCALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, useLinear ? GL_LINEAR : GL_NEAREST));
-        GLCALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-        GLCALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+        GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, useLinear ? GL_LINEAR : GL_NEAREST));
+        GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, useLinear ? GL_LINEAR : GL_NEAREST));
+        GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+        GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
 
-        GLCALL(glPixelStorei(GL_UNPACK_ALIGNMENT, alignment));
-        GLCALL(glTexImage2D(GL_TEXTURE_2D, 0, (int)iformat, size.x, size.y, 0, (int)format, (int)GLTypeID::UBYTE, img));
+        GL_CALL(glPixelStorei(GL_UNPACK_ALIGNMENT, alignment));
+        GL_CALL(glTexImage2D(GL_TEXTURE_2D, 0, (int)iformat, size.x, size.y, 0, (int)format, (int)GLTypeID::UBYTE, img));
         Unbind();
     }
 
@@ -81,14 +82,14 @@ namespace Graphics {
             slot = FindEmptySlot();
         if (slot == -1) return; // if slot is still -1, then the slots are full
 
-        GLCALL(glActiveTexture(GL_TEXTURE0 + slot));
+        GL_CALL(glActiveTexture(GL_TEXTURE0 + slot));
         Bind();
         Slots[slot] = this;
         textureSlot.reset(slot);
     }
 
     void Texture::Deactivate() {
-        GLCALL(glActiveTexture(GL_TEXTURE0 + *textureSlot));
+        GL_CALL(glActiveTexture(GL_TEXTURE0 + *textureSlot));
         Unbind();
         textureSlot.reset(-1);
     }
@@ -108,7 +109,7 @@ namespace Graphics {
     }
 
     void Texture::SetSubTexture(const uchar* data, Maths::rect2u rect, TextureFormat format) {
-        GLCALL(glTexSubImage2D(GL_TEXTURE_2D, 0,
+        GL_CALL(glTexSubImage2D(GL_TEXTURE_2D, 0,
             rect.min.x, rect.min.y, rect.width(), rect.height(),
             (int)format, (int)GLTypeID::UBYTE, data));
     }

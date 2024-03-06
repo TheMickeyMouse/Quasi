@@ -1,7 +1,6 @@
 #pragma once
 #include "GLObject.h"
-#include "opengl.h"
-#include "NumTypes.h"
+#include <core.h>
 
 namespace Graphics {
 	class VertexBuffer : public GLObject<BufferHandler<BufferType::VERTEX>> {

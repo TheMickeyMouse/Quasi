@@ -1,4 +1,6 @@
 ﻿// because gl.h cant be included before glew.h, weird ordering
+#include <GL/glew.h>
+
 #include "Render.h"
 #include "GraphicsDevice.h"
 
@@ -8,8 +10,7 @@
 #include "Mouse.h"
 #include "Keyboard.h"
 
-#include <numeric>
-
+#include "GLDebug.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -229,9 +230,11 @@ namespace Graphics {
     }
 
     GraphicsDevice GraphicsDevice::Initialize(Maths::ivec2 winSize) {
+        InitGLLog();
         /* Initialize the library */
-        if (!glfwInit())
-            ASSERT(false);
+        if (!glfwInit()) {
+            GLError("GLFW failed to initialize");
+        }
 
         /* Create a windowed mode window and its OpenGL context */
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -240,7 +243,7 @@ namespace Graphics {
 
         if (!window) {
             glfwTerminate();
-            ASSERT(false);
+            GLError("Failed to create window");
         }
 
         /* Make the window's context current */
@@ -250,11 +253,10 @@ namespace Graphics {
 
         /* SETTING UP GLEW W/ GLEWINIT*/
         if (glewInit() != GLEW_OK) {
-            LOG("ERR: ERROR SETTING UP glewInit()");
-            ASSERT(false);
+            GLError("GLEW failed to initialize");
         }
 
-        LOG(glGetString(GL_VERSION));
+        GLInfo((const char*)glGetString(GL_VERSION));
 
         Render::EnableBlend();
         Render::UseBlendFunc(BlendFactor::SRC_ALPHA, BlendFactor::INVERT_SRC_ALPHA);

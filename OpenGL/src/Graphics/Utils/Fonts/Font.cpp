@@ -3,7 +3,7 @@
 
 #include <numeric>
 
-#include "Debugging.h"
+#include "GLDebug.h"
 
 namespace Graphics {
     void FontDeleter::operator()(FT_FaceRec_* ptr) const {
@@ -24,7 +24,7 @@ namespace Graphics {
         for (const FaceHandle& faceHandle : faceHandles) {
             if (!faceHandle) continue;
             const int error = FT_Set_Char_Size(faceHandle.get(), charWidth, charHeight == 0 ? charWidth : charHeight, dpi, dpi);
-            if (error) LOG("[ERR]: font char size set with error code " << error);
+            GLLogger().AssertFmt(!error, {"Font Char size set with err code {}"}, error);
         }
     }
 
@@ -45,7 +45,7 @@ namespace Graphics {
                 // new method: SDFs extrude 8 pixels in all directions, so you can load normally and then add 16
                 // (no need to load twice!)
                 if (const int error = FT_Load_Char(faceHandle.get(), charCode, FT_LOAD_DEFAULT)) { 
-                    LOG("[ERR]: loading char with error code " << error);
+                    GLLogger().Error({"Loading char with err code {}"}, error);
                     continue;  /* ignore errors */
                 }
 
@@ -73,7 +73,7 @@ namespace Graphics {
             );
             for (uchar charCode = 32; charCode < 127; ++charCode) { // loop through again, this time drawing textures
                 if (const int error = FT_Load_Char(faceHandle.get(), charCode, loadSDF)) { // loads again
-                    LOG("[ERR]: loading char with error code " << error);
+                    GLLogger().Error({"Loading char with err code {}"}, error);
                     continue;
                 }
             
@@ -140,9 +140,9 @@ namespace Graphics {
         }
         
         if (error == FT_Err_Unknown_File_Format)
-            LOG("[ERR]: font " << filename << " doesn't have valid format");
+            GLLogger().Error({"Font {} doesn't have valid format"}, filename);
         else
-            LOG("[ERR]: font load with error code " << error);
+            GLLogger().Error({"Font loaded with err code {}"}, error);
         return {};
     }
 
@@ -155,7 +155,7 @@ namespace Graphics {
             return font;
         }
         
-        LOG("[ERR]: font load with error code " << error);
+        GLLogger().Error({"Font loaded with err code {}"}, error);
         return {};
     }
 
@@ -170,7 +170,7 @@ namespace Graphics {
             if (faceHandles.size() <= (uint)id * 4 + (uint)style) faceHandles.resize(id * 4 + (int)style + 1);
             SetFontStyle(id, face, style);
         } else {
-            LOG("[ERR]: font load with error code " << error);
+            GLLogger().Error({"Font loaded with err code {}"}, error);
         }
     }
 

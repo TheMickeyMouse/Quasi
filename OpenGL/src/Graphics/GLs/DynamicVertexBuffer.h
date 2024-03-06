@@ -1,11 +1,11 @@
 ﻿#pragma once
-#include "Debugging.h"
 #include "NumTypes.h"
-#include "opengl.h"
+#include <core.h>
 
 #include <typeindex>
 #include <span>
 
+#include "GLDebug.h"
 #include "GLObject.h"
 
 namespace Graphics {
@@ -19,7 +19,7 @@ namespace Graphics {
 
         template <class T> bool IsValidVert() {
             if (typeid(T) == vertType) return true;
-            LOG("ERR: C++ Type " << typeid(T).name() << " doesn't fit with " << vertType.name());
+            GLLogger().Error({"Vertex type {} doesn't fit type {}"}, stdu::nameof<T>(), vertType.name());
             return false;
         }
     public:

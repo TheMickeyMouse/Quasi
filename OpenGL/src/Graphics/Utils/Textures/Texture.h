@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "GLObject.h"
-#include "opengl.h"
+#include "..\..\..\core.h"
 
 #include "NumTypes.h"
 #include "Vector.h"

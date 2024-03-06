@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <ostream>
-#include "opengl.h"
+#include <core.h>
 #include "Vector.h"
 
 namespace Maths {

@@ -1,8 +1,6 @@
 ﻿#pragma once
-#include <limits.h>
-
 #include "GLObject.h"
-#include "opengl.h"
+#include <core.h>
 
 #include "NumTypes.h"
 #include "TriIndices.h"
