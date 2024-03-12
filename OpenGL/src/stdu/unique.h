@@ -17,7 +17,7 @@ namespace stdu {
 
         ~unique() { handler(val); }
 
-        unique& operator=(unique&& u) noexcept { val = u.val; u.handler(u.val); return *this; }
+        unique& operator=(unique&& u) noexcept { handler(val); val = u.val; u.val = u.handler(); return *this; }
         unique& operator=(const unique& u) = delete;
 
         T release() { T v = val; val = handler(); return v; }

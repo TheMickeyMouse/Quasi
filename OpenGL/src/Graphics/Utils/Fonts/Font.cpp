@@ -59,9 +59,15 @@ namespace Graphics {
             textureSize.y += y;
         }
 
-        atlas = Texture(nullptr, textureSize.x, textureSize.y, true, TextureFormat::RED, TextureInternalFormat::RGBA_8, 1); // create blank texture
+        Texture::SetPixelStore(PixelStoreParam::UNPACK_ALIGNMENT, 1);
+        atlas = Texture(
+            nullptr, { textureSize.x, textureSize.y },
+            {
+                .load = { .format = TextureFormat::RED, .internalformat = TextureIFormat::RGBA_8 },
+            }
+        ); // create blank texture
         atlas.Bind(); // set this texture to the active one
-        glyphs.resize(NUM_GLYPHS * faceHandles.size()); // amt of glyphs
+        glyphs.resize(NUM_GLYPHS * faceHandles.size()); // amt of glyphs-
         metrics.reserve(faceHandles.size());
         for (uint i = 0; i < faceHandles.size(); ++i) {
             const FaceHandle& faceHandle = faceHandles[i];
@@ -78,7 +84,7 @@ namespace Graphics {
                 }
             
                 const uvec2 size = { glyphHandle->bitmap.width, glyphHandle->bitmap.rows }; // construct size in pixels of the texture
-                atlas.SetSubTexture(glyphHandle->bitmap.buffer, uvec2 { pen, heights[i] }.to(size.as_size()), TextureFormat::RED); // draw the sub texture
+                atlas.SetSubTexture(glyphHandle->bitmap.buffer, uvec2 { pen, heights[i] }.to(size.as_size()), { .format = TextureFormat::RED }); // draw the sub texture
 
                 Glyph& glyph = glyphs[charCode - 32 + i * NUM_GLYPHS]; // write rendering memory
                 glyph.rect = fvec2 { pen, heights[i] }.to(size.as<float>().as_size()) / textureSize.as<float>(); // rect of texture in atlas
@@ -89,6 +95,7 @@ namespace Graphics {
             }
             pen = 0;
         }
+        Texture::SetPixelStore(PixelStoreParam::UNPACK_ALIGNMENT, 4);
     }
 
     const Glyph& Font::GetGlyphRect(char c, FontStyle style, int id) const {

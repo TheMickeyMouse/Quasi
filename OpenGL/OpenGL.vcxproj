@@ -278,7 +278,6 @@
     <ClCompile Include="src\Graphics\Utils\Model Loading\OBJModel.cpp" />
     <ClCompile Include="src\Graphics\Utils\Model Loading\OBJModelLoader.cpp" />
     <ClCompile Include="src\Graphics\Utils\Textures\Texture.cpp" />
-    <ClCompile Include="src\Graphics\Utils\Textures\TextureAtlas.cpp" />
     <ClCompile Include="src\IO\IO.cpp" />
     <ClCompile Include="src\IO\Keyboard.cpp" />
     <ClCompile Include="src\IO\Mouse.cpp" />
@@ -413,7 +412,7 @@
     <ClInclude Include="src\Graphics\Utils\Model Loading\OBJModel.h" />
     <ClInclude Include="src\Graphics\Utils\Model Loading\OBJModelLoader.h" />
     <ClInclude Include="src\Graphics\Utils\Textures\Texture.h" />
-    <ClInclude Include="src\Graphics\Utils\Textures\TextureAtlas.h" />
+    <ClInclude Include="src\Graphics\Utils\Textures\TextureConstants.h" />
     <ClInclude Include="src\IO\IO.h" />
     <ClInclude Include="src\IO\Keyboard.h" />
     <ClInclude Include="src\IO\Mouse.h" />

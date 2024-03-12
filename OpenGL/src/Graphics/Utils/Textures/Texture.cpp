@@ -1,4 +1,7 @@
 ﻿#include "Texture.h"
+
+#include <ranges>
+
 #include "GL/glew.h"
 #include "GLDebug.h"
 #include "GraphicsDevice.h"
@@ -16,16 +19,20 @@ namespace Graphics {
     }
 
     void TextureHandler::Bind(glID id) const {
-        GL_CALL(glBindTexture(GL_TEXTURE_2D, id));
+        GL_CALL(glBindTexture((int)target, id));
     }
 
     void TextureHandler::Unbind() const {
-        GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
+        GL_CALL(glBindTexture((int)target, 0));
     }
 
     void TextureSlotHandler::operator()(int slot) const {
         if (slot == -1) return;
         Texture::Slots[slot] = nullptr;
+    }
+
+    void STBIImageHandler::operator()(void* dat) {
+        stbi_image_free(dat);
     }
 
     void Texture::Init() {
@@ -37,44 +44,101 @@ namespace Graphics {
         Slots.resize(textureCount, nullptr);
     }
 
-    Texture::Texture(const uchar* raw, uint w, uint h, bool useLinear,
-                     TextureFormat format, TextureInternalFormat iformat, int alignment)
-        : GLObject({}), size { w, h } {
-        //flips texture
-        LoadTexture(raw, useLinear, format, iformat, alignment);
+    Texture::Texture(stdu::empty) : GLObject({}) {}
+
+    Texture::Texture(const void* raw, const Maths::uvec3& size, const TextureInitParams& init)
+        : GLObject({}), size(size) {
+        // flips texture
+        SetTarget(init.target);
+        LoadTexture(raw, init);
     }
 
-    Texture::Texture(const std::string& filePath, bool useLinear)
-        : GLObject({}) {
-        //flips texture
-        stbi_set_flip_vertically_on_load(1);
-        const uchar* localTexture = stbi_load(filePath.c_str(), (int*)&size.x, (int*)&size.y, &BPPixel, 4);
-        LoadTexture(localTexture, useLinear);
-        if (localTexture) stbi_image_free((void*)localTexture);
+    void Texture::SetParam(TextureParamName param, float val) const {
+        GL_CALL(glTexParameterf(TargetI(), (int)param, val));
     }
 
-    void Texture::LoadTexture(const uchar* img, bool useLinear,
-                              TextureFormat format, TextureInternalFormat iformat, int alignment) {
+    void Texture::SetParam(TextureParamName param, int val) const {
+        GL_CALL(glTexParameteri(TargetI(), (int)param, val));
+    }
+
+    void Texture::SetParam(TextureParamName param, float* vals) const {
+        GL_CALL(glTexParameterfv(TargetI(), (int)param, vals));
+    }
+
+    void Texture::SetParam(TextureParamName param, int* vals) const {
+        GL_CALL(glTexParameterIiv(TargetI(), (int)param, vals));
+    }
+
+    void Texture::DefaultParams() const {
+        SetSample(TextureSample::LINEAR);
+        SetWrapping(TextureBorder::CLAMP_TO_EDGE);
+    }
+
+    void Texture::TexImage(const void* data, const Maths::uvec3& dim, const TextureLoadParams& params, TextureTarget overrideTarget) {
+        const int newTarget = overrideTarget == TextureTarget::NONE ? TargetI() : (int)overrideTarget;
+        switch (Dimension()) {
+            case 1:
+                return GL_CALL(glTexImage1D(newTarget, params.level, (int)params.internalformat, dim.x, 0, (int)params.format, (int)params.type, data));
+            case 2:
+                return GL_CALL(glTexImage2D(newTarget, params.level, (int)params.internalformat, dim.x, dim.y, 0, (int)params.format, (int)params.type, data));
+            case 3:
+                return GL_CALL(glTexImage3D(newTarget, params.level, (int)params.internalformat, dim.x, dim.y, dim.z, 0, (int)params.format, (int)params.type, data));
+            default:;
+        }
+    }
+
+    void Texture::SetPixelStore(PixelStoreParam param, int val) {
+        GL_CALL(glPixelStorei((int)param, val));
+    }
+
+    void Texture::LoadTexture(const void* img, const TextureInitParams& init) {
         Bind();
-        GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, useLinear ? GL_LINEAR : GL_NEAREST));
-        GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, useLinear ? GL_LINEAR : GL_NEAREST));
-        GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-        GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-
-        GL_CALL(glPixelStorei(GL_UNPACK_ALIGNMENT, alignment));
-        GL_CALL(glTexImage2D(GL_TEXTURE_2D, 0, (int)iformat, size.x, size.y, 0, (int)format, (int)GLTypeID::UBYTE, img));
+        DefaultParams();
+        SetParams(init.params);
+        TexImage(img, size, init.load);
         Unbind();
     }
 
-    Texture Texture::LoadPNGBytes(const uchar* png, int len, bool useLinear) {
-        Maths::uvec2 size;
+    Texture Texture::LoadPNGBytes(stdu::byte_span datapng, const TextureInitParams& init) {
+        Maths::ivec2 size;
         int BPPixel;
         stbi_set_flip_vertically_on_load(1);
-        const uchar* localTexture = stbi_load_from_memory(png, len, (int*)&size.x, (int*)&size.y, &BPPixel, 4);
-        Texture tex { localTexture, size.x, size.y, useLinear };
-        if (localTexture) stbi_image_free((void*)localTexture);
+        const STBIImage localTexture { stbi_load_from_memory(datapng.data(), (int)datapng.size(), &size.x, &size.y, &BPPixel, 4) };
+        Texture tex { localTexture.get(), { size.x, size.y }, init };
         
         return tex;
+    }
+
+    Texture Texture::LoadPNG(const std::string& fname, const TextureInitParams& init) {
+        Maths::ivec2 size;
+        int BPPixel;
+        stbi_set_flip_vertically_on_load(1);
+        const STBIImage localTexture { stbi_load(fname.c_str(), &size.x, &size.y, &BPPixel, 4) };
+        Texture tex { localTexture.get(), { size.x, size.y }, init };
+
+        return tex;
+    }
+
+    Texture Texture::LoadCubemapPNG(std::initializer_list<std::string> faces, const TextureInitParams& init) {
+        if (faces.size() != 6) return {};
+
+        Texture cubemap {};
+        cubemap.SetTarget(TextureTarget::CUBEMAP);
+        cubemap.Bind();
+        int faceTarget = (int)TextureTarget::CUBEMAP_RIGHT;
+        for (const std::string& face : faces) {
+            int sx, sy, bpx;
+            const STBIImage localTexture { stbi_load(face.c_str(), &sx, &sy, &bpx, 4) };
+            Texture dummy {};
+            dummy.SetTarget((TextureTarget)faceTarget);
+            dummy.TexImage(localTexture.get(), { sx, sy }, init.load);
+            ++faceTarget;
+        }
+        cubemap.DefaultParams();
+        cubemap.SetParams(init.params);
+        cubemap.Unbind();
+
+        return cubemap;
     }
 
     void Texture::Activate(int slot) {
@@ -108,9 +172,75 @@ namespace Graphics {
         return -1;
     }
 
-    void Texture::SetSubTexture(const uchar* data, Maths::rect2u rect, TextureFormat format) {
-        GL_CALL(glTexSubImage2D(GL_TEXTURE_2D, 0,
-            rect.min.x, rect.min.y, rect.width(), rect.height(),
-            (int)format, (int)GLTypeID::UBYTE, data));
+    void Texture::SetParams(TextureParameters params) {
+        for (const TextureParamPair& p : params) {
+            switch (p.pname) {
+                case TextureParamName::XT_SAMPLE_FILTER:
+                    SetSample((TextureSample)p.as<int>());
+                    break;
+                case TextureParamName::XT_WRAPPING:
+                    SetWrapping((TextureBorder)p.as<int>());
+                    break;
+                default:
+                    if (p.is<int>())         SetParam(p.pname, p.as<int>());
+                    else if (p.is<float>())  SetParam(p.pname, p.as<float>());
+                    else if (p.is<int*>())   SetParam(p.pname, p.as<int*>());
+                    else if (p.is<float*>()) SetParam(p.pname, p.as<float*>());
+            }
+        }
+    }
+
+    void Texture::SetSample(TextureSample s) const {
+        SetParam(TextureParamName::MIN_FILTER, s);
+        SetParam(TextureParamName::MAG_FILTER, s);
+    }
+
+    void Texture::SetWrapping(TextureBorder b) const {
+        switch (Dimension()) {
+            case 3:
+                SetParam(TextureParamName::WRAP_R, b);
+            case 2:
+                SetParam(TextureParamName::WRAP_T, b);
+            case 1:
+                SetParam(TextureParamName::WRAP_S, b);
+            default:;
+        }
+    }
+
+    void Texture::SetSubTexture(const void* data, const Maths::rect3u& rect, const TextureLoadParams& params) {
+        switch (Dimension()) {
+            case 1:
+                return GL_CALL(glTexSubImage1D(TargetI(), params.level, rect.min.x, rect.width(), (int)params.format, (int)params.type, data));
+            case 2:
+                return GL_CALL(glTexSubImage2D(TargetI(), params.level, rect.min.x, rect.min.y, rect.width(), rect.height(), (int)params.format, (int)params.type, data));
+            case 3:
+                return GL_CALL(glTexSubImage3D(TargetI(), params.level, rect.min.x, rect.min.y, rect.min.z, rect.width(), rect.height(), rect.depth(), (int)params.format, (int)params.type, data));
+            default:;
+        }
+    }
+
+    int Texture::Dimension() const {
+        switch (Target()) {
+            case TextureTarget::TEXTURE_1D:
+            case TextureTarget::TEXTURE_1D_ARRAY:
+                return 1;
+            case TextureTarget::TEXTURE_2D:
+            case TextureTarget::TEXTURE_2D_ARRAY:
+            case TextureTarget::TEXTURE_2D_MULTISAMPLE:
+            case TextureTarget::TEXTURE_2D_MULTISAMPLE_ARRAY:
+            case TextureTarget::TEXTURE_RECTANGLE:
+                return 2;
+            case TextureTarget::TEXTURE_3D:
+            case TextureTarget::CUBEMAP:
+                return 3;
+            case TextureTarget::CUBEMAP_POS_X:
+            case TextureTarget::CUBEMAP_NEG_X:
+            case TextureTarget::CUBEMAP_POS_Y:
+            case TextureTarget::CUBEMAP_NEG_Y:
+            case TextureTarget::CUBEMAP_POS_Z:
+            case TextureTarget::CUBEMAP_NEG_Z:
+                return 2;
+            default: return 0;
+        }
     }
 }

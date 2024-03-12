@@ -9,11 +9,11 @@ namespace Maths {
         fvec4 x, y, z, w;
         
     public:
-        mat4x4(const fvec4& _x = { 1.0f, 0.0f, 0.0f, 0.0f },
-               const fvec4& _y = { 0.0f, 1.0f, 0.0f, 0.0f },
-               const fvec4& _z = { 0.0f, 0.0f, 1.0f, 0.0f },
-               const fvec4& _w = { 0.0f, 0.0f, 0.0f, 1.0f })
-        : x(_x), y(_y), z(_z), w(_w) {}
+        mat4x4(const fvec4& x = { 1.0f, 0.0f, 0.0f, 0.0f },
+               const fvec4& y = { 0.0f, 1.0f, 0.0f, 0.0f },
+               const fvec4& z = { 0.0f, 0.0f, 1.0f, 0.0f },
+               const fvec4& w = { 0.0f, 0.0f, 0.0f, 1.0f })
+        : x(x), y(y), z(z), w(w) {}
 
         OPENGL_API const float* get_in_col() const;
         OPENGL_API const fvec4* get_cols() const;

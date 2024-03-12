@@ -102,7 +102,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)OpenGL\src;$(SolutionDir)OpenGL\src\Graphics\GLs;$(SolutionDir)OpenGL\src\Graphics\Graphicals;$(SolutionDir)OpenGL\src\Graphics\Meshes;$(SolutionDir)OpenGL\src\Graphics\Utils\Textures;$(SolutionDir)OpenGL\src\Graphics\Utils\Fonts;$(SolutionDir)OpenGL\src\Graphics\Utils\Model Loading;$(SolutionDir)OpenGL\src\IO;$(SolutionDir)OpenGL\src\Maths;$(SolutionDir)OpenGL\src\vendor\imgui;$(SolutionDir)OpenGL\src\vendor\freetype;$(SolutionDir)OpenGL\src\stdu;$(SolutionDir)Dependencies\GLEW\include;$(SolutionDir)Dependencies\GLFW\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)OpenGL\src;$(SolutionDir)OpenGL\src\Debug;$(SolutionDir)OpenGL\src\Graphics\GLs;$(SolutionDir)OpenGL\src\Graphics\Graphicals;$(SolutionDir)OpenGL\src\Graphics\Meshes;$(SolutionDir)OpenGL\src\Graphics\Utils\Textures;$(SolutionDir)OpenGL\src\Graphics\Utils\Fonts;$(SolutionDir)OpenGL\src\Graphics\Utils\Model Loading;$(SolutionDir)OpenGL\src\IO;$(SolutionDir)OpenGL\src\Maths;$(SolutionDir)OpenGL\src\vendor\imgui;$(SolutionDir)OpenGL\src\vendor\freetype;$(SolutionDir)OpenGL\src\stdu;$(SolutionDir)Dependencies\GLEW\include;$(SolutionDir)Dependencies\GLFW\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>
       </AdditionalOptions>

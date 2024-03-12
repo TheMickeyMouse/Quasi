@@ -4,21 +4,7 @@
 #include "VertexElement.h"
 
 namespace Graphics {
-    struct OBJVertex {
-        Maths::fvec3 Position;
-        Maths::fvec2 TextureCoordinate;
-        Maths::fvec3 Normal;
-
-        GL_VERTEX_T(OBJVertex);
-        GL_VERTEX_FIELD((Position)(TextureCoordinate)(Normal));
-        GL_VERTEX_CUSTOM_TRANSFORM(mat) {
-            return {
-                .Position = mat * Position,
-                .TextureCoordinate = TextureCoordinate,
-                .Normal = mat.inv().transpose() * Normal.with_w(0),
-            };
-        }
-    };
+    using OBJVertex = VertexTextureNormal3D;
 
     struct MTLMaterial { // https://en.wikipedia.org/wiki/Wavefront_.obj_file
         std::string name;

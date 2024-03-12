@@ -21,7 +21,7 @@ namespace Graphics {
         GL_CALL(glBindRenderbuffer(GL_RENDERBUFFER, 0));
     }
 
-    RenderBuffer::RenderBuffer(TextureInternalFormat format, Maths::ivec2 size) : GLObject({}) {
+    RenderBuffer::RenderBuffer(TextureIFormat format, Maths::ivec2 size) : GLObject({}) {
         Bind();
         GL_CALL(glRenderbufferStorage(GL_RENDERBUFFER, (int)format, size.x, size.y));
         Unbind();

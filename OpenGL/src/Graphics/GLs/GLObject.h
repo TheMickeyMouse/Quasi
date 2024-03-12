@@ -29,8 +29,14 @@ namespace Graphics {
 
         GLObject(const GLObject&) = delete;
         GLObject& operator=(const GLObject&) = delete;
-        GLObject(GLObject&& obj) noexcept : rendererID(obj.rendererID) { obj.rendererID = GL_NULL; }
-        GLObject& operator=(GLObject&& obj) noexcept { rendererID = obj.rendererID; obj.rendererID = GL_NULL; return *this; }
+        GLObject(GLObject&& obj) noexcept : handler(obj.handler), rendererID(obj.rendererID) {
+            obj.rendererID = GL_NULL;
+        }
+        GLObject& operator=(GLObject&& obj) noexcept {
+            rendererID = obj.rendererID; obj.rendererID = GL_NULL;
+            handler = std::move(obj.handler);
+            return *this;
+        }
 
         void Bind() const { handler.Bind(rendererID); }
         void Unbind() const { handler.Unbind(); }
@@ -38,6 +44,9 @@ namespace Graphics {
         void Delete() { handler.Destroy(rendererID); rendererID = GL_NULL; }
 
         [[nodiscard]] bool IsNull() const { return rendererID == GL_NULL; }
+
+        [[nodiscard]] const H& Handler() const { return handler; }
+        H& Handler() { return handler; }
 
         [[nodiscard]] operator glID() const { return rendererID; }
     };

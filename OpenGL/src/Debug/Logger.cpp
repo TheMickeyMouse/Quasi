@@ -1,7 +1,5 @@
 #include "Logger.h"
 
-#include <cassert>
-
 #include "internal_debug_break.h"
 #include "stdu/io.h"
 
@@ -23,11 +21,10 @@ namespace Debug {
     }
 
     void DebugBreak() {
-#ifdef NDEBUG
-        throw std::runtime_error("assertion failed.");
-#else
-        debug_break();
-#endif
+        if constexpr (Logger::DEBUG)
+            debug_break();
+        else
+            throw std::runtime_error("assertion failed.");
     }
 
     DateTime Logger::Now() {

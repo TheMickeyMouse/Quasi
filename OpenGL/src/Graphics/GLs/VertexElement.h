@@ -50,17 +50,6 @@ struct VertexTexture2D {
     }
 };
 
-struct VertexColorTextureAtlas3D {
-    Maths::fvec3  Position;
-    Maths::colorf Color;
-    int TextureAtlID = 0;
-    int TextureCorner = 0;
-    
-    GL_VERTEX_T(VertexColorTextureAtlas3D);
-    GL_VERTEX_FIELD((Position)(Color)(TextureAtlID)(TextureCorner));
-    GL_VERTEX_TRANSFORM_FIELDS((Position))
-};
-
 struct VertexColor3D {
     Maths::fvec3  Position;
     Maths::colorf Color;
@@ -68,4 +57,20 @@ struct VertexColor3D {
     GL_VERTEX_T(VertexColor3D);
     GL_VERTEX_FIELD((Position)(Color));
     GL_VERTEX_TRANSFORM_FIELDS((Position))
+};
+
+struct VertexTextureNormal3D {
+    Maths::fvec3 Position;
+    Maths::fvec3 TextureCoordinate;
+    Maths::fvec3 Normal;
+
+    GL_VERTEX_T(VertexTextureNormal3D);
+    GL_VERTEX_FIELD((Position)(TextureCoordinate)(Normal));
+    GL_VERTEX_CUSTOM_TRANSFORM(mat) {
+        return {
+            .Position = mat * Position,
+            .TextureCoordinate = TextureCoordinate,
+            .Normal = mat * Normal.with_w(0)
+        };
+    }
 };

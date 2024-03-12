@@ -4,7 +4,7 @@
 // #include "Keyboard.h"
 // #include "Mouse.h"
 #include <stdu/types.h>
-#include "../OpenGL/Debug/Logger.h"
+#include "Logger.h"
 
 int main() {
     // Graphics::GraphicsDevice GraphicsDevice = Graphics::GraphicsDevice::Initialize({ 1200, 900 });

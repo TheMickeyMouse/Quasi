@@ -3,59 +3,19 @@
 #include <vector>
 
 #include "GLObject.h"
-#include "..\..\..\core.h"
+#include <core.h>
+#include <variant>
 
+#include "GLTypeID.h"
 #include "NumTypes.h"
+#include "TextureConstants.h"
 #include "Vector.h"
 #include "stdu/unique.h"
 
 namespace Graphics {
-    // * from glew.h or https://javagl.github.io/GLConstantsTranslator/GLConstantsTranslator.html
-    enum class TextureFormat {
-        RED = 0x1903,
-        RED_GREEN = 0x8227,
-        RGB = 0x1907,
-        RGB_REVERSE = 0x80E0,
-        BGR = RGB_REVERSE,
-        RGBA = 0x1908,
-        RGBA_REVERSE = 0x80E1,
-        BGRA = RGBA_REVERSE
-    };
-
-    enum class TextureInternalFormat {
-        RGBA_8  = 0x8058, RGBA_8I  = 0x8D8E, RGBA_8UI  = 0x8D7C,
-        RGBA_16 = 0x805B, RGBA_16I = 0x8D88, RGBA_16UI = 0x8D76, RGBA_16F  = 0x881A,
-                          RGBA_32I = 0x8D82, RGBA_32UI = 0x8D70, RGBA_32F  = 0x8814,
-
-        RGB_8   = 0x8051, RGB_8I   = 0x8D8F, RGB_8UI   = 0x8D7D,
-        RGB_16  = 0x8054, RGB_16I  = 0x8D89, RGB_16UI  = 0x8D77, RGB_16F   = 0x881B,
-                          RGB_32I  = 0x8D83, RGB_32UI  = 0x8D71, RGB_32F   = 0x8815,
-
-        R_8     = 0x8229, R_8I     = 0x8231, R_8UI     = 0x8232,
-        R_16    = 0x822A, R_16I    = 0x8233, R_16UI    = 0x8234, R_16F     = 0x822D,
-                          R_32I    = 0x8235, R_32UI    = 0x8236, R_32F     = 0x822E,
-
-        RG_8    = 0x822B, RG_8I    = 0x8237, RG_8UI    = 0x8238,
-        RG_16   = 0x822C, RG_16I   = 0x8239, RG_16UI   = 0x823A, RG_16F    = 0x822F,
-                          RG_32I   = 0x823B, RG_32UI   = 0x823C, RG_32F    = 0x8230,
-
-        R8_SNORM  = 0x8F94, RG8_SNORM  = 0x8F95, RGB8_SNORM  = 0x8F96, RGBA8_SNORM  = 0x8F97,
-        R16_SNORM = 0x8F98, RG16_SNORM = 0x8F99, RGB16_SNORM = 0x8F9A, RGBA16_SNORM = 0x8F9B,
-
-        SRGB_8 = 0x8C41, SRGBA_8 = 0x8C43,
-
-        RGBA_10_2 = 0x8059, RGBA_10_2UI = 0x906F,
-        RGB_11_11_10F = 0x8C3A,
-        RGB_9E5 = 0x8C3D,
-
-        RGTC_COMPRESSED_RED = 0x8DBB, RGTC_COMPRESSED_SIGNED_RED = 0x8DBC,
-        RGTC_COMPRESSED_RG  = 0x8DBD, RGTC_COMPRESSED_SIGNED_RG  = 0x8DBE,
-
-        DEPTH_32F = 0x8CAC, DEPTH_32 = 0x81A7, DEPTH_24 = 0x81A6, DEPTH_16 = 0x81A5, DEPTH = 0x1902,
-        DEPTH_32F_STENCIL_8 = 0x8CAD,          DEPTH_24_STENCIL_8 = 0x88F0
-    };
-
     struct TextureHandler : GLObjectHandler<TextureHandler> {
+        TextureTarget target;
+
         OPENGL_API glID Create() const;
         OPENGL_API void Destroy(glID id) const;
         OPENGL_API void Bind(glID id) const;
@@ -67,42 +27,117 @@ namespace Graphics {
         OPENGL_API void operator()(int slot) const;
     };
 
+    struct TextureParamPair {
+        TextureParamName pname;
+        std::variant<int, float, int*, float*> val;
+
+        template <class E> requires std::is_enum_v<E>
+        TextureParamPair(TextureParamName name, E val) : pname(name), val((int)val) {}
+
+        static TextureParamPair NearestSample() { return { TextureParamName::XT_SAMPLE_FILTER, TextureSample::NEAREST }; }
+        static TextureParamPair LinearSample()  { return { TextureParamName::XT_SAMPLE_FILTER, TextureSample::LINEAR }; }
+        static TextureParamPair ClampedBorder()   { return { TextureParamName::XT_WRAPPING, TextureBorder::CLAMP_TO_EDGE }; }
+        static TextureParamPair ColoredBorder()   { return { TextureParamName::XT_WRAPPING, TextureBorder::CLAMP_TO_BORDER }; }
+        static TextureParamPair MirroredBorder()  { return { TextureParamName::XT_WRAPPING, TextureBorder::MIRRORED_REPEAT }; }
+        static TextureParamPair RepeatingBorder() { return { TextureParamName::XT_WRAPPING, TextureBorder::REPEAT }; }
+
+        template <class T> [[nodiscard]] bool is() const { return std::holds_alternative<T>(val); }
+        template <class T> [[nodiscard]] T as() const { return std::get<T>(val); }
+    };
+
+    using TextureParameters = std::initializer_list<TextureParamPair>;
+
+    struct TextureLoadParams {
+        TextureFormat format = TextureFormat::RGBA;
+        TextureIFormat internalformat = TextureIFormat::RGBA_8;
+        GLTypeID type = GLTypeID::UBYTE;
+        int level = 0;
+    };
+
+    struct TextureInitParams {
+        TextureLoadParams load = {};
+        TextureTarget target = TextureTarget::TEXTURE_2D;
+        TextureParameters params;
+    };
+
+    struct STBIImageHandler {
+        OPENGL_API void operator()(void* dat);
+    };
+    using STBIImage = std::unique_ptr<void, STBIImageHandler>;
+
     class Texture : public GLObject<TextureHandler> {
     public:
         inline static int SlotCount = -1;
         inline static std::vector<Texture*> Slots {};
         OPENGL_API static void Init();
     private:
-        Maths::uvec2 size;
-        int BPPixel = 0; //stands for bits per pixel'
         using slot_t = stdu::unique<int, TextureSlotHandler>;
+
+        Maths::uvec3 size;
+        int BPPixel = 0; //stands for bits per pixel'
         slot_t textureSlot = -1;
 
-        OPENGL_API void LoadTexture(const uchar* img, bool useLinear = true,
-            TextureFormat format = TextureFormat::RGBA,
-            TextureInternalFormat iformat = TextureInternalFormat::RGBA_8,
-            int alignment = 4 /* see https://registry.khronos.org/OpenGL-Refpages/gl4/html/glPixelStore.xhtml */);
-     public:
-        Texture() = default;
-        OPENGL_API explicit Texture(const uchar* raw, uint w, uint h, bool useLinear = true,
-            TextureFormat format = TextureFormat::RGBA,
-            TextureInternalFormat iformat = TextureInternalFormat::RGBA_8,
-            int alignment = 4);
-        OPENGL_API explicit Texture(const std::string& filePath, bool useLinear = true);
+        OPENGL_API void DefaultParams() const;
 
-        OPENGL_API static Texture LoadPNGBytes(const uchar* png, int len, bool useLinear = true);
+        OPENGL_API void LoadTexture(const void* img, const TextureInitParams& init = {});
+    public:
+        Texture() = default;
+        OPENGL_API Texture(stdu::empty);
+        OPENGL_API explicit Texture(const void* raw, const Maths::uvec3& size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_3D });
+        explicit Texture(const void* raw, const Maths::uvec2& size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_2D }) : Texture(raw, size.with_z(0), init) {}
+        explicit Texture(const void* raw, uint size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_1D }) : Texture(raw, { size, 0, 0 }, init) {}
+
+        OPENGL_API static Texture LoadPNGBytes(stdu::byte_span datapng, const TextureInitParams& init = {});
+        OPENGL_API static Texture LoadPNG(const std::string& fname, const TextureInitParams& init = {});
+
+        OPENGL_API static Texture LoadCubemapPNG(std::initializer_list<std::string> faces /* in order: rludfb */, const TextureInitParams& init = {});
 
         OPENGL_API void Activate(int slot = -1);
         OPENGL_API void Deactivate();
         OPENGL_API static void DeactivateAll();
         OPENGL_API static int FindEmptySlot();
 
-        OPENGL_API void SetSubTexture(const uchar* data, Maths::rect2u rect, TextureFormat format = TextureFormat::RGBA);
+        OPENGL_API void SetParam(TextureParamName param, float val) const;
+        OPENGL_API void SetParam(TextureParamName param, int val) const;
+        OPENGL_API void SetParam(TextureParamName param, float* vals) const;
+        OPENGL_API void SetParam(TextureParamName param, int* vals) const;
+        template <class E> requires std::is_enum_v<E>
+        void SetParam(TextureParamName param, E val) const { SetParam(param, (int)val); }
+
+        OPENGL_API void SetParams(TextureParameters params);
+
+        OPENGL_API void SetSample(TextureSample s) const;
+        OPENGL_API void SetWrapping(TextureBorder b) const;
+
+        OPENGL_API void SetSubTexture(const void* data, const Maths::rect3u& rect, const TextureLoadParams& params = {});
+        void SetSubTexture(const void* data, const Maths::rect2u& rect, const TextureLoadParams& params = {}) {
+            SetSubTexture(data, Maths::rect3u { rect.min.with_z(0), rect.max.with_z(0) }, params);
+        }
+        void SetSubTexture(const uchar* data, const Maths::urange& rect, const TextureLoadParams& params = {}) {
+            SetSubTexture(data, Maths::rect3u { { rect.min, 0, 0 }, { rect.max, 0, 0 } }, params);
+        }
+
+        OPENGL_API void TexImage(const void* data, const Maths::uvec3& dim, const TextureLoadParams& params = {}, TextureTarget overrideTarget = TextureTarget::NONE);
+        void TexImage(const void* data, uint width, const TextureLoadParams& params = {}) {
+            TexImage(data, { width, 0, 0 }, params);
+        }
+        void TexImage(const void* data, const Maths::uvec2& dim, const TextureLoadParams& params = {}) {
+            TexImage(data, dim.with_z(0), params);
+        }
+
+        OPENGL_API static void SetPixelStore(PixelStoreParam param, int val);
 
         [[nodiscard]] int Slot() const { return *textureSlot; }
-        [[nodiscard]] float Slotf() const { return (float)*textureSlot; }
 
-        [[nodiscard]] Maths::uvec2 GetSize() const { return size; }
+        [[nodiscard]] TextureTarget Target() const { return Handler().target; }
+        [[nodiscard]] int TargetI() const { return (int)Target(); }
+        void SetTarget(const TextureTarget target) { Handler().target = target; }
+
+        [[nodiscard]] const Maths::uvec3& Size() const { return size; }
+        [[nodiscard]] Maths::uvec2 Size2D() const { return size.xy(); }
+        [[nodiscard]] uint Size1D() const { return size.x; }
+
+        OPENGL_API [[nodiscard]] int Dimension() const;
 
         friend class FrameBuffer;
     };

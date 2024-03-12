@@ -162,7 +162,7 @@ namespace Graphics {
 
         if (!enabled) goto skipDebugs; // i know goto is not great but its more readable imo  // NOLINT(cppcoreguidelines-avoid-goto, hicpp-avoid-goto)
         
-        ImGui::Text("Application Averages %fms/frame (~%f FPS)", 1000.0 * ioDevice.Time.deltaTime, ioDevice.Time.Framerate());
+        ImGui::Text("Application Averages %.2fms/frame (%d FPS)", 1000.0 * ioDevice.Time.deltaTime, (int)ioDevice.Time.Framerate());
         if (ImGui::Button(useWireRender ? "Draw Fill" : "Draw Wireframe")) { useWireRender = !useWireRender; }
 
         if (ImGui::CollapsingHeader("Mouse Input")) {

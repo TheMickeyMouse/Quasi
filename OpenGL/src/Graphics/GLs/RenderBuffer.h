@@ -14,7 +14,7 @@ namespace Graphics {
     class RenderBuffer : public GLObject<RenderBufferHandler> {
     public:
         RenderBuffer() = default;
-        OPENGL_API RenderBuffer(TextureInternalFormat format, Maths::ivec2 size);
+        OPENGL_API RenderBuffer(TextureIFormat format, Maths::ivec2 size);
 
         friend class FrameBuffer;
     };
