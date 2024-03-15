@@ -1,0 +1,14 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "CMakeFiles\\OpenGL.dir\\src\\IO\\IO.cpp.obj",
+            "outputs": [
+                "C:\\Users\\User\\RiderProjects\\OpenGL\\OpenGL\\cmake-build-debug-visual-studio\\vc140.pdb",
+                "CMakeFiles\\OpenGL.dir\\src\\IO\\IO.cpp.obj.ddi"
+            ],
+            "requires": []
+        }
+    ]
+}

@@ -26,6 +26,6 @@ namespace Graphics {
 
     void DynamicVertexBuffer::AddDataUnchecked(stdu::cbyte_span data) {
         glBufferSubData(GL_ARRAY_BUFFER, (int)(dataOffset * vertSize), (int)data.size_bytes(), data.data());
-        dataOffset += data.size_bytes() / vertSize;
+        dataOffset += (uint)(data.size_bytes() / vertSize);
     }
 }

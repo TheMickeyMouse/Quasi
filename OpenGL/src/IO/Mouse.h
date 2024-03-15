@@ -43,36 +43,36 @@ namespace IO {
         OPENGL_API void Hide();
         OPENGL_API void Show(); // will also unlock the cursor
 
-        OPENGL_API [[nodiscard]] Maths::dvec2 GetMousePosPx();
-        OPENGL_API [[nodiscard]] Maths::dvec2 GetMousePos();
-        OPENGL_API [[nodiscard]] bool IsInWindow();
+        [[nodiscard]] OPENGL_API Maths::dvec2 GetMousePosPx();
+        [[nodiscard]] OPENGL_API Maths::dvec2 GetMousePos();
+        [[nodiscard]] OPENGL_API bool IsInWindow();
 
-        OPENGL_API [[nodiscard]] Maths::dvec2 GetMouseScroll() const;
-        OPENGL_API [[nodiscard]] Maths::dvec2 GetMouseScrollDelta() const;
+        [[nodiscard]] OPENGL_API Maths::dvec2 GetMouseScroll() const;
+        [[nodiscard]] OPENGL_API Maths::dvec2 GetMouseScrollDelta() const;
 
-        OPENGL_API [[nodiscard]] int  PressedState()         const;
-        OPENGL_API [[nodiscard]] bool LeftPressed()          const;
-        OPENGL_API [[nodiscard]] bool RightPressed()         const;
-        OPENGL_API [[nodiscard]] bool MiddlePressed()        const;
-        OPENGL_API [[nodiscard]] bool ButtonPressed(int btn) const;
-        OPENGL_API [[nodiscard]] bool AnyPressed()           const;
-        OPENGL_API [[nodiscard]] bool NonePressed()          const;
+        [[nodiscard]] OPENGL_API int  PressedState()         const;
+        [[nodiscard]] OPENGL_API bool LeftPressed()          const;
+        [[nodiscard]] OPENGL_API bool RightPressed()         const;
+        [[nodiscard]] OPENGL_API bool MiddlePressed()        const;
+        [[nodiscard]] OPENGL_API bool ButtonPressed(int btn) const;
+        [[nodiscard]] OPENGL_API bool AnyPressed()           const;
+        [[nodiscard]] OPENGL_API bool NonePressed()          const;
 
-        OPENGL_API [[nodiscard]] int  OnPressState()         const;
-        OPENGL_API [[nodiscard]] bool LeftOnPress()          const;
-        OPENGL_API [[nodiscard]] bool RightOnPress()         const;
-        OPENGL_API [[nodiscard]] bool MiddleOnPress()        const;
-        OPENGL_API [[nodiscard]] bool ButtonOnPress(int btn) const;
-        OPENGL_API [[nodiscard]] bool AnyOnPress()           const;
-        OPENGL_API [[nodiscard]] bool NoneOnPress()          const;
+        [[nodiscard]] OPENGL_API int  OnPressState()         const;
+        [[nodiscard]] OPENGL_API bool LeftOnPress()          const;
+        [[nodiscard]] OPENGL_API bool RightOnPress()         const;
+        [[nodiscard]] OPENGL_API bool MiddleOnPress()        const;
+        [[nodiscard]] OPENGL_API bool ButtonOnPress(int btn) const;
+        [[nodiscard]] OPENGL_API bool AnyOnPress()           const;
+        [[nodiscard]] OPENGL_API bool NoneOnPress()          const;
 
-        OPENGL_API [[nodiscard]] int  OnReleaseState()         const;
-        OPENGL_API [[nodiscard]] bool LeftOnRelease()          const;
-        OPENGL_API [[nodiscard]] bool RightOnRelease()         const;
-        OPENGL_API [[nodiscard]] bool MiddleOnRelease()        const;
-        OPENGL_API [[nodiscard]] bool ButtonOnRelease(int btn) const;
-        OPENGL_API [[nodiscard]] bool AnyOnRelease()           const;
-        OPENGL_API [[nodiscard]] bool NoneOnRelease()          const;
+        [[nodiscard]] OPENGL_API int  OnReleaseState()         const;
+        [[nodiscard]] OPENGL_API bool LeftOnRelease()          const;
+        [[nodiscard]] OPENGL_API bool RightOnRelease()         const;
+        [[nodiscard]] OPENGL_API bool MiddleOnRelease()        const;
+        [[nodiscard]] OPENGL_API bool ButtonOnRelease(int btn) const;
+        [[nodiscard]] OPENGL_API bool AnyOnRelease()           const;
+        [[nodiscard]] OPENGL_API bool NoneOnRelease()          const;
 
         OPENGL_API static bool IsStandardMouseButton(int btn);
         OPENGL_API static bool IsValidMouseButton(int btn);
@@ -80,6 +80,6 @@ namespace IO {
         
         private:
             OPENGL_API GLFWwindow* inputWindow();
-            OPENGL_API [[nodiscard]] const GLFWwindow* inputWindow() const;
+            [[nodiscard]] OPENGL_API const GLFWwindow* inputWindow() const;
     };
 }

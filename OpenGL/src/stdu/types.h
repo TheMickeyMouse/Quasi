@@ -10,6 +10,12 @@ namespace stdu {
         empty(auto ...) {}
     }; // used with [[no_unique_address]]
 
+    template <class>
+    concept always_true = true;
+
+    template <class>
+    concept always_false = false;
+
     template <class T> using is_void_t = std::is_same<T, void>;
 
     template <class T> constexpr bool is_void_v = std::is_same_v<T, void>;
@@ -56,8 +62,8 @@ namespace stdu {
     template <class U, class T> requires divides<T, U> || divides<U, T>
     std::span<U> span_cast(std::span<T> span) { return { (U*)span.data(), span.size_bytes() / sizeof(U) }; }
 
-    using byte_span = std::span<uchar>;
-    using cbyte_span = std::span<const uchar>;
+    using byte_span = std::span<byte>;
+    using cbyte_span = std::span<const byte>;
 
 
 
@@ -68,15 +74,36 @@ namespace stdu {
     template <bool... Bs>
     constexpr bool any_of = (Bs || ...);
 
-    template <class... Ts> struct typelist { static constexpr std::size_t size = sizeof...(Ts); };
+    template <class, template <class> class> struct instanceof_t : std::false_type {};
+    template <class T, template <class> class I> struct instanceof_t<I<T>, I> : std::true_type {};
+    template <class T, template <class> class I>
+    concept instanceof = instanceof_t<T, I>::value;
+
+    template <class... Ts> struct typelist {
+        static constexpr std::size_t size = sizeof...(Ts);
+        template <class X> using join = typelist<Ts..., X>;
+    };
     template <class> struct typelist_instance_t : std::false_type { };
     template <class... T> struct typelist_instance_t<typelist<T...>> : std::true_type { };
     template <class T> concept typelist_instance = typelist_instance_t<T>::value;
 
-    template <class T, T ...V> struct valuelist { using type = T; static constexpr std::size_t size = sizeof...(V); };
+    template <class T, T ...V> struct valuelist {
+        using type = T;
+        static constexpr std::size_t size = sizeof...(V);
+        template <T X> using join = valuelist<T, V..., X>;
+    };
     template <class> struct valuelist_instance_t : std::false_type { };
     template <class T, T ...V> struct valuelist_instance_t<valuelist<T, V...>> : std::true_type { };
     template <class T> concept valuelist_instance = valuelist_instance_t<T>::value;
+
+    template <auto ...V> struct anylist {
+        using type = typelist<decltype(V)...>;
+        static constexpr std::size_t size = sizeof...(V);
+        template <auto X> using join = anylist<V..., X>;
+    };
+    template <class> struct anylist_instance_t : std::false_type { };
+    template <auto ...V> struct anylist_instance_t<anylist<V...>> : std::true_type { };
+    template <class T> concept anylist_instance = anylist_instance_t<T>::value;
 
     template <typelist_instance K, valuelist_instance V> requires (K::size == V::size)
     struct typemap { using value_type = typename V::type; };
@@ -105,6 +132,12 @@ namespace stdu {
     template <class V, V I, V J, V... T>
     constexpr int index_of_v<I, valuelist<V, J, T...>> = 1 + index_of_v<I, valuelist<V, T...>>;
 
+    template <auto I, auto... V>
+    constexpr int index_of_v<I, anylist<I, V...>> = 0;
+
+    template <auto I, auto J, auto... V>
+    constexpr int index_of_v<I, anylist<J, V...>> = 1 + index_of_v<I, anylist<V...>>;
+
     template <class Q, class M>
     constexpr typename M::value_type query_map = {};
 
@@ -128,16 +161,18 @@ namespace stdu {
     namespace impl {
         template <class T>
         [[nodiscard]] constexpr std::string_view raw_typename() {
-#ifndef _MSC_VER
+#if defined(__clang__) || defined(__GNUC__)
             return __PRETTY_FUNCTION__;
-#else
+#elif defined(_MSC_VER)
             return __FUNCSIG__;  // NOLINT(clang-diagnostic-language-extension-token)
+#else
+#error "Pretty Function Not supported"
 #endif
         }
 
         constexpr std::size_t type_junk_prefix = raw_typename<int>().find("int");
         constexpr std::size_t type_junk_size = raw_typename<int>().size() - 3;
-        static_assert(type_junk_prefix != std::string::npos, "cannot determine type signature in this compiler");
+        static_assert(type_junk_prefix != std::string_view::npos, "cannot determine type signature in this compiler");
     }
 
     template <typename T>
@@ -149,12 +184,22 @@ namespace stdu {
     template <typename T>
     struct is_complete_helper {
         template <typename U>
-        static auto test(U*)  -> std::integral_constant<bool, sizeof(U) == sizeof(U)>;
-        static auto test(...) -> std::false_type;
+        static auto test(U*)  -> std::integral_constant<bool, sizeof(U) == sizeof(U)> { return {}; }
+        static auto test(...) -> std::false_type { return {}; }
         using type = decltype(test((T*)nullptr));
     };
 
     template <typename T>
     struct is_complete : is_complete_helper<T>::type {};
     template <class T> constexpr bool is_complete_v = is_complete<T>::value;
+
+    template <class F, class O, class... I>
+    concept fn = requires (F f, I&&... args) {
+        { f(std::forward<I>(args)...) } -> std::same_as<O>;
+    };
+
+    template <class F, class... I>
+    concept fn_args = requires (F f, I&&... args) {
+        { f(std::forward<I>(args)...) } -> always_true;
+    };
 }

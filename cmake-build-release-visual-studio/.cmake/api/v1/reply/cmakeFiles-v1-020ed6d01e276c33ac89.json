@@ -1,0 +1,226 @@
+{
+	"inputs" : 
+	[
+		{
+			"path" : "CMakeLists.txt"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "cmake-build-release-visual-studio/CMakeFiles/3.28.1/CMakeSystem.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "C:/Users/User/.vcpkg-clion/vcpkg/scripts/buildsystems/vcpkg.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeDependentOption.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeSystemSpecificInitialize.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-Initialize.cmake"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "cmake-build-release-visual-studio/CMakeFiles/3.28.1/CMakeCXXCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeSystemSpecificInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeGenericSystem.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeInitializeConfigs.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/WindowsPaths.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeCXXInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeLanguageInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/Compiler/MSVC-CXX.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/Compiler/MSVC.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/Compiler/CMakeCommonCompilerMacros.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-MSVC-CXX.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/Platform/Windows-MSVC.cmake"
+		},
+		{
+			"isGenerated" : true,
+			"path" : "cmake-build-release-visual-studio/CMakeFiles/3.28.1/CMakeRCCompiler.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeRCInformation.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeCommonLanguageInclude.cmake"
+		},
+		{
+			"path" : "CMake/Utils.cmake"
+		},
+		{
+			"path" : "Game/CMakeLists.txt"
+		},
+		{
+			"path" : "CMake/DefaultCXX.cmake"
+		},
+		{
+			"path" : "CMake/Default.cmake"
+		},
+		{
+			"path" : "CMake/DefaultCXX.cmake"
+		},
+		{
+			"path" : "CMake/Default.cmake"
+		},
+		{
+			"path" : "OpenGL/CMakeLists.txt"
+		},
+		{
+			"isExternal" : true,
+			"path" : "C:/Users/User/.vcpkg-clion/vcpkg/installed/x64-windows/share/freetype/vcpkg-cmake-wrapper.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "C:/Users/User/.vcpkg-clion/vcpkg/installed/x64-windows/share/freetype/freetype-config-version.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "C:/Users/User/.vcpkg-clion/vcpkg/installed/x64-windows/share/freetype/freetype-config.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/CMakeFindDependencyMacro.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "C:/Users/User/.vcpkg-clion/vcpkg/installed/x64-windows/share/zlib/vcpkg-cmake-wrapper.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/FindZLIB.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/SelectLibraryConfigurations.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/FindPackageHandleStandardArgs.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/FindPackageMessage.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "C:/Users/User/.vcpkg-clion/vcpkg/installed/x64-windows/share/freetype/freetype-targets.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "C:/Users/User/.vcpkg-clion/vcpkg/installed/x64-windows/share/freetype/freetype-targets-debug.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "C:/Users/User/.vcpkg-clion/vcpkg/installed/x64-windows/share/freetype/freetype-targets-release.cmake"
+		},
+		{
+			"isCMake" : true,
+			"isExternal" : true,
+			"path" : "C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/cmake/win/x64/share/cmake-3.28/Modules/SelectLibraryConfigurations.cmake"
+		},
+		{
+			"path" : "CMake/DefaultCXX.cmake"
+		},
+		{
+			"path" : "CMake/Default.cmake"
+		},
+		{
+			"path" : "CMake/DefaultCXX.cmake"
+		},
+		{
+			"path" : "CMake/Default.cmake"
+		},
+		{
+			"path" : "Testing/CMakeLists.txt"
+		},
+		{
+			"path" : "CMake/DefaultCXX.cmake"
+		},
+		{
+			"path" : "CMake/Default.cmake"
+		},
+		{
+			"path" : "CMake/DefaultCXX.cmake"
+		},
+		{
+			"path" : "CMake/Default.cmake"
+		}
+	],
+	"kind" : "cmakeFiles",
+	"paths" : 
+	{
+		"build" : "C:/Users/User/RiderProjects/OpenGL/cmake-build-release-visual-studio",
+		"source" : "C:/Users/User/RiderProjects/OpenGL"
+	},
+	"version" : 
+	{
+		"major" : 1,
+		"minor" : 0
+	}
+}

@@ -189,7 +189,7 @@ namespace stdu {
     }
 
     uint rich_string::lines() const {
-        return std::ranges::count(rawString, '\n') + 1;
+        return (uint)(std::ranges::count(rawString, '\n') + 1);
     }
 
     std::string rich_string::debug_rawstr() const {

@@ -72,7 +72,7 @@ namespace Graphics {
         
         void PushCharQuad(const Maths::rect2f& pos, const Maths::rect2f& tex);
         void AddChar(std::string::const_iterator& it, std::string::const_iterator begin);
-        void AddRichChar(stdu::rich_string::const_iter& it);
+        void AddRichChar(const stdu::rich_string::const_iter& it);
         
         void TriggerNewLine();
         void TriggerSpace();

@@ -48,7 +48,7 @@ namespace Graphics {
         static STDU_ENUM_TOSTR(LightType, Nameof, (SUNLIGHT, "SunLight")(POINTLIGHT, "PointLight")(FLASHLIGHT, "FlashLight"), "")
 
         template <LightCaster L> OPENGL_API stdu::ref<L> AsUnchecked();
-        template <LightCaster L> OPENGL_API [[nodiscard]] stdu::ref<const L> AsUnchecked() const;
+        template <LightCaster L> [[nodiscard]] OPENGL_API stdu::ref<const L> AsUnchecked() const;
 
         template <LightCaster L> stdu::ref<L> As() { return LightIndex<L> == type ? AsUnchecked<L>() : nullptr; }
         template <LightCaster L> stdu::ref<const L> As() const { return LightIndex<L> == type ? AsUnchecked<L>() : nullptr; }
@@ -56,8 +56,8 @@ namespace Graphics {
         template <LightCaster L> [[nodiscard]] bool Is() const { return type == LightIndex<L>; }
         [[nodiscard]] bool Is(const LightType t) const { return type == t; }
 
-        OPENGL_API [[nodiscard]] Maths::fvec3 Position() const;
-        OPENGL_API [[nodiscard]] Maths::fvec3 Direction() const;
+        [[nodiscard]] OPENGL_API Maths::fvec3 Position() const;
+        [[nodiscard]] OPENGL_API Maths::fvec3 Direction() const;
 
         template <LightCaster L> void Set(const L& l) { type = LightIndex<L>; *As<L>() = l; }
         template <LightCaster L> Light& operator=(const L& l) { this->Set(l); return *this; }

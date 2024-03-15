@@ -137,7 +137,7 @@ namespace Graphics {
         [[nodiscard]] Maths::uvec2 Size2D() const { return size.xy(); }
         [[nodiscard]] uint Size1D() const { return size.x; }
 
-        OPENGL_API [[nodiscard]] int Dimension() const;
+        [[nodiscard]] OPENGL_API int Dimension() const;
 
         friend class FrameBuffer;
     };

@@ -2,7 +2,7 @@
 #include <type_traits>
 
 #include "NumTypes.h"
-#include <core.h>
+#include "core.h"
 #include "stdu/types.h"
 
 namespace Graphics {

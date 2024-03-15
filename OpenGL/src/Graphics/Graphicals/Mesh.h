@@ -3,10 +3,14 @@
 #include <algorithm>
 
 #include "RenderObject.h"
-#include "VertexElement.h"
 #include "TriIndices.h"
 
 namespace Graphics {
+    namespace Primitives {
+        class Quad;
+        class Tri;
+    }
+
     class GenericMesh;
     
     template <class T>
@@ -41,17 +45,26 @@ namespace Graphics {
 
         void SetTransform(const Maths::mat3D& model) { modelTransform = model; }
         void Transform(const Maths::mat3D& model) { modelTransform *= model; }
-        void ApplyTransform(const Maths::mat3D& model);
+        Mesh& ApplyTransform(const Maths::mat3D& model);
+        Mesh& ApplyTransform() { return ApplyTransform(modelTransform); }
+        Mesh& Move(const Maths::fvec3& offset) { return ApplyTransform(Maths::mat3D::translate_mat(offset)); }
+        Mesh& Scale(const Maths::fvec3& scale) { return ApplyTransform(Maths::mat3D::scale_mat(scale)); }
+        Mesh& Rotate(const Maths::fvec3& rot) { return ApplyTransform(Maths::mat3D::rotate_identity(rot)); }
+
         void AddTo(DynamicVertexBuffer& vbuffer, DynamicIndexBuffer& ibuffer) const;
+
+        template <stdu::fn<T, Maths::fvec3> F> void AddQuad(const Primitives::Quad& quad, F f);
+        template <stdu::fn<T, Maths::fvec3> F> void AddTri(const Primitives::Tri& tri, F f);
 
         // moving isnt that efficient bc vertexes are easy to copy
         Mesh& Add(const Mesh& m);
         template <size_t N> static Mesh Combine(std::array<Mesh, N> meshes);
+        static Mesh Combine(std::initializer_list<Mesh> meshes);
 
         template <class U> Mesh& ApplyMaterial(U Vertex::* prop, U base);
         template <class U> Mesh& ApplyMaterial(std::ptrdiff_t prop, U base);
 
-        template <class U, class F> Mesh<U> Convert(F f) const;
+        template <class U, stdu::fn<U, T> F> Mesh<U> Convert(F f) const;
 
         [[nodiscard]] bool IsBound() const { return render; }
 
@@ -67,22 +80,25 @@ namespace Graphics {
         friend class GraphicsDevice;
         friend class RenderData;
         friend class GenericMesh;
+
+        friend class Primitives::Tri;
+        friend class Primitives::Quad;
     };
 
     template <class T>
     void Mesh<T>::AddTo(DynamicVertexBuffer& vbuffer, DynamicIndexBuffer& ibuffer) const {
         std::vector<T> transformed;
         transformed.resize(vertices.size());
-        std::transform(vertices.begin(), vertices.end(), transformed.begin(), [&](auto v) { return GL_VERTEX_MATMUL(v, modelTransform); });
+        std::transform(vertices.begin(), vertices.end(), transformed.begin(), [&](auto v) { return VertexMul(v, modelTransform); });
         vbuffer.AddData(transformed);
-        ibuffer.AddData(stdu::span_cast<const uint>(std::span { indices }), vertices.size() - 1);
+        ibuffer.AddData(stdu::span_cast<const uint>(std::span { indices }), (int)(vertices.size() - 1));
     }
 
     template <class T>
     Mesh<T>& Mesh<T>::Add(const Mesh& m) {
-        uint off = vertices.size();
+        const usize off = vertices.size();
         vertices.insert(vertices.end(), m.vertices.begin(), m.vertices.end());
-        auto end = indices.size();
+        const auto end = indices.size();
         indices.insert(indices.end(), m.indices.begin(), m.indices.end());
         std::for_each(indices.begin() + end, indices.end(), [=](TriIndices& i) { i += off; });
         return *this;
@@ -108,7 +124,7 @@ namespace Graphics {
 
         dest.deviceIndex = from.deviceIndex;
         from.deviceIndex = 0;
-        
+
         if (dest.render)
             dest.render->GetMeshes()[dest.deviceIndex].Set(&dest);
     }
@@ -121,19 +137,20 @@ namespace Graphics {
     }
 
     template <class T>
-    void Mesh<T>::ApplyTransform(const Maths::mat3D& model) {
-        for (auto& v : vertices) v *= model;
+    Mesh<T>& Mesh<T>::ApplyTransform(const Maths::mat3D& model) {
+        for (auto& v : vertices) v = VertexMul(v, model);
+        return *this;
     }
 
     template <class T>
-    void Mesh<T>::Bind(RenderData& rend) { 
-        deviceIndex = rend.GetMeshes().size();
+    void Mesh<T>::Bind(RenderData& rend) {
+        deviceIndex = (uint)rend.GetMeshes().size();
         rend.GetMeshes().push_back(this);
         this->render = &rend;
     }
 
     template <class T>
-    void Mesh<T>::Bind(RenderObject<T>& rend) { 
+    void Mesh<T>::Bind(RenderObject<T>& rend) {
         Bind(rend.GetRenderData());
     }
 
@@ -147,9 +164,16 @@ namespace Graphics {
     template <class T>
     template <size_t N>
     Mesh<T> Mesh<T>::Combine(std::array<Mesh, N> meshes) {
-        if constexpr (N == 0) return Mesh<T>();
-        Mesh<T> combined = std::move(meshes[0]);
+        if constexpr (N == 0) return Mesh();
+        Mesh combined = std::move(meshes[0]);
         for (size_t i = 0; i < N; ++i)
+            combined.Add(meshes[i]);
+        return combined;
+    }
+
+    template <class T> Mesh<T> Mesh<T>::Combine(std::initializer_list<Mesh> meshes) {
+        Mesh combined = std::move(meshes[0]);
+        for (size_t i = 0; i < meshes.size(); ++i)
             combined.Add(meshes[i]);
         return combined;
     }
@@ -163,7 +187,7 @@ namespace Graphics {
     }
 
     template<class T> template<class U>
-    Mesh<T>& Mesh<T>::ApplyMaterial(std::ptrdiff_t prop, U base) {
+    Mesh<T>& Mesh<T>::ApplyMaterial(const std::ptrdiff_t prop, U base) {
         void* beg = ((void*)vertices[0]) + prop;
         for (int i = 0; i < vertices.size(); ++i, beg += sizeof(T)) {
             *((U*)beg) = base;
@@ -171,17 +195,11 @@ namespace Graphics {
         return *this;
     }
 
-    template <class T> template <class U, class F> Mesh<U> Mesh<T>::Convert(F f) const {
+    template <class T>
+    template <class U, stdu::fn<U, T> F> Mesh<U> Mesh<T>::Convert(F f) const {
         std::vector<U> newVerts {};
         newVerts.resize(vertices.size());
         std::transform(vertices.begin(), vertices.end(), newVerts.begin(), f);
         return Mesh<U>(newVerts, indices);
-    }
-
-    namespace MeshUtils {
-        using Vec3 = const Maths::fvec3&;
-        OPENGL_API Mesh<VertexColor3D> CubeMesh(Vec3 origin, float x, float y, float z);
-        OPENGL_API Mesh<Maths::fvec2> CircleMesh(float radius, int subdivisions);
-        // TODO: MeshObject CubeMesh(Vec3 origin, Vec3 x, Vec3 y, Vec3 z);
     }
 }

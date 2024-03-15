@@ -25,7 +25,7 @@ namespace Graphics {
     }
 
     Shader::Shader(std::string_view program) {
-        ShaderProgramSource shadersrc = ParseShader(program);
+        const ShaderProgramSource shadersrc = ParseShader(program);
         rendererID = CreateShader(shadersrc.vertexShader, shadersrc.fragmentShader);
     }
 
@@ -45,7 +45,7 @@ namespace Graphics {
 
     ShaderProgramSource Shader::ParseShader(std::string_view program) {
         uint lastLine = 0;
-        Maths::urange ssv, ssf, *ss = nullptr;
+        Maths::rangez ssv, ssf, *ss = nullptr;
         for (uint i = 0; i < program.size(); ++i) {
             if (program[i] != '\n') continue;
             std::string_view line = std::string_view { program }.substr(lastLine, i - lastLine);
@@ -61,7 +61,7 @@ namespace Graphics {
                 ss->min = i + 1;
             }
         }
-        ss->max = program.size();
+        if (ss) ss->max = program.size();
 
         const ShaderProgramSource s = {
             std::string_view(program).substr(ssv.min, ssv.width()),
@@ -81,7 +81,7 @@ namespace Graphics {
 
     Shader Shader::FromFile(stringr filepath) {
         Shader s {};
-        ShaderProgramSource shadersrc = ParseFromFile(filepath);
+        const ShaderProgramSource shadersrc = ParseFromFile(filepath);
         s.rendererID = CreateShader(shadersrc.vertexShader, shadersrc.fragmentShader);
         return s;
     }
@@ -203,4 +203,5 @@ namespace Graphics {
 
         void Shader::SetUniformMatrix4x4(stringr name, const Maths::mat3D& mat) { SHADER_UNIF_MAT(4, mat.get_in_col()); }
 #undef SHADER_UNIF_MAT
+#pragma endregion
 }

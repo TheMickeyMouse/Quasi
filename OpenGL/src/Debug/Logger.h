@@ -1,5 +1,3 @@
-// ReSharper disable CppClangTidyClangDiagnosticReservedMacroIdentifier
-// ReSharper disable CppClangTidyBugproneReservedIdentifier
 #pragma once
 #include <chrono>
 #include <source_location>
@@ -10,7 +8,6 @@
 
 #include "ConsoleColor.h"
 #include <core.h>
-#include "freetype/internal/ftobjs.h"
 #include "stdu/macros.h"
 #include "stdu/ref.h"
 #include "stdu/types.h"
@@ -104,8 +101,8 @@ namespace Debug {
         OPENGL_API static DateTime Now();
 
         OPENGL_API std::string FmtLog(const LogEntry& log);
-        OPENGL_API std::string_view FmtFile(std::string_view fullname) const;
-        OPENGL_API std::string FmtSourceLoc(const SourceLoc& loc) const;
+        [[nodiscard]] OPENGL_API std::string_view FmtFile(std::string_view fullname) const;
+        [[nodiscard]] OPENGL_API std::string FmtSourceLoc(const SourceLoc& loc) const;
         OPENGL_API void LogNoOut  (Severity sv, const std::string& s, const SourceLoc& loc = SourceLoc::current());
         OPENGL_API void ConsoleLog(Severity sv, const std::string& s, const SourceLoc& loc = SourceLoc::current());
         OPENGL_API void Log       (Severity sv, const std::string& s, const SourceLoc& loc = SourceLoc::current());

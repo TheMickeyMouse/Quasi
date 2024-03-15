@@ -94,7 +94,7 @@ namespace Graphics {
     
     void GraphicsDevice::BindRender(RenderData& render) {
         render.device = this;
-        render.deviceIndex = renders.size() - 1;
+        render.deviceIndex = (uint)(renders.size() - 1);
     }
 
     void GraphicsDevice::DeleteRender(uint index) {

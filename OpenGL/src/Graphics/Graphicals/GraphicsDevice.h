@@ -55,7 +55,7 @@ namespace Graphics {
         OPENGL_API void ClearColor(const Maths::colorf& color);
 
         [[nodiscard]] bool IsClosed() const { return !mainWindow; }
-        OPENGL_API [[nodiscard]] bool WindowIsOpen() const;
+        [[nodiscard]] OPENGL_API bool WindowIsOpen() const;
     
         [[nodiscard]] Maths::ivec2 GetWindowSize() const { return windowSize; }
         GLFWwindow* GetWindow() { return mainWindow; }

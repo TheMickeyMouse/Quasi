@@ -30,8 +30,8 @@ namespace Graphics {
         OPENGL_API void Update(GraphicsDevice& gd, float dt);
         OPENGL_API void Toggle(GraphicsDevice& gd);
 
-        OPENGL_API [[nodiscard]] Maths::mat3D GetViewMat() const;
-        OPENGL_API [[nodiscard]] Maths::mat3D GetProjMat() const;
+        [[nodiscard]] OPENGL_API Maths::mat3D GetViewMat() const;
+        [[nodiscard]] OPENGL_API Maths::mat3D GetProjMat() const;
 
         [[nodiscard]] bool UsesSmoothZoom() const { return !std::signbit(smoothZoom); }
 

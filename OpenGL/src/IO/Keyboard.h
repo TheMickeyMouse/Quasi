@@ -121,12 +121,12 @@ namespace IO {
 
         void Update();
 
-        OPENGL_API [[nodiscard]] bool KeyPressed(Key key) const;
-        OPENGL_API [[nodiscard]] bool KeyOnPress(Key key) const;
-        OPENGL_API [[nodiscard]] bool KeyOnRelease(Key key) const;
-        OPENGL_API [[nodiscard]] bool AnyPressed() const;
-        OPENGL_API [[nodiscard]] bool NonePressed() const;
-        OPENGL_API [[nodiscard]] std::vector<Key> KeysPressed() const;
+        [[nodiscard]] OPENGL_API bool KeyPressed(Key key) const;
+        [[nodiscard]] OPENGL_API bool KeyOnPress(Key key) const;
+        [[nodiscard]] OPENGL_API bool KeyOnRelease(Key key) const;
+        [[nodiscard]] OPENGL_API bool AnyPressed() const;
+        [[nodiscard]] OPENGL_API bool NonePressed() const;
+        [[nodiscard]] OPENGL_API std::vector<Key> KeysPressed() const;
 
         static const char* KeyToStr(Key key);
 
@@ -138,7 +138,7 @@ namespace IO {
         std::queue<KeyIndex> queuedKeys = {};
 
         OPENGL_API GLFWwindow* inputWindow();
-        OPENGL_API [[nodiscard]] const GLFWwindow* inputWindow() const;
+        [[nodiscard]] OPENGL_API const GLFWwindow* inputWindow() const;
 
         [[nodiscard]] bool getCurrKeyStatus(KeyIndex i) const { return getKeyStatusOf(currKeySet, i); }
         [[nodiscard]] bool getPrevKeyStatus(KeyIndex i) const { return getKeyStatusOf(prevKeySet, i); }

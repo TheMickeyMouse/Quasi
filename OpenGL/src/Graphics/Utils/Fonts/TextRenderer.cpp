@@ -127,7 +127,7 @@ namespace Graphics {
     bool TextRenderer::WordWrap(float advance, std::string::const_iterator& it,
                                                std::string::const_iterator  begin) {
         if (align.IsWordWrap() && lineWidth + advance > align.rect.width()) { // word wrapping (complex part over here)
-            if (it == begin) return false;  // NOLINT(cppcoreguidelines-avoid-goto, hicpp-avoid-goto)
+            if (it == begin) return false;
             auto backUntilSpace       = it - 1; // new iterator for looping until we reach a space
             const float originalWidth = lineWidth; // keeps track if the word is too long and will always overflow without breaking the word
             do { // man the first time ive use do while
@@ -184,7 +184,6 @@ namespace Graphics {
     void TextRenderer::PushCharQuad(const Maths::rect2f& pos, const Maths::rect2f& tex) {
         textVertices.emplace_back(pos.corner(0), tex.corner(0 ^ 2 /* flip Y with xor */), 1.0f, Vertex::RENDER_TEXT); // y flipped cuz opengl textures are flipped
         textVertices.emplace_back(pos.corner(1), tex.corner(1 ^ 2 /* flip Y with xor */), 1.0f, Vertex::RENDER_TEXT);
-        // ReSharper disable once CppIdenticalOperandsInBinaryExpression
         textVertices.emplace_back(pos.corner(2), tex.corner(2 ^ 2 /* flip Y with xor */), 1.0f, Vertex::RENDER_TEXT); // NOLINT(clang-diagnostic-xor-used-as-pow)
         textVertices.emplace_back(pos.corner(3), tex.corner(3 ^ 2 /* flip Y with xor */), 1.0f, Vertex::RENDER_TEXT);
     }
@@ -230,7 +229,7 @@ namespace Graphics {
         if (align.IsAlignJustified()) lineWords.back().width += advance; // the current word also has to be updated}
     }
 
-    void TextRenderer::AddRichChar(stdu::rich_string::const_iter& it) {
+    void TextRenderer::AddRichChar(const stdu::rich_string::const_iter& it) {
         using namespace Maths;
         const auto [glyph, style] = *it;
         if (glyph == '\n') {
@@ -299,7 +298,7 @@ namespace Graphics {
 
     std::vector<Font::Vertex> TextRenderer::RenderText(const std::string& string) {
         using namespace Maths;
-        lineCount = std::ranges::count(string, '\n') + 1; //line count for vertical alignment
+        lineCount = (uint)(std::ranges::count(string, '\n') + 1); //line count for vertical alignment
         Prepare();
         
         if (align.IsAlignJustified()) lineWords.emplace_back(0, 0.0f); // add new beginning 'word'
@@ -377,22 +376,22 @@ namespace Graphics {
         // rectangle
         const fvec2 y = fvec2::unit_y(roundRadius);
         constexpr int renderType = Vertex::RENDER_FILL;
-        const uint off = bgVertices.size();
-        bgVertices.push_back(Vertex { region.corner(0) + y, 0, color, renderType });
-        bgVertices.push_back(Vertex { region.corner(1) + y, 0, color, renderType });
-        bgVertices.push_back(Vertex { region.corner(2) - y, 0, color, renderType });
-        bgVertices.push_back(Vertex { region.corner(3) - y, 0, color, renderType });
+        const uint off = (uint)bgVertices.size();
+        bgVertices.emplace_back(region.corner(0) + y, 0.0f, color, renderType);
+        bgVertices.emplace_back(region.corner(1) + y, 0.0f, color, renderType);
+        bgVertices.emplace_back(region.corner(2) - y, 0.0f, color, renderType);
+        bgVertices.emplace_back(region.corner(3) - y, 0.0f, color, renderType);
 
         const fvec2 x = fvec2::unit_x(roundRadius);
-        bgVertices.push_back(Vertex { region.corner(2) + x,     0, color, renderType });
-        bgVertices.push_back(Vertex { region.corner(2) + x - y, 0, color, renderType });
-        bgVertices.push_back(Vertex { region.corner(3) - x,     0, color, renderType });
-        bgVertices.push_back(Vertex { region.corner(3) - x - y, 0, color, renderType });
+        bgVertices.emplace_back(region.corner(2) + x,     0.0f, color, renderType);
+        bgVertices.emplace_back(region.corner(2) + x - y, 0.0f, color, renderType);
+        bgVertices.emplace_back(region.corner(3) - x,     0.0f, color, renderType);
+        bgVertices.emplace_back(region.corner(3) - x - y, 0.0f, color, renderType);
 
-        bgVertices.push_back(Vertex { region.corner(0) + x,     0, color, renderType });
-        bgVertices.push_back(Vertex { region.corner(0) + x + y, 0, color, renderType });
-        bgVertices.push_back(Vertex { region.corner(1) - x,     0, color, renderType });
-        bgVertices.push_back(Vertex { region.corner(1) - x + y, 0, color, renderType });
+        bgVertices.emplace_back(region.corner(0) + x,     0.0f, color, renderType);
+        bgVertices.emplace_back(region.corner(0) + x + y, 0.0f, color, renderType);
+        bgVertices.emplace_back(region.corner(1) - x,     0.0f, color, renderType);
+        bgVertices.emplace_back(region.corner(1) - x + y, 0.0f, color, renderType);
 
         bgIndices.push_back(TriIndices { 0,  1,  2 } + off);
         bgIndices.push_back(TriIndices { 1,  2,  3 } + off);
@@ -406,18 +405,18 @@ namespace Graphics {
         uint ind = 12 + off;
         for (int corner = 0; corner < 4; ++corner) {
             fvec2 origin = region.inset(roundRadius).corner(corner);
-            bgVertices.push_back(Vertex { origin, 0, color, renderType });
+            bgVertices.emplace_back(origin, 0.0f, color, renderType);
             for (int i = 0; i < cuts; ++i) {
-                bgVertices.push_back(Vertex { 
+                bgVertices.emplace_back(
                     fvec2::from_polar(roundRadius,
                         angle * (float)i + HALF_PI * (float)(map >> corner * 8 & 255))
-                    + origin, 0, color, renderType });
+                    + origin, 0.0f, color, renderType);
                 bgIndices.emplace_back(ind, ind + 1 + i, ind + 2 + i );
             }
-            bgVertices.push_back(Vertex { 
+            bgVertices.emplace_back(
                 fvec2::from_polar(roundRadius,
                     HALF_PI * (float)(1 + (map >> corner * 8 & 255)))
-                + origin, 0, color, renderType });
+                + origin, 0.0f, color, renderType);
             ind += cuts + 2;
         }
     }

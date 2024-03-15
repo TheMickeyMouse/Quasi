@@ -110,7 +110,7 @@ namespace Graphics {
     template <class T>
     std::unique_ptr<RenderData> RenderData::CreateHeap(uint vsize, uint isize) {
 	    // times 3 to account for triangles
-	    return std::make_unique<RenderData>(vsize, isize * 3, sizeof(T), typeid(T), GL_VERTEX_LAYOUT_OF(T));
+	    return std::make_unique<RenderData>(vsize, isize * 3, (uint)sizeof(T), typeid(T), GL_VERTEX_LAYOUT_OF(T));
 	}
 
 	template <class T>

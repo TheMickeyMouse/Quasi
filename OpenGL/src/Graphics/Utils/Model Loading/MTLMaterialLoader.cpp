@@ -2,7 +2,7 @@
 #include <ranges>
 
 #include "OBJModel.h"
-#include "Parser.h"
+#include "Parsing.h"
 
 namespace Graphics {
     void MTLMaterialLoader::Load(std::string_view string) {
@@ -11,7 +11,7 @@ namespace Graphics {
     }
 
     void MTLMaterialLoader::ParseProperty(std::string_view line) {
-        const uint spaceIdx = line.find_first_of(' ');
+        const usize spaceIdx = line.find_first_of(' ');
         const std::string_view prefix = line.substr(0, spaceIdx),
                                data   = line.substr(spaceIdx + 1);
 

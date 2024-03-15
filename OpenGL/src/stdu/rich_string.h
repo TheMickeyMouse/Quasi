@@ -23,7 +23,7 @@ namespace stdu {
         enum class style : uchar { // each 16 values represents 1 byte of memeory taken
             NONE = 0,
             SWITCH = 1 << 7,
-            
+
             STYLE_SWITCH(BOLD, 1),
             STYLE_SWITCH(ITALIC, 2),
             STYLE_SWITCH(UNDERLINE, 3),
@@ -76,16 +76,16 @@ namespace stdu {
         OPENGL_API void add_tag(style s, std::initializer_list<uchar> data, int off = 0);
         OPENGL_API void add_tag(style s, bool state, int off = 0);
 
-        OPENGL_API [[nodiscard]] uint lines() const;
+        [[nodiscard]] OPENGL_API uint lines() const;
 
-        OPENGL_API [[nodiscard]] std::string debug_rawstr() const;
+        [[nodiscard]] OPENGL_API std::string debug_rawstr() const;
 
         struct const_iter;
         struct rich_char;
         struct style_state;
         
-        OPENGL_API [[nodiscard]] const_iter begin() const;
-        OPENGL_API [[nodiscard]] const_iter end() const;
+        [[nodiscard]] OPENGL_API const_iter begin() const;
+        [[nodiscard]] OPENGL_API const_iter end() const;
     };
 
     enum class code_lang {
@@ -121,7 +121,7 @@ namespace stdu {
 #undef MAP
 #undef MAP2
 #undef MAP3
-    
+
     struct rich_string::style_state {
         uchar styleFlags = 0, alignment = 0;
         uchar codeLang = 0;

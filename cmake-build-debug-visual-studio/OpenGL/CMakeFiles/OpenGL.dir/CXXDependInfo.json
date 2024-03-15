@@ -1,0 +1,36 @@
+{
+	"bmi-installation" : null,
+	"compiler-frontend-variant" : "MSVC",
+	"compiler-id" : "MSVC",
+	"compiler-simulate-id" : "",
+	"config" : "Debug",
+	"cxx-modules" : {},
+	"dir-cur-bld" : "C:/Users/User/RiderProjects/OpenGL/cmake-build-debug-visual-studio/OpenGL",
+	"dir-cur-src" : "C:/Users/User/RiderProjects/OpenGL/OpenGL",
+	"dir-top-bld" : "C:/Users/User/RiderProjects/OpenGL/cmake-build-debug-visual-studio",
+	"dir-top-src" : "C:/Users/User/RiderProjects/OpenGL",
+	"exports" : [],
+	"forward-modules-from-target-dirs" : [],
+	"include-dirs" : 
+	[
+		"C:\\Users\\User\\RiderProjects\\OpenGL\\OpenGL\\src",
+		"C:\\Users\\User\\RiderProjects\\OpenGL\\OpenGL\\src\\Debug",
+		"C:\\Users\\User\\RiderProjects\\OpenGL\\OpenGL\\src\\Graphics\\Utils\\Fonts",
+		"C:\\Users\\User\\RiderProjects\\OpenGL\\OpenGL\\src\\Graphics\\Utils\\Model Loading",
+		"C:\\Users\\User\\RiderProjects\\OpenGL\\OpenGL\\src\\Graphics\\GLs",
+		"C:\\Users\\User\\RiderProjects\\OpenGL\\OpenGL\\src\\Graphics\\Graphicals",
+		"C:\\Users\\User\\RiderProjects\\OpenGL\\OpenGL\\src\\Graphics\\Primitives",
+		"C:\\Users\\User\\RiderProjects\\OpenGL\\OpenGL\\src\\Maths",
+		"C:\\Users\\User\\RiderProjects\\OpenGL\\OpenGL\\src\\Graphics\\Utils\\Textures",
+		"C:\\Users\\User\\RiderProjects\\OpenGL\\OpenGL\\src\\IO",
+		"C:\\Users\\User\\RiderProjects\\OpenGL\\OpenGL\\src\\vendor\\imgui",
+		"C:\\Users\\User\\RiderProjects\\OpenGL\\OpenGL\\src\\vendor\\freetype",
+		"C:\\Users\\User\\RiderProjects\\OpenGL\\OpenGL\\src\\vendor",
+		"C:\\Users\\User\\RiderProjects\\OpenGL\\OpenGL\\src\\test",
+		"C:\\Users\\User\\RiderProjects\\OpenGL\\OpenGL\\..\\Dependencies\\GLFW\\include",
+		"C:\\Users\\User\\RiderProjects\\OpenGL\\OpenGL\\..\\Dependencies\\GLEW\\include"
+	],
+	"language" : "CXX",
+	"linked-target-dirs" : [],
+	"module-dir" : "C:/Users/User/RiderProjects/OpenGL/cmake-build-debug-visual-studio/OpenGL/CMakeFiles/OpenGL.dir"
+}

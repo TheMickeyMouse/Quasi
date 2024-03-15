@@ -5,8 +5,7 @@
 #include <ranges>
 
 #include "NumTypes.h"
-#include "Parser.h"
-#include "stdu/parsing.h"
+#include "Parsing.h"
 
 namespace Graphics {
     void OBJModelLoader::LoadFile(const std::string& filepath) {
@@ -30,7 +29,7 @@ namespace Graphics {
     }
 
     void OBJModelLoader::ParseProperty(const std::string_view line) {
-        const uint spaceIdx = line.find_first_of(' ');
+        const usize spaceIdx = line.find_first_of(' ');
         const std::string_view prefix = line.substr(0, spaceIdx),
                                data   = line.substr(spaceIdx + 1);
 
@@ -152,9 +151,9 @@ namespace Graphics {
                 case OBJPropertyType::UseMaterial: {
                     const auto& matName = std::get<std::string>(prop.data);
                     object.materialIndex =
-                        std::ranges::find_if(model.materials,
+                        (int)(std::ranges::find_if(model.materials,
                             [&](const MTLMaterial& m) { return m.name == matName; })
-                        - model.materials.begin();
+                        - model.materials.begin());
                     break;
                 }
                 case OBJPropertyType::Vertex:
@@ -194,8 +193,8 @@ namespace Graphics {
             indices.emplace_back(f.v2, f.vt2, f.vn2);
             indices.emplace_back(f.v3, f.vt3, f.vn3);
         }
-        std::sort(indices.begin(), indices.end(), Cmp3 {});
-        const auto end = std::unique(indices.begin(), indices.end());
+        std::ranges::sort(indices, Cmp3 {});
+        const auto end = std::ranges::unique(indices).begin();
         const auto beg = indices.begin();
         obj.mesh.GetVertices().resize(end - beg);
         std::transform(beg, end, obj.mesh.GetVertices().begin(),
@@ -216,7 +215,7 @@ namespace Graphics {
             const auto i1 = std::lower_bound(beg, end, v1, Cmp3 {}),
                        i2 = std::lower_bound(beg, end, v2, Cmp3 {}),
                        i3 = std::lower_bound(beg, end, v3, Cmp3 {});
-            ind.emplace_back(i1 - beg, i2 - beg, i3 - beg);
+            ind.emplace_back((uint)(i1 - beg), (uint)(i2 - beg), (uint)(i3 - beg));
         }
 
         faces.clear();

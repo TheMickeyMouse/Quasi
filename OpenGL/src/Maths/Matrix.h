@@ -35,10 +35,10 @@ namespace Maths {
         OPENGL_API static mat4x4 transform(const fvec3& translate, const fvec3& scale, const fvec3& rotate);
         OPENGL_API static mat4x4 look_at(const fvec3& eye, const fvec3& center, const fvec3& worldUp);
 
-        OPENGL_API [[nodiscard]] mat4x4 transpose() const;
-        OPENGL_API [[nodiscard]] float det() const; // determinate
-        OPENGL_API [[nodiscard]] mat4x4 adjugate() const;
-        OPENGL_API [[nodiscard]] mat4x4 inv() const; // inverse
+        [[nodiscard]] OPENGL_API mat4x4 transpose() const;
+        [[nodiscard]] OPENGL_API float det() const; // determinate
+        [[nodiscard]] OPENGL_API mat4x4 adjugate() const;
+        [[nodiscard]] OPENGL_API mat4x4 inv() const; // inverse
 
         OPENGL_API static mat4x4 unit_axis(Direction3D xd, Direction3D yd, Direction3D zd);
 

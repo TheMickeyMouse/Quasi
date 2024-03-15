@@ -34,7 +34,7 @@ namespace Graphics {
         std::ranges::transform(data, dataOff.begin(), [=](uint i){ return i + indexOff; } );
         maxIndex = maxIndex == INT_MIN ? *std::ranges::max_element(dataOff) : (maxIndex + indexOffset);  // NOLINT(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, dataOffset * sizeof(uint), data.size() * sizeof(uint), dataOff.data());  // NOLINT(bugprone-narrowing-conversions, cppcoreguidelines-narrowing-conversions)
-        dataOffset += data.size();
+        dataOffset += (uint)data.size();
         indexOffset = maxIndex + 1;
     }
 }

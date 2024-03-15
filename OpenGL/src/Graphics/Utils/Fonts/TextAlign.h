@@ -55,9 +55,9 @@ namespace Graphics {
         [[nodiscard]] bool IsCropX()             const { return   alignOptions & CROP_X; }
         [[nodiscard]] bool IsCropY()             const { return   alignOptions & CROP_Y; }
         
-        OPENGL_API [[nodiscard]] float GetXOff(float width) const;
-        OPENGL_API [[nodiscard]] float GetYOff(float height) const;
+        [[nodiscard]] OPENGL_API float GetXOff(float width) const;
+        [[nodiscard]] OPENGL_API float GetYOff(float height) const;
 
-        OPENGL_API [[nodiscard]] float GetAdvance(const Glyph& glyph, float scaleRatio) const;
+        [[nodiscard]] OPENGL_API float GetAdvance(const Glyph& glyph, float scaleRatio) const;
     };
 }

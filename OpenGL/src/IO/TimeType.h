@@ -15,7 +15,7 @@ namespace IO {
 
         OPENGL_API void Update();
         OPENGL_API void SetTime(double time);
-        OPENGL_API [[nodiscard]] double Framerate() const;
+        [[nodiscard]] OPENGL_API double Framerate() const;
 
         [[nodiscard]] float DeltaTimef() const { return (float)deltaTime; }
         [[nodiscard]] float Frameratef() const { return (float)Framerate(); }

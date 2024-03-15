@@ -41,7 +41,7 @@ namespace Graphics {
         };
 
         struct Vertex {
-            Maths::fvec3 Position;
+            Maths::fvec2 Position;
             Maths::fvec2 TextureCoord;
             Maths::colorf Color;
             int RenderType;
@@ -49,7 +49,14 @@ namespace Graphics {
 
             GL_VERTEX_T(Vertex);
             GL_VERTEX_FIELD((Position)(TextureCoord)(Color)(RenderType));
-            GL_VERTEX_TRANSFORM_FIELDS((Position))
+            GL_VERTEX_CUSTOM_TRANSFORM(mat) {
+                return {
+                    .Position = mat * Position.with_z(0),
+                    .TextureCoord = TextureCoord,
+                    .Color = Color,
+                    .RenderType = RenderType
+                };
+            }
         };
     private:
         static constexpr uint NUM_GLYPHS = 127 - 32;
@@ -71,7 +78,7 @@ namespace Graphics {
         OPENGL_API void SetSize(PointPer64 charWidth, PointPer64 charHeight = 0 /* use width instead */, uint dpi = FontDevice::DPI());
         OPENGL_API void RenderBitmap();
 
-        OPENGL_API [[nodiscard]] const Glyph& GetGlyphRect(char c, FontStyle style = FontStyle::NONE, int id = 0) const;
+        [[nodiscard]] OPENGL_API const Glyph& GetGlyphRect(char c, FontStyle style = FontStyle::NONE, int id = 0) const;
         OPENGL_API Mesh<Vertex> RenderText(
             const std::string& string, PointPer64 size,
             const TextAlign& align = { { 0, INFINITY } }

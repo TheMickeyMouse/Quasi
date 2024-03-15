@@ -267,7 +267,8 @@
     <ClCompile Include="src\Graphics\GLs\VertexBuffer.cpp" />
     <ClCompile Include="src\Graphics\GLs\VertexBufferLayout.cpp" />
     <ClCompile Include="src\Graphics\Graphicals\GraphicsDevice.cpp" />
-    <ClCompile Include="src\Graphics\Graphicals\Mesh.cpp" />
+    <ClInclude Include="src\Graphics\Graphicals\MeshImpl.h" />
+    <ClInclude Include="src\Graphics\Graphicals\MeshUtilsImpl.h" />
     <ClCompile Include="src\Graphics\Primitives\Quad.cpp" />
     <ClCompile Include="src\Graphics\Primitives\Tri.cpp" />
     <ClCompile Include="src\Graphics\Utils\Fonts\Font.cpp" />
@@ -390,6 +391,7 @@
     <ClInclude Include="src\Graphics\Graphicals\CameraController.h" />
     <ClInclude Include="src\Graphics\Graphicals\GenericMesh.h" />
     <ClInclude Include="src\Graphics\Graphicals\Light.h" />
+    <ClInclude Include="src\Graphics\Graphicals\MeshUtils.h" />
     <ClInclude Include="src\Graphics\Graphicals\RenderData.h" />
     <ClInclude Include="src\Graphics\GLs\Render.h" />
     <ClInclude Include="src\Graphics\GLs\Shader.h" />

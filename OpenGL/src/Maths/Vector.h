@@ -78,6 +78,7 @@ namespace Maths {
     using irange = range<int>;
     using urange = range<uint>;
     using brange = range<uchar>;
+    using rangez = range<usize>;
     using rangef = range<float>;
     using ranged = range<double>;
     using rect2f = rect2<float>;

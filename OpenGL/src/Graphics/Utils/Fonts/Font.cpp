@@ -34,6 +34,7 @@ namespace Graphics {
 
         constexpr int loadSDF = FT_LOAD_RENDER | FT_LOAD_TARGET_(FT_RENDER_MODE_SDF); // used for sdf rendering
         constexpr int sdfExtrude = 16;
+
         textureSize = 0;
         std::vector<uint> heights;
         heights.reserve(faceHandles.size());
@@ -123,10 +124,10 @@ namespace Graphics {
         text.SetFontSize(size);
         text.RenderRichText(string);
 
-        const uint iSize = text.textVertices.size() / 2, back = text.bgIndices.size();
-        uint off = text.bgVertices.size();
+        const usize iSize = text.textVertices.size() / 2, back = text.bgIndices.size();
+        usize off = text.bgVertices.size();
         text.bgIndices.reserve(back + iSize);
-        for (uint i = back; i < back + iSize; i += 2) {
+        for (usize i = back; i < back + iSize; i += 2) {
             text.bgIndices.push_back(TriIndices { 0, 1, 2 } + off);
             text.bgIndices.push_back(TriIndices { 1, 2, 3 } + off);
             off += 4;

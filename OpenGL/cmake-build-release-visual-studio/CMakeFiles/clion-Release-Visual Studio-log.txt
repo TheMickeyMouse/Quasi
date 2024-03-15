@@ -1,0 +1,4 @@
+C:\Users\User\AppData\Local\JetBrains\Toolbox\apps\CLion-Nova\ch-0\241.14024.27\bin\cmake\win\x64\bin\cmake.exe -DCMAKE_BUILD_TYPE=Release -DCMAKE_MAKE_PROGRAM=C:/Users/User/AppData/Local/JetBrains/Toolbox/apps/CLion-Nova/ch-0/241.14024.27/bin/ninja/win/x64/ninja.exe -G Ninja -S C:\Users\User\RiderProjects\OpenGL\OpenGL -B C:\Users\User\RiderProjects\OpenGL\OpenGL\cmake-build-release-visual-studio
+-- Configuring done (0.1s)
+-- Generating done (0.0s)
+-- Build files have been written to: C:/Users/User/RiderProjects/OpenGL/OpenGL/cmake-build-release-visual-studio

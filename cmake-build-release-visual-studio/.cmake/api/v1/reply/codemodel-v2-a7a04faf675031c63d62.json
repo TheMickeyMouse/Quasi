@@ -1,0 +1,126 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3
+					],
+					"jsonFile" : "directory-.-Release-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16.0"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				},
+				{
+					"build" : "Game",
+					"jsonFile" : "directory-Game-Release-3fdc2a9f77bc10ae1a54.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16.0"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "Game",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "OpenGL",
+					"jsonFile" : "directory-OpenGL-Release-d4bab4fe29c9436ceb9e.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16.0"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "OpenGL",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"build" : "Testing",
+					"jsonFile" : "directory-Testing-Release-3f77389bbeabe7e7afb4.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16.0"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "Testing",
+					"targetIndexes" : 
+					[
+						2
+					]
+				}
+			],
+			"name" : "Release",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3
+					],
+					"name" : "MyGame",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 1,
+					"id" : "Game::@971b28586fb25e7ff763",
+					"jsonFile" : "target-Game-Release-bb14cba814d1276d93e7.json",
+					"name" : "Game",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "OpenGL::@2304b9bd64a465b6fed5",
+					"jsonFile" : "target-OpenGL-Release-122f9683d66fdaabe9b6.json",
+					"name" : "OpenGL",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "Testing::@ea41f389d6241025cb5e",
+					"jsonFile" : "target-Testing-Release-08ea1cb3a05b314b22b6.json",
+					"name" : "Testing",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/Users/User/RiderProjects/OpenGL/cmake-build-release-visual-studio",
+		"source" : "C:/Users/User/RiderProjects/OpenGL"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 6
+	}
+}
