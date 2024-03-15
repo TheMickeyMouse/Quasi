@@ -8,3 +8,5 @@ OpenGL/src/vendor/imgui/docs
 .idea/
 .vs/
 out/
+cmake-build-debug-visual-studio/
+cmake-build-release-visual-studio/
