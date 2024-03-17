@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <ostream>
 #include <core.h>
 #include "Vector.h"
 
@@ -15,8 +14,8 @@ namespace Maths {
                const fvec4& w = { 0.0f, 0.0f, 0.0f, 1.0f })
         : x(x), y(y), z(z), w(w) {}
 
-        OPENGL_API const float* get_in_col() const;
-        OPENGL_API const fvec4* get_cols() const;
+        [[nodiscard]] OPENGL_API const float* get_in_col() const;
+        [[nodiscard]] OPENGL_API const fvec4* get_cols() const;
 
         OPENGL_API void translate(const fvec3& translation);
         OPENGL_API static mat4x4 translate_mat(const fvec3& translation, const mat4x4& mat = {});
@@ -54,6 +53,4 @@ namespace Maths {
     };
 
     using mat3D = mat4x4;
-
-    OPENGL_API std::ostream& operator<<(std::ostream& stream, const mat4x4& mat);
 }

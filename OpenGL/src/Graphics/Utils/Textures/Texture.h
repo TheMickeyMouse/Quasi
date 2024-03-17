@@ -16,7 +16,7 @@ namespace Graphics {
     struct TextureHandler : GLObjectHandler<TextureHandler> {
         TextureTarget target;
 
-        OPENGL_API glID Create() const;
+        [[nodiscard]] OPENGL_API glID Create() const;
         OPENGL_API void Destroy(glID id) const;
         OPENGL_API void Bind(glID id) const;
         OPENGL_API void Unbind() const;
@@ -29,7 +29,7 @@ namespace Graphics {
 
     struct TextureParamPair {
         TextureParamName pname;
-        std::variant<int, float, int*, float*> val;
+        std::variant<int, float, const int*, const float*> val;
 
         template <class E> requires std::is_enum_v<E>
         TextureParamPair(TextureParamName name, E val) : pname(name), val((int)val) {}
@@ -99,8 +99,8 @@ namespace Graphics {
 
         OPENGL_API void SetParam(TextureParamName param, float val) const;
         OPENGL_API void SetParam(TextureParamName param, int val) const;
-        OPENGL_API void SetParam(TextureParamName param, float* vals) const;
-        OPENGL_API void SetParam(TextureParamName param, int* vals) const;
+        OPENGL_API void SetParam(TextureParamName param, const float* vals) const;
+        OPENGL_API void SetParam(TextureParamName param, const int* vals) const;
         template <class E> requires std::is_enum_v<E>
         void SetParam(TextureParamName param, E val) const { SetParam(param, (int)val); }
 

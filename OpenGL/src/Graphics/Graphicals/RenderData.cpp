@@ -40,8 +40,8 @@ namespace Graphics {
 		ibo.ClearData(shallowClear);
 	}
 
-	void RenderData::Render() {
-		device->Render(*this);
+	void RenderData::Render(Shader& replaceShader, const ShaderArgs& args, bool setDefaultShaderArgs) {
+		device->Render(*this, replaceShader, args, setDefaultShaderArgs);
 	}
 
 	void RenderData::UnbindMesh(int index) {
@@ -68,11 +68,11 @@ namespace Graphics {
 
     void RenderData::EnableShader() {
 	    shader.Bind();
-	    shader.SetUniformMatrix4x4("u_projection", projection);
-	    shader.SetUniformMatrix4x4("u_view", camera);
+	    shader.SetUniformMat4x4("u_projection", projection.get_in_col());
+	    shader.SetUniformMat4x4("u_view", camera.get_in_col());
 	}
 
     void RenderData::DisableShader() {
 	    shader.Unbind();
 	}
-};
+}

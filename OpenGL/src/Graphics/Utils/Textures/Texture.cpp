@@ -61,11 +61,11 @@ namespace Graphics {
         GL_CALL(glTexParameteri(TargetI(), (int)param, val));
     }
 
-    void Texture::SetParam(TextureParamName param, float* vals) const {
+    void Texture::SetParam(TextureParamName param, const float* vals) const {
         GL_CALL(glTexParameterfv(TargetI(), (int)param, vals));
     }
 
-    void Texture::SetParam(TextureParamName param, int* vals) const {
+    void Texture::SetParam(TextureParamName param, const int* vals) const {
         GL_CALL(glTexParameterIiv(TargetI(), (int)param, vals));
     }
 
@@ -122,6 +122,7 @@ namespace Graphics {
     Texture Texture::LoadCubemapPNG(std::initializer_list<std::string> faces, const TextureInitParams& init) {
         if (faces.size() != 6) return {};
 
+        stbi_set_flip_vertically_on_load(0);
         Texture cubemap {};
         cubemap.SetTarget(TextureTarget::CUBEMAP);
         cubemap.Bind();
@@ -182,10 +183,10 @@ namespace Graphics {
                     SetWrapping((TextureBorder)p.as<int>());
                     break;
                 default:
-                    if (p.is<int>())         SetParam(p.pname, p.as<int>());
-                    else if (p.is<float>())  SetParam(p.pname, p.as<float>());
-                    else if (p.is<int*>())   SetParam(p.pname, p.as<int*>());
-                    else if (p.is<float*>()) SetParam(p.pname, p.as<float*>());
+                    if      (p.is<int>())          SetParam(p.pname, p.as<int>());
+                    else if (p.is<float>())        SetParam(p.pname, p.as<float>());
+                    else if (p.is<const int*>())   SetParam(p.pname, p.as<const int*>());
+                    else if (p.is<const float*>()) SetParam(p.pname, p.as<const float*>());
             }
         }
     }

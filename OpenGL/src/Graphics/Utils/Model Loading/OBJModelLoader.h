@@ -81,6 +81,6 @@ namespace Graphics {
 
         OPENGL_API OBJModel&& RetrieveModel();
 
-        OPENGL_API std::string DebugStr() const;
+        [[nodiscard]] OPENGL_API std::string DebugStr() const;
     };
 }

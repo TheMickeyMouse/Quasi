@@ -13,8 +13,7 @@ find_package(Freetype REQUIRED)
 # Source groups
 ################################################################################
 set(no_group_source_files
-    "cpp.hint"
-    "src/core.h"
+        "src/core.h"
     "src/Debug/ConsoleColor.h"
     "src/Debug/internal_debug_break.h"
     "src/Debug/Logger.cpp"

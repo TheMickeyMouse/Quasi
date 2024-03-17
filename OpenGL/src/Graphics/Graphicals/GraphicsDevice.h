@@ -49,7 +49,9 @@ namespace Graphics {
         OPENGL_API void DeleteRender(uint index);
         OPENGL_API void DeleteAllRenders();
         OPENGL_API RenderData& GetRender(uint index);
-        OPENGL_API void Render(RenderData& r);
+
+        OPENGL_API void Render(RenderData& r, Shader& s, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true);
+        void Render(RenderData& r, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { Render(r, r.GetShader(), args, setDefaultShaderArgs); }
         void Render(uint index) { Render(GetRender(index)); }
 
         OPENGL_API void ClearColor(const Maths::colorf& color);

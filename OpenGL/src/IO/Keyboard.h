@@ -2,11 +2,11 @@
 #include <array>
 #include <queue>
 #include <GLFW/glfw3.h>
-#include <core.h>
 
 #include "NumTypes.h"
 #include "stdu/enum_utils.h"
 #include "stdu/ref.h"
+#include <core.h>
 
 struct GLFWwindow;
 
@@ -115,9 +115,9 @@ namespace IO {
         OPENGL_API static Key FromModBits(ModifierKey mod);
         OPENGL_API static KeyIndex IndexFromModBits(ModifierKey mod);
 
-        inline static constexpr KeyIndex MAX_KEY_INDEX = 119; // ToKeyIndex(Key::NON_US_2); // should be 119
-        inline static constexpr KeyIndex KEY_COUNT = MAX_KEY_INDEX + 1; // MAX_KEY_INDEX + 1; // should be 120
-        inline static constexpr KeyIndex KEYSET_SIZE = (KEY_COUNT - 1) / 64 + 1; // TODO: MAKE MODIF KEYS WORK
+        static constexpr KeyIndex MAX_KEY_INDEX = 119; // ToKeyIndex(Key::NON_US_2); // should be 119
+        static constexpr KeyIndex KEY_COUNT = MAX_KEY_INDEX + 1; // MAX_KEY_INDEX + 1; // should be 120
+        static constexpr KeyIndex KEYSET_SIZE = (KEY_COUNT - 1) / 64 + 1; // TODO: MAKE MODIF KEYS WORK
 
         void Update();
 

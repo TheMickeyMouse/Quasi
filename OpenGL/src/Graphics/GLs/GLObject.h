@@ -11,7 +11,7 @@ namespace Graphics {
 
     template <class H>
     struct GLObjectHandler {
-        glID Create() const { return ((const H*)this)->Create(); }
+        [[nodiscard]] glID Create() const { return ((const H*)this)->Create(); }
         void Destroy(glID id) const { ((const H*)this)->Destroy(id); }
         void Bind(glID id) const { ((const H*)this)->Bind(id); }
         void Unbind() const { ((const H*)this)->Unbind(); }
@@ -58,7 +58,7 @@ namespace Graphics {
 
     template <BufferType T>
     struct BufferHandler : GLObjectHandler<BufferHandler<T>> {
-        OPENGL_API glID Create() const;
+        [[nodiscard]] OPENGL_API glID Create() const;
         OPENGL_API void Destroy(glID id) const;
         OPENGL_API void Bind(glID id) const;
         OPENGL_API void Unbind() const;

@@ -59,7 +59,8 @@ namespace Graphics {
         void BindMeshes(std::initializer_list<Mesh<T>*> meshes) { for (auto* m : meshes) BindMeshes(*m); }
 		template <stdu::array_like U> void BindMeshes(U& ms) { BindMeshes(stdu::to_span(ms)); }
         
-		void Render() { rd->Render(); }
+		void Render(Shader& rShader, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { rd->Render(rShader, args, setDefaultShaderArgs); }
+		void Render(const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { rd->Render(args, setDefaultShaderArgs); }
         
 		void AddNewMeshes(const Mesh<T>& mesh) { rd->AddNewMeshes<T>(std::span { &mesh, 1 }); }
 		void AddNewMeshes(std::span<const Mesh<T>> meshes) { rd->AddNewMeshes<T>(meshes); }

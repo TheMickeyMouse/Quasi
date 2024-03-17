@@ -1,6 +1,7 @@
 ﻿#include "Shader.h"
 
-#include <fstream>
+#include <numeric>
+
 #include "stdu/io.h"
 
 #include "GL/glew.h"
@@ -33,14 +34,39 @@ namespace Graphics {
         rendererID = CreateShader(vert, frag);
     }
 
-    uint Shader::GetUniformLocation(stringr name) {
-        if (uniformCache.contains(name))
-            return uniformCache[name];
+    int Shader::GetUniformLocation(std::string_view name) {
+        const auto it = uniformCache.find(name);
+        if (it != uniformCache.end())
+            return it->second;
 
-        const int location = GL_CALL(glGetUniformLocation(rendererID, name.c_str()));
+        const int location = GL_CALL(glGetUniformLocation(rendererID, name.data()));
         GLLogger().AssertFmt(location != -1, {"Uniform location for '{}' was -1"}, name);
-        uniformCache[name] = location;
+        uniformCache[std::string { name }] = location;
         return location;
+    }
+
+    void Shader::SetUniformDyn(const ShaderParameter& arg) {
+        using enum ShaderUniformType;
+        const int loc = GetUniformLocation(arg.name);
+        #define SWITCH_STATE(I) case UNIF_##I: SetUniformAtLoc<UNIF_##I>(loc, arg.value.as<ShaderUniformArgOf<UNIF_##I>>()); break;
+        switch (arg.value.type) {
+            SWITCH_STATE(1I)  SWITCH_STATE(2I)  SWITCH_STATE(3I)  SWITCH_STATE(4I)
+            SWITCH_STATE(1UI) SWITCH_STATE(2UI) SWITCH_STATE(3UI) SWITCH_STATE(4UI)
+            SWITCH_STATE(1F)  SWITCH_STATE(2F)  SWITCH_STATE(3F)  SWITCH_STATE(4F)
+            SWITCH_STATE(1I_ARR)  SWITCH_STATE(2I_ARR)  SWITCH_STATE(3I_ARR)  SWITCH_STATE(4I_ARR)
+            SWITCH_STATE(1UI_ARR) SWITCH_STATE(2UI_ARR) SWITCH_STATE(3UI_ARR) SWITCH_STATE(4UI_ARR)
+            SWITCH_STATE(1F_ARR)  SWITCH_STATE(2F_ARR)  SWITCH_STATE(3F_ARR)  SWITCH_STATE(4F_ARR)
+            SWITCH_STATE(MAT2x2) SWITCH_STATE(MAT2x3) SWITCH_STATE(MAT2x4)
+            SWITCH_STATE(MAT3x2) SWITCH_STATE(MAT3x3) SWITCH_STATE(MAT3x4)
+            SWITCH_STATE(MAT4x2) SWITCH_STATE(MAT4x3) SWITCH_STATE(MAT4x4)
+            default:;
+        }
+    }
+
+    void Shader::SetUniformArgs(const ShaderArgs& args) {
+        for (const auto arg : args) {
+            SetUniformDyn(arg);
+        }
     }
 
     ShaderProgramSource Shader::ParseShader(std::string_view program) {
@@ -76,7 +102,7 @@ namespace Graphics {
     }
 
     void Shader::SetUniformTex(stringr name, const Texture& texture) {
-        GL_CALL(glUniform1i(GetUniformLocation(name), texture.Slot()));
+        SetUniformInt(name, texture.Slot());
     }
 
     Shader Shader::FromFile(stringr filepath) {
@@ -132,76 +158,42 @@ namespace Graphics {
         return program;
     }
 
-    #pragma region Uniform Ints
-#define SHADER_UNIF_I(n, ...) GL_CALL(glUniform##n##i(GetUniformLocation(name), __VA_ARGS__))
-        void Shader::SetUniform1I(stringr name, int val)                        { SHADER_UNIF_I(1, val); }
-        void Shader::SetUniform2I(stringr name, int v0, int v1)                 { SHADER_UNIF_I(2, v0, v1); }
-        void Shader::SetUniform2I(stringr name, intptr vals)                    { SHADER_UNIF_I(2, vals[0], vals[1]); }
-        void Shader::SetUniform3I(stringr name, int v0, int v1, int v2)         { SHADER_UNIF_I(3, v0, v1, v2); }
-        void Shader::SetUniform3I(stringr name, intptr vals)                    { SHADER_UNIF_I(3, vals[0], vals[1], vals[2]); }
-        void Shader::SetUniform4I(stringr name, int v0, int v1, int v2, int v3) { SHADER_UNIF_I(4, v0, v1, v2, v3); }
-        void Shader::SetUniform4I(stringr name, intptr vals)                    { SHADER_UNIF_I(4, vals[0], vals[1], vals[2], vals[3]); }
-#undef SHADER_UNIF_I
-#pragma endregion
-#pragma region Uniform Unsigned Ints
-#define SHADER_UNIF_UI(n, ...) GL_CALL(glUniform##n##ui(GetUniformLocation(name), __VA_ARGS__))
-        void Shader::SetUniform1IUnsigned(stringr name, uint val)                           { SHADER_UNIF_UI(1, val); }
-        void Shader::SetUniform2IUnsigned(stringr name, uint v0, uint v1)                   { SHADER_UNIF_UI(2, v0, v1); }
-        void Shader::SetUniform2IUnsigned(stringr name, uintptr vals)                       { SHADER_UNIF_UI(2, vals[0], vals[1]); }
-        void Shader::SetUniform3IUnsigned(stringr name, uint v0, uint v1, uint v2)          { SHADER_UNIF_UI(3, v0, v1, v2); }
-        void Shader::SetUniform3IUnsigned(stringr name, uintptr vals)                       { SHADER_UNIF_UI(3, vals[0], vals[1], vals[2]); }
-        void Shader::SetUniform4IUnsigned(stringr name, uint v0, uint v1, uint v2, uint v3) { SHADER_UNIF_UI(4, v0, v1, v2, v3); }
-        void Shader::SetUniform4IUnsigned(stringr name, uintptr vals)                       { SHADER_UNIF_UI(4, vals[0], vals[1], vals[2], vals[3]); }
-#undef SHADER_UNIF_UI
-#pragma endregion
-#pragma region Uniform Int Vecs
-#define SHADER_UNIF_IV(n, d, c) GL_CALL(glUniform##n##iv(GetUniformLocation(name), c, d))
-        void Shader::SetUniform1IVec(stringr name, intptr vals, uint count) { SHADER_UNIF_IV(1, vals, count); }
-        void Shader::SetUniform2IVec(stringr name, intptr vals, uint count) { SHADER_UNIF_IV(2, vals, count); }
-        void Shader::SetUniform3IVec(stringr name, intptr vals, uint count) { SHADER_UNIF_IV(3, vals, count); }
-        void Shader::SetUniform4IVec(stringr name, intptr vals, uint count) { SHADER_UNIF_IV(4, vals, count); }
-#undef SHADER_UNIF_IV
-#pragma endregion
-#pragma region Uniform Unsigned Int Vecs
-#define SHADER_UNIF_UIV(n, d, c) GL_CALL(glUniform##n##uiv(GetUniformLocation(name), c, d))
-        void Shader::SetUniform1UIVec(stringr name, uintptr vals, uint count) { SHADER_UNIF_UIV(1, vals, count); }
-        void Shader::SetUniform2UIVec(stringr name, uintptr vals, uint count) { SHADER_UNIF_UIV(2, vals, count); }
-        void Shader::SetUniform3UIVec(stringr name, uintptr vals, uint count) { SHADER_UNIF_UIV(3, vals, count); }
-        void Shader::SetUniform4UIVec(stringr name, uintptr vals, uint count) { SHADER_UNIF_UIV(4, vals, count); }
-#undef SHADER_UNIF_UIV
-#pragma endregion
-#pragma region Uniform Floats
-#define SHADER_UNIF_F(n, ...) GL_CALL(glUniform##n##f(GetUniformLocation(name), __VA_ARGS__))
-        void Shader::SetUniform1F(stringr name, float val)                              { SHADER_UNIF_F(1, val); }
-        void Shader::SetUniform2F(stringr name, float v0, float v1)                     { SHADER_UNIF_F(2, v0, v1); }
-        void Shader::SetUniform2F(stringr name, floatptr vals)                          { SHADER_UNIF_F(2, vals[0], vals[1]); }
-        void Shader::SetUniform3F(stringr name, float v0, float v1, float v2)           { SHADER_UNIF_F(3, v0, v1, v2); }
-        void Shader::SetUniform3F(stringr name, floatptr vals)                          { SHADER_UNIF_F(3, vals[0], vals[1], vals[2]); }
-        void Shader::SetUniform4F(stringr name, float v0, float v1, float v2, float v3) { SHADER_UNIF_F(4, v0, v1, v2, v3); }
-        void Shader::SetUniform4F(stringr name, floatptr vals)                          { SHADER_UNIF_F(4, vals[0], vals[1], vals[2], vals[3]); }
-#undef SHADER_UNIF_F
-#pragma endregion
-#pragma region Uniform Float Vecs
-#define SHADER_UNIF_FV(n, d, c) GL_CALL(glUniform##n##fv(GetUniformLocation(name), c, d))
-        void Shader::SetUniform1FVec(stringr name, floatptr vals, uint count) { SHADER_UNIF_FV(1, vals, count); }
-        void Shader::SetUniform2FVec(stringr name, floatptr vals, uint count) { SHADER_UNIF_FV(2, vals, count); }
-        void Shader::SetUniform3FVec(stringr name, floatptr vals, uint count) { SHADER_UNIF_FV(3, vals, count); }
-        void Shader::SetUniform4FVec(stringr name, floatptr vals, uint count) { SHADER_UNIF_FV(4, vals, count); }
-#undef SHADER_UNIF_FV
-#pragma endregion
-#pragma region Uniform Matricies
-#define SHADER_UNIF_MAT(s, m) GL_CALL(glUniformMatrix##s##fv(GetUniformLocation(name), 1, GL_FALSE, m)) // column major
-        void Shader::SetUniformMatrix2x2(stringr name, floatptr mat) { SHADER_UNIF_MAT(2, mat); }
-        void Shader::SetUniformMatrix3x3(stringr name, floatptr mat) { SHADER_UNIF_MAT(3, mat); }
+    ShaderArgs::ShaderArgs(std::initializer_list<ShaderParameter> p) {
+        nullSepName.reserve(
+            std::accumulate(
+                p.begin(), p.end(), usize { 0 },
+                [](usize i, const ShaderParameter& sp) { return i + sp.name.size() + 1; }));
+        params.reserve(p.size());
 
-        void Shader::SetUniformMatrix2x3(stringr name, floatptr mat) { SHADER_UNIF_MAT(2x3, mat); }
-        void Shader::SetUniformMatrix3x2(stringr name, floatptr mat) { SHADER_UNIF_MAT(3x2, mat); }
-        void Shader::SetUniformMatrix2x4(stringr name, floatptr mat) { SHADER_UNIF_MAT(2x4, mat); }
-        void Shader::SetUniformMatrix4x2(stringr name, floatptr mat) { SHADER_UNIF_MAT(4x2, mat); }
-        void Shader::SetUniformMatrix3x4(stringr name, floatptr mat) { SHADER_UNIF_MAT(3x4, mat); }
-        void Shader::SetUniformMatrix4x3(stringr name, floatptr mat) { SHADER_UNIF_MAT(4x3, mat); }
+        usize idx = 0;
+        for (const ShaderParameter& sp : p) {
+            nullSepName += sp.name;
+            nullSepName += '\0';
+            params.emplace_back(Maths::rangez { idx, idx += sp.name.size() + 1 }, sp.value);
+        }
+    }
 
-        void Shader::SetUniformMatrix4x4(stringr name, const Maths::mat3D& mat) { SHADER_UNIF_MAT(4, mat.get_in_col()); }
-#undef SHADER_UNIF_MAT
-#pragma endregion
+    ShaderValueVariant::ShaderValueVariant(const Texture& tex) {
+        type = ShaderUniformType::UNIF_1I;
+        datInt = tex.Slot();
+        size = 1;
+    }
+
+#define DEFINE_UNIF_FN(IN, GL, ...) \
+    template <>\
+    OPENGL_API void Shader::SetUniformAtLoc<ShaderUniformType::UNIF_##IN>(int uniformLoc, ShaderUniformArgOf<ShaderUniformType::UNIF_##IN> val) { \
+        GL_CALL(glUniform##GL(uniformLoc, __VA_ARGS__)); \
+    } \
+    template OPENGL_API void Shader::SetUniformAtLoc<ShaderUniformType::UNIF_##IN>(int, ShaderUniformArgOf<ShaderUniformType::UNIF_##IN>); \
+
+    DEFINE_UNIF_FN(1I,  1i,  val) DEFINE_UNIF_FN(2I,  2i,  val.x, val.y) DEFINE_UNIF_FN(3I,  3i,  val.x, val.y, val.z) DEFINE_UNIF_FN(4I,  4i,  val.x, val.y, val.z, val.w)
+    DEFINE_UNIF_FN(1UI, 1ui, val) DEFINE_UNIF_FN(2UI, 2ui, val.x, val.y) DEFINE_UNIF_FN(3UI, 3ui, val.x, val.y, val.z) DEFINE_UNIF_FN(4UI, 4ui, val.x, val.y, val.z, val.w)
+    DEFINE_UNIF_FN(1F,  1f,  val) DEFINE_UNIF_FN(2F,  2f,  val.x, val.y) DEFINE_UNIF_FN(3F,  3f,  val.x, val.y, val.z) DEFINE_UNIF_FN(4F,  4f,  val.x, val.y, val.z, val.w)
+    DEFINE_UNIF_FN(1I_ARR,  1iv,  (int)val.size(), val.data()) DEFINE_UNIF_FN(2I_ARR,  2iv,  (int)val.size(), (const int*)  val.data()) DEFINE_UNIF_FN(3I_ARR,  3iv,  (int)val.size(), (const int*)  val.data()) DEFINE_UNIF_FN(4I_ARR,  4iv,  (int)val.size(), (const int*)  val.data())
+    DEFINE_UNIF_FN(1UI_ARR, 1uiv, (int)val.size(), val.data()) DEFINE_UNIF_FN(2UI_ARR, 2uiv, (int)val.size(), (const uint*) val.data()) DEFINE_UNIF_FN(3UI_ARR, 3uiv, (int)val.size(), (const uint*) val.data()) DEFINE_UNIF_FN(4UI_ARR, 4uiv, (int)val.size(), (const uint*) val.data())
+    DEFINE_UNIF_FN(1F_ARR,  1fv,  (int)val.size(), val.data()) DEFINE_UNIF_FN(2F_ARR,  2fv,  (int)val.size(), (const float*)val.data()) DEFINE_UNIF_FN(3F_ARR,  3fv,  (int)val.size(), (const float*)val.data()) DEFINE_UNIF_FN(4F_ARR,  4fv,  (int)val.size(), (const float*)val.data())
+
+    DEFINE_UNIF_FN(MAT2x2, Matrix2fv,   1, false, val) DEFINE_UNIF_FN(MAT2x3, Matrix2x3fv, 1, false, val) DEFINE_UNIF_FN(MAT2x4, Matrix2x4fv, 1, false, val)
+    DEFINE_UNIF_FN(MAT3x2, Matrix3x2fv, 1, false, val) DEFINE_UNIF_FN(MAT3x3, Matrix3fv,   1, false, val) DEFINE_UNIF_FN(MAT3x4, Matrix3x4fv, 1, false, val)
+    DEFINE_UNIF_FN(MAT4x2, Matrix4x2fv, 1, false, val) DEFINE_UNIF_FN(MAT4x3, Matrix4x3fv, 1, false, val) DEFINE_UNIF_FN(MAT4x4, Matrix4fv,   1, false, val)
 }

@@ -475,7 +475,7 @@ namespace Maths {
     template <class T>
     VEC2DEF(vec2, T, x, y, 1, 1, 1, \
         vec2(Direction2D dir, T scale = 1); \
-        vec2(Corner2D dir,    T scale = 1); \
+        vec2(Corner2D cor,    T scale = 1); \
         vec2(stdu::convertible_to<T> auto x, stdu::convertible_to<T> auto y) : x((T)x), y((T)y) {} \
         \
         template <vec_t V> requires (V::dimension == dimension) \
@@ -525,7 +525,7 @@ namespace Maths {
     template <class T>
     VEC3DEF(vec3, T, x, y, z, 1, 1, 1,
         vec3(Direction3D dir, T scale = 1); \
-        vec3(Corner3D dir,    T scale = 1); \
+        vec3(Corner3D cor,    T scale = 1); \
         vec3(stdu::convertible_to<T> auto x, stdu::convertible_to<T> auto y, \
              stdu::convertible_to<T> auto z) : x((T)x), y((T)y), z((T)z) {} \
         \

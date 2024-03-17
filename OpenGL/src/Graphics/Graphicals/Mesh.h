@@ -87,9 +87,10 @@ namespace Graphics {
 
     template <class T>
     void Mesh<T>::AddTo(DynamicVertexBuffer& vbuffer, DynamicIndexBuffer& ibuffer) const {
+        const Maths::mat3D normMat = modelTransform.inv().transpose();
         std::vector<T> transformed;
         transformed.resize(vertices.size());
-        std::transform(vertices.begin(), vertices.end(), transformed.begin(), [&](auto v) { return VertexMul(v, modelTransform); });
+        std::transform(vertices.begin(), vertices.end(), transformed.begin(), [&](auto v) { return VertexMul(v, modelTransform, normMat); });
         vbuffer.AddData(transformed);
         ibuffer.AddData(stdu::span_cast<const uint>(std::span { indices }), (int)(vertices.size() - 1));
     }
@@ -138,7 +139,8 @@ namespace Graphics {
 
     template <class T>
     Mesh<T>& Mesh<T>::ApplyTransform(const Maths::mat3D& model) {
-        for (auto& v : vertices) v = VertexMul(v, model);
+        const Maths::mat3D normMat = model.inv().transpose();
+        for (auto& v : vertices) v = VertexMul(v, model, normMat);
         return *this;
     }
 

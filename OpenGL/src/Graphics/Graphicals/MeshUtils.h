@@ -27,19 +27,7 @@ namespace Graphics::MeshUtils {
 
     MESH_UTIL_FN(SimpleCircleMesh, Maths::fvec2, int(subdivisions));
     MESH_UTIL_FN(SimpleCubeMesh, Maths::fvec3);
-    template<stdu::fn_args<VertexNormal3D, uint> F>
-    auto CubeMeshNorm(F f) -> Mesh<decltype(f(VertexNormal3D {}, 0))>;
-
-    template<stdu::fn_args<VertexNormal3D, uint> F>
-    auto CubeMeshNorm(F f, const Maths::mat4x4& transform) -> Mesh<decltype(f(VertexNormal3D {}, 0))> {
-        return CubeMeshNorm(f).ApplyTransform(transform);
-    }
-
-    inline Mesh<VertexNormal3D> CubeMeshNorm() { return CubeMeshNorm(identity_vec<VertexNormal3D> {}); }
-
-    inline Mesh<VertexNormal3D> CubeMeshNorm(const Maths::mat4x4& transform) {
-        return CubeMeshNorm(identity_vec<VertexNormal3D> {}, transform);
-    };
+    MESH_UTIL_FN(CubeMeshNorm, VertexNormal3D);
 
 #undef MESH_UTIL_FN
 }

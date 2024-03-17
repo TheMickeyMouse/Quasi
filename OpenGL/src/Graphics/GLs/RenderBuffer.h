@@ -5,7 +5,7 @@
 
 namespace Graphics {
     struct RenderBufferHandler : GLObjectHandler<RenderBufferHandler> {
-        OPENGL_API glID Create() const;
+        [[nodiscard]] OPENGL_API glID Create() const;
         OPENGL_API void Destroy(glID id) const;
         OPENGL_API void Bind(glID id) const;
         OPENGL_API void Unbind() const;

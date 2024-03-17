@@ -1,8 +1,5 @@
 ﻿#include "Matrix.h"
 
-#include <complex>
-#include <iomanip>
-
 #include "Constants.h"
 
 namespace Maths {
@@ -93,12 +90,12 @@ namespace Maths {
     }
 
     mat4x4 mat4x4::perspective_fov(float fovDeg, float aspect, float near, float far) {
-        float fovRad = fovDeg * PI / 180.0f;
-        float y = 1.0f / std::tan(fovRad / 2);
-        float x = y / aspect;
-        float dz = far - near;
-        float zsum  = (far + near) / dz;
-        float zprod = (far * near) / dz;
+        const float fovRad = fovDeg * PI / 180.0f;
+        const float y = 1.0f / std::tan(fovRad / 2);
+        const float x = y / aspect;
+        const float dz = far - near;
+        const float zsum  = (far + near) / dz;
+        const float zprod = (far * near) / dz;
         return { { x, 0,  0,         0 },
                  { 0, y,  0,         0 },
                  { 0, 0, -zsum,     -1 },
@@ -204,15 +201,5 @@ namespace Maths {
 
     mat4x4 mat4x4::operator*(float s) const {
         return { x * s, y * s, z * s, w * s };
-    }
-
-    std::ostream& operator<<(std::ostream& stream, const mat4x4& mat) {
-        stream << std::fixed << std::setprecision(3);
-        stream << '[' << mat.x.x << ',' << mat.y.x << ',' << mat.z.x << ',' << mat.w.x << ']' << '\n';
-        stream << '[' << mat.x.y << ',' << mat.y.y << ',' << mat.z.y << ',' << mat.w.y << ']' << '\n';
-        stream << '[' << mat.x.z << ',' << mat.y.z << ',' << mat.z.z << ',' << mat.w.z << ']' << '\n';
-        stream << '[' << mat.x.w << ',' << mat.y.w << ',' << mat.z.w << ',' << mat.w.w << ']';// << '\n'
-        stream << std::setprecision(-1);
-        return stream;
     }
 }

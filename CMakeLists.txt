@@ -87,7 +87,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 ################################################################################
 # Sub-projects
 ################################################################################
-add_subdirectory(Game)
+# add_subdirectory(Game)
 add_subdirectory(OpenGL)
 add_subdirectory(Testing)
 

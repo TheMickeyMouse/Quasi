@@ -29,12 +29,12 @@ namespace Graphics {
 			return *reinterpret_cast<Mesh<T>*>(ptr);
 		}
 
-		OPENGL_API void Set(void* ptr);
+		OPENGL_API void Set(void* mesh);
 		template <class T> void Set(Mesh<T>* mesh) {
 			Set((void*)mesh);
 		}
 
 		OPENGL_API uint& deviceIndex();
-		OPENGL_API uint deviceIndex() const;
+		[[nodiscard]] OPENGL_API uint deviceIndex() const;
 	};
 }

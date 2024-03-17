@@ -25,7 +25,7 @@ namespace Graphics {
 
         inline static bool showControls = false;
 
-        OPENGL_API Maths::fvec3 Right() const;
+        [[nodiscard]] OPENGL_API Maths::fvec3 Right() const;
 
         OPENGL_API void Update(GraphicsDevice& gd, float dt);
         OPENGL_API void Toggle(GraphicsDevice& gd);

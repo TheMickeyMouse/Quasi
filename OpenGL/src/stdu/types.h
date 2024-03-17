@@ -50,6 +50,9 @@ namespace stdu {
     template <class R>
     using element_t = std::ranges::range_value_t<R>;
 
+    template <class R, class E>
+    concept range_of = std::ranges::range<R> && std::is_same_v<std::ranges::range_value_t<R>, E>;
+
     template <array_like R> // from https://stackoverflow.com/questions/77097857/conversion-of-stdvector-to-stdspant
     std::span<element_t<R>> to_span(R& r) { return std::span<std::ranges::range_value_t<R>>(r); }
 
@@ -65,14 +68,14 @@ namespace stdu {
     using byte_span = std::span<byte>;
     using cbyte_span = std::span<const byte>;
 
-
-
     // adapted from https://stackoverflow.com/a/66422428
     template <bool... Bs>
     constexpr bool all_of = (Bs && ...);
 
     template <bool... Bs>
     constexpr bool any_of = (Bs || ...);
+
+    template <auto V> struct value_t { using type = decltype(V); static constexpr type value = V; };
 
     template <class, template <class> class> struct instanceof_t : std::false_type {};
     template <class T, template <class> class I> struct instanceof_t<I<T>, I> : std::true_type {};
@@ -172,6 +175,7 @@ namespace stdu {
 
         constexpr std::size_t type_junk_prefix = raw_typename<int>().find("int");
         constexpr std::size_t type_junk_size = raw_typename<int>().size() - 3;
+        // ReSharper disable once CppStaticAssertFailure
         static_assert(type_junk_prefix != std::string_view::npos, "cannot determine type signature in this compiler");
     }
 

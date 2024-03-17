@@ -1,6 +1,0 @@
-// Hint files help the Visual Studio IDE interpret Visual C++ identifiers
-// such as names of functions and macros.
-// For more information see https://go.microsoft.com/fwlink/?linkid=865984
-#define OPENGL_API __declspec(dllexport)
-#define KEY_IMPL_GLFW(K, NAME_PRE, GLFW_PRE)
-#define IMPL_ENUM_OPERATORS(E) ENUM_BINARY_OP(E, +) ENUM_BINARY_OP(E, -) ENUM_BINARY_OP(E, *) ENUM_BINARY_OP(E, /) ENUM_BINARY_OP(E, %) ENUM_BINARY_OP(E, &) ENUM_BINARY_OP(E, |) ENUM_BINARY_OP(E, ^) ENUM_BINARY_OP(E, <<) ENUM_BINARY_OP(E, >>) ENUM_CMP(E, <) ENUM_CMP(E, <=) ENUM_CMP(E, >) ENUM_CMP(E, >=) ENUM_CMP(E, ==) ENUM_CMP(E, !=) ENUM_UNARY_OP(E, +) ENUM_UNARY_OP(E, -) ENUM_UNARY_OP(E, ~) ENUM_SELF_BINARY_OP(E, +) ENUM_SELF_BINARY_OP(E, -) ENUM_SELF_BINARY_OP(E, *) ENUM_SELF_BINARY_OP(E, /) ENUM_SELF_BINARY_OP(E, %) ENUM_SELF_BINARY_OP(E, &) ENUM_SELF_BINARY_OP(E, |) ENUM_SELF_BINARY_OP(E, ^) ENUM_SELF_BINARY_OP(E, <<) ENUM_SELF_BINARY_OP(E, >>) ENUM_SELF_UNARY_OP(E, +) ENUM_SELF_UNARY_OP(E, -)

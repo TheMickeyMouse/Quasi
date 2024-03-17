@@ -77,15 +77,21 @@ namespace Graphics {
 		OPENGL_API void ClearData(bool shallowClear = true);
 		template <class T> void BindMeshes(std::span<Mesh<T>> newMeshes);
 		template <stdu::array_like T> void BindMeshes(T& ms) { BindMeshes(stdu::to_span(ms)); }
-		OPENGL_API void Render();
+
 		template <class T> void AddNewMeshes(std::span<const Mesh<T>> newMeshes);
 		template <stdu::array_like T> void AddNewMeshes(const T& arr) { AddNewMeshes(stdu::to_cspan(arr)); }
 		template <class T> void AddBoundMeshes() { for (GenericMesh& m : meshes) m.As<T>().AddTo(vbo, ibo); }
 		template <class T> void ResetData(bool shallowClear = true) { ClearData(shallowClear); AddBoundMeshes<T>(); }
+
 		OPENGL_API void UnbindMesh(int index);
 		OPENGL_API void UnbindMeshes(int indexStart, int indexEnd);
+
 		OPENGL_API void UpdateMeshIndices();
+
 		OPENGL_API void Destroy();
+
+		OPENGL_API void Render(Shader& replaceShader, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true);
+		void Render(const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { Render(shader, args, setDefaultShaderArgs); }
 
 	    void SetCamera(const Maths::mat3D& cam) { camera = cam; }
 	    void SetProjection(const Maths::mat3D& proj) { projection = proj; }
@@ -98,19 +104,18 @@ namespace Graphics {
 	    void UseShaderFromFile(const std::string& vert, const std::string& frag) { shader = Shader::FromFile(vert, frag); }
 	    OPENGL_API void EnableShader();
 	    OPENGL_API void DisableShader();
-
 	};
 
 	template <class T>
 	RenderData RenderData::Create(uint vsize, uint isize) {
 		// times 3 to account for triangles
-		return RenderData(vsize, isize * 3, sizeof(T), typeid(T), GL_VERTEX_LAYOUT_OF(T));
+		return RenderData(vsize, isize * 3, sizeof(T), typeid(T), VertexLayoutOf<T>);
 	}
 
     template <class T>
     std::unique_ptr<RenderData> RenderData::CreateHeap(uint vsize, uint isize) {
 	    // times 3 to account for triangles
-	    return std::make_unique<RenderData>(vsize, isize * 3, (uint)sizeof(T), typeid(T), GL_VERTEX_LAYOUT_OF(T));
+	    return std::make_unique<RenderData>(vsize, isize * 3, (uint)sizeof(T), typeid(T), VertexLayoutOf<T>);
 	}
 
 	template <class T>

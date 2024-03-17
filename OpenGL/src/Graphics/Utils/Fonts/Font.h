@@ -49,14 +49,7 @@ namespace Graphics {
 
             GL_VERTEX_T(Vertex);
             GL_VERTEX_FIELD((Position)(TextureCoord)(Color)(RenderType));
-            GL_VERTEX_CUSTOM_TRANSFORM(mat) {
-                return {
-                    .Position = mat * Position.with_z(0),
-                    .TextureCoord = TextureCoord,
-                    .Color = Color,
-                    .RenderType = RenderType
-                };
-            }
+            GL_VERTEX_TRANSFORM_FIELDS((Position));
         };
     private:
         static constexpr uint NUM_GLYPHS = 127 - 32;
@@ -79,12 +72,12 @@ namespace Graphics {
         OPENGL_API void RenderBitmap();
 
         [[nodiscard]] OPENGL_API const Glyph& GetGlyphRect(char c, FontStyle style = FontStyle::NONE, int id = 0) const;
-        OPENGL_API Mesh<Vertex> RenderText(
+        [[nodiscard]] OPENGL_API Mesh<Vertex> RenderText(
             const std::string& string, PointPer64 size,
             const TextAlign& align = { { 0, INFINITY } }
         ) const;
 
-        OPENGL_API Mesh<Vertex> RenderRichText(
+        [[nodiscard]] OPENGL_API Mesh<Vertex> RenderRichText(
             const stdu::rich_string& string, PointPer64 size,
             const TextAlign& align = { { 0, INFINITY } }
         ) const;
@@ -95,10 +88,10 @@ namespace Graphics {
         OPENGL_API static Font LoadFile (const std::string& filename);
         OPENGL_API static Font LoadBytes(const uchar* data, uint len);
 
-        FT_Face DefaultFontUnchecked(FontStyle style = FontStyle::NONE) const { return faceHandles[(int)style].get(); }
-        FT_Face GetFontUnchecked(int id = 0, FontStyle style = FontStyle::NONE) const { return faceHandles[(id << 2) | (int)style].get(); }
-        FT_Face DefaultFont(FontStyle style = FontStyle::NONE) const { return DefaultFontUnchecked(style) ? DefaultFontUnchecked(style) : DefaultFontUnchecked(); }
-        FT_Face GetFont(int id = 0, FontStyle style = FontStyle::NONE) const { return GetFontUnchecked(id, style) ? GetFontUnchecked(id, style) : DefaultFont(style); }
+        [[nodiscard]] FT_Face DefaultFontUnchecked(FontStyle style = FontStyle::NONE) const { return faceHandles[(int)style].get(); }
+        [[nodiscard]] FT_Face GetFontUnchecked(int id = 0, FontStyle style = FontStyle::NONE) const { return faceHandles[(id << 2) | (int)style].get(); }
+        [[nodiscard]] FT_Face DefaultFont(FontStyle style = FontStyle::NONE) const { return DefaultFontUnchecked(style) ? DefaultFontUnchecked(style) : DefaultFontUnchecked(); }
+        [[nodiscard]] FT_Face GetFont(int id = 0, FontStyle style = FontStyle::NONE) const { return GetFontUnchecked(id, style) ? GetFontUnchecked(id, style) : DefaultFont(style); }
 
         OPENGL_API void ReserveFont();
         void AddDefaultFontStyle(const std::string& filePath, FontStyle style = FontStyle::NONE) { AddFontStyle(DEFAULT_FONT_ID, filePath, style); }

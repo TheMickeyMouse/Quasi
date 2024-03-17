@@ -6,18 +6,19 @@
 
 #define GL_VERTEX_T(T) using __vertex_type__ = T; static constexpr bool _internalVertexFlag = true
 
-#define GL_VERTEX_LAYOUT_OF(T) T::__VERTEX_LAYOUT__
-#define GL_VERTEX_CUSTOM_TRANSFORM(N) __vertex_type__ __vertex_mul__(const Maths::mat3D& N) const
+#define GL_VERTEX_CUSTOM_TRANSFORM(M, N) __vertex_type__ __vertex_mul__(const Maths::mat3D& M, const Maths::mat3D& N) const
 
-#define __GL_VERTEX_TRANSFORM_FIELD__(M) copy.M = _m * copy.M; 
+#define __GL_GET_THIRD__(X, Y, Z, ...) Z
+#define __GL_VERTEX_TRANSFORM_FIELD_DEFAULT__(M) __GL_VERTEX_TRANSFORM_FIELD_CUSTOM__(M, Graphics::PositionTransformer)
+#define __GL_VERTEX_TRANSFORM_FIELD_CUSTOM__(M, H) copy.M = (H {})(copy.M, _m, _nm)
+#define __GL_VERTEX_TRANSFORM_FIELD__(...) __GL_GET_THIRD__(__VA_ARGS__, __GL_VERTEX_TRANSFORM_FIELD_CUSTOM__, __GL_VERTEX_TRANSFORM_FIELD_DEFAULT__)(__VA_ARGS__);
 #define __GL_VERTEX_TRANSFORM_SEQUENCE__(SEQ) STDU_CAT(__GL_VT1__ SEQ, END__)
-#define __GL_VT1__(X) __GL_VERTEX_TRANSFORM_FIELD__(X) __GL_VT2__
-#define __GL_VT2__(X) __GL_VERTEX_TRANSFORM_FIELD__(X) __GL_VT1__
+#define __GL_VT1__(...) __GL_VERTEX_TRANSFORM_FIELD__(__VA_ARGS__) __GL_VT2__
+#define __GL_VT2__(...) __GL_VERTEX_TRANSFORM_FIELD__(__VA_ARGS__) __GL_VT1__
 #define __GL_VT1__END__
 #define __GL_VT2__END__
 #define GL_VERTEX_TRANSFORM_FIELDS(FIELDS) \
-    GL_VERTEX_CUSTOM_TRANSFORM(_m) { __vertex_type__ copy = *this; __GL_VERTEX_TRANSFORM_SEQUENCE__(FIELDS) return copy; }
-#define GL_VERTEX_MATMUL(V, M) V.__vertex_mul__(M)
+    GL_VERTEX_CUSTOM_TRANSFORM(_m, _nm) { __vertex_type__ copy = *this; __GL_VERTEX_TRANSFORM_SEQUENCE__(FIELDS) return copy; }
 
 #define __GL_VERTEX_ELEMENT__(M) .Join(Graphics::VertexBufferComponent::Type<STDU_DECLTYPE_MEMBER(__vertex_type__, M)>())
 #define __GL_VERTEX_FIELDS__(SEQ) STDU_CAT(__GL_VE1__ SEQ, END__)
@@ -38,6 +39,23 @@
     inline static const auto __VERTEX_LAYOUT__ = Graphics::VertexBufferLayout() __GL_VERTEX_FIELDS__(X)
 
 namespace Graphics {
+    struct PositionTransformer {
+        template <Maths::vec_t V>
+        V operator()(const V& vec, const Maths::mat3D& mat, const Maths::mat3D& /* normmat */) {
+            if constexpr (requires (V t, Maths::mat4x4 m) { { m * t } -> std::same_as<V>; })
+                return mat * vec;
+            else return (V)(mat * (Maths::fvec3)vec);
+        }
+    };
+    struct NormalTransformer {
+        template <Maths::vec_t V>
+        V operator()(const V& vec, const Maths::mat3D& /* mat */, const Maths::mat3D& normmat) {
+            if constexpr (requires (V t, Maths::mat4x4 m) { { m * t } -> std::same_as<V>; })
+                return normmat * vec;
+            else return (V)(normmat * (Maths::fvec3)vec);
+        }
+    };
+
     struct VertexColorTexture3D {
         Maths::fvec3  Position;
         Maths::colorf Color;
@@ -54,11 +72,7 @@ namespace Graphics {
 
         GL_VERTEX_T(VertexTexture2D);
         GL_VERTEX_FIELD((Position)(TextureCoordinate));
-        GL_VERTEX_CUSTOM_TRANSFORM(mat) {
-            VertexTexture2D v = *this;
-            v.Position = mat * (Maths::fvec3)Position;
-            return v;
-        }
+        GL_VERTEX_TRANSFORM_FIELDS((Position))
     };
 
     struct VertexColor3D {
@@ -72,18 +86,12 @@ namespace Graphics {
 
     struct VertexTextureNormal3D {
         Maths::fvec3 Position;
-        Maths::fvec3 TextureCoordinate;
+        Maths::fvec2 TextureCoordinate;
         Maths::fvec3 Normal;
 
         GL_VERTEX_T(VertexTextureNormal3D);
         GL_VERTEX_FIELD((Position)(TextureCoordinate)(Normal));
-        GL_VERTEX_CUSTOM_TRANSFORM(mat) {
-            return {
-                .Position = mat * Position,
-                .TextureCoordinate = TextureCoordinate,
-                .Normal = mat * Normal.with_w(0)
-            };
-        }
+        GL_VERTEX_TRANSFORM_FIELDS((Position)(Normal, NormalTransformer))
     };
 
     struct VertexNormal3D {
@@ -92,12 +100,7 @@ namespace Graphics {
 
         GL_VERTEX_T(VertexNormal3D);
         GL_VERTEX_FIELD((Position)(Normal));
-        GL_VERTEX_CUSTOM_TRANSFORM(mat) {
-            return {
-                .Position = mat * Position,
-                .Normal = mat * Normal.with_w(0)
-            };
-        }
+        GL_VERTEX_TRANSFORM_FIELDS((Position)(Normal, NormalTransformer))
     };
 
     template <class T>
@@ -106,10 +109,13 @@ namespace Graphics {
     template <InstanceofVertex T>
     using VertexComponents = typename T::__vertex_params__;
 
+    template <InstanceofVertex T>
+    const VertexBufferLayout& VertexLayoutOf = T::__VERTEX_LAYOUT__;
+
     template <class T>
-    T VertexMul(const T& v, const Maths::mat4x4& mat) {
+    T VertexMul(const T& v, const Maths::mat4x4& mat, const Maths::mat4x4& nmat) {
         if constexpr (InstanceofVertex<T>)
-            return v.__vertex_mul__(mat);
+            return v.__vertex_mul__(mat, nmat);
         else if constexpr (requires (T t, Maths::mat4x4 m) { { m * t } -> std::same_as<T>; })
             return mat * v;
         else return mat * (Maths::fvec3)v;

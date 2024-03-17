@@ -103,7 +103,7 @@ namespace Graphics {
     }
 
     void GraphicsDevice::DeleteAllRenders() {
-        std::ranges::for_each(renders, [](RenderHandle& r){ r->device = nullptr; });
+        std::ranges::for_each(renders, [](const RenderHandle& r){ r->device = nullptr; });
         renders.clear();
     }
 
@@ -111,9 +111,14 @@ namespace Graphics {
         return *renders[index];
     }
 
-    void GraphicsDevice::Render(RenderData& r) {
-        r.EnableShader();
-        Render::Draw(r);
+    void GraphicsDevice::Render(RenderData& r, Shader& s, const ShaderArgs& args, bool setDefaultShaderArgs) {
+        s.Bind();
+        s.SetUniformArgs(args);
+        if (setDefaultShaderArgs) {
+            s.SetUniformMat4x4("u_projection", r.projection.get_in_col());
+            s.SetUniformMat4x4("u_view", r.camera.get_in_col());
+        }
+        Render::Draw(r, s);
     }
 
     // void GraphicsDevice::BindTexture(Texture& texture, int slot) {
@@ -268,7 +273,7 @@ namespace Graphics {
         // IMGUI INIT
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
-        ImGuiIO& io = ImGui::GetIO(); (void)io;
+        const ImGuiIO& io = ImGui::GetIO(); (void)io;
 
         ImGui::StyleColorsDark();
 

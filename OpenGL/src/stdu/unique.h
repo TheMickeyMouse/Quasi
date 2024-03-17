@@ -29,7 +29,7 @@ namespace stdu {
         H get_handler() const { return handler; }
         H& get_handler() { return handler; }
 
-        bool is_null() const { return val == handler(); }
+        [[nodiscard]] bool is_null() const { return val == handler(); }
 
         [[nodiscard]] operator bool() const { return !is_null(); }
         [[nodiscard]] operator T() const { return val; }

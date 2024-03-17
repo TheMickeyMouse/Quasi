@@ -58,7 +58,7 @@ namespace Graphics {
         OPENGL_API void CreateMaterial(std::span<const MTLProperty> matprop);
         OPENGL_API void CreateMaterials();
 
-        OPENGL_API std::string DebugStr() const;
+        [[nodiscard]] OPENGL_API std::string DebugStr() const;
 
         friend class OBJModelLoader;
     };

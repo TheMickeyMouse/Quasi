@@ -12,7 +12,7 @@ namespace stdu {
             contents.resize((uint)in.tellg());
             // ill be honest idk what the compiler wants from me
             in.seekg(0, std::ios::beg);
-            in.read(contents.data(), contents.size());
+            in.read(contents.data(), (long long)contents.size());
             in.close();
             return contents;
         }
