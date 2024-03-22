@@ -20,25 +20,66 @@
 #define GL_VERTEX_TRANSFORM_FIELDS(FIELDS) \
     GL_VERTEX_CUSTOM_TRANSFORM(_m, _nm) { __vertex_type__ copy = *this; __GL_VERTEX_TRANSFORM_SEQUENCE__(FIELDS) return copy; }
 
-#define __GL_VERTEX_ELEMENT__(M) .Join(Graphics::VertexBufferComponent::Type<STDU_DECLTYPE_MEMBER(__vertex_type__, M)>())
+#define __REMOVE_FIRST__(FIRST, ...) __VA_ARGS__
+
+#define __GL_VERTEX_TYPES__(SEQ) STDU_CAT(__GL_VY1__ SEQ, END__)
+#define __GL_VY1__(X) using _##X = stdu::member_t<&__vertex_type__::X>; __GL_VY2__
+#define __GL_VY2__(X) using _##X = stdu::member_t<&__vertex_type__::X>; __GL_VY1__
+#define __GL_VY1__END__
+#define __GL_VY2__END__
+
 #define __GL_VERTEX_FIELDS__(SEQ) STDU_CAT(__GL_VE1__ SEQ, END__)
-#define __GL_VE1__(X) __GL_VERTEX_ELEMENT__(X) __GL_VE2__
-#define __GL_VE2__(X) __GL_VERTEX_ELEMENT__(X) __GL_VE1__
+#define __GL_VE1__(X) STDU_DEFER(STDU_COMMA)() Graphics::VertexBufferComponent::Type<types::_##X>() __GL_VE2__
+#define __GL_VE2__(X) STDU_DEFER(STDU_COMMA)() Graphics::VertexBufferComponent::Type<types::_##X>() __GL_VE1__
 #define __GL_VE1__END__
 #define __GL_VE2__END__
 
-#define __GL_VERTEX_ELEMENT_LIST__(M) ::join<&__vertex_type__::M>
-#define __GL_VERTEX_FIELD_LIST__(SEQ) STDU_CAT(__GL_VEL1__ SEQ, END__)
-#define __GL_VEL1__(X) __GL_VERTEX_ELEMENT_LIST__(X) __GL_VEL2__
-#define __GL_VEL2__(X) __GL_VERTEX_ELEMENT_LIST__(X) __GL_VEL1__
-#define __GL_VEL1__END__
-#define __GL_VEL2__END__
+#define __GL_VERTEX_TEMPLATE_LIST__(SEQ) STDU_CAT(__GL_VTL1__ SEQ, END__)
+#define __GL_VTL1__(X) STDU_DEFER(STDU_COMMA)() class _type_##X##_ = Graphics::VertexBuilder::Default<types::_##X> __GL_VTL2__
+#define __GL_VTL2__(X) STDU_DEFER(STDU_COMMA)() class _type_##X##_ = Graphics::VertexBuilder::Default<types::_##X> __GL_VTL1__
+#define __GL_VTL1__END__
+#define __GL_VTL2__END__
+
+#define __GL_VERTEX_PARAM_LIST__(SEQ) STDU_CAT(__GL_VPL1__ SEQ, END__)
+#define __GL_VPL1__(X) _type_##X##_ X {}; __GL_VPL2__
+#define __GL_VPL2__(X) _type_##X##_ X {}; __GL_VPL1__
+#define __GL_VPL1__END__
+#define __GL_VPL2__END__
+
+#define __GL_VERTEX_BUILD_LIST__(SEQ) STDU_CAT(__GL_VBL1__ SEQ, END__)
+#define __GL_VBL1__(X) STDU_DEFER(STDU_COMMA)() Graphics::VertexBuilder::BlueprintMember<&__vertex_type__::X STDU_DEFER(STDU_COMMA)() _type_##X##_> { std::move(X) } __GL_VBL2__
+#define __GL_VBL2__(X) STDU_DEFER(STDU_COMMA)() Graphics::VertexBuilder::BlueprintMember<&__vertex_type__::X STDU_DEFER(STDU_COMMA)() _type_##X##_> { std::move(X) } __GL_VBL1__
+#define __GL_VBL1__END__
+#define __GL_VBL2__END__
 
 #define GL_VERTEX_FIELD(X) \
-    using __vertex_params__ = stdu::anylist<> __GL_VERTEX_FIELD_LIST__(X); \
-    inline static const auto __VERTEX_LAYOUT__ = Graphics::VertexBufferLayout() __GL_VERTEX_FIELDS__(X)
+    private: struct types { __GL_VERTEX_TYPES__(X) }; public: \
+    inline static const auto __VERTEX_LAYOUT__ = Graphics::VertexBufferLayout({STDU_UNARY(STDU_DEFER(__REMOVE_FIRST__)(__GL_VERTEX_FIELDS__(X)))}); \
+    template <STDU_UNARY(STDU_DEFER(__REMOVE_FIRST__)(__GL_VERTEX_TEMPLATE_LIST__(X)))> \
+    struct Blueprint { \
+        __GL_VERTEX_PARAM_LIST__(X) \
+        __vertex_type__ operator()(const auto& args) { \
+            return Graphics::VertexBuilder::BlueprintBuilder<__vertex_type__>(args __GL_VERTEX_BUILD_LIST__(X)); \
+        } \
+    };
 
 namespace Graphics {
+    template <class T> concept InstanceofVertex = T::_internalVertexFlag;
+
+    namespace VertexBuilder {
+        struct MeshConstructData2D;
+        struct MeshConstructData3D;
+
+        template <class T>
+        struct Default;
+
+        template <auto P, class F>
+        struct BlueprintMember;
+
+        template <InstanceofVertex T, class... Ms>
+        T BlueprintBuilder(const auto& args, Ms... members);
+    }
+
     struct PositionTransformer {
         template <Maths::vec_t V>
         V operator()(const V& vec, const Maths::mat3D& mat, const Maths::mat3D& /* normmat */) {
@@ -54,6 +95,22 @@ namespace Graphics {
                 return normmat * vec;
             else return (V)(normmat * (Maths::fvec3)vec);
         }
+    };
+
+    struct Vertex2D {
+        Maths::fvec2 Position;
+
+        GL_VERTEX_T(Vertex2D);
+        GL_VERTEX_FIELD((Position));
+        GL_VERTEX_TRANSFORM_FIELDS((Position))
+    };
+
+    struct Vertex3D {
+        Maths::fvec3 Position;
+
+        GL_VERTEX_T(Vertex3D);
+        GL_VERTEX_FIELD((Position));
+        GL_VERTEX_TRANSFORM_FIELDS((Position))
     };
 
     struct VertexColorTexture3D {
@@ -103,9 +160,6 @@ namespace Graphics {
         GL_VERTEX_TRANSFORM_FIELDS((Position)(Normal, NormalTransformer))
     };
 
-    template <class T>
-    concept InstanceofVertex = T::_internalVertexFlag;
-
     template <InstanceofVertex T>
     using VertexComponents = typename T::__vertex_params__;
 
@@ -120,62 +174,4 @@ namespace Graphics {
             return mat * v;
         else return mat * (Maths::fvec3)v;
     }
-
-    template <InstanceofVertex T, stdu::anylist_instance Fill>
-    struct VertexConverter {
-        template <class... Args> static std::tuple<Args...> tuple_get(stdu::typelist<Args...>) { return {}; }
-        using Tup = decltype(tuple_get(typename Fill::type {}));
-        Tup fills;
-
-        VertexConverter(const Tup& f) : fills(f) {}
-
-        template <class P1, class C1, class P2, class C2>
-        static constexpr bool prop_eq(P1 C1::* p1, P2 C2::* p2) {
-            if constexpr (std::is_same_v<P1, P2> && std::is_same_v<C1, C2>)
-                return p1 == p2;
-            else return false;
-        }
-
-        template <auto, class>
-        static constexpr bool IsFill = false;
-        template <auto Match, auto... Args>
-        static constexpr bool IsFill<Match, stdu::anylist<Args...>> = (prop_eq(Match, Args) || ...);
-
-        template <stdu::anylist_instance Accum, auto First, auto ...C> struct CompLeftoverT;
-        template <stdu::anylist_instance Accum, auto First> struct CompLeftoverT<Accum, First> {
-            using type = std::conditional_t<IsFill<First, Fill>, Accum, typename Accum::template join<First>>;
-        };
-        template <stdu::anylist_instance Accum, auto First, auto ...C> requires IsFill<First, Fill>
-        struct CompLeftoverT<Accum, First, C...> {
-            using type = typename CompLeftoverT<Accum, C...>::type;
-        };
-        template <stdu::anylist_instance Accum, auto First, auto ...C> requires (!IsFill<First, Fill>)
-        struct CompLeftoverT<Accum, First, C...> {
-            using type = typename CompLeftoverT<typename Accum::template join<First>, C...>::type;
-        };
-        template <auto... P> static auto params_get(stdu::anylist<P...>) {
-            return typename CompLeftoverT<stdu::anylist<>, P...>::type {};
-        }
-        using ParamComp = decltype(params_get(VertexComponents<T> {}));
-        using Params = decltype(tuple_get(typename ParamComp::type {}));
-
-        template <auto... F>
-        static constexpr auto props_of(stdu::anylist<F...>) {
-            return std::make_tuple(F...);
-        }
-
-        template <class Tp, class Vp, usize... I>
-        void set_props(T& t, const Tp& props, const Vp& vals, std::integer_sequence<usize, I...>) {
-            [&] {
-                t.*(std::get<I>(props)) = std::get<I>(vals);
-            }();
-        }
-
-        T operator()(const Params& in) {
-            T base;
-            set_props(base, props_of(Fill {}), fills, std::make_index_sequence<Fill::size> {});
-            set_props(base, props_of(ParamComp {}), in, std::make_index_sequence<ParamComp::size> {});
-            return base;
-        }
-    };
 }

@@ -13,7 +13,7 @@ find_package(Freetype REQUIRED)
 # Source groups
 ################################################################################
 set(no_group_source_files
-        "src/core.h"
+    "src/core.h"
     "src/Debug/ConsoleColor.h"
     "src/Debug/internal_debug_break.h"
     "src/Debug/Logger.cpp"
@@ -31,7 +31,7 @@ set(no_group_source_files
     "src/Graphics/Graphicals/CameraController.h"
     "src/Graphics/Graphicals/Light.cpp"
     "src/Graphics/Graphicals/Light.h"
-        "src/Graphics/Graphicals/MeshUtils.h"
+    "src/Graphics/Graphicals/MeshUtils.h"
     "src/Graphics/Graphicals/MeshUtilsImpl.h"
     "src/Graphics/Utils/Model Loading/MTLMaterialLoader.cpp"
     "src/Graphics/Utils/Model Loading/MTLMaterialLoader.h"
@@ -62,6 +62,7 @@ set(Header_Files
     "src/Graphics/GLs/VertexBuffer.h"
     "src/Graphics/GLs/VertexBufferLayout.h"
     "src/Graphics/GLs/VertexElement.h"
+    "src/Graphics/GLs/VertexConverter.h"
     "src/Graphics/Graphicals/GenericMesh.h"
     "src/Graphics/Graphicals/GraphicsDevice.h"
     "src/Graphics/Graphicals/Mesh.h"
@@ -96,6 +97,7 @@ set(Header_Files
     "src/stdu/rich_string.h"
     "src/stdu/sorted_vector.h"
     "src/stdu/types.h"
+    "src/stdu/lambdas.h"
     "src/vendor/freetype/freetype/config/ftconfig.h"
     "src/vendor/freetype/freetype/config/ftheader.h"
     "src/vendor/freetype/freetype/config/ftmodule.h"

@@ -12,8 +12,8 @@ namespace Graphics {
         GLTypeID type;
         uint count;
         uchar flags;
-        static constexpr uchar NORMALIZED_FLAG = 1;
-        static constexpr uchar INTEGER_FLAG = 2;
+        static constexpr uchar NORMALIZED_FLAG = 1 << 0;
+        static constexpr uchar INTEGER_FLAG = 1 << 1;
 
         VertexBufferComponent() = default;
         VertexBufferComponent(GLTypeID type, uint count, bool norm = false, bool integral = false)
@@ -52,8 +52,6 @@ namespace Graphics {
         template <class T> void Push(uint count, bool normalized = false, bool integral = false);
         OPENGL_API void Push(VertexBufferComponent comp);
         OPENGL_API void PushLayout(const VertexBufferLayout& layout);
-
-        OPENGL_API VertexBufferLayout& Join(VertexBufferComponent comp);
 
 #define VBE VertexBufferComponent::
         

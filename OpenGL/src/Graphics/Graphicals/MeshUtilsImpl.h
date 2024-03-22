@@ -3,26 +3,28 @@
 #include "Constants.h"
 
 namespace Graphics::MeshUtils {
-    template <stdu::fn_args<Maths::fvec2, uint> F>
-    auto SimpleCircleMesh(int subdivisions, F f) -> Mesh<decltype(f(Maths::fvec2 {}, 0))> {
-        using T = decltype(f(Maths::fvec2 {}, 0));
+    template <stdu::fn_args<const VertexBuilder::MeshConstructData2D&> F>
+    auto Circle(uint subdivisions, F&& f) -> Mesh<decltype(f(VertexBuilder::MeshConstructData2D {}))> {
+        using Mdata = VertexBuilder::MeshConstructData2D;
+        using T = decltype(f(Mdata {}));
         const float angle = Maths::TAU / (float)subdivisions;
         Mesh<T> mesh;
         mesh.GetVertices().reserve(subdivisions + 1);
         mesh.GetIndices().reserve(subdivisions);
 
-        mesh.GetVertices().emplace_back(f(Maths::fvec2::ZERO(), -1));
-        for (int i = 0; i < subdivisions; ++i) {
-            mesh.GetVertices().push_back(f(Maths::fvec2::from_polar(1.0f, angle * (float)i), i));
+        mesh.GetVertices().emplace_back(f(Mdata { Maths::fvec2::ZERO(), 0 }));
+        for (uint i = 0; i < subdivisions; ++i) {
+            mesh.GetVertices().push_back(f(Mdata { Maths::fvec2::from_polar(1.0f, angle * (float)i), i + 1 }));
             mesh.GetIndices().emplace_back(0, i + 1, (i + 1) % subdivisions + 1);
         }
 
         return mesh;
     }
 
-    template <stdu::fn_args<Maths::fvec3, uint> F>
-    auto SimpleCubeMesh(F f) -> Mesh<decltype(f(Maths::fvec3 {}, 0))> {
-        using T = decltype(f(Maths::fvec2 {}, 0));
+    template <stdu::fn_args<const VertexBuilder::MeshConstructData3D&> F>
+    auto CubeNormless(F&& f) -> Mesh<decltype(f(VertexBuilder::MeshConstructData3D {}))> {
+        using Mdata = VertexBuilder::MeshConstructData3D;
+        using T = decltype(f(Mdata {}));
         Mesh<T> mesh;
         mesh.GetIndices().reserve(6 * 2);
         for (Maths::Direction3D i = Maths::Direction3D::RIGHT; i < 6; ++i) {
@@ -35,15 +37,16 @@ namespace Graphics::MeshUtils {
 
         mesh.GetVertices().reserve(8);
         for (Maths::Corner3D i = Maths::Corner3D::FRONT_TOP_RIGHT; i < 8; ++i) {
-            mesh.GetVertices().emplace_back(f(Maths::fvec3 { i }, (uint)i));
+            mesh.GetVertices().emplace_back(f(Mdata { .Position = Maths::fvec3 { i }, .VertexIndex = (uint)i }));
         }
 
         return mesh;
     }
 
-    template <stdu::fn_args<VertexNormal3D, uint> F>
-    auto CubeMeshNorm(F f) -> Mesh<decltype(f(VertexNormal3D {}, 0))> {
-        using T = decltype(f(VertexNormal3D {}, 0));
+    template <stdu::fn_args<const VertexBuilder::MeshConstructData3D&> F>
+    auto Cube(F&& f) -> Mesh<decltype(f(VertexBuilder::MeshConstructData3D {}))> {
+        using Mdata = VertexBuilder::MeshConstructData3D;
+        using T = decltype(f(Mdata {}));
         Mesh<T> mesh;
         auto& vert = mesh.GetVertices();
         auto& ind = mesh.GetIndices();
@@ -56,10 +59,10 @@ namespace Graphics::MeshUtils {
             const Maths::fvec3& norm = i;
             const uint n = ii / 2, flip = (ii & 1) << n;
             const uint t1 = 0, t2 = n == 0 ? 2 : 1, t3 = n == 2 ? 2 : 4, t4 = t2 + t3;
-            vert.emplace_back(f({ .Position = Maths::fvec3 { (Maths::Corner3D)(t1 ^ flip) }, .Normal = norm }, indoff + 0));
-            vert.emplace_back(f({ .Position = Maths::fvec3 { (Maths::Corner3D)(t2 ^ flip) }, .Normal = norm }, indoff + 1));
-            vert.emplace_back(f({ .Position = Maths::fvec3 { (Maths::Corner3D)(t3 ^ flip) }, .Normal = norm }, indoff + 2));
-            vert.emplace_back(f({ .Position = Maths::fvec3 { (Maths::Corner3D)(t4 ^ flip) }, .Normal = norm }, indoff + 3));
+            vert.emplace_back(f(Mdata { .Position = Maths::fvec3 { (Maths::Corner3D)(t1 ^ flip) }, .Normal = norm, .VertexIndex = indoff + 0 }));
+            vert.emplace_back(f(Mdata { .Position = Maths::fvec3 { (Maths::Corner3D)(t2 ^ flip) }, .Normal = norm, .VertexIndex = indoff + 1 }));
+            vert.emplace_back(f(Mdata { .Position = Maths::fvec3 { (Maths::Corner3D)(t3 ^ flip) }, .Normal = norm, .VertexIndex = indoff + 2 }));
+            vert.emplace_back(f(Mdata { .Position = Maths::fvec3 { (Maths::Corner3D)(t4 ^ flip) }, .Normal = norm, .VertexIndex = indoff + 3 }));
         }
 
         return mesh;

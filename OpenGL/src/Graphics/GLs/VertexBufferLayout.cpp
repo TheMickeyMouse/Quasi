@@ -2,6 +2,7 @@
 
 namespace Graphics {
     VertexBufferLayout::VertexBufferLayout(std::initializer_list<VertexBufferComponent> comps) {
+        _components.reserve(comps.size());
         for (const auto& component : comps) Push(component);
     }
 
@@ -12,10 +13,5 @@ namespace Graphics {
 
     void VertexBufferLayout::PushLayout(const VertexBufferLayout& layout) {
         for (const auto& component : layout.GetComponents()) Push(component);
-    }
-
-    VertexBufferLayout& VertexBufferLayout::Join(VertexBufferComponent comp) {
-        Push(comp);
-        return *this;
     }
 }

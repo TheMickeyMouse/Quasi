@@ -21,8 +21,9 @@ namespace stdu {
     template <class T> constexpr bool is_void_v = std::is_same_v<T, void>;
     
     template <class T, class M> M decltype_member(M T::*) { return M {}; }
-
-#define STDU_DECLTYPE_MEMBER(T, M) decltype(stdu::decltype_member(&T::M))
+    template <auto P> using member_t = decltype(decltype_member(P));
+    template <class T, class M> T decltype_structure(M T::*) { return T {}; }
+    template <auto P> using structure_t = decltype(decltype_structure(P));
 
     template <class T, class U>
     struct arithmetic_t {
@@ -206,4 +207,10 @@ namespace stdu {
     concept fn_args = requires (F f, I&&... args) {
         { f(std::forward<I>(args)...) } -> always_true;
     };
+
+    template <class T, class U>
+    constexpr bool typed_eq(T&& t, U&& u) {
+        if constexpr (std::is_same_v<T, U>) return t == u;
+        else return false;
+    }
 }

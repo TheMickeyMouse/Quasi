@@ -49,7 +49,6 @@ namespace Graphics {
 
         ImGui::BeginTabBar("Light Edit");
 
-
         for (uint i = 0; i < LightTypeCount(); ++i) {
             if (ImGui::TabItemButton(ToStr((LightType)i))) {
                 type = (LightType)i;

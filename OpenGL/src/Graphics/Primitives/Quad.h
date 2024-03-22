@@ -56,7 +56,7 @@ namespace Graphics::Primitives {
 namespace Graphics {
     template <class T>
     template <stdu::fn<T, Maths::fvec3> F>
-    void Mesh<T>::AddQuad(const Primitives::Quad& quad, F f) {
+    void Mesh<T>::AddQuad(const Primitives::Quad& quad, F&& f) {
         std::array v = quad.GetVertices();
         const uint i = vertices.size();
         vertices.emplace_back(f(v[0]));

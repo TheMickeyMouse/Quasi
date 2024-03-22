@@ -42,7 +42,7 @@ namespace Graphics {
             const FT_GlyphSlot glyphHandle = faceHandle->glyph;
             uint y = 0;
             uint x = 0;
-            for (uchar charCode = 32; charCode < 127; ++charCode) { // loop through each character
+            for (char charCode = 32; charCode < 127; ++charCode) { // loop through each character
                 // new method: SDFs extrude 8 pixels in all directions, so you can load normally and then add 16
                 // (no need to load twice!)
                 if (const int error = FT_Load_Char(faceHandle.get(), charCode, FT_LOAD_DEFAULT)) { 
@@ -78,7 +78,7 @@ namespace Graphics {
                 PointPer64::inP64(faceHandle->size->metrics.ascender),
                 PointPer64::inP64(faceHandle->size->metrics.descender)
             );
-            for (uchar charCode = 32; charCode < 127; ++charCode) { // loop through again, this time drawing textures
+            for (char charCode = 32; charCode < 127; ++charCode) { // loop through again, this time drawing textures
                 if (const int error = FT_Load_Char(faceHandle.get(), charCode, loadSDF)) { // loads again
                     GLLogger().Error({"Loading char with err code {}"}, error);
                     continue;

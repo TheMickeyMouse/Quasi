@@ -196,14 +196,14 @@ namespace Maths {
                                          (T::operator color3f() const { return { (float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f }; } )))) \
     T T::color_id(const int id) { \
         switch (id) { \
-            case  0: return BETTER_BLACK(); \
-            case  1: return BETTER_RED(); \
-            case  2: return BETTER_GREEN(); \
-            case  3: return BETTER_YELLOW(); \
-            case  4: return BETTER_BLUE(); \
-            case  5: return BETTER_PURPLE(); \
-            case  6: return BETTER_CYAN(); \
-            case  7: return BETTER_WHITE(); \
+            case 0: return BETTER_BLACK(); \
+            case 1: return BETTER_RED(); \
+            case 2: return BETTER_GREEN(); \
+            case 3: return BETTER_YELLOW(); \
+            case 4: return BETTER_BLUE(); \
+            case 5: return BETTER_PURPLE(); \
+            case 6: return BETTER_CYAN(); \
+            case 7: return BETTER_WHITE(); \
             default: return BLACK(); \
         } \
     } \
