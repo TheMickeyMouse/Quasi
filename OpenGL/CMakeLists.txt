@@ -1,11 +1,4 @@
 set(PROJECT_NAME OpenGL)
-#cmake_minimum_required(VERSION 3.28)
-#project(OpenGL)
-#include("${PROJECT_SOURCE_DIR}/../CMake/Utils.cmake")
-#set(CMAKE_CXX_STANDARD 20)
-#set(CMAKE_CXX_COMPILER_ID "MSVC")
-#set(CMAKE_CXX_COMPILER_VERSION "19.latest")
-add_compile_definitions(OPENGL_EXPORTS)
 
 find_package(Freetype REQUIRED)
 
@@ -98,98 +91,6 @@ set(Header_Files
     "src/stdu/sorted_vector.h"
     "src/stdu/types.h"
     "src/stdu/lambdas.h"
-    "src/vendor/freetype/freetype/config/ftconfig.h"
-    "src/vendor/freetype/freetype/config/ftheader.h"
-    "src/vendor/freetype/freetype/config/ftmodule.h"
-    "src/vendor/freetype/freetype/config/ftoption.h"
-    "src/vendor/freetype/freetype/config/ftstdlib.h"
-    "src/vendor/freetype/freetype/freetype.h"
-    "src/vendor/freetype/freetype/ftadvanc.h"
-    "src/vendor/freetype/freetype/ftbbox.h"
-    "src/vendor/freetype/freetype/ftbdf.h"
-    "src/vendor/freetype/freetype/ftbitmap.h"
-    "src/vendor/freetype/freetype/ftbzip2.h"
-    "src/vendor/freetype/freetype/ftcache.h"
-    "src/vendor/freetype/freetype/ftchapters.h"
-    "src/vendor/freetype/freetype/ftcid.h"
-    "src/vendor/freetype/freetype/ftcolor.h"
-    "src/vendor/freetype/freetype/ftdriver.h"
-    "src/vendor/freetype/freetype/fterrdef.h"
-    "src/vendor/freetype/freetype/fterrors.h"
-    "src/vendor/freetype/freetype/ftfntfmt.h"
-    "src/vendor/freetype/freetype/ftgasp.h"
-    "src/vendor/freetype/freetype/ftglyph.h"
-    "src/vendor/freetype/freetype/ftgxval.h"
-    "src/vendor/freetype/freetype/ftgzip.h"
-    "src/vendor/freetype/freetype/ftimage.h"
-    "src/vendor/freetype/freetype/ftincrem.h"
-    "src/vendor/freetype/freetype/ftlcdfil.h"
-    "src/vendor/freetype/freetype/ftlist.h"
-    "src/vendor/freetype/freetype/ftlzw.h"
-    "src/vendor/freetype/freetype/ftmac.h"
-    "src/vendor/freetype/freetype/ftmm.h"
-    "src/vendor/freetype/freetype/ftmodapi.h"
-    "src/vendor/freetype/freetype/ftmoderr.h"
-    "src/vendor/freetype/freetype/ftotval.h"
-    "src/vendor/freetype/freetype/ftoutln.h"
-    "src/vendor/freetype/freetype/ftparams.h"
-    "src/vendor/freetype/freetype/ftpfr.h"
-    "src/vendor/freetype/freetype/ftrender.h"
-    "src/vendor/freetype/freetype/ftsizes.h"
-    "src/vendor/freetype/freetype/ftsnames.h"
-    "src/vendor/freetype/freetype/ftstroke.h"
-    "src/vendor/freetype/freetype/ftsynth.h"
-    "src/vendor/freetype/freetype/ftsystem.h"
-    "src/vendor/freetype/freetype/fttrigon.h"
-    "src/vendor/freetype/freetype/fttypes.h"
-    "src/vendor/freetype/freetype/ftwinfnt.h"
-    "src/vendor/freetype/freetype/internal/autohint.h"
-    "src/vendor/freetype/freetype/internal/cffotypes.h"
-    "src/vendor/freetype/freetype/internal/cfftypes.h"
-    "src/vendor/freetype/freetype/internal/ftcalc.h"
-    "src/vendor/freetype/freetype/internal/ftdebug.h"
-    "src/vendor/freetype/freetype/internal/ftdrv.h"
-    "src/vendor/freetype/freetype/internal/ftgloadr.h"
-    "src/vendor/freetype/freetype/internal/fthash.h"
-    "src/vendor/freetype/freetype/internal/ftmemory.h"
-    "src/vendor/freetype/freetype/internal/ftobjs.h"
-    "src/vendor/freetype/freetype/internal/ftpsprop.h"
-    "src/vendor/freetype/freetype/internal/ftrfork.h"
-    "src/vendor/freetype/freetype/internal/ftserv.h"
-    "src/vendor/freetype/freetype/internal/ftstream.h"
-    "src/vendor/freetype/freetype/internal/fttrace.h"
-    "src/vendor/freetype/freetype/internal/ftvalid.h"
-    "src/vendor/freetype/freetype/internal/internal.h"
-    "src/vendor/freetype/freetype/internal/psaux.h"
-    "src/vendor/freetype/freetype/internal/pshints.h"
-    "src/vendor/freetype/freetype/internal/services/svbdf.h"
-    "src/vendor/freetype/freetype/internal/services/svcfftl.h"
-    "src/vendor/freetype/freetype/internal/services/svcid.h"
-    "src/vendor/freetype/freetype/internal/services/svfntfmt.h"
-    "src/vendor/freetype/freetype/internal/services/svgldict.h"
-    "src/vendor/freetype/freetype/internal/services/svgxval.h"
-    "src/vendor/freetype/freetype/internal/services/svkern.h"
-    "src/vendor/freetype/freetype/internal/services/svmetric.h"
-    "src/vendor/freetype/freetype/internal/services/svmm.h"
-    "src/vendor/freetype/freetype/internal/services/svotval.h"
-    "src/vendor/freetype/freetype/internal/services/svpfr.h"
-    "src/vendor/freetype/freetype/internal/services/svpostnm.h"
-    "src/vendor/freetype/freetype/internal/services/svprop.h"
-    "src/vendor/freetype/freetype/internal/services/svpscmap.h"
-    "src/vendor/freetype/freetype/internal/services/svpsinfo.h"
-    "src/vendor/freetype/freetype/internal/services/svsfnt.h"
-    "src/vendor/freetype/freetype/internal/services/svttcmap.h"
-    "src/vendor/freetype/freetype/internal/services/svtteng.h"
-    "src/vendor/freetype/freetype/internal/services/svttglyf.h"
-    "src/vendor/freetype/freetype/internal/services/svwinfnt.h"
-    "src/vendor/freetype/freetype/internal/sfnt.h"
-    "src/vendor/freetype/freetype/internal/t1types.h"
-    "src/vendor/freetype/freetype/internal/tttypes.h"
-    "src/vendor/freetype/freetype/t1tables.h"
-    "src/vendor/freetype/freetype/ttnameid.h"
-    "src/vendor/freetype/freetype/tttables.h"
-    "src/vendor/freetype/freetype/tttags.h"
-    "src/vendor/freetype/ft2build.h"
     "src/vendor/imgui/imconfig.h"
     "src/vendor/imgui/imgui.h"
     "src/vendor/imgui/imgui_impl_glfw.h"
@@ -262,17 +163,10 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 set_target_properties(${PROJECT_NAME} PROPERTIES
     OUTPUT_DIRECTORY_DEBUG   "${CMAKE_SOURCE_DIR}/bin/${CMAKE_VS_PLATFORM_NAME}/$<CONFIG>/"
     OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/bin/${CMAKE_VS_PLATFORM_NAME}/$<CONFIG>/"
+    INTERPROCEDURAL_OPTIMIZATION_RELEASE "TRUE"
 )
-if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        INTERPROCEDURAL_OPTIMIZATION_RELEASE "TRUE"
-    )
-elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        INTERPROCEDURAL_OPTIMIZATION_RELEASE "TRUE"
-    )
-endif()
-################################################################################
+
+#######################################################################
 # Include directories
 ################################################################################
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -299,28 +193,12 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 ################################################################################
 # Compile definitions
 ################################################################################
-if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-    target_compile_definitions(${PROJECT_NAME} PRIVATE
-        "GLEW_STATIC;"
-        "OPENGL_EXPORTS;"
-        "UNICODE;"
-        "_UNICODE"
-    )
-elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
-    target_compile_definitions(${PROJECT_NAME} PRIVATE
-        "GLEW_STATIC;"
-        "OPENGL_EXPORTS;"
-        "UNICODE;"
-        "_UNICODE"
-    )
-endif()
-set_source_files_properties(src/Graphics/GLs/RenderBuffer.cpp PROPERTIES
-    COMPILE_DEFINITIONS "GLEW_STATIC;OPENGL_EXPORTS"
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    "GLEW_STATIC;"
+    "OPENGL_EXPORTS;"
+    "UNICODE;"
+    "_UNICODE"
 )
-set_source_files_properties(src/IO/TimeType.cpp PROPERTIES
-    COMPILE_DEFINITIONS "GLEW_STATIC;OPENGL_EXPORTS"
-)
-
 ################################################################################
 # Compile and link options
 ################################################################################
@@ -353,46 +231,25 @@ if(MSVC)
             ${DEFAULT_CXX_EXCEPTION_HANDLING}
         )
     endif()
-    if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-        target_link_options(${PROJECT_NAME} PRIVATE
-            $<$<CONFIG:Release>:
-                /OPT:REF;
-                /OPT:ICF
-            >
-            /DEBUG;
-            /SUBSYSTEM:WINDOWS
-        )
-    elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
-        target_link_options(${PROJECT_NAME} PRIVATE
-            $<$<CONFIG:Release>:
-                /OPT:REF;
-                /OPT:ICF
-            >
-            /DEBUG;
-            /SUBSYSTEM:WINDOWS
-        )
-    endif()
+    target_link_options(${PROJECT_NAME} PRIVATE
+        $<$<CONFIG:Release>:
+            /OPT:REF;
+            /OPT:ICF
+        >
+        /DEBUG;
+        /SUBSYSTEM:WINDOWS
+    )
 endif()
-
-################################################################################
-# Post build events
-################################################################################
-add_custom_command_if(
-    TARGET ${PROJECT_NAME}
-    POST_BUILD
-    COMMANDS
-    COMMAND   $<CONFIG:Debug> $<SHELL_PATH:${CMAKE_CURRENT_SOURCE_DIR}/>post_build.bat ${CMAKE_VS_PLATFORM_NAME} $<CONFIG>
-)
 
 ################################################################################
 # Dependencies
 ################################################################################
 set(ADDITIONAL_LIBRARY_DEPENDENCIES
-#    "${CMAKE_CURRENT_SOURCE_DIR}\\src\\vendor\\freetype\\freetype.lib"
     "glew32s;"
     "glfw3;"
     "Opengl32"
 )
+
 target_link_libraries(${PROJECT_NAME} PUBLIC
     "${ADDITIONAL_LIBRARY_DEPENDENCIES};"
     ${FREETYPE_LIBRARIES}
