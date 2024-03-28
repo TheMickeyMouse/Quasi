@@ -1,7 +1,6 @@
 # Mickey's Project Planner
 ## Things to do: 
 - High Priority (ABSOLUTELY NECESSARY)
-  * [ ] `[TODO]` Make Vector share same class `vecn<N, T>` (and use less macros)
   * [ ] `[TODO]` Make Matrix Variations `matrix<N, M, T>`
   * [ ] `[TODO]` Add Tests for Geometry shaders
   * [ ] `[TODO]` [Bloom](https://learnopengl.com/Advanced-Lighting/Bloom)
@@ -20,6 +19,7 @@
   * [ ] `[TODO]` Custom GUI
 - Misc (I have no idea)
 - Done (Finished!)
+  * [X] ~~`[TODO]` Make Vector share same class `vecn<N, T>` (and use less macros)~~
   * [X] ~~`[DONE]` Add Easy Shader Args~~
   * [X] ~~`[TODO]` Add Easy Vertex Conversion~~
   * [X] ~~`[TODO]` Integrate `post_build.bat` to CMake~~

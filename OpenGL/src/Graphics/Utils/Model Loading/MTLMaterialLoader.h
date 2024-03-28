@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Vector.h"
+#include "Color.h"
 #include "stdu/io.h"
 
 namespace Graphics {

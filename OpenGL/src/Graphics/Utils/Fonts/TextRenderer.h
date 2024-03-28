@@ -64,14 +64,14 @@ namespace Graphics {
         void JustifyAlignX();
         void AlignX();
         bool WordWrap(float advance, std::string::const_iterator& it,
-                                     std::string::const_iterator  begin);
+                      const std::string::const_iterator& begin);
         
         void FixAlignY();
         void ClipY(Maths::rect2f& pos, Maths::rect2f& tex,
                    bool clipTop, bool clipBottom) const;
         
         void PushCharQuad(const Maths::rect2f& pos, const Maths::rect2f& tex);
-        void AddChar(std::string::const_iterator& it, std::string::const_iterator begin);
+        void AddChar(std::string::const_iterator& it, const std::string::const_iterator& begin);
         void AddRichChar(const stdu::rich_string::const_iter& it);
         
         void TriggerNewLine();

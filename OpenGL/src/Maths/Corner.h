@@ -3,7 +3,7 @@
 #include "Direction.h"
 
 namespace Maths {
-    enum class Corner2D : int {
+    enum class Corner2D {
         SIDE_RIGHT   = 0,
         SIDE_LEFT    = 1 << ((int)Direction2D::RIGHT / 2),
         SIDE_TOP     = 0,
@@ -18,7 +18,7 @@ namespace Maths {
     };
     STDU_IMPL_ENUM_OPERATORS(Corner2D);
     
-    enum class Corner3D : int {
+    enum class Corner3D {
         SIDE_RIGHT   = 0,
         SIDE_LEFT    = 1 << ((int)Direction3D::RIGHT / 2),
         SIDE_TOP     = 0,
@@ -39,7 +39,7 @@ namespace Maths {
     };
     STDU_IMPL_ENUM_OPERATORS(Corner3D);
 
-    enum class Corner4D : int {
+    enum class Corner4D {
         SIDE_RIGHT   = 0,
         SIDE_LEFT    = 1 << ((int)Direction4D::RIGHT / 2),
         SIDE_TOP     = 0,

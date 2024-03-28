@@ -1,6 +1,6 @@
 #pragma once
 #include "FontDevice.h"
-#include "Vector.h"
+#include "Rect.h"
 
 namespace Graphics {
     struct Glyph;

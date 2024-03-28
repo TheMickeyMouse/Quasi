@@ -36,7 +36,7 @@ namespace Graphics {
             case LightType::POINTLIGHT:
                 return -pointLight.position;
             case LightType::FLASHLIGHT:
-                return Maths::fvec3::from_polar(1, flashLight.yaw, flashLight.pitch);
+                return Maths::fvec3::from_spheric(1, flashLight.yaw, flashLight.pitch);
             case LightType::NONE:
                 return 0;
         }
@@ -139,7 +139,7 @@ namespace Graphics {
         ImGui::SliderFloat("Yaw", &yaw, -Maths::PI, Maths::PI);
         ImGui::SliderFloat("Pitch", &pitch, -Maths::HALF_PI, Maths::HALF_PI);
         ImGui::SliderFloat("Length", &len, 0, 10);
-        sunLight.direction = Maths::fvec3::from_polar(len, yaw, pitch);
+        sunLight.direction = Maths::fvec3::from_spheric(len, yaw, pitch);
     }
 
     template <> void Light::ImGuiEditLight<PointLight>() {

@@ -88,7 +88,7 @@ namespace Graphics {
                 atlas.SetSubTexture(glyphHandle->bitmap.buffer, uvec2 { pen, heights[i] }.to(size.as_size()), { .format = TextureFormat::RED }); // draw the sub texture
 
                 Glyph& glyph = glyphs[charCode - 32 + i * NUM_GLYPHS]; // write rendering memory
-                glyph.rect = fvec2 { pen, heights[i] }.to(size.as<float>().as_size()) / textureSize.as<float>(); // rect of texture in atlas
+                glyph.rect = fvec2 { pen, heights[i] }.to(size.asf().as_size()) / textureSize.asf(); // rect of texture in atlas
                 glyph.advance = { (float)glyphHandle->advance.x / 64.0f, (float)glyphHandle->advance.y / 64.0f }; // pen move
                 glyph.offset  = { glyphHandle->bitmap_left, glyphHandle->bitmap_top }; // offset from pen
 

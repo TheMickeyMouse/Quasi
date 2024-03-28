@@ -9,7 +9,7 @@
 #include "GLTypeID.h"
 #include "NumTypes.h"
 #include "TextureConstants.h"
-#include "Vector.h"
+#include "Rect.h"
 #include "stdu/unique.h"
 
 namespace Graphics {

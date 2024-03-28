@@ -4,13 +4,10 @@
 
 namespace Maths::Geometry {
     // TODO: ADD MATH METHODS
-    template <int N, class T>
+    template <uint N, class T>
     struct line {
-        using vec_t = typename vecn<N, T>::type;
-        union {
-            vec_t points[2];
-            struct { vec_t start, end; };
-        };
+        using vec_t = vecn<N, T>;
+        vec_t start, end;
 
         line(vec_t s, vec_t e) : start(s), end(e) {}
 
@@ -42,11 +39,11 @@ namespace Maths::Geometry {
     using bline4d = line4d<uchar>;
 
     // TODO: ADD MATH METHODS
-    template <int N, class T>
+    template <uint N, class T>
     union triangle {
-        using vec_t = typename vecn<N, T>::type;
-        template <class U> using vec_of_t = typename vecn<N, U>::type;
-        template <int M> using vec_of_n = typename vecn<M, T>::type;
+        using vec_t = vecn<N, T>;
+        template <class U> using vec_of_t = vecn<N, U>;
+        template <int M> using vec_of_n = vecn<M, T>;
 
         vec_t points[3];
         struct {
@@ -90,7 +87,7 @@ namespace Maths::Geometry {
 
         auto asf() const { if constexpr (std::is_floating_point_v<T>) return *this; else return (triangle<N, float>)*this; }
         template <class U> operator triangle<N, U>() const { return { (vec_of_t<U>)p1, (vec_of_t<U>)p2, (vec_of_t<U>)p3 }; }
-        template <int M>   operator triangle<M, T>() const { return { (vec_of_n<M>)p1, (vec_of_n<M>)p2, (vec_of_n<M>)p3 }; }
+        template <uint M>  operator triangle<M, T>() const { return { (vec_of_n<M>)p1, (vec_of_n<M>)p2, (vec_of_n<M>)p3 }; }
     };
 
     template <class T = float> using triangle2d = triangle<2, T>;

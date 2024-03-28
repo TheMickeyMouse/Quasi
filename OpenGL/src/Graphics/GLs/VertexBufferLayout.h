@@ -6,6 +6,7 @@
 
 #include "NumTypes.h"
 #include "Vector.h"
+#include "Color.h"
 
 namespace Graphics {
     struct VertexBufferComponent {
@@ -35,8 +36,10 @@ namespace Graphics {
         template <class T> static VertexBufferComponent Type() {
             if constexpr (std::is_floating_point_v<T>) return { GLTypeIDOf<T>, 1 };
             if constexpr (std::is_integral_v<T>) return { GLTypeIDOf<T>, 1, false, true };
-            if constexpr (Maths::is_vec_v<T> || Maths::is_color_v<T>)
+            if constexpr (Maths::vec_t<T>)
                 return { GLTypeIDOf<typename T::scalar>, T::dimension };
+            if constexpr (Maths::color_t<T>)
+                return { GLTypeIDOf<typename Maths::color_traits<T>::scalar>, 3 + Maths::color_traits<T>::has_alpha };
             return { GLTypeID::UNDEFINED, 0 };
         }
     };

@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <core.h>
-#include "Vector.h"
+#include "Rect.h"
 
 namespace Maths {
     // column major mat
@@ -43,10 +43,10 @@ namespace Maths {
 
         OPENGL_API float operator[](unsigned i) { return *((float*)this + i); }
 
-        OPENGL_API fvec3 operator* (const fvec3& v) const;
-        OPENGL_API fvec4 operator* (const fvec4& v) const;
-        OPENGL_API mat4x4 operator* (const mat4x4& m) const;
-        OPENGL_API mat4x4 operator* (float s) const;
+        OPENGL_API fvec3 operator*(const fvec3& v) const;
+        OPENGL_API fvec4 operator*(const fvec4& v) const;
+        OPENGL_API mat4x4 operator*(const mat4x4& m) const;
+        OPENGL_API mat4x4 operator*(float s) const;
         mat4x4& operator*=(const mat4x4& m) { *this = *this * m; return *this; }
         
         friend OPENGL_API std::ostream& operator<<(std::ostream& stream, const mat4x4& mat);

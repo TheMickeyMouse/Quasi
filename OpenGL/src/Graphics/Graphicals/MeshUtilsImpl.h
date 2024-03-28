@@ -56,7 +56,7 @@ namespace Graphics::MeshUtils {
             const uint ii = (uint)i, indoff = ii * 4;
             ind.emplace_back(indoff, indoff + 1, indoff + 2);
             ind.emplace_back(indoff + 1, indoff + 2, indoff + 3);
-            const Maths::fvec3& norm = i;
+            const Maths::fvec3 norm { i };
             const uint n = ii / 2, flip = (ii & 1) << n;
             const uint t1 = 0, t2 = n == 0 ? 2 : 1, t3 = n == 2 ? 2 : 4, t4 = t2 + t3;
             vert.emplace_back(f(Mdata { .Position = Maths::fvec3 { (Maths::Corner3D)(t1 ^ flip) }, .Normal = norm, .VertexIndex = indoff + 0 }));

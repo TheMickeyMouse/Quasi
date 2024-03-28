@@ -61,7 +61,7 @@ namespace Graphics {
             case MTLPropertyType::EmissiveCol: {
                 const auto color = Maths::parse_vec<float, 3>(data, " "sv, ""sv, ""sv);
                 if (!color.has_value()) return {};
-                prop.data = color->color();
+                prop.data = color->to_color3();
                 return prop;
             }
             case MTLPropertyType::SpecularExp:
@@ -134,16 +134,16 @@ namespace Graphics {
                     ss << "newmtl, " << std::get<std::string>(p.data);
                     break;
                 case MTLPropertyType::AmbientCol:
-                    ss << "ambient, " << std::get<Maths::color3f>(p.data).str();
+                    ss << "ambient, " << std::get<Maths::color3f>(p.data).hexcode();
                     break;
                 case MTLPropertyType::DiffuseCol:
-                    ss << "diffuse, " << std::get<Maths::color3f>(p.data).str();
+                    ss << "diffuse, " << std::get<Maths::color3f>(p.data).hexcode();
                     break;
                 case MTLPropertyType::SpecularCol:
-                    ss << "specular, " << std::get<Maths::color3f>(p.data).str();
+                    ss << "specular, " << std::get<Maths::color3f>(p.data).hexcode();
                     break;
                 case MTLPropertyType::EmissiveCol:
-                    ss << "emissive, " << std::get<Maths::color3f>(p.data).str();
+                    ss << "emissive, " << std::get<Maths::color3f>(p.data).hexcode();
                     break;
                 case MTLPropertyType::SpecularExp:
                     ss << "specular exp, " << std::get<float>(p.data);

@@ -1,7 +1,25 @@
+#include "Color.h"
 #include "Vector.h"
 
 namespace Maths {
-    namespace Color {
+    namespace color_utils {
+        template <class T> T convert_type(auto channel) {
+            if constexpr (std::is_same_v<decltype(channel), T>) return channel;
+            else if constexpr (std::is_same_v<decltype(channel), byte> && std::is_same_v<T, float>) return (float)channel / 255.0f;
+            else if constexpr (std::is_same_v<decltype(channel), float> && std::is_same_v<T, byte>) return (byte)(channel * 255.0f);
+            else return nullptr;
+        }
+        template OPENGL_API byte  convert_type<byte,  byte>(byte);
+        template OPENGL_API byte  convert_type<byte,  float>(float);
+        template OPENGL_API float convert_type<float, byte>(byte);
+        template OPENGL_API float convert_type<float, float>(float);
+
+        template <class T> T channel_from_hexcode(char D0, char D1) {
+            return convert_type<T>((byte)((D0 - (D0 < ':' ? '0' : 'W')) << 4 | (D1 - (D1 < ':' ? '0' : 'W'))));
+        }
+        template OPENGL_API byte  channel_from_hexcode<byte> (char, char);
+        template OPENGL_API float channel_from_hexcode<float>(char, char);
+
         fvec3 rgb2hsl(float r, float g, float b) {
             // https://stackoverflow.com/a/9493060
             const float max = std::max({r, g, b}), min = std::min({r, g, b});
@@ -46,7 +64,7 @@ namespace Maths {
         fvec3 rgb2hsv(float r, float g, float b) {
             // https://stackoverflow.com/a/6930407
             const float max = std::max({r, g, b}), min = std::min({r, g, b});
-            float v = max, d = max - min;
+            const float v = max, d = max - min;
             if (v == 0) // NOLINT(clang-diagnostic-float-equal)
                 return { NAN, 0, v }; // acromatic
             float s = d / v;
@@ -65,10 +83,10 @@ namespace Maths {
 
         fvec3 hsv2rgb(float h, float s, float v) {
             if (s == 0)  // NOLINT(clang-diagnostic-float-equal)
-                return v; // Achromatic case
+                return { v }; // Achromatic case
             h *= 6;
-            int i = (int)h;
-            float f = h - (float)i;
+            const int i = (int)h;
+            const float f = h - (float)i;
 
             float p = v * (1 - s);
             float q = v * (1 - f * s);
@@ -93,202 +111,203 @@ namespace Maths {
             return a < 128 ? a * b * 255 / 2 : 255 - 255 * (1 - a) * (1 - b) / 2;
         }
 
-        bool channel_eq(float a, float b) { // loose equality
+        bool channel_loose_eq(float a, float b) { // loose equality
             return std::abs(a - b) < (1 / 255.0f);
         }
         
-        bool color_eq(const float* a, const float* b) {
-            return channel_eq(a[0], b[0]) && channel_eq(a[1], b[1]) && channel_eq(a[2], b[2]);
+        bool color_loose_eq(const float* a, const float* b) {
+            return channel_loose_eq(a[0], b[0]) && channel_loose_eq(a[1], b[1]) && channel_loose_eq(a[2], b[2]);
+        }
+
+        bool color4_loose_eq(const float* a, const float* b) {
+            return channel_loose_eq(a[0], b[0]) && channel_loose_eq(a[1], b[1])
+                && channel_loose_eq(a[2], b[2]) && channel_loose_eq(a[3], b[3]);
         }
 
         char channel_hex(const char i) {
             return (i < 10) ? (char)('0' + i) : (char)('a' + i - 10);
         }
-    }
-    
-#define CM(F) STDU_IF_ELSE(F, (255.0f), (1))
-#define CM_N(F) STDU_IF_ELSE(F, (1), (255))
-#define A(HAS_A) STDU_IF_ELSE(HAS_A, (a), (1))
-#define S scalar
-#define COLOR_IMPL(T, HAS_A, F) \
-    std::string T::hexcode() const { \
-        return std::format(STDU_IF_ELSE(HAS_A, ("#{}{}{}{}{}{}{}{}"), ("#{}{}{}{}{}{}")), \
-            Color::channel_hex((char)(r * CM(F)) / 16), \
-            Color::channel_hex((char)(r * CM(F)) % 16), \
-            Color::channel_hex((char)(g * CM(F)) / 16), \
-            Color::channel_hex((char)(g * CM(F)) % 16), \
-            Color::channel_hex((char)(b * CM(F)) / 16), \
-            Color::channel_hex((char)(b * CM(F)) % 16) \
-            STDU_IF(HAS_A, , \
-                Color::channel_hex((int)(a * CM(F)) / 16), \
-                Color::channel_hex((int)(a * CM(F)) % 16)) \
-        ); \
-    } \
-    \
-    bool T::eq(const T& other) const { return r == other.r && g == other.g && b == other.b STDU_IF(HAS_A, && r == other.r); } \
-    bool T::loose_eq(const T& other) const { \
-        return STDU_IF_ELSE(F, \
-            (Color::color_eq((const float*)this, (const float*)&other) \
-             STDU_IF(HAS_A, && Color::channel_eq(a, other.a))), \
-            (eq(other)) \
-        ); \
-    } \
-    bool T::neq(const T& other) const { return !eq(other); } \
-    bool T::operator==(const T& other) const { return eq(other); } \
-    \
-    T T::neg() const { return { (S)(CM_N(F) - r), (S)(CM_N(F) - g), (S)(CM_N(F) - b) STDU_IF(HAS_A, , (S)(CM_N(F) - a))}; } \
-    T T::lerp(const T& other, float t) const { \
-        float s = (1 - t); \
-        return { \
-            (S)(((float)r*s + (float)other.r*t) / CM_N(F)), (S)(((float)g*s + (float)other.g*t) / CM_N(F)), \
-            (S)(((float)b*s + (float)other.b*t) / CM_N(F)) STDU_IF(HAS_A, , (S)(((float)a*s + (float)other.a*t) / CM_N(F))) \
-        }; \
-    } \
-    T T::mul(const T& other) const { \
-        return { \
-            (S)(r * other.r / CM_N(F)), (S)(g * other.g / CM_N(F)), \
-            (S)(b * other.b / CM_N(F)) STDU_IF(HAS_A, , (S)(a * other.a / CM_N(F))) \
-        }; \
-    } \
-    T T::screen(const T& other) const { return neg().mul(other).neg(); } \
-    T T::overlay(const T& other) const { \
-        return { \
-            Color::overlay_channel(r, other.r), Color::overlay_channel(g, other.g), \
-            Color::overlay_channel(b, other.b) STDU_IF(HAS_A, , Color::overlay_channel(r, other.r)) \
-        }; \
-    } \
-    STDU_IF(HAS_A, T::without_alpha_t T::mul_alpha() const { \
-        return { (S)(r * a / CM_N(F)), (S)(g * a / CM_N(F)), (S)(b * a / CM_N(F)) }; \
-    }) \
-    \
-    float T::luminance() const { return (0.2126f * (float)r + 0.7152f * (float)g + 0.0722f * (float)b) / CM_N(F); /*https://en.wikipedia.org/wiki/Relative_luminance*/ } \
-    bvec3 T::as_rgb()   const { return { (uchar)(r * CM(F)), (uchar)(g * CM(F)), (uchar)(b * CM(F)) }; } \
-    bvec4 T::as_rgba()  const { return as_rgb() STDU_IF(HAS_A, .with_w((uchar)(A(HAS_A) * CM(F)))); } \
-    fvec3 T::as_rgbf()  const { return { (float)r / CM_N(F), (float)g / CM_N(F), (float)b / CM_N(F) }; } \
-    fvec4 T::as_rgbaf() const { return as_rgbf() STDU_IF(HAS_A, .with_w((float)A(HAS_A) / CM_N(F))); } \
-    fvec3 T::as_hsl()   const { return Color::rgb2hsl((float)r / CM_N(F), (float)g / CM_N(F), (float)b / CM_N(F)); } \
-    fvec4 T::as_hsla()  const { return as_hsl() STDU_IF(HAS_A, .with_w((float)A(HAS_A) / CM_N(F))); } \
-    T T::from_hsl(float hue, float saturation, float lightness STDU_IF(HAS_A, , float alpha)) { \
-        return Color::hsl2rgb(hue / 360.0f, saturation, lightness) STDU_IF(HAS_A, .with_w(alpha)) .color(); \
-    } \
-    T T::from_hsl(STDU_IF_ELSE(HAS_A, (fvec4 hsla), (fvec3 hsl))) { \
-        return STDU_IF_ELSE(HAS_A, (from_hsl(hsla.x, hsla.y, hsla.z, hsla.w)), (from_hsl(hsl.x, hsl.y, hsl.z))); \
-    } \
-    fvec3 T::as_hsv()  const { return Color::rgb2hsv((float)r / CM_N(F), (float)g / CM_N(F), (float)b / CM_N(F)); } \
-    fvec4 T::as_hsva() const { return as_hsv() STDU_IF(HAS_A, .with_w((float)A(HAS_A) / CM_N(F))); } \
-    T T::from_hsv(float hue, float saturation, float value STDU_IF(HAS_A, , float alpha)) { \
-        return Color::hsv2rgb(hue / 360.0f, saturation, value) STDU_IF(HAS_A, .with_w(alpha)) .color(); \
-    } \
-    T T::from_hsv(STDU_IF_ELSE(HAS_A, (fvec4 hsva), (fvec3 hsv))) { \
-        return STDU_IF_ELSE(HAS_A, (from_hsv(hsva.x, hsva.y, hsva.z, hsva.w)), (from_hsv(hsv.x, hsv.y, hsv.z))); \
-    } \
-    \
-    STDU_IF(HAS_A, T::without_alpha_t T::rgb() const { return { r, g, b }; }) \
-    T STDU_IF_NOT(HAS_A, ::with_alpha_t) T::with_alpha(scalar alpha) const { return { r, g, b, alpha }; } \
-    T STDU_IF_NOT(HAS_A, ::with_alpha_t) T::rgb1() const { return { r, g, b, CM_N(F) }; } \
-    \
-    STDU_IF_ELSE(HAS_A, (T::operator T::without_alpha_t() const { return rgb(); }), \
-                        (T::operator T::with_alpha_t()    const { return with_alpha(); })) \
-    \
-    STDU_IF_ELSE(HAS_A, (STDU_IF_ELSE(F, (T::operator color()   const { return { (uchar)(r * 255), (uchar)(g * 255), (uchar)(b * 255), (uchar)(a * 255) }; }), \
-                                         (T::operator colorf()  const { return { (float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f, (float)a / 255.0f }; } ))), \
-                        (STDU_IF_ELSE(F, (T::operator color3()  const { return { (uchar)(r * 255), (uchar)(g * 255), (uchar)(b * 255) }; }), \
-                                         (T::operator color3f() const { return { (float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f }; } )))) \
-    T T::color_id(const int id) { \
-        switch (id) { \
-            case 0: return BETTER_BLACK(); \
-            case 1: return BETTER_RED(); \
-            case 2: return BETTER_GREEN(); \
-            case 3: return BETTER_YELLOW(); \
-            case 4: return BETTER_BLUE(); \
-            case 5: return BETTER_PURPLE(); \
-            case 6: return BETTER_CYAN(); \
-            case 7: return BETTER_WHITE(); \
-            default: return BLACK(); \
-        } \
-    } \
 
-    COLOR_IMPL(color3f, 0, 1);
-    COLOR_IMPL(color3,  0, 0);
-    COLOR_IMPL(colorf,  1, 1);
-    COLOR_IMPL(color,   1, 0);
-#undef COLOR_IMPL
-#undef A
-#undef CM
-#undef CM_N
-#undef S
-    
-// #define COLOR_CONSTANT(T, C) \
-//     const T T::BLACK 	  = { 0   / C, 0   / C, 0   / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::DARK_GRAY  = { 64  / C, 64  / C, 64  / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::GRAY 	  = { 128 / C, 128 / C, 128 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::LIGHT_GRAY = { 192 / C, 192 / C, 192 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::WHITE 	  = { 255 / C, 255 / C, 255 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T& T::SILVER = T::LIGHT_GRAY; \
-//     \
-//     const T T::RED     = { 255 / C, 0   / C, 0   / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::ORANGE  = { 255 / C, 128 / C, 0   / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::YELLOW  = { 255 / C, 255 / C, 0   / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::LIME    = { 128 / C, 255 / C, 0   / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::GREEN   = { 0   / C, 255 / C, 0   / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::SEAFOAM = { 0   / C, 255 / C, 128 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::CYAN    = { 0   / C, 255 / C, 255 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::AZURE   = { 0   / C, 128 / C, 255 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::BLUE    = { 0   / C, 0   / C, 255 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::PURPLE  = { 128 / C, 0   / C, 255 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::MAGENTA = { 255 / C, 0   / C, 255 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::ROSE    = { 255 / C, 0   / C, 128 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     \
-//     const T T::LIGHT_RED     = { 255 / C, 128 / C, 128 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::LIGHT_YELLOW  = { 255 / C, 255 / C, 128 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::LIGHT_GREEN   = { 128 / C, 255 / C, 128 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::LIGHT_CYAN    = { 128 / C, 255 / C, 255 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::LIGHT_BLUE    = { 128 / C, 128 / C, 255 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::LIGHT_MAGENTA = { 255 / C, 128 / C, 255 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T& T::SALMON     = T::LIGHT_RED;     \
-//     const T& T::LEMON      = T::LIGHT_YELLOW;  \
-//     const T& T::MINT       = T::LIGHT_GREEN;   \
-//     const T& T::SKY        = T::LIGHT_CYAN;    \
-//     const T& T::CORNFLOWER = T::LIGHT_BLUE;    \
-//     const T& T::PINK       = T::LIGHT_MAGENTA; \
-//     \
-//     const T T::DARK_RED     = { 128 / C, 0   / C, 0   / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::DARK_YELLOW  = { 128 / C, 128 / C, 0   / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::DARK_GREEN   = { 0   / C, 128 / C, 0   / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::DARK_CYAN    = { 0   / C, 128 / C, 128 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::DARK_BLUE    = { 0   / C, 0   / C, 128 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::DARK_MAGENTA = { 128 / C, 0   / C, 128 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T& T::MAROON  = DARK_RED;     \
-//     const T& T::OLIVE   = DARK_YELLOW;  \
-//     const T& T::AVOCADO = DARK_GREEN;   \
-//     const T& T::TEAL    = DARK_CYAN;    \
-//     const T& T::NAVY    = DARK_BLUE;    \
-//     const T& T::VIOLET  = DARK_MAGENTA; \
-//     \
-//     const T T::BETTER_RED        = { 255 / C, 48  / C, 48  / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::BETTER_ORANGE     = { 255 / C, 128 / C, 043 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::BETTER_YELLOW     = { 255 / C, 192 / C, 020 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::BETTER_LIME       = { 135 / C, 247 / C, 037 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::BETTER_GREEN      = { 12  / C, 133 / C, 1   / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::BETTER_AQUA       = { 40  / C, 206 / C, 247 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::BETTER_CYAN       = { 23  / C, 160 / C, 179 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::BETTER_BLUE       = { 16  / C, 65  / C, 227 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::BETTER_PURPLE     = { 120 / C, 24  / C, 237 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::BETTER_MAGENTA    = { 203 / C, 42  / C, 235 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::BETTER_PINK       = { 250 / C, 87  / C, 198 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::BETTER_BROWN      = { 69  / C, 32  / C, 13  / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::BETTER_BLACK      = { 22  / C, 25  / C, 29  / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::BETTER_DARK_GRAY  = { 76  / C, 75  / C, 93  / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::BETTER_GRAY       = { 116 / C, 126 / C, 134 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::BETTER_LIGHT_GRAY = { 175 / C, 186 / C, 193 / C }; /* NOLINT(bugprone-macro-parentheses) */ \
-//     const T T::BETTER_WHITE      = { 232 / C, 247 / C, 249 / C }  /* NOLINT(bugprone-macro-parentheses) */ \
-//
-//     COLOR_CONSTANT(color, 1);
-//     COLOR_CONSTANT(color3, 1);
-//     COLOR_CONSTANT(colorf, 255.0f);
-//     COLOR_CONSTANT(color3f, 255.0f);
-//
-//     const colorf colorf::CLEAR = { 0, 0, 0, 1   };
-//     const color  color ::CLEAR = { 0, 0, 0, 255 };
-// #undef COLOR_CONSTANT
+        char hexdigit_1(auto channel) {
+            return channel_hex(convert_type<byte>(channel) % 16);
+        }
+
+        char hexdigit_2(auto channel) {
+            return channel_hex(convert_type<byte>(channel) / 16);
+        }
+    }
+
+    template <class Color>
+    typename color_base<Color>::scalar color_base<Color>::alpha(scalar def) const {
+        if constexpr (traits_has_alpha) return color().a;
+        else return def;
+    }
+
+    template <class Color> Color color_base<Color>::from_hex(std::string_view hex) {
+        if constexpr (traits_has_alpha)
+            return hex.size() > 6 ? Color {
+                color_utils::channel_from_hexcode<scalar>(hex[0], hex[1]),
+                color_utils::channel_from_hexcode<scalar>(hex[2], hex[3]),
+                color_utils::channel_from_hexcode<scalar>(hex[4], hex[5]),
+                color_utils::channel_from_hexcode<scalar>(hex[6], hex[7])
+            } : Color {
+                color_utils::channel_from_hexcode<scalar>(hex[0], hex[1]),
+                color_utils::channel_from_hexcode<scalar>(hex[2], hex[3]),
+                color_utils::channel_from_hexcode<scalar>(hex[4], hex[5]),
+            };
+        else return Color {
+            color_utils::channel_from_hexcode<scalar>(hex[0], hex[1]),
+            color_utils::channel_from_hexcode<scalar>(hex[2], hex[3]),
+            color_utils::channel_from_hexcode<scalar>(hex[4], hex[5]),
+        };
+    }
+
+    template <class Color> std::string color_base<Color>::hexcode() const {
+        if constexpr (traits_has_alpha) return std::format("{}{}{}{}{}{}{}{}",
+            color_utils::hexdigit_1(color().r),
+            color_utils::hexdigit_1(color().r),
+            color_utils::hexdigit_1(color().g),
+            color_utils::hexdigit_1(color().g),
+            color_utils::hexdigit_1(color().b),
+            color_utils::hexdigit_1(color().b),
+            color_utils::hexdigit_1(color().a),
+            color_utils::hexdigit_1(color().a)
+        ); else return std::format("{}{}{}{}{}{}",
+            color_utils::hexdigit_1(color().r),
+            color_utils::hexdigit_1(color().r),
+            color_utils::hexdigit_1(color().g),
+            color_utils::hexdigit_1(color().g),
+            color_utils::hexdigit_1(color().b),
+            color_utils::hexdigit_1(color().b)
+        );
+    }
+
+    template <class Color> bool color_base<Color>::eq(const Color& other) const {
+        if constexpr (traits_has_alpha)
+            return color().r == other.r && color().g == other.g && color().b == other.b && color().a == other.a;
+        else
+            return color().r == other.r && color().g == other.g && color().b == other.b;
+    }
+
+    template <class Color> bool color_base<Color>::operator==(const Color& other) const { return eq(other); }
+    template <class Color> bool color_base<Color>::neq(const Color& other) const { return !eq(other); }
+
+    template <class Color> bool color_base<Color>::loose_eq(const Color& other) const {
+        if constexpr (traits_is_floating)
+            if constexpr (traits_has_alpha) return color_utils::color4_loose_eq(begin(), other.begin());
+            else return color_utils::color_loose_eq(begin(), other.begin());
+        else return eq(other);
+    }
+
+    template <class Color> Color color_base<Color>::neg() const {
+        return color_utils::make_color<Color>(
+            CHANNEL_MAX_VALUE - color().r,
+            CHANNEL_MAX_VALUE - color().g,
+            CHANNEL_MAX_VALUE - color().b,
+            CHANNEL_MAX_VALUE - alpha()
+        );
+    }
+
+    template <class Color> Color color_base<Color>::lerp(const Color& other, float t) const {
+        const float s = 1 - t;
+        using namespace color_utils;
+        return make_color<Color>(
+            convert_type<float>(color().r) * s + convert_type<float>(other.r) * t,
+            convert_type<float>(color().g) * s + convert_type<float>(other.g) * t,
+            convert_type<float>(color().b) * s + convert_type<float>(other.b) * t,
+            convert_type<float>(alpha())   * s + convert_type<float>(other.alpha()) * t
+        );
+    }
+
+    template <class Color> Color color_base<Color>::mul(const Color& other) const {
+        return color_utils::make_color<Color>(
+            color().r * other.r / CHANNEL_MAX_VALUE,
+            color().g * other.g / CHANNEL_MAX_VALUE,
+            color().b * other.b / CHANNEL_MAX_VALUE,
+            alpha() * other.alpha() / CHANNEL_MAX_VALUE
+        );
+    }
+
+    template <class Color> Color color_base<Color>::screen(const Color& other) const { return neg().mul(other).neg(); }
+    template <class Color> Color color_base<Color>::overlay(const Color& other) const {
+        using namespace color_utils;
+        return make_color<Color>(
+            overlay_channel(color().r, other.r), overlay_channel(color().g, other.g),
+            overlay_channel(color().b, other.b), overlay_channel(alpha(), other.alpha())
+        );
+    }
+
+    template <class Color> typename color_base<Color>::without_alpha_t color_base<Color>::mul_alpha() const {
+        return { color().r * alpha() / CHANNEL_MAX_VALUE, color().g * alpha() / CHANNEL_MAX_VALUE, color().b * alpha() / CHANNEL_MAX_VALUE, };
+    }
+
+    template <class Color> float color_base<Color>::luminance() const {
+        // https://en.wikipedia.org/wiki/Relative_luminance
+        return (0.2126f * color_utils::convert_type<float>(color().r) + 0.7152f * color_utils::convert_type<float>(color().g) + 0.0722f * color_utils::convert_type<float>(color().b));
+    }
+
+    template <class Color> bvec3 color_base<Color>::as_rgb()   const { return { color_utils::convert_type<byte>(color().r), color_utils::convert_type<byte>(color().g), color_utils::convert_type<byte>(color().b) }; }
+    template <class Color> bvec4 color_base<Color>::as_rgba()  const { return as_rgb().with_w(color_utils::convert_type<byte>(alpha())); }
+    template <class Color> fvec3 color_base<Color>::as_rgbf()  const { return { color_utils::convert_type<float>(color().r), color_utils::convert_type<float>(color().g), color_utils::convert_type<float>(color().b) }; }
+    template <class Color> fvec4 color_base<Color>::as_rgbaf() const { return as_rgbf().with_w(color_utils::convert_type<float>(alpha())); }
+
+    template <class Color> fvec3 color_base<Color>::as_hsl()  const { return color_utils::rgb2hsl(color_utils::convert_type<float>(color().r), color_utils::convert_type<float>(color().g), color_utils::convert_type<float>(color().b)); }
+    template <class Color> fvec4 color_base<Color>::as_hsla() const { return as_hsl().with_w(color_utils::convert_type<float>(alpha())); }
+
+    template <class Color> Color color_base<Color>::from_hsl(float hue, float saturation, float lightness) requires !traits_has_alpha {
+        return color_utils::hsl2rgb(hue / 360.0f, saturation, lightness).to_color3();
+    }
+    template <class Color> Color color_base<Color>::from_hsl(float hue, float saturation, float lightness, float alpha) requires traits_has_alpha {
+        return color_utils::hsl2rgb(hue / 360.0f, saturation, lightness).with_w(alpha).to_color();
+    }
+
+    template <class Color> Color color_base<Color>::from_hsl(const fvec3& hsl) requires !traits_has_alpha { return from_hsl(hsl.x, hsl.y, hsl.z); }
+    template <class Color> Color color_base<Color>::from_hsl(const fvec4& hsla) requires traits_has_alpha { return from_hsl(hsla.x, hsla.y, hsla.z, hsla.w); }
+
+    template <class Color> fvec3 color_base<Color>::as_hsv()  const { return color_utils::rgb2hsv(color_utils::convert_type<float>(color().r), color_utils::convert_type<float>(color().g), color_utils::convert_type<float>(color().b)); }
+    template <class Color> fvec4 color_base<Color>::as_hsva() const { return as_hsv().with_w(color_utils::convert_type<float>(alpha())); }
+
+    template <class Color> Color color_base<Color>::from_hsv(float hue, float saturation, float value) requires !traits_has_alpha {
+        return color_utils::hsv2rgb(hue / 360.0f, saturation, value).to_color3();
+    }
+    template <class Color> Color color_base<Color>::from_hsv(float hue, float saturation, float value, float alpha) requires traits_has_alpha {
+        return color_utils::hsv2rgb(hue / 360.0f, saturation, value).with_w(alpha).to_color();
+    }
+
+    template <class Color> Color color_base<Color>::from_hsv(const fvec3& hsv) requires !traits_has_alpha { return from_hsv(hsv.x, hsv.y, hsv.z); }
+    template <class Color> Color color_base<Color>::from_hsv(const fvec4& hsva) requires traits_has_alpha { return from_hsv(hsva.x, hsva.y, hsva.z, hsva.w); }
+    template <class Color> typename color_base<Color>::without_alpha_t color_base<Color>::rgb() const { return { color().r, color().g, color().b }; }
+    template <class Color> typename color_base<Color>::with_alpha_t color_base<Color>::with_alpha(scalar alpha) const { return { color().r, color().g, color().b, alpha }; }
+    template <class Color> typename color_base<Color>::with_alpha_t color_base<Color>::rgb1() const { return { color().r, color().g, color().b, CHANNEL_MAX_VALUE }; }
+
+    template <class Color> color_base<Color>::operator without_alpha_t() const requires traits_has_alpha { return rgb(); }
+    template <class Color> color_base<Color>::operator with_alpha_t() const requires !traits_has_alpha { return rgb1(); }
+    template <class Color> color_base<Color>::operator alternate_data_form() const {
+        using alt = typename color_traits<alternate_data_form>::scalar;
+        return color_utils::make_color<alternate_data_form>(
+            color_utils::convert_type<alt>(color().r),
+            color_utils::convert_type<alt>(color().g),
+            color_utils::convert_type<alt>(color().b),
+            color_utils::convert_type<alt>(alpha())
+        );
+    }
+
+    template <class Color> Color color_base<Color>::color_id(int id) {
+        switch (id) {
+            case 0: return BETTER_BLACK();
+            case 1: return BETTER_RED();
+            case 2: return BETTER_GREEN();
+            case 3: return BETTER_YELLOW();
+            case 4: return BETTER_BLUE();
+            case 5: return BETTER_PURPLE();
+            case 6: return BETTER_CYAN();
+            case 7: return BETTER_WHITE();
+            default: return BLACK();
+        }
+    }
+
+    template OPENGL_API struct color_base<color3>;
+    template OPENGL_API struct color_base<color3f>;
+    template OPENGL_API struct color_base<color>;
+    template OPENGL_API struct color_base<colorf>;
 }

@@ -4,7 +4,7 @@
 #include "stdu/enum_utils.h"
 
 namespace Maths {
-    enum class Direction2D : int {
+    enum class Direction2D {
         RIGHT = 0,
         LEFT,
         UP,
@@ -23,7 +23,7 @@ namespace Maths {
     };
     STDU_IMPL_ENUM_OPERATORS(Direction2D)
     
-    enum class Direction3D : int {
+    enum class Direction3D {
         RIGHT = 0,
         LEFT,
         UP,
@@ -47,7 +47,7 @@ namespace Maths {
     };
     STDU_IMPL_ENUM_OPERATORS(Direction3D)
 
-    enum class Direction4D : int {
+    enum class Direction4D {
         RIGHT = 0,
         LEFT,
         UP,

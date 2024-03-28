@@ -125,7 +125,7 @@ namespace Graphics {
     }
 
     bool TextRenderer::WordWrap(float advance, std::string::const_iterator& it,
-                                               std::string::const_iterator  begin) {
+                                const std::string::const_iterator& begin) {
         if (align.IsWordWrap() && lineWidth + advance > align.rect.width()) { // word wrapping (complex part over here)
             if (it == begin) return false;
             auto backUntilSpace       = it - 1; // new iterator for looping until we reach a space
@@ -182,13 +182,13 @@ namespace Graphics {
     }
 
     void TextRenderer::PushCharQuad(const Maths::rect2f& pos, const Maths::rect2f& tex) {
-        textVertices.emplace_back(pos.corner(0), tex.corner(0 ^ 2 /* flip Y with xor */), 1.0f, Vertex::RENDER_TEXT); // y flipped cuz opengl textures are flipped
-        textVertices.emplace_back(pos.corner(1), tex.corner(1 ^ 2 /* flip Y with xor */), 1.0f, Vertex::RENDER_TEXT);
-        textVertices.emplace_back(pos.corner(2), tex.corner(2 ^ 2 /* flip Y with xor */), 1.0f, Vertex::RENDER_TEXT); // NOLINT(clang-diagnostic-xor-used-as-pow)
-        textVertices.emplace_back(pos.corner(3), tex.corner(3 ^ 2 /* flip Y with xor */), 1.0f, Vertex::RENDER_TEXT);
+        textVertices.emplace_back(pos.corner(0), tex.corner(0), 1.0f, Vertex::RENDER_TEXT); // y flipped cuz opengl textures are flipped
+        textVertices.emplace_back(pos.corner(1), tex.corner(1), 1.0f, Vertex::RENDER_TEXT);
+        textVertices.emplace_back(pos.corner(2), tex.corner(2), 1.0f, Vertex::RENDER_TEXT); // NOLINT(clang-diagnostic-xor-used-as-pow)
+        textVertices.emplace_back(pos.corner(3), tex.corner(3), 1.0f, Vertex::RENDER_TEXT);
     }
 
-    void TextRenderer::AddChar(std::string::const_iterator& it, std::string::const_iterator begin) {
+    void TextRenderer::AddChar(std::string::const_iterator& it, const std::string::const_iterator& begin) {
         using namespace Maths;
         const char glyph = *it;
         if (glyph == '\n') {
@@ -343,7 +343,7 @@ namespace Graphics {
                     AddRoundedRect(
                         { monoSpan.min + restWidth, monoSpan.max + restWidth,
                           pen.y + descent.pointsf() * scaleRatio, pen.y + ascend.pointsf() * scaleRatio },
-                        fontSize.pointsf() * 0.3f, "#27303d"
+                        fontSize.pointsf() * 0.3f, colorf::from_hex("27303d")
                     );
                 }
                 monos.clear();
@@ -364,7 +364,7 @@ namespace Graphics {
             AddRoundedRect(
                 { monoSpan.min + restWidth, monoSpan.max + restWidth,
                   pen.y + descent.pointsf() * scaleRatio, pen.y + ascend.pointsf() * scaleRatio },
-                fontSize.pointsf() * 0.3f, "#27303d"
+                fontSize.pointsf() * 0.3f, colorf::from_hex("27303d")
             );
         }
         

@@ -82,7 +82,6 @@ set(Header_Files
     "src/Maths/NumTypes.h"
     "src/Maths/Rect.h"
     "src/Maths/Vector.h"
-    "src/Maths/VectorImpl.h"
     "src/stdu/enum_utils.h"
     "src/stdu/io.h"
     "src/stdu/macros.h"
@@ -100,6 +99,7 @@ set(Header_Files
     "src/vendor/imgui/imstb_textedit.h"
     "src/vendor/imgui/imstb_truetype.h"
     "src/vendor/stb_image/stb_image.h"
+    "src/Maths/Color.h"
 )
 source_group("Header Files" FILES ${Header_Files})
 
@@ -137,6 +137,7 @@ set(Source_Files
     "src/vendor/imgui/imgui_widgets.cpp"
     "src/vendor/imgui/main.cpp"
     "src/vendor/stb_image/stb_image.cpp"
+        src/Maths/Vector.cpp
 )
 source_group("Source Files" FILES ${Source_Files})
 

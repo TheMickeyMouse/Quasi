@@ -75,7 +75,7 @@ namespace Graphics {
     }
 
     Maths::mat3D CameraController::GetProjMat() const {
-        const float aspect = 1.0f / GraphicsDevice::GetDeviceInstance().GetWindowSize().as<float>().slope();
+        const float aspect = 1.0f / GraphicsDevice::GetDeviceInstance().GetWindowSize().slope();
         return Maths::mat3D::perspective_fov(viewFov, aspect, 0.01f, 100.0f);
     }
 
@@ -93,7 +93,7 @@ namespace Graphics {
 
         if (ImGui::TreeNode("FOV & Zoom")) {
             ImGui::SliderFloat("FOV", &fov, fovRange.min, fovRange.max);
-            ImGui::DragFloatRange2("FOV Range", &fovRange.min, &fovRange.max, 0.5f, 0.0f, 90.0f);
+            ImGui::DragFloatRange2("FOV Range", &fovRange.min.x, &fovRange.max.x, 0.5f, 0.0f, 90.0f);
             ImGui::DragFloat("Zoom Lerp", &smoothZoom);
             ImGui::DragFloat("Zoom Factor", &zoomRatio);
 
@@ -132,7 +132,7 @@ namespace Graphics {
                 speed,
                 sensitivity,
                 fov,
-                fovRange.min, fovRange.max,
+                fovRange.min.x, fovRange.max.x,
                 zoomRatio,
                 smoothZoom)
             .c_str());

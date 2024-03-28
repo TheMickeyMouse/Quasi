@@ -26,23 +26,6 @@ namespace stdu {
     template <auto P> using structure_t = decltype(decltype_structure(P));
 
     template <class T, class U>
-    struct arithmetic_t {
-        static constexpr bool value = std::is_arithmetic_v<T> && std::is_arithmetic_v<U>;
-
-        static T clamped_neg(T x) {
-            if constexpr (std::is_unsigned_v<T>) return 0;
-            else return -x;
-        }
-
-        static bool lt(T a, U b) { return a  < b; }
-        static bool le(T a, U b) { return a <= b; }
-        static bool eq(T a, U b) { return a == b; }
-        static bool ge(T a, U b) { return a >= b; }
-        static bool gt(T a, U b) { return a  > b; }
-        static bool ne(T a, U b) { return a != b; }
-    };
-
-    template <class T, class U>
     concept convertible_to = std::is_convertible_v<T, U>;
 
     template <class R>

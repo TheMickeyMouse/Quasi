@@ -30,10 +30,9 @@ namespace Maths {
         {
             if (!v.starts_with(beg) || !v.starts_with(end)) return std::nullopt;
 
-            auto split = std::views::split(v.substr(beg.length(), v.length() - beg.length() - end.length()), sep);
             T vec;
             int ptr = 0;
-            for (const auto val : split) {
+            for (const auto val : std::views::split(v.substr(beg.length(), v.length() - beg.length() - end.length()), sep)) {
                 if (ptr >= T::dimension) return std::nullopt;
 
                 std::optional<scalar_t> t = cparser(std::string_view(val.begin(), val.end()));
@@ -46,24 +45,24 @@ namespace Maths {
         }
     };
 
-    template <class T, int N>
-    std::optional<typename vecn<N, T>::type> parse_vec(
+    template <class T, uint N>
+    std::optional<vecn<N, T>> parse_vec(
         const std::string_view v,
         const std::string_view sep = detail::DEFAULT_COMMA_SEPARATOR,
         const std::string_view beg = detail::DEFAULT_BRACKET_BEGIN,
         const std::string_view end = detail::DEFAULT_BRACKET_CLOSE)
     {
-        return parser<typename vecn<N, T>::type>::impl(v, stdu::parse_num<T>, sep, beg, end);
+        return parser<vecn<N, T>>::impl(v, stdu::parse_num<T>, sep, beg, end);
     }
 
-    template <class T, int N, class F>
-    std::optional<typename vecn<N, T>::type> parse_vec(
+    template <class T, uint N, class F>
+    std::optional<vecn<N, T>> parse_vec(
         const std::string_view v,
         F&& cparser,
         const std::string_view sep = detail::DEFAULT_COMMA_SEPARATOR,
         const std::string_view beg = detail::DEFAULT_BRACKET_BEGIN,
         const std::string_view end = detail::DEFAULT_BRACKET_CLOSE)
     {
-        return parser<typename vecn<N, T>::type>::impl(v, cparser, sep, beg, end);
+        return parser<vecn<N, T>>::impl(v, cparser, sep, beg, end);
     }
 }

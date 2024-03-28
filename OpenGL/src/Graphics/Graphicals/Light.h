@@ -1,5 +1,7 @@
 #pragma once
 #include "Vector.h"
+#include "Color.h"
+#include "stdu/macros.h"
 #include "stdu/ref.h"
 
 namespace Graphics {

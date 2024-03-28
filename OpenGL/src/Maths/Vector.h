@@ -1,39 +1,31 @@
 ﻿#pragma once
 #include <type_traits>
-#include <array>
 #include <string>
 #include <format>
 
 #include "Corner.h"
 #include "Direction.h"
-#include <core.h>
 #include "NumTypes.h"
-#include <stdu/macros.h>
+
 #include <stdu/types.h>
+#include <stdu/ref.h>
 
 namespace Maths {
-#pragma region Declaration
 #pragma region Concepts and Decls
-    template <class T> struct vec2;
-    template <class T> struct vec3;
-    template <class T> struct vec4;
-
-    template <int, class> struct vecn { using type = void; };
-    template <class T> struct vecn<2, T> { using type = vec2<T>; };
-    template <class T> struct vecn<3, T> { using type = vec3<T>; };
-    template <class T> struct vecn<4, T> { using type = vec4<T>; };
+    template <uint N, class T> struct vecn;
     
     template <class> struct is_vec_t : std::false_type {};
-    template <class T> struct is_vec_t<vec2<T>> : std::true_type {};
-    template <class T> struct is_vec_t<vec3<T>> : std::true_type {};
-    template <class T> struct is_vec_t<vec4<T>> : std::true_type {};
-
-    template <class V>
-    constexpr bool is_vec_v = is_vec_t<V>::value;
+    template <uint N, class T> struct is_vec_t<vecn<N, T>> : std::true_type {};
     
     template <class V>
-    concept vec_t = is_vec_v<V>;
+    concept vec_t = is_vec_t<V>::value;
 
+    template <class T> using vec1   = vecn<1, T>;
+    template <class T> using unit   = vecn<1, T>;
+    template <class T> using single = vecn<1, T>;
+    template <class T> using vec2 = vecn<2, T>;
+    template <class T> using vec3 = vecn<3, T>;
+    template <class T> using vec4 = vecn<4, T>;
     using fvec2 = vec2<float>;
     using fvec3 = vec3<float>;
     using fvec4 = vec4<float>;
@@ -55,725 +47,560 @@ namespace Maths {
     struct colorf;
     struct color;
 
-    template <class> struct is_color_t : std::false_type {};
-    template <> struct is_color_t<color3>  : std::true_type {};
-    template <> struct is_color_t<color3f> : std::true_type {};
-    template <> struct is_color_t<color>   : std::true_type {};
-    template <> struct is_color_t<colorf>  : std::true_type {};
-
-    template <class T>
-    constexpr bool is_color_v = is_color_t<T>::value;
-    
-    template <class T>
-    concept color_t = is_color_v<T>;
-
     template <class V> struct _rect_origin_inbetween_;
     template <class V> struct _rect_size_inbetween_;
-    template <int, class> struct rect;
-
-    template <class T> using range = rect<1, T>;
-    template <class T> using rect2 = rect<2, T>;
-    template <class T> using rect3 = rect<3, T>;
-    template <class T> using rect4 = rect<4, T>;
-    using irange = range<int>;
-    using urange = range<uint>;
-    using brange = range<uchar>;
-    using rangez = range<usize>;
-    using rangef = range<float>;
-    using ranged = range<double>;
-    using rect2f = rect2<float>;
-    using rect3f = rect3<float>;
-    using rect4f = rect4<float>;
-    using rect2d = rect2<double>;
-    using rect3d = rect3<double>;
-    using rect4d = rect4<double>;
-    using rect2i = rect2<int>;
-    using rect3i = rect3<int>;
-    using rect4i = rect4<int>;
-    using rect2u = rect2<uint>;
-    using rect3u = rect3<uint>;
-    using rect4u = rect4<uint>;
-    using rect2b = rect2<uchar>;
-    using rect3b = rect3<uchar>;
-    using rect4b = rect4<uchar>;
+    template <uint, class> struct rect;
     
 #pragma endregion // concepts and decls
+
 #pragma region Vector Swizzle Impl
 #define VECTOR_SWIZZLING 1
-
 #if VECTOR_SWIZZLING == 1
-    // a bit of template magic going off over here
-    template <uchar N> using vector_swizzle_data = const char[N+1];
-    template <uchar D, vector_swizzle_data<D> T>
-    struct swizzle { // N is the dimension of conversion, D is the dimension of the vector itself, and T is the member mapping
-        uchar packed = 0;
-        uchar N = 0;
+    namespace swizz {
+        // a bit of template magic going off over here
+        template <uchar N> using vector_swizzle_data = const char[N+1];
+        template <uchar D, vector_swizzle_data<D> T>
+        struct swizzle { // N is the dimension of conversion, D is the dimension of the vector itself, and T is the member mapping
+            uchar packed = 0;
+            uchar N = 0;
 
-        static constexpr uchar into_id(char expr) {
-            for (uchar i = 0; i < D; ++i) if (expr == T[i]) return i;
-            return -1;
-        }
+            static constexpr uchar into_id(char expr) {
+                for (uchar i = 0; i < D; ++i) if (expr == T[i]) return i;
+                return -1;
+            }
 
-        template <uchar n>
-        constexpr swizzle(const char (&args)[n]) {
-            packed = into_id(args[0]);
-            N = n - 1;
-            for (uchar i = 1; i < N; ++i) packed |= into_id(args[i]) << (2 * i);
-        }
+            template <uchar n>
+            constexpr swizzle(const char (&args)[n]) {
+                packed = this->into_id(args[0]);
+                N = n - 1;
+                for (uchar i = 1; i < N; ++i) packed |= this->into_id(args[i]) << (2 * i);
+            }
 
-        constexpr uchar operator[](uchar i) const {
-            return 3 & (packed >> (i * 2));
+            constexpr uchar operator[](uchar i) const {
+                return 3 & (packed >> (i * 2));
+            }
+        };
+
+        // swizzles a vecD<T> into a vec{S.N}<T> with reflection data V and of swizzle S
+        template <class T, uchar D, vector_swizzle_data<D> V, swizzle<D, V> S>
+        // ReSharper disable once CppNotAllPathsReturnValue
+        typename vecn<S.N, T>::type swizzle_impl(const T* v) {
+            if constexpr (S.N == 2) return { v[S[0]], v[S[1]] };
+            if constexpr (S.N == 3) return { v[S[0]], v[S[1]], v[S[2]] };
+            if constexpr (S.N == 4) return { v[S[0]], v[S[1]], v[S[2]], v[S[3]] };
+            if constexpr (S.N < 2 || S.N > 4) return {};
         }
     };
-
-    // swizzles a vecD<T> into a vec{S.N}<T> with reflection data V and of swizzle S 
-    template <class T, uchar D, vector_swizzle_data<D> V, swizzle<D, V> S>
-    // ReSharper disable once CppNotAllPathsReturnValue
-    typename vecn<S.N, T>::type swizzle_impl(const T* v) {
-        if constexpr (S.N == 2) return { v[S[0]], v[S[1]] };
-        if constexpr (S.N == 3) return { v[S[0]], v[S[1]], v[S[2]] };
-        if constexpr (S.N == 4) return { v[S[0]], v[S[1]], v[S[2]], v[S[3]] };
-        if constexpr (S.N < 2 || S.N > 4) return {};
-    }
 #endif
 #pragma endregion // vector swizzle impl
 
-#pragma region Templated Vectors
-#define R(T) const T&
-#define SCALAR_T(V) typename V::scalar
-    
-#define S_ONLY requires std::is_signed_v<scalar>
+#pragma region Vector Util Fn
+    namespace vecops {
+        template <class T, class U> T cast(U val) { return (T)val; }
 
-#define ARITH(T, U) stdu::arithmetic_t<T, U>
-#define ARITH_T(T, U, O) typename ARITH(T, U)::O##_t
-#define ARITH_DO(U, M) ARITH(scalar, U)::M
-    
-#define VEC_OP(V, M, OP) \
-    template <class U> auto M(U v) const { \
-        static_assert(std::is_arithmetic_v<U> || is_vec_v<U>, #V "::" #M " not supported"); /* NOLINT(bugprone-macro-parentheses) */ \
-        if constexpr (std::is_arithmetic_v<U>) return apply([=](scalar x){ return x OP v; }); /* NOLINT(bugprone-macro-parentheses) */ \
-        else if constexpr (is_vec_v<U>) return apply([](scalar a, scalar b) { return a OP b; }, v); /* NOLINT(bugprone-macro-parentheses) */ \
+        template <class T, class U, class F, uint... I>
+        void rangecopy(T& out, const U& in, F fn, std::integer_sequence<uint, I...>) {
+            // ReSharper disable once CppDFAUnusedValue, CppDFAUnreadVariable
+            stdu::empty _ = { (out[I] = fn(in[I]))... };
+        }
+
+        template <uint N, class From, class To>
+        vecn<N, To> typecast(const vecn<N, From>& vec) {
+            vecn<N, To> out;
+            rangecopy(out, vec, cast<To, From>, std::make_integer_sequence<uint, N> {});
+            return out;
+        }
+
+        template <uint From, uint To, class T>
+        vecn<To, T> sizecast(const vecn<From, T>& vec) {
+            vecn<To, T> out;
+            rangecopy(out, vec, std::identity {}, std::make_integer_sequence<uint, std::min(From, To)> {});
+            return out;
+        }
+
+        struct add { auto operator()(auto a, auto b) { return a + b; } };
+        struct sub { auto operator()(auto a, auto b) { return a - b; } };
+        struct mul { auto operator()(auto a, auto b) { return a * b; } };
+        struct div { auto operator()(auto a, auto b) { return a / b; } };
+        struct mod {
+            auto operator()(auto a, auto b) {
+                if constexpr (std::is_floating_point_v<decltype(a)> || std::is_floating_point_v<decltype(b)>)
+                    return std::fmod(a, b);
+                else return a % b;
+            }
+        };
+        struct cneg { auto operator()(auto v) { if constexpr (std::is_signed_v<decltype(v)>) return -v; else return 0; } };
+
+        struct eq  { bool operator()(auto a, auto b) { return a == b; } };
+        struct neq { bool operator()(auto a, auto b) { return a != b; } };
+        struct lt  { bool operator()(auto a, auto b) { return a <  b; } };
+        struct le  { bool operator()(auto a, auto b) { return a <= b; } };
+        struct ge  { bool operator()(auto a, auto b) { return a >= b; } };
+        struct gt  { bool operator()(auto a, auto b) { return a >  b; } };
+
+        struct min { auto operator()(auto a, auto b) { return a < b ? a : b; } };
+        struct max { auto operator()(auto a, auto b) { return a < b ? b : a; } };
+
+        template <uint N, class T, class F>
+        vecn<N, decltype(F{}(T{}, T{}))> operate(F f, const vecn<N, T>& a, const vecn<N, T>& b, int = 0 /* here to explicitly say for no recursion*/) {
+            return [&]<uint... I>(std::integer_sequence<uint, I...>) {
+                return vecn<N, decltype(F{}(T{}, T{}))> { f(a[I], b[I])... };
+            }(std::make_integer_sequence<uint, N> {});
+        }
+
+        template <uint N, class T, class F>
+        vecn<N, decltype(F{}(T{}, T{}))> operate(F f, const vecn<N, T>& a, std::convertible_to<T> auto b, int = 0) {
+            return [&]<uint... I>(std::integer_sequence<uint, I...>) {
+                return vecn<N, decltype(F{}(T{}, T{}))> { f(a[I], b)... };
+            }(std::make_integer_sequence<uint, N> {});
+        }
+
+        template <uint N, uint M, class T, class U, class F>
+        vecn<N, decltype(F{}(T{}, T{}))> operate(F f, const vecn<N, T>& a, const vecn<M, U>& b, int = 0) {
+            constexpr uint NM = std::max(N, M);
+            using vec = vecn<NM, std::common_type_t<T, U>>;
+            vec ca = vec::ZERO(), cb = vec::ZERO();
+            rangecopy(ca, a, std::identity {}, std::make_integer_sequence<uint, N> {});
+            rangecopy(cb, b, std::identity {}, std::make_integer_sequence<uint, M> {});
+            return operate(f, ca, cb, int {});
+        }
+
+        template <class F, class T, class U> requires requires { operate(F {}, U {}, T {}, int {} /* specify to not choose this function */); }
+        auto operate(F f, const T& a, const U& b) { return operate(f, b, a, int {}); }
+
+        template <uint N, class T, class F>
+        void operate_inplace(F f, vecn<N, T>& a, const vecn<N, T>& b, int = 0 /* here to explicitly say for no recursion*/) {
+            return [&]<uint... I>(std::integer_sequence<uint, I...>) {
+                stdu::empty _ = { (a[I] = f(a[I], b[I]))... };
+            }(std::make_integer_sequence<uint, N> {});
+        }
+
+        template <uint N, class T, class F>
+        void operate_inplace(F f, vecn<N, T>& a, std::convertible_to<T> auto b, int = 0) {
+            return [&]<uint... I>(std::integer_sequence<uint, I...>) {
+                stdu::empty _ = { (a[I] = f(a[I], b))... };
+            }(std::make_integer_sequence<uint, N> {});
+        }
+
+        template <uint N, class T, class F>
+        T accum(F f, const vecn<N, T>& v, T base) {
+            return [&]<uint... I>(std::integer_sequence<uint, I...>) {
+                stdu::empty _ = { (base = f(base, v[I]))... };
+                return base;
+            }(std::make_integer_sequence<uint, N> {});
+        }
+
+        template <uint N, class T>
+        vecn<N, T> negate(const vecn<N, T>& vec) {
+            return [&]<uint... I>(std::integer_sequence<uint, I...>) {
+                return vecn<N, T> { -vec[I]... };
+            }(std::make_integer_sequence<uint, N> {});
+        }
     }
-    
-#define VEC_OP_OTHER(V, M) \
-    template <class U, class T> \
-    requires (std::is_arithmetic_v<U> && requires (U u, V<T> t) { t M u; }) /* NOLINT(bugprone-macro-parentheses) */ \
-    auto operator M(U u, const V<T>& t) { return t M u; }
+#pragma endregion
 
-#define VEC_CMP(V, M) \
-    template <class U> bool M(U v) const { \
-        static_assert(std::is_arithmetic_v<U> || is_vec_v<U>, #V "::" #M " not supported"); /* NOLINT(bugprone-macro-parentheses) */ \
-        if constexpr (std::is_arithmetic_v<U>) return apply([=](scalar x){ return ARITH_DO(U, M)(x, v); }).all(); /* NOLINT(bugprone-macro-parentheses) */ \
-        else if constexpr (is_vec_v<U>) return apply(ARITH_DO(SCALAR_T(U), M), v).all(); /* NOLINT(bugprone-macro-parentheses) */ \
+#define NODISC [[nodiscard]]
+
+#pragma region Vector Base
+    template <uint N, class T>
+    struct vecn_base {
+    public:
+        using scalar = T;
+        using vec_t = vecn<N, T>;
+        static constexpr uint size() { return N; }
+        static constexpr uint dimension = N;
+
+        static constexpr bool traits_float  = std::is_floating_point_v<T>,
+                              traits_signed = std::is_signed_v<T>;
+        using float_type = std::common_type_t<float, T>;
+
+        static vec_t from_span(std::span<const T> span) {
+            vec_t out;
+            vecops::rangecopy(out, span, std::make_integer_sequence<uint, N> {});
+            return out;
+        }
+
+        T* begin() { return (T*)this; }
+        T* end()   { return (T*)this + N; }
+        NODISC const T* begin()  const { return (const T*)this; }
+        NODISC const T* cbegin() const { return (const T*)this; }
+        NODISC const T* end()    const { return (const T*)this + N; }
+        NODISC const T* cend()   const { return (const T*)this + N; }
+
+        T& at_unchecked(uint i) { return *(begin() + i); }
+        NODISC const T& at_unchecked(uint i) const { return *(begin() + i); }
+        T& operator[](uint i) { return at_unchecked(i); }
+        NODISC const T& operator[](uint i) const { return at_unchecked(i); }
+
+        stdu::ref<T> at(uint i) { return i < N ? at_unchecked(i) : nullptr; }
+        NODISC stdu::ref<const T> at(uint i) const { return i < N ? at_unchecked(i) : nullptr; }
+
+        vec_t& as_vec() { return *(vec_t*)this; }
+        NODISC const vec_t& as_vec() const { return *(const vec_t*)this; }
+
+        template <class U> NODISC operator vecn<N, U>() const { return vecops::typecast<N, T, U>(as_vec()); }
+        template <uint M>  NODISC operator vecn<M, T>() const { return vecops::sizecast<N, M, T>(as_vec()); }
+        template <class U> NODISC vecn<N, U> as() const { return (vecn<N, U>)as_vec(); }
+        NODISC vecn<N, float_type> asf() const { return as<float_type>(); }
+
+        NODISC auto operator+() const { return as_vec(); }
+        NODISC auto operator-() const requires traits_signed { return vecops::negate(as_vec()); }
+        template <class V> NODISC auto operator+(const V& v) const { return vecops::operate(vecops::add {}, as_vec(), v); }
+        template <class V> NODISC auto operator-(const V& v) const { return vecops::operate(vecops::sub {}, as_vec(), v); }
+        template <class V> NODISC auto operator*(const V& v) const { return vecops::operate(vecops::mul {}, as_vec(), v); }
+        template <class V> NODISC auto operator/(const V& v) const { return vecops::operate(vecops::div {}, as_vec(), v); }
+        template <class V> NODISC auto operator%(const V& v) const { return vecops::operate(vecops::mod {}, as_vec(), v); }
+        template <class V> vecn<N, T>& operator+=(const V& v) { vecops::operate_inplace(vecops::add {}, as_vec(), v); return as_vec(); }
+        template <class V> vecn<N, T>& operator-=(const V& v) { vecops::operate_inplace(vecops::sub {}, as_vec(), v); return as_vec(); }
+        template <class V> vecn<N, T>& operator*=(const V& v) { vecops::operate_inplace(vecops::mul {}, as_vec(), v); return as_vec(); }
+        template <class V> vecn<N, T>& operator/=(const V& v) { vecops::operate_inplace(vecops::div {}, as_vec(), v); return as_vec(); }
+        template <class V> vecn<N, T>& operator%=(const V& v) { vecops::operate_inplace(vecops::mod {}, as_vec(), v); return as_vec(); }
+
+        NODISC bool eq(const vec_t& other) const { return as_vec() == other; }
+        NODISC bool neq(const vec_t& other) const { return !eq(other); }
+        NODISC std::strong_ordering  ord_cmp(const vec_t& other) const { return as_vec()->tup() <=> other.tup(); }
+        NODISC std::partial_ordering abs_cmp(const vec_t& other) const {
+            return as_vec() == other ? std::partial_ordering::equivalent :
+                   as_vec() <  other ? std::partial_ordering::less :
+                   as_vec() >  other ? std::partial_ordering::greater :
+                   std::partial_ordering::unordered;
+        }
+        NODISC bool iszero() const { return eq(as_vec()->ZERO()); }
+
+        template <class V> NODISC bool operator==(const V& v) const { return vecops::operate(vecops::eq  {}, as_vec(), v).all(); }
+        template <class V> NODISC bool operator!=(const V& v) const { return vecops::operate(vecops::neq {}, as_vec(), v).all(); }
+        template <class V> NODISC bool operator< (const V& v) const { return vecops::operate(vecops::lt  {}, as_vec(), v).all(); }
+        template <class V> NODISC bool operator<=(const V& v) const { return vecops::operate(vecops::le  {}, as_vec(), v).all(); }
+        template <class V> NODISC bool operator>=(const V& v) const { return vecops::operate(vecops::ge  {}, as_vec(), v).all(); }
+        template <class V> NODISC bool operator> (const V& v) const { return vecops::operate(vecops::gt  {}, as_vec(), v).all(); }
+
+        NODISC float_type len() const { return std::sqrt((float_type)lensq()); }
+        NODISC T          lensq() const { return dot(as_vec()); }
+        NODISC float_type dist(const vec_t& to) const { return (as_vec() - to).len(); }
+        NODISC float_type distsq(const vec_t& to) const { return (as_vec() - to).lensq(); }
+        NODISC bool       in_range(const T& other, T d) const { return dist(other) <= d; }
+        NODISC vec_t      norm() const { return as_vec() / len(); }
+        NODISC vec_t      norm(float d) const { return norm() * d; }
+
+        NODISC T sum() const { return vecops::accum(vecops::add {}, as_vec(), (T)0); }
+        NODISC T dot(const vec_t& other) const { return (as_vec() * other).sum(); }
+
+        NODISC vecn<N, float_type> lerp(const vec_t& other, float t) const { return as_vec() + (other - as_vec()) * t; }
+        vec_t& lerp_to(const vec_t& other, float t) requires traits_float { return as_vec() = lerp(other, t); }
+        NODISC vecn<N, float_type> towards(const vec_t& other, float max_d) const { vec_t u = (other - *this).norm(); return *this + u * max_d; }
+        vec_t& move_towards(const vec_t& other, float max_d) requires traits_float { return as_vec() = towards(other, max_d); }
+
+        NODISC vec_t clamped() const { return clamp(as_vec().ZERO(), as_vec().ONE(), as_vec()); }
+        vec_t& clamp() { return as_vec() = clamped(); }
+        NODISC vecn<N, float> len_clamped() const { return as_vec() / std::max(1, len()); }
+        vec_t& len_clamp() { return as_vec() = len_clamped(); }
+        NODISC static vec_t max(const vec_t& a, const vec_t& b) { return vecops::operate(vecops::max {}, a, b); }
+        NODISC static vec_t min(const vec_t& a, const vec_t& b) { return vecops::operate(vecops::min {}, a, b); }
+        NODISC static vec_t clamp(const rect<N, T>& r, const vec_t& x);
+
+        NODISC _rect_origin_inbetween_<vec_t> as_origin() const;
+        NODISC _rect_size_inbetween_<vec_t> as_size() const;
+        NODISC rect<N, T> to(const vec_t& other) const;
+        NODISC rect<N, T> to(const _rect_size_inbetween_<vec_t>& other) const;
+        NODISC bool is_in(const rect<N, T>& region) const;
+
+        NODISC bool all() const requires std::is_same_v<T, bool> { return vecops::accum([](bool a, bool b) { return a && b; }, as_vec(), true); }
+        NODISC bool any() const requires std::is_same_v<T, bool> { return vecops::accum([](bool a, bool b) { return a || b; }, as_vec(), true); }
+    };
+
+    template <uint N, class T> auto operator+(std::convertible_to<T> auto val, const vecn<N, T>& vec) requires !vec_t<decltype(val)> { return vec + val; }
+    template <uint N, class T> auto operator-(std::convertible_to<T> auto val, const vecn<N, T>& vec) requires !vec_t<decltype(val)> { return vecn<N, T> { val } - vec; }
+    template <uint N, class T> auto operator*(std::convertible_to<T> auto val, const vecn<N, T>& vec) requires !vec_t<decltype(val)> { return vec * val; }
+    template <uint N, class T> auto operator/(std::convertible_to<T> auto val, const vecn<N, T>& vec) requires !vec_t<decltype(val)> { return vecn<N, T> { val } / vec; }
+    template <uint N, class T> auto operator%(std::convertible_to<T> auto val, const vecn<N, T>& vec) requires !vec_t<decltype(val)> { return vecn<N, T> { val } % vec; }
+#pragma endregion
+
+#pragma region Vector Impl
+    namespace types {
+        template <uint N, class T> using ft = typename vecn_base<N, T>::float_type;
+        template <uint N, class T> using fv = typename vecn<N, T>::float_vec;
     }
-    
-#define VEC_CMP_OTHER(V, M, N_M) \
-    template <class U, class T> \
-    requires (std::is_arithmetic_v<U> && requires (U u, V<T> t) { t M u; }) /* NOLINT(bugprone-macro-parentheses) */ \
-    bool operator M(U u, const V<T>& t) { return t N_M u; }
 
-#define VEC2DEF(NAME, SCALAR, _X, _Y, DEF_OP, DEF_CMP, CEXPR, ...) \
-    struct NAME { \
-        using scalar = SCALAR; \
-        static constexpr int dimension = 2; \
-        \
-        union { \
-            SCALAR scalars[dimension]; \
-            struct { SCALAR _X, _Y; }; \
-        }; \
-        \
-        STDU_IF(CEXPR, constexpr) NAME (SCALAR s = 0) : _X(s), _Y(s) {} \
-        STDU_IF(CEXPR, constexpr) NAME (SCALAR _X, SCALAR _Y) : _X(_X), _Y(_Y) {} \
-        NAME (std::array<SCALAR, dimension> arr) : _X(arr[0]), _Y(arr[1]) {} \
-        \
-        STDU_IF(CEXPR, constexpr) SCALAR operator[] (uint i) const { return scalars[i]; } \
-        SCALAR& operator[] (uint i) { return scalars[i]; } \
-        \
-        STDU_IF(DEF_OP, \
-        VEC_OP(vec2, add, +); \
-        VEC_OP(vec2, sub, -); \
-        VEC_OP(vec2, mul, *); \
-        VEC_OP(vec2, div, /); \
-        VEC_OP(vec2, mod, %); \
-        \
-        template <class U> auto  operator+ (U v) const { return add(v); } \
-        template <class U> NAME& operator+=(U v)       { return *this = add(v); } \
-        template <class U> auto  operator- (U v) const { return sub(v); } \
-        template <class U> NAME& operator-=(U v)       { return *this = sub(v); } \
-        template <class U> auto  operator* (U v) const { return mul(v); } \
-        template <class U> NAME& operator*=(U v)       { return *this = mul(v); } \
-        template <class U> auto  operator/ (U v) const { return div(v); } \
-        template <class U> NAME& operator/=(U v)       { return *this = div(v); } \
-        template <class U> auto  operator% (U v) const { return mod(v); } \
-        template <class U> NAME& operator%=(U v)       { return *this = mod(v); } \
-        \
-        NAME operator+() const { return *this; } /* NOLINT(bugprone-macro-parentheses) */ \
-        NAME operator-() const S_ONLY { return { -_X, -_Y }; } /* NOLINT(bugprone-macro-parentheses) */ \
-        ) \
-        \
-        STDU_IF(DEF_CMP, \
-        VEC_CMP(vec2, lt); \
-        VEC_CMP(vec2, le); \
-        VEC_CMP(vec2, eq); \
-        VEC_CMP(vec2, ge); \
-        VEC_CMP(vec2, gt); \
-        VEC_CMP(vec2, ne); \
-        \
-        template <class U> bool operator <(U v) const { return lt(v); } \
-        template <class U> bool operator<=(U v) const { return le(v); } \
-        template <class U> bool operator==(U v) const { return eq(v); } \
-        template <class U> bool operator>=(U v) const { return ge(v); } \
-        template <class U> bool operator >(U v) const { return gt(v); } \
-        template <class U> bool operator!=(U v) const { return ne(v); } \
-        ) \
-        \
-        STDU_IF(VECTOR_SWIZZLING, \
-        static constexpr vector_swizzle_data<2> params = #_X#_Y; \
-        template <swizzle<2, params> S> \
-        STDU_IF(CEXPR, constexpr) typename vecn<S.N, SCALAR>::type swizzle() const { return swizzle_impl<SCALAR, 2, params, S>(scalars); } \
-        ) \
-        \
-        SCALAR* begin() { return scalars; } \
-        const SCALAR* begin() const { return scalars; } \
-        SCALAR* end() { return begin() + 2; } \
-        const SCALAR* end() const { return begin() + 2; } \
-        \
-        std::string str() const { return std::format("("#_X": {}, "#_Y": {})", _X, _Y); } \
-        \
-        __VA_ARGS__ /* extra declarations */ \
-    }; \
-    STDU_IF(DEF_OP, \
-        VEC_OP_OTHER(vec2, +) \
-        VEC_OP_OTHER(vec2, -) \
-        VEC_OP_OTHER(vec2, *) \
-        VEC_OP_OTHER(vec2, /) \
-        VEC_OP_OTHER(vec2, %) \
-    ) \
-    STDU_IF(DEF_CMP, \
-        VEC_CMP_OTHER(vec2,  <,  >) \
-        VEC_CMP_OTHER(vec2, <=, >=) \
-        VEC_CMP_OTHER(vec2, ==, ==) \
-        VEC_CMP_OTHER(vec2, >=, <=) \
-        VEC_CMP_OTHER(vec2,  >,  <) \
-        VEC_CMP_OTHER(vec2, !=, !=) \
-    )
+#pragma region Vec1
+    template <class T>
+    struct vecn<1, T> : public vecn_base<1, T> {
+        using base = vecn_base<1, T>;
+        using base::dimension, base::traits_float, base::traits_signed;
+        using float_type = typename base::float_type;
+        using float_vec = vecn<dimension, float_type>;
+        T x;
 
-#define VEC3DEF(NAME, SCALAR, _X, _Y, _Z, DEF_OP, DEF_CMP, CEXPR, ...) \
-    struct NAME { \
-        using scalar = SCALAR; \
-        static constexpr int dimension = 3; \
-        \
-        union { \
-            SCALAR scalars[dimension]; \
-            struct { SCALAR _X, _Y, _Z; }; \
-        }; \
-        STDU_IF(CEXPR, constexpr) NAME (SCALAR s = 0) : _X(s), _Y(s), _Z(s) {} \
-        STDU_IF(CEXPR, constexpr) NAME (SCALAR _X, SCALAR _Y, SCALAR _Z) : _X(_X), _Y(_Y), _Z(_Z) {} \
-        NAME (std::array<SCALAR, dimension> arr) : _X(arr[0]), _Y(arr[1]), _Z(arr[2]) {} \
-        \
-        STDU_IF(CEXPR, constexpr) SCALAR operator[] (uint i) const { return scalars[i]; } /* NOLINT(bugprone-macro-parentheses) */ \
-        SCALAR& operator[] (uint i) { return scalars[i]; } \
-        \
-        STDU_IF(DEF_OP, \
-        VEC_OP(vec3, add, +); \
-        VEC_OP(vec3, sub, -); \
-        VEC_OP(vec3, mul, *); \
-        VEC_OP(vec3, div, /); \
-        VEC_OP(vec3, mod, %); \
-        \
-        template <class U> auto  operator+ (U v) const { return add(v); } \
-        template <class U> NAME& operator+=(U v)       { return *this = add(v); } \
-        template <class U> auto  operator- (U v) const { return sub(v); } \
-        template <class U> NAME& operator-=(U v)       { return *this = sub(v); } \
-        template <class U> auto  operator* (U v) const { return mul(v); } \
-        template <class U> NAME& operator*=(U v)       { return *this = mul(v); } \
-        template <class U> auto  operator/ (U v) const { return div(v); } \
-        template <class U> NAME& operator/=(U v)       { return *this = div(v); } \
-        template <class U> auto  operator% (U v) const { return mod(v); } \
-        template <class U> NAME& operator%=(U v)       { return *this = mod(v); } \
-        \
-        NAME operator+() const { return *this; } /* NOLINT(bugprone-macro-parentheses) */ \
-        NAME operator-() const S_ONLY { return { -_X, -_Y, -_Z }; } /* NOLINT(bugprone-macro-parentheses) */ \
-        ) \
-        \
-        STDU_IF(DEF_CMP, \
-        VEC_CMP(vec3, lt); \
-        VEC_CMP(vec3, le); \
-        VEC_CMP(vec3, eq); \
-        VEC_CMP(vec3, ge); \
-        VEC_CMP(vec3, gt); \
-        VEC_CMP(vec3, ne); \
-        \
-        template <class U> bool operator <(U v) const { return lt(v); } \
-        template <class U> bool operator<=(U v) const { return le(v); } \
-        template <class U> bool operator==(U v) const { return eq(v); } \
-        template <class U> bool operator>=(U v) const { return ge(v); } \
-        template <class U> bool operator >(U v) const { return gt(v); } \
-        template <class U> bool operator!=(U v) const { return ne(v); } \
-        ) \
-        \
-        STDU_IF(VECTOR_SWIZZLING, \
-        static constexpr vector_swizzle_data<3> params = #_X#_Y#_Z; \
-        template <swizzle<3, params> S> \
-        STDU_IF(CEXPR, constexpr) typename vecn<S.N, SCALAR>::type swizzle() const { return swizzle_impl<SCALAR, 3, params, S>(scalars); } \
-        ) \
-        \
-        SCALAR* begin() { return scalars; } \
-        const SCALAR* begin() const { return scalars; } \
-        SCALAR* end() { return begin() + 3; } \
-        const SCALAR* end() const { return begin() + 3; } \
-        \
-        std::string str() const { return std::format("("#_X": {}, "#_Y": {}, "#_Z": {})", _X, _Y, _Z); } \
-        \
-        __VA_ARGS__ /* extra declarations */ \
-    }; \
-    STDU_IF(DEF_OP, \
-        VEC_OP_OTHER(vec3, +) \
-        VEC_OP_OTHER(vec3, -) \
-        VEC_OP_OTHER(vec3, *) \
-        VEC_OP_OTHER(vec3, /) \
-        VEC_OP_OTHER(vec3, %) \
-    ) \
-    STDU_IF(DEF_CMP, \
-        VEC_CMP_OTHER(vec3,  <,  >) \
-        VEC_CMP_OTHER(vec3, <=, >=) \
-        VEC_CMP_OTHER(vec3, ==, ==) \
-        VEC_CMP_OTHER(vec3, >=, <=) \
-        VEC_CMP_OTHER(vec3,  >,  <) \
-        VEC_CMP_OTHER(vec3, !=, !=) \
-    )
+        vecn(T x = 0) : x(x) {}
+        vecn(stdu::convertible_to<T> auto x) : x((T)x) {}
 
-#define VEC4DEF(NAME, SCALAR, _X, _Y, _Z, _W, DEF_OP, DEF_CMP, DEF_W_VAL, CEXPR, ...) \
-    struct NAME { \
-        using scalar = SCALAR; \
-        static constexpr int dimension = 4; \
-        \
-        union { \
-        SCALAR scalars[dimension]; \
-        struct { SCALAR _X, _Y, _Z, _W; }; \
-        }; \
-        STDU_IF(CEXPR, constexpr) NAME () : _X(0), _Y(0), _Z(0), _W(0) {} \
-        STDU_IF(CEXPR, constexpr) NAME (SCALAR s, SCALAR _W = DEF_W_VAL) : _X(s), _Y(s), _Z(s), _W(_W) {} \
-        STDU_IF(CEXPR, constexpr) NAME (SCALAR _X, SCALAR _Y, SCALAR _Z, SCALAR _W = DEF_W_VAL) : _X(_X), _Y(_Y), _Z(_Z), _W(_W) {} \
-        NAME (std::array<SCALAR, dimension> arr) : _X(arr[0]), _Y(arr[1]), _Z(arr[2]), _W(arr[3]) {} \
-        \
-        STDU_IF(CEXPR, constexpr) SCALAR operator[] (uint i) const { return scalars[i]; } /* NOLINT(bugprone-macro-parentheses) */ \
-        SCALAR& operator[] (uint i) { return scalars[i]; } \
-        \
-        STDU_IF(DEF_OP, \
-        VEC_OP(vec4, add, +); \
-        VEC_OP(vec4, sub, -); \
-        VEC_OP(vec4, mul, *); \
-        VEC_OP(vec4, div, /); \
-        VEC_OP(vec4, mod, %); \
-        \
-        template <class U> auto  operator+ (U v) const { return add(v); } \
-        template <class U> NAME& operator+=(U v)       { return *this = add(v); } \
-        template <class U> auto  operator- (U v) const { return sub(v); } \
-        template <class U> NAME& operator-=(U v)       { return *this = sub(v); } \
-        template <class U> auto  operator* (U v) const { return mul(v); } \
-        template <class U> NAME& operator*=(U v)       { return *this = mul(v); } \
-        template <class U> auto  operator/ (U v) const { return div(v); } \
-        template <class U> NAME& operator/=(U v)       { return *this = div(v); } \
-        template <class U> auto  operator% (U v) const { return mod(v); } \
-        template <class U> NAME& operator%=(U v)       { return *this = mod(v); } \
-        \
-        NAME operator+() const { return *this; } /* NOLINT(bugprone-macro-parentheses) */ \
-        NAME operator-() const S_ONLY { return { -_X, -_Y, -_Z, -_W }; } /* NOLINT(bugprone-macro-parentheses) */ \
-        ) \
-        \
-        STDU_IF(DEF_CMP, \
-        VEC_CMP(vec4, lt); \
-        VEC_CMP(vec4, le); \
-        VEC_CMP(vec4, eq); \
-        VEC_CMP(vec4, ge); \
-        VEC_CMP(vec4, gt); \
-        VEC_CMP(vec4, ne); \
-        \
-        template <class U> bool operator <(U v) const { return lt(v); } \
-        template <class U> bool operator<=(U v) const { return le(v); } \
-        template <class U> bool operator==(U v) const { return eq(v); } \
-        template <class U> bool operator>=(U v) const { return ge(v); } \
-        template <class U> bool operator >(U v) const { return gt(v); } \
-        template <class U> bool operator!=(U v) const { return ne(v); } \
-        ) \
-        \
-        STDU_IF(VECTOR_SWIZZLING, \
-        static constexpr vector_swizzle_data<4> params = #_X#_Y#_Z#_W; \
-        template <swizzle<4, params> S> \
-        STDU_IF(CEXPR, constexpr) typename vecn<S.N, SCALAR>::type swizzle() const { return swizzle_impl<SCALAR, 4, params, S>(scalars); } \
-        ) \
-        \
-        SCALAR* begin() { return scalars; } \
-        const SCALAR* begin() const { return scalars; } \
-        SCALAR* end() { return begin() + 4; } \
-        const SCALAR* end() const { return begin() + 4; } \
-        \
-        std::string str() const { return std::format("("#_X": {}, "#_Y": {}, "#_Z": {}, "#_W": {})", _X, _Y, _Z, _W); } \
-        \
-        __VA_ARGS__ /* extra declarations */ \
-    }; \
-    STDU_IF(DEF_OP, \
-    VEC_OP_OTHER(vec4, +) \
-    VEC_OP_OTHER(vec4, -) \
-    VEC_OP_OTHER(vec4, *) \
-    VEC_OP_OTHER(vec4, /) \
-    VEC_OP_OTHER(vec4, %) \
-    ) \
-    STDU_IF(DEF_CMP, \
-    VEC_CMP_OTHER(vec4,  <,  >) \
-    VEC_CMP_OTHER(vec4, <=, >=) \
-    VEC_CMP_OTHER(vec4, ==, ==) \
-    VEC_CMP_OTHER(vec4, >=, <=) \
-    VEC_CMP_OTHER(vec4,  >,  <) \
-    VEC_CMP_OTHER(vec4, !=, !=) \
-    )
+        static constexpr swizz::vector_swizzle_data<dimension> params = "x";
+        template <auto S>
+        vecn<S.N, T> swizzle() const {
+            return swizz::swizzle_impl<T, dimension, params, swizz::swizzle<dimension, params> { S }>(this->begin());
+        }
 
-#define BOOL_ONLY requires std::is_same_v<scalar, bool>
-#define B_ONLY requires std::is_same_v<scalar, uchar>
-#define F_ONLY requires std::is_floating_point_v<scalar>
-#define COMMON_VEC_MATH(T) \
-    auto len() const; \
-    scalar lensq() const; \
-    auto dist(R(T) to) const; \
-    auto distsq(R(T) to) const; \
-    bool in_range(R(T) other, scalar d) const; \
-    \
-    scalar sum() const; \
-    \
-    auto dot(R(T) other) const; \
-    \
-    T  norm(float d = 1) const F_ONLY; /* NOLINT(bugprone-macro-parentheses) */ \
-    \
-    T  lerp(R(T) other, float t) const F_ONLY; \
-    T& lerp_to(R(T) other, float t) F_ONLY; /* NOLINT(bugprone-macro-parentheses) */ \
-    T  towards(R(T) other, float max_d) const F_ONLY; \
-    T& move_towards(R(T) other, float max_d) F_ONLY; /* NOLINT(bugprone-macro-parentheses) */ \
-    \
-    scalar angle(R(T) other) const F_ONLY; \
-    \
-    T clamped() const F_ONLY; \
-    static T max(R(T) a, R(T) b); \
-    static T min(R(T) a, R(T) b); \
-    static T clamp(R(T) rmin, R(T) rmax, R(T) x); \
-    \
-    _rect_origin_inbetween_<T> as_origin() const; \
-    _rect_size_inbetween_<T> as_size() const; \
-    auto to(R(T) other) const; \
-    auto to(R(_rect_size_inbetween_<T>) other) const; \
-    bool is_in(const rect<dimension, scalar>& region) const; \
-    \
-    bool all() const BOOL_ONLY; \
-    bool any() const BOOL_ONLY; \
-    \
-    template <class F, class... Ts> \
-    auto apply(F func, const T<Ts>&... args) const -> T<decltype(func((scalar)0, ((Ts)0)...))>;
-    
-#pragma endregion // templated vectors
-    
+        [[nodiscard]] std::string str() const { return std::format("(x: {})", x); }
+
+        NODISC operator const T&() const { return x; }
+        operator T&() { return x; }
+
+        static vecn ZERO() { return {  0 }; }
+        static vecn ONE()  { return { +1 }; }
+    };
+#pragma endregion // Vec1
 #pragma region Vec2
     template <class T>
-    VEC2DEF(vec2, T, x, y, 1, 1, 1, \
-        vec2(Direction2D dir, T scale = 1); \
-        vec2(Corner2D cor,    T scale = 1); \
-        vec2(stdu::convertible_to<T> auto x, stdu::convertible_to<T> auto y) : x((T)x), y((T)y) {} \
-        \
-        template <vec_t V> requires (V::dimension == dimension) \
-        operator V() const { return { (SCALAR_T(V))x, (SCALAR_T(V))y }; } \
-        template <class U> operator vec3<U>() const { return { (U)x, (U)y, 0 }; } \
-        template <class U> operator vec4<U>() const { return { (U)x, (U)y, 0, 0 }; } \
-        template <class U> vec2<U> as() const { return vec2<U>(*this); } \
-        \
-        static constexpr vec2 RIGHT()       { return {  1,  0 }; } /* constexpr vars dont work with templates */ \
-        static constexpr vec2 LEFT() S_ONLY { return { -1,  0 }; } \
-        static constexpr vec2 UP()          { return {  0,  1 }; } \
-        static constexpr vec2 DOWN() S_ONLY { return {  0, -1 }; } \
-        static constexpr vec2 ZERO()        { return {  0,  0 }; } \
-        static constexpr vec2 ONE()         { return {  1,  1 }; } \
-        \
-        COMMON_VEC_MATH(vec2) \
-        \
-        auto slope() const; \
-        \
-        T angle_signed(const vec2& other) const F_ONLY; \
-        T angle() const F_ONLY; \
-        vec2 polar() const F_ONLY; \
-        vec2 cartesian() const F_ONLY; \
-        static vec2 from_polar(T r, T theta) F_ONLY { return vec2 { r, theta }.cartesian(); } \
-        \
-        vec2  perpend() const S_ONLY; \
-        \
-        vec2  rotated(float angle) const F_ONLY; \
-        vec2& rotate(float angle) F_ONLY; \
-        vec2  rotated(float angle, const vec2& origin) const F_ONLY; \
-        vec2& rotate(float angle, const vec2& origin) F_ONLY; \
-        \
-        vec2  reflected(const vec2& normal) const F_ONLY; \
-        vec2& reflect(const vec2& normal) F_ONLY; \
-        vec2  reflected_uc(const vec2& normal) const F_ONLY; \
-        vec2& reflect_uc(const vec2& normal) F_ONLY; \
-        \
-        vec2 project(const vec2& axis) const F_ONLY; \
-        \
-        vec3<T> with_z(T z) const; \
-        \
-        static vec2 unit_x(T x) { return { x, 0 }; } \
-        static vec2 unit_y(T y) { return { 0, y }; } \
-    )
-#pragma endregion // vec2
+    struct vecn<2, T> : public vecn_base<2, T> {
+        using base = vecn_base<2, T>;
+        using base::dimension, base::traits_float, base::traits_signed;
+        using float_type = typename base::float_type;
+        using float_vec = vecn<dimension, float_type>;
+        T x, y;
+
+        vecn(T s = 0) : x(s), y(s) {}
+        vecn(T x, T y) : x(x), y(y) {}
+        explicit vecn(Direction2D dir, T scale = 1);
+        explicit vecn(Corner2D cor, T scale = 1);
+        vecn(stdu::convertible_to<T> auto x, stdu::convertible_to<T> auto y) : x((T)x), y((T)y) {}
+
+        static constexpr swizz::vector_swizzle_data<dimension> params = "xy";
+        template <auto S>
+        vecn<S.N, T> swizzle() const {
+            return swizz::swizzle_impl<T, dimension, params, swizz::swizzle<dimension, params> { S }>(this->begin());
+        }
+
+        [[nodiscard]] std::string str() const { return std::format("(x: {}, y: {})", x, y); }
+
+        static vecn RIGHT()                       { return { +1,  0 }; }
+        static vecn LEFT() requires traits_signed { return { -1,  0 }; }
+        static vecn UP()                          { return {  0, +1 }; }
+        static vecn DOWN() requires traits_signed { return {  0, -1 }; }
+        static vecn ZERO()                        { return {  0,  0 }; }
+        static vecn ONE()                         { return { +1, +1 }; }
+
+        NODISC float_type slope() const;
+
+        NODISC float_type angle() const;
+        NODISC float_type angle(const vecn& other) const;
+        NODISC float_type angle_signed(const vecn& other) const;
+        NODISC float_vec polar() const;
+        static float_vec from_polar(T r, T theta);
+
+        NODISC vecn perpend() const requires traits_signed;
+
+        NODISC float_vec rotated(float angle) const;
+        NODISC float_vec rotated(float angle, const vecn& origin) const;
+        NODISC vecn projected(const vecn& axis) const;
+        NODISC vecn reflected(const vecn& normal) const;
+        vecn& rotate(float angle)                     requires traits_float { return *this = rotated(angle); }
+        vecn& rotate(float angle, const vecn& origin) requires traits_float { return *this = rotated(angle, origin); }
+        vecn& reflect(const vecn& normal) { return *this = reflected(normal); }
+        vecn& project(const vecn& axis)   { return *this = projected(axis); }
+
+        NODISC vec3<T> with_z(T z) const { return { x, y, z }; }
+
+        NODISC std::tuple<T, T> tup() const { return { x, y }; }
+
+        static vecn unit_x(T x) { return { x, 0 }; }
+        static vecn unit_y(T y) { return { 0, y }; }
+    };
+
+    template <class T> types::ft<2, T> vecn<2, T>::slope() const { return (float_type)y / (float_type)x; }
+    template <class T> types::ft<2, T> vecn<2, T>::angle() const { return std::atan2((float_type)y, (float_type)x); }
+    template <class T> types::ft<2, T> vecn<2, T>::angle(const vecn& other) const { return std::acos((float_type)this->dot(other) / (this->len() * other.len())); }
+    template <class T> types::ft<2, T> vecn<2, T>::angle_signed(const vecn& other) const { return std::atan2((float_type)(y * other.x - x * other.y), (float_type)this->dot(other)); }
+    template <class T> types::fv<2, T> vecn<2, T>::polar() const { return { this->len(), angle() }; }
+    template <class T> types::fv<2, T> vecn<2, T>::from_polar(T r, T theta) { return { r * std::cos(theta), r * std::sin(theta) }; }
+
+    template <class T> vec2<T> vecn<2, T>::perpend() const requires traits_signed { return { y, -x }; } /* perpendicular vector (rotated 90 deg), (0, 1) -> (1, 0) */
+    template <class T> types::fv<2, T> vecn<2, T>::rotated(float angle) const {
+        types::ft<2, T> sin = std::sin(angle), cos = std::cos(angle);
+        return { x * cos - y * sin, x * sin + y * cos };
+    }
+    template <class T> types::fv<2, T> vecn<2, T>::rotated(float angle, const vecn& origin) const { return (*this - origin).rotated(angle) + (float_vec)origin; }
+    template <class T> vecn<2, T> vecn<2, T>::reflected(const vecn& normal) const { return *this - 2 * this->dot(normal) * normal; }
+    template <class T> vecn<2, T> vecn<2, T>::projected(const vecn& axis) const { return axis * this->dot(axis) / axis.lensq(); }
+
+    template <class T> vecn<2, T>::vecn(Direction2D dir, T scale) : x(0), y(0) {
+        using enum Direction2D;
+        if (dir == UNIT) {
+            x = y = scale; return;
+        }
+        if (dir < 0 || dir > DOWN) return;
+        (&x)[(int)(dir >> 1)] = (int)(dir & 1) ? vecops::cneg {} (scale) : scale;
+    }
+
+    template <class T> vecn<2, T>::vecn(Corner2D cor, T scale) : x(0), y(0) {
+        using enum Corner2D;
+        if (cor < 0 || cor > BOTTOM_LEFT) return;
+        x = (int)(cor & SIDE_LEFT  ) ? vecops::cneg {} (scale) : scale;
+        y = (int)(cor & SIDE_BOTTOM) ? vecops::cneg {} (scale) : scale;
+    }
+#pragma endregion
 #pragma region Vec3
     template <class T>
-    VEC3DEF(vec3, T, x, y, z, 1, 1, 1,
-        vec3(Direction3D dir, T scale = 1); \
-        vec3(Corner3D cor,    T scale = 1); \
-        vec3(stdu::convertible_to<T> auto x, stdu::convertible_to<T> auto y, \
-             stdu::convertible_to<T> auto z) : x((T)x), y((T)y), z((T)z) {} \
-        \
-        template <vec_t V> requires (V::dimension == dimension) \
-        operator V() const { return { (SCALAR_T(V))x, (SCALAR_T(V))y, (SCALAR_T(V))z }; } \
-        template <class U> operator vec2<U>() const { return { (U)x, (U)y }; } \
-        template <class U> operator vec4<U>() const { return { (U)x, (U)y, (U)z, 1 }; } \
-        template <class U> vec3<U> as() const { return vec3<U>(*this); } \
-        \
-        static constexpr vec3 RIGHT()       { return {  1,  0,  0 }; }
-        static constexpr vec3 LEFT() S_ONLY { return { -1,  0,  0 }; }
-        static constexpr vec3 UP()          { return {  0,  1,  0 }; }
-        static constexpr vec3 DOWN() S_ONLY { return {  0, -1,  0 }; }
-        static constexpr vec3 FRONT()       { return {  0,  0,  1 }; }
-        static constexpr vec3 BACK() S_ONLY { return {  0,  0, -1 }; }
-        static constexpr vec3 ZERO()        { return {  0,  0,  0 }; }
-        static constexpr vec3 ONE()         { return {  1,  1,  1 }; }
-        \
-        COMMON_VEC_MATH(vec3) \
-        vec2<T> xy() const; \
-        \
-        vec3 cross(const vec3& other) const; \
-        \
-        T angle_signed(const vec3& other, const vec3& normal) const F_ONLY; /* normal should be normalized */ \
-        \
-        T yaw() const F_ONLY; \
-        T pitch() const F_ONLY; \
-        vec3 spheric() const F_ONLY; /* 3d polar coordinates, (x,y,z) into (r,theta,phi) */ \
-        vec3 cartesian() const F_ONLY; /* converts (r,theta,phi) into (x,y,z) */ \
-        static vec3 from_polar(T r, T yaw, T pitch) F_ONLY { return vec3 { r, yaw, pitch }.cartesian(); } \
-        \
-        vec2<T> projected() const F_ONLY;
-        vec3  reflected(const vec3& normal) const F_ONLY; \
-        vec3& reflect(const vec3& normal) F_ONLY; \
-        vec3  reflected_uc(const vec3& normal) const F_ONLY; /* this assumes normal is normalized */ \
-        vec3& reflect_uc(const vec3& normal) F_ONLY; /* this assumes normal is normalized */ \
-        \
-        color color(uchar a) const B_ONLY; \
-        colorf color(float a) const F_ONLY; \
-        color3 color() const B_ONLY; \
-        color3f color() const F_ONLY; \
-        \
-        vec4<T> with_w(T w = 1) const; \
-        \
-        static vec3 unit_x(T x) { return { x, 0, 0 }; } \
-        static vec3 unit_y(T y) { return { 0, y, 0 }; } \
-        static vec3 unit_z(T z) { return { 0, 0, z }; } \
-    );
-#pragma endregion // vec3
+    struct vecn<3, T> : public vecn_base<3, T> {
+        using base = vecn_base<3, T>;
+        using base::dimension, base::traits_float, base::traits_signed;
+        using float_type = typename base::float_type;
+        using float_vec = vecn<dimension, float_type>;
+        T x, y, z;
+
+        vecn(T s = 0) : x(s), y(s), z(s) {}
+        vecn(T x, T y, T z) : x(x), y(y), z(z) {}
+        explicit vecn(Direction3D dir, T scale = 1);
+        explicit vecn(Corner3D cor,    T scale = 1);
+        vecn(stdu::convertible_to<T> auto x, stdu::convertible_to<T> auto y,
+             stdu::convertible_to<T> auto z) : x((T)x), y((T)y), z((T)z) {}
+
+        static constexpr swizz::vector_swizzle_data<dimension> params = "xyz";
+        template <auto S>
+        vecn<S.N, T> swizzle() const {
+            return swizz::swizzle_impl<T, dimension, params, swizz::swizzle<dimension, params> { S }>(this->begin());
+        }
+
+        [[nodiscard]] std::string str() const { return std::format("(x: {}, y: {}, z: {})", x, y, z); }
+
+        static vecn RIGHT()                       { return {  1,  0,  0 }; }
+        static vecn LEFT() requires traits_signed { return { -1,  0,  0 }; }
+        static vecn UP()                          { return {  0,  1,  0 }; }
+        static vecn DOWN() requires traits_signed { return {  0, -1,  0 }; }
+        static vecn FRONT()                       { return {  0,  0,  1 }; }
+        static vecn BACK() requires traits_signed { return {  0,  0, -1 }; }
+        static vecn ZERO()                        { return {  0,  0,  0 }; }
+        static vecn ONE()                         { return {  1,  1,  1 }; }
+
+        NODISC vecn cross(const vecn& other) const;
+
+        NODISC float_type angle(const vecn& other) const;
+        NODISC float_type angle_signed(const vecn& other, const vecn& normal) const;
+
+        NODISC float_type yaw() const;
+        NODISC float_type pitch() const;
+        NODISC float_vec spheric() const;
+        static float_vec from_spheric(T r, T yaw, T pitch);
+
+        NODISC vec2<float_type> projected() const;
+        NODISC vecn reflected(const vecn& normal) const;
+        vecn& reflect(const vecn& normal) { return *this = reflected(normal); }
+
+        NODISC auto to_color(T alpha = 1) const -> std::conditional_t<traits_float, colorf,  color>;
+        NODISC auto to_color3() const -> std::conditional_t<traits_float, color3f, color3>;
+
+        NODISC vec2<T> xy() const { return { x, y }; }
+        NODISC vec4<T> with_w(T w = 1) const { return { x, y, z, w }; }
+
+        NODISC std::tuple<T, T, T> tup() const { return { x, y, z }; }
+
+        static vecn unit_x(T x) { return { x, 0, 0 }; }
+        static vecn unit_y(T y) { return { 0, y, 0 }; }
+        static vecn unit_z(T z) { return { 0, 0, z }; }
+    };
+
+    template <class T> vec3<T> vecn<3, T>::cross(const vecn& other) const { return { (T)(y * other.z - z * other.y), (T)(z * other.x - x * other.z), (T)(x * other.y - y * other.x) }; }
+
+    template <class T> types::ft<3, T> vecn<3, T>::yaw() const { return std::atan2((float_type)x, (float_type)z); }
+    template <class T> types::ft<3, T> vecn<3, T>::pitch() const { return std::asin((float_type)y / this->len()); }
+    template <class T> types::fv<3, T> vecn<3, T>::spheric() const { return { this->len(), yaw(), pitch() }; }
+    template <class T> types::fv<3, T> vecn<3, T>::from_spheric(T r, T yaw, T pitch) { return (float_type)r * float_vec { std::sin(yaw) * std::cos(pitch), std::sin(pitch), std::cos(yaw) * std::cos(pitch) }; }
+
+    template <class T> types::ft<3, T> vecn<3, T>::angle(const vecn& other) const { return std::acos((float_type)this->dot(other) / (this->len() * other.len())); }
+    template <class T> types::ft<3, T> vecn<3, T>::angle_signed(const vecn& other, const vecn& normal) const { return std::atan2((float_type)cross(other).dot(normal), (float_type)this->dot(other)); }
+
+    template <class T> vec2<types::ft<3, T>> vecn<3, T>::projected() const { return (vec2<float_type>)xy() / (float_type)z; }
+    template <class T> vec3<T> vecn<3, T>::reflected(const vecn& normal) const { return *this - 2 * this->dot(normal) * normal; }
+
+    template <class T> vecn<3, T>::vecn(Direction3D dir, T scale) : x(0), y(0), z(0) {
+        using enum Direction3D;
+        if (dir == UNIT) {
+            x = y = z = scale; return;
+        }
+        if (dir < 0 || dir > BACK) return;
+        (&x)[(int)(dir >> 1)] = (int)(dir & 1) ? vecops::cneg {} (scale) : scale;
+    }
+
+    template <class T> vecn<3, T>::vecn(Corner3D cor, T scale) : x(0), y(0), z(0) {
+        using enum Corner3D;
+        if (cor < 0 || cor > BACK_BOTTOM_LEFT) return;
+        x = (int)(cor & SIDE_LEFT  ) ? vecops::cneg {} (scale) : scale;
+        y = (int)(cor & SIDE_BOTTOM) ? vecops::cneg {} (scale) : scale;
+        z = (int)(cor & SIDE_BACK  ) ? vecops::cneg {} (scale) : scale;
+    }
+#pragma endregion
 #pragma region Vec4
     template <class T>
-    VEC4DEF(vec4, T, x, y, z, w, 1, 1, 1, 1,
-        vec4(Direction4D dir, T scale = 1); \
-        vec4(Corner4D    cor, T scale = 1); \
-        vec4(stdu::convertible_to<T> auto x, stdu::convertible_to<T> auto y, \
-             stdu::convertible_to<T> auto z, stdu::convertible_to<T> auto w = 1) : x((T)x), y((T)y), z((T)z), w((T)w) {} \
-        \
-        template <vec_t V> requires (V::dimension == dimension) \
-        operator V() const { return { (SCALAR_T(V))x, (SCALAR_T(V))y, (SCALAR_T(V))z, (SCALAR_T(V))w }; } \
-        template <class U> operator vec2<U>() const { return { (U)x, (U)y }; } \
-        template <class U> operator vec3<U>() const { return { (U)x, (U)y, (U)z }; } \
-        template <class U> vec4<U> as() const { return vec4<U>(*this); } \
-        \
-        static constexpr vec4 RIGHT()       { return {  1,  0,  0,  0 }; }
-        static constexpr vec4 LEFT() S_ONLY { return { -1,  0,  0,  0 }; }
-        static constexpr vec4 UP()          { return {  0,  1,  0,  0 }; }
-        static constexpr vec4 DOWN() S_ONLY { return {  0, -1,  0,  0 }; }
-        static constexpr vec4 FRONT()       { return {  0,  0,  1,  0 }; }
-        static constexpr vec4 BACK() S_ONLY { return {  0,  0, -1,  0 }; }
-        static constexpr vec4 IN()          { return {  0,  0,  0,  1 }; }
-        static constexpr vec4 OUT()  S_ONLY { return {  0,  0,  0, -1 }; }
-        static constexpr vec4 ZERO()        { return {  0,  0,  0,  0 }; }
-        static constexpr vec4 ONE()         { return {  1,  1,  1,  1 }; }
-        \
-        COMMON_VEC_MATH(vec4) \
-        vec3<T> xyz() const; \
-        vec2<T> xy() const; \
-        \
-        vec3<T> projected() const F_ONLY; \
-        \
-        color color() const B_ONLY; \
-        colorf color() const F_ONLY; \
-        \
-        static vec4 unit_x(T x) { return { x, 0, 0, 0 }; } \
-        static vec4 unit_y(T y) { return { 0, y, 0, 0 }; } \
-        static vec4 unit_z(T z) { return { 0, 0, z, 0 }; } \
-        static vec4 unit_w(T w) { return { 0, 0, 0, w }; } \
-    );
-#pragma endregion // vec4
+    struct vecn<4, T> : vecn_base<4, T> {
+        using base = vecn_base<4, T>;
+        using base::dimension, base::traits_float, base::traits_signed;
+        using float_type = typename base::float_type;
+        using float_vec = vecn<dimension, float_type>;
+        T x, y, z, w;
 
-#pragma region Color
-#define COLOR_COMMON(T, HAS_A, C) \
-    constexpr T(const char (&hex)[1+6+1]); \
-    STDU_IF(HAS_A, constexpr T(const char (&hex)[1+8+1]);) \
-    std::string hexcode() const; \
-    \
-    bool eq(const T& other) const; \
-    bool loose_eq(const T& other) const; \
-    bool neq(const T& other) const; \
-    bool operator==(const T& other) const; \
-    \
-    OPENGL_API T neg() const; \
-    OPENGL_API T lerp(const T& other, float t) const; \
-    OPENGL_API T mul(const T& other) const; \
-    OPENGL_API T screen(const T& other) const; \
-    OPENGL_API T overlay(const T& other) const; \
-    STDU_IF(HAS_A, OPENGL_API without_alpha_t mul_alpha() const;) \
-    \
-    OPENGL_API float luminance() const; \
-    \
-    OPENGL_API bvec3 as_rgb()   const; \
-    OPENGL_API bvec4 as_rgba()  const; \
-    OPENGL_API fvec3 as_rgbf()  const; \
-    OPENGL_API fvec4 as_rgbaf() const; \
-    OPENGL_API fvec3 as_hsl()   const; \
-    OPENGL_API fvec4 as_hsla()  const; \
-    OPENGL_API static T from_hsl(float hue, float saturation = 1, float lightness = 1 STDU_IF(HAS_A, , float alpha = 1)); /* hue: [0-360], sat: [0-1], L: [0-1] */ \
-    OPENGL_API static T from_hsl(STDU_IF_ELSE(HAS_A, (fvec4 hsla), (fvec3 hsl))); /* hue: [0-360], sat: [0-1], L: [0-1] */ \
-    OPENGL_API fvec3 as_hsv()  const; \
-    OPENGL_API fvec4 as_hsva() const; \
-    OPENGL_API static T from_hsv(float hue, float saturation = 1, float value = 1 STDU_IF(HAS_A, , float alpha = 1)); /* hue: [0-360], sat: [0-1], val: [0-1] */ \
-    OPENGL_API static T from_hsv(STDU_IF_ELSE(HAS_A, (fvec4 hsva), (fvec3 hsv))); /* hue: [0-360], sat: [0-1], val: [0-1] */ \
-    \
-    STDU_IF(HAS_A, OPENGL_API without_alpha_t rgb() const;) \
-    OPENGL_API STDU_IF_ELSE(HAS_A, (T), (with_alpha_t)) with_alpha(scalar alpha = (C)) const; \
-    OPENGL_API STDU_IF_ELSE(HAS_A, (T), (with_alpha_t)) rgb1() const; \
-    \
-    OPENGL_API \
-    STDU_IF_ELSE(HAS_A, (operator without_alpha_t() const;), (operator with_alpha_t() const;)) \
-    \
-    OPENGL_API static T color_id(int id); \
-    \
-    static constexpr T BLACK()      { return "#000000"; } /* solid black: rgb(000, 000, 000) or #000000 */ \
-    static constexpr T DARK_GRAY()  { return "#404040"; } /*   25% white: rgb(064, 064, 064) or #404040 */ \
-    static constexpr T GRAY()       { return "#808080"; } /*   50% white: rgb(128, 128, 128) or #808080 */ \
-    static constexpr T LIGHT_GRAY() { return "#c0c0c0"; } /*   75% white: rgb(192, 192, 192) or #c0c0c0 */ \
-    static constexpr T WHITE()      { return "#ffffff"; } /* solid white: rgb(255, 255, 255) or #ffffff */ \
-    static constexpr T SILVER() { return LIGHT_GRAY(); }  /* same as light_gray, rgb(192, 192, 192) or #c0c0c0 */ \
-    \
-    static constexpr T RED()     { return "#ff0000"; } /* red    (100%   red):              rgb(255, 000, 000) or #ff0000 */ \
-    static constexpr T ORANGE()  { return "#ff8000"; } /* orange (100%   red +  50% green): rgb(255, 128, 000) or #ff8000 */ \
-    static constexpr T YELLOW()  { return "#ffff00"; } /* yellow (100%   red + 100% green): rgb(255, 255, 000) or #ffff00 */ \
-    static constexpr T LIME()    { return "#80ff00"; } /* lime   (100% green +  50%   red): rgb(128, 255, 000) or #80ff00 */ \
-    static constexpr T GREEN()   { return "#00ff00"; } /* green  (100% green):              rgb(000, 255, 000) or #00ff00 */ \
-    static constexpr T SEAFOAM() { return "#00ff80"; } /* seafoam(100% green +  50%  blue): rgb(000, 255, 128) or #00ff80 */ \
-    static constexpr T CYAN()    { return "#00ffff"; } /* cyan   (100% green + 100%  blue): rgb(000, 255, 255) or #00ffff */ \
-    static constexpr T AZURE()   { return "#0080ff"; } /* azure  (100%  blue +  50% green): rgb(000, 128, 255) or #0080ff */ \
-    static constexpr T BLUE()    { return "#0000ff"; } /* blue   (100%  blue):              rgb(000, 000, 255) or #0000ff */ \
-    static constexpr T PURPLE()  { return "#8000ff"; } /* purple (100%  blue +  50%   red): rgb(128, 000, 255) or #8000ff */ \
-    static constexpr T MAGENTA() { return "#ff00ff"; } /* magenta(100%  blue + 100%   red): rgb(255, 000, 255) or #ff00ff */ \
-    static constexpr T ROSE()    { return "#ff0080"; } /* rose   (100%   red +  50%  blue): rgb(255, 000, 128) or #ff0080 */ \
-    \
-    static constexpr T LIGHT_RED()     { return "#ff8080"; } /* light_red    (100%   red +  50% green +  50%  blue): rgb(255, 128, 128) or #ff8080 */ \
-    static constexpr T LIGHT_YELLOW()  { return "#ffff80"; } /* light_yellow (100%   red + 100% green +  50%  blue): rgb(255, 255, 128) or #ffff80 */ \
-    static constexpr T LIGHT_GREEN()   { return "#80ff80"; } /* light_green  ( 50%   red + 100% green +  50%  blue): rgb(128, 255, 128) or #80ff80 */ \
-    static constexpr T LIGHT_CYAN()    { return "#80ffff"; } /* light_cyan   ( 50%   red + 100% green + 100%  blue): rgb(128, 255, 255) or #80ffff */ \
-    static constexpr T LIGHT_BLUE()    { return "#8080ff"; } /* light_blue   ( 50%   red +  50% green + 100%  blue): rgb(128, 128, 255) or #8080ff */ \
-    static constexpr T LIGHT_MAGENTA() { return "#ff80ff"; } /* light_magenta(100%   red +  50% green + 100%  blue): rgb(255, 128, 255) or #ff80ff */ \
-    static constexpr T SALMON()     { return LIGHT_RED();     } /* same as light_red,     rgb(255, 128, 128) or #ff8080 */ \
-    static constexpr T LEMON()      { return LIGHT_YELLOW();  } /* same as light_yellow,  rgb(255, 255, 128) or #ffff80 */ \
-    static constexpr T MINT()       { return LIGHT_GREEN();   } /* same as light_green,   rgb(128, 255, 128) or #80ff80 */ \
-    static constexpr T SKY()        { return LIGHT_CYAN();    } /* same as light_cyan,    rgb(128, 255, 255) or #80ffff */ \
-    static constexpr T CORNFLOWER() { return LIGHT_BLUE();    } /* same as light_blue,    rgb(128, 128, 255) or #8080ff */ \
-    static constexpr T PINK()       { return LIGHT_MAGENTA(); } /* same as light_magenta, rgb(255, 128, 255) or #ff80ff */ \
-    \
-    static constexpr T DARK_RED()     { return "#800000"; } /* dark_red   ( 50%   red):              rgb(128, 000, 000) or #800000 */ \
-    static constexpr T DARK_YELLOW()  { return "#808000"; } /* dark_yellow( 50%   red +  50% green): rgb(128, 128, 000) or #808000 */ \
-    static constexpr T DARK_GREEN()   { return "#008000"; } /* dark_green ( 50% green):              rgb(000, 128, 000) or #008000 */ \
-    static constexpr T DARK_CYAN()    { return "#008080"; } /* dark_cyan  ( 50% green +  50%  blue): rgb(000, 128, 128) or #008080 */ \
-    static constexpr T DARK_BLUE()    { return "#000080"; } /* dark_blue  ( 50%  blue):              rgb(000, 000, 128) or #000080 */ \
-    static constexpr T DARK_MAGENTA() { return "#800080"; } /* dark_purple( 50%  blue +  50%   red): rgb(128, 000, 128) or #800080 */ \
-    static constexpr T MAROON()  { return DARK_RED();     } /* same as dark_red,    rgb(128, 000, 000) or #800000 */ \
-    static constexpr T OLIVE()   { return DARK_YELLOW();  } /* same as dark_yellow, rgb(128, 128, 000) or #808000 */ \
-    static constexpr T AVOCADO() { return DARK_GREEN();   } /* same as dark_green,  rgb(000, 128, 000) or #008000 */ \
-    static constexpr T TEAL()    { return DARK_CYAN();    } /* same as dark_cyan,   rgb(000, 128, 128) or #008080 */ \
-    static constexpr T NAVY()    { return DARK_BLUE();    } /* same as dark_blue,   rgb(000, 000, 128) or #000080 */ \
-    static constexpr T VIOLET()  { return DARK_MAGENTA(); } /* same as dark_purple, rgb(128, 000, 128) or #800080 */ \
-    \
-    static constexpr T BETTER_RED()        { return "#ff3030"; } /* more appealing red:     rgb(255, 048, 048) or #ff3030 */ \
-    static constexpr T BETTER_ORANGE()     { return "#ff802b"; } /* more appealing orange:  rgb(255, 128, 043) or #ff802b */ \
-    static constexpr T BETTER_YELLOW()     { return "#ffc014"; } /* more appealing yellow:  rgb(255, 192, 020) or #ffc014 */ \
-    static constexpr T BETTER_LIME()       { return "#87f725"; } /* more appealing lime:    rgb(135, 247, 037) or #87f725 */ \
-    static constexpr T BETTER_GREEN()      { return "#0c8501"; } /* more appealing green:   rgb(012, 133, 001) or #0c8501 */ \
-    static constexpr T BETTER_AQUA()       { return "#28cef7"; } /* more appealing aqua:    rgb(040, 206, 247) or #28cef7 */ \
-    static constexpr T BETTER_CYAN()       { return "#17a0b3"; } /* more appealing cyan:    rgb(023, 160, 179) or #17a0b3 */ \
-    static constexpr T BETTER_BLUE()       { return "#1041e3"; } /* more appealing blue:    rgb(016, 065, 227) or #1041e3 */ \
-    static constexpr T BETTER_PURPLE()     { return "#7818ed"; } /* more appealing purple:  rgb(120, 024, 237) or #7818ed */ \
-    static constexpr T BETTER_MAGENTA()    { return "#cb2aeb"; } /* more appealing magenta: rgb(203, 042, 235) or #cb2aeb */ \
-    static constexpr T BETTER_PINK()       { return "#fa57c6"; } /* more appealing pink:    rgb(250, 087, 198) or #fa57c6 */ \
-    static constexpr T BETTER_BROWN()      { return "#45200d"; } /* more appealing brown:   rgb(069, 032, 013) or #45200d */ \
-    static constexpr T BETTER_BLACK()      { return "#16191d"; } /* more appealing black:   rgb(022, 025, 029) or #16191d */ \
-    static constexpr T BETTER_DARK_GRAY()  { return "#4c4b5d"; } /* more appealing gray:    rgb(076, 075, 093) or #4c4b5d */ \
-    static constexpr T BETTER_GRAY()       { return "#747e86"; } /* more appealing gray:    rgb(116, 126, 134) or #747e86 */ \
-    static constexpr T BETTER_LIGHT_GRAY() { return "#afbac1"; } /* more appealing gray:    rgb(175, 186, 193) or #afbac1 */ \
-    static constexpr T BETTER_WHITE()      { return "#e8f7f9"; } /* more appealing white:   rgb(232, 247, 249) or #e8f7f9 */ \
-    \
-    STDU_IF(HAS_A, static constexpr T CLEAR() { return "#00000000"; } /* complete transparency. RGBA is (0, 0, 0, 0). */) \
-    
-    VEC3DEF(color3f, float, r, g, b,    0, 0,      1, OPENGL_API operator color3 () const; using with_alpha_t    = colorf;  COLOR_COMMON(color3f, 0, 1.0f));
-    VEC3DEF(color3,  uchar, r, g, b,    0, 0,      1, OPENGL_API operator color3f() const; using with_alpha_t    = color;   COLOR_COMMON(color3,  0, 255));
-    VEC4DEF(colorf,  float, r, g, b, a, 0, 0, 1,   1, OPENGL_API operator color  () const; using without_alpha_t = color3f; COLOR_COMMON(colorf,  1, 1.0f));
-    VEC4DEF(color,   uchar, r, g, b, a, 0, 0, 255, 1, OPENGL_API operator colorf () const; using without_alpha_t = color3;  COLOR_COMMON(color,   1, 255));
+        vecn(T s = 0, T w = 0) : x(s), y(s), z(s), w(w) {}
+        vecn(T x, T y, T z, T w = 1) : x(x), y(y), z(z), w(w) {}
+        explicit vecn(Direction4D dir, T scale = 1);
+        explicit vecn(Corner4D    cor, T scale = 1);
+        vecn(stdu::convertible_to<T> auto x, stdu::convertible_to<T> auto y,
+             stdu::convertible_to<T> auto z, stdu::convertible_to<T> auto w = 1) : x((T)x), y((T)y), z((T)z), w((T)w) {}
 
+        static constexpr swizz::vector_swizzle_data<dimension> params = "xyzw";
+        template <auto S>
+        vecn<S.N, T> swizzle() const {
+            return swizz::swizzle_impl<T, dimension, params, swizz::swizzle<dimension, params> { S }>(this->begin());
+        }
 
-#pragma endregion // color
+        [[nodiscard]] std::string str() const { return std::format("(x: {}, y: {}, z: {}, w: {})", x, y, z, w); }
 
-#undef VEC_OP
-#undef VEC_OP_OTHER
-#undef VEC_CMP
-#undef VEC_CMP_OTHER
-#undef COLOR_COMMON
-#undef VEC2DEF
-#undef VEC3DEF
-#undef VEC4DEF
-#undef SCALAR_T
-#undef F_ONLY
-#undef B_ONLY
-#undef BOOL_ONLY
-#undef S_ONLY
-#undef S_ONLY_U
-#undef COMMON_VEC_MATH
-#undef R
-#pragma endregion // declaration
+        static constexpr vecn RIGHT()                       { return {  1,  0,  0,  0 }; }
+        static constexpr vecn LEFT() requires traits_signed { return { -1,  0,  0,  0 }; }
+        static constexpr vecn UP()                          { return {  0,  1,  0,  0 }; }
+        static constexpr vecn DOWN() requires traits_signed { return {  0, -1,  0,  0 }; }
+        static constexpr vecn FRONT()                       { return {  0,  0,  1,  0 }; }
+        static constexpr vecn BACK() requires traits_signed { return {  0,  0, -1,  0 }; }
+        static constexpr vecn IN()                          { return {  0,  0,  0,  1 }; }
+        static constexpr vecn OUT()  requires traits_signed { return {  0,  0,  0, -1 }; }
+        static constexpr vecn ZERO()                        { return {  0,  0,  0,  0 }; }
+        static constexpr vecn ONE()                         { return {  1,  1,  1,  1 }; }
 
-    template struct vec2<float>;
-    template struct vec3<float>;
-    template struct vec4<float>;
-    template struct vec2<double>;
-    template struct vec3<double>;
-    template struct vec4<double>;
-    template struct vec2<int>;
-    template struct vec3<int>;
-    template struct vec4<int>;
-    template struct vec2<uint>;
-    template struct vec3<uint>;
-    template struct vec4<uint>;
-    template struct vec2<uchar>;
-    template struct vec3<uchar>;
-    template struct vec4<uchar>;
+        NODISC float_type angle(const vecn& other) const;
 
-#undef ARITH_DO
-#undef ARITH
-#undef ARITH_T
-    
-#undef F_ONLY
-#undef B_ONLY
-#undef S_ONLY
-#undef S_ONLY_U
+        NODISC vec3<T> xyz() const { return { x, y, z }; }
+        NODISC vec2<T> xy() const { return { x, y }; }
+
+        NODISC vec3<float_type> projected() const;
+
+        NODISC auto to_color() const -> std::conditional_t<traits_float, colorf, color>;
+
+        NODISC std::tuple<T, T, T, T> tup() const { return { x, y, z, w }; }
+
+        static vecn unit_x(T x) { return { x, 0, 0, 0 }; }
+        static vecn unit_y(T y) { return { 0, y, 0, 0 }; }
+        static vecn unit_z(T z) { return { 0, 0, z, 0 }; }
+        static vecn unit_w(T w) { return { 0, 0, 0, w }; }
+    };
+
+    template <class T> types::ft<4, T> vecn<4, T>::angle(const vecn& other) const { return std::acos((float_type)this->dot(other) / (this->len() * other.len())); }
+    template <class T> vec3<types::ft<4, T>> vecn<4, T>::projected() const { return (vec3<float_type>)xyz() / (float_type)w; }
+
+    template <class T> vecn<4, T>::vecn(Direction4D dir, T scale) : x(0), y(0), z(0), w(0) {
+        using enum Direction4D;
+        if (dir == UNIT) {
+            x = y = z = w = scale; return;
+        }
+        if (dir < 0 || dir > OUT) return;
+        (&x)[(int)(dir >> 1)] = (int)(dir & 1) ? vecops::cneg {} (scale) : scale;
+    }
+
+    template <class T> vecn<4, T>::vecn(Corner4D cor, T scale) : x(0), y(0), z(0), w(0) {
+        using enum Corner4D;
+        if (cor < 0 || cor > OUTER_BACK_BOTTOM_LEFT) return;
+        x = (int)(cor & SIDE_LEFT  ) ? vecops::cneg {} (scale) : scale;
+        y = (int)(cor & SIDE_BOTTOM) ? vecops::cneg {} (scale) : scale;
+        z = (int)(cor & SIDE_BACK  ) ? vecops::cneg {} (scale) : scale;
+        w = (int)(cor & SIDE_OUTER ) ? vecops::cneg {} (scale) : scale;
+    }
+#pragma endregion
+#pragma endregion
+
+#undef NODISC
 }
-
-#include "VectorImpl.h"

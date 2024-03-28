@@ -2,9 +2,12 @@
 #include <string>
 #include <unordered_map>
 #include <core.h>
+#include <stdu/macros.h>
 
 #include "GLObject.h"
 #include "Matrix.h"
+#include "Color.h"
+#include "Rect.h"
 
 namespace Graphics {
     enum class ShaderType {
@@ -94,8 +97,8 @@ namespace Graphics {
             if constexpr (rows > 1) {
                 return (const float*)nullptr;
             } else if constexpr(cols > 1) {
-                if constexpr (array) return std::span<const typename Maths::vecn<cols, T>::type> {};
-                else return use_const_ref<typename Maths::vecn<cols, T>::type> {};
+                if constexpr (array) return std::span<const Maths::vecn<cols, T>> {};
+                else return use_const_ref<Maths::vecn<cols, T>> {};
             } else {
                 if constexpr (array) return std::span<const T> {};
                 else return T {};

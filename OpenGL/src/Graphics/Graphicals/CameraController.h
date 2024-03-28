@@ -1,12 +1,10 @@
 #pragma once
 #include "Matrix.h"
-#include "Vector.h"
+#include "Rect.h"
 
 namespace Graphics {
     class GraphicsDevice;
-}
 
-namespace Graphics {
     class CameraController {
     public:
         Maths::fvec3 worldUp = Maths::fvec3::UP(), worldFront = Maths::fvec3::BACK();

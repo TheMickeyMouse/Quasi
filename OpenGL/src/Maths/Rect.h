@@ -1,64 +1,51 @@
 #pragma once
+
+#include "Vector.h"
+
 namespace Maths {
-    template <int N, class T> struct rect;
+    template <uint N, class T> struct rect;
     
     template <class V> struct _rect_origin_inbetween_ {
-        static auto _scalar_type_t() { if constexpr (is_vec_v<V>) return typename V::scalar {}; else return V {}; }
-        using scalar = decltype(_scalar_type_t());
-        static constexpr int _dimension_num() { if constexpr (is_vec_v<V>) return V::dimension; else return 1; }
-        static constexpr int dimension = _dimension_num();
+        using scalar = typename V::scalar;
+        static constexpr uint dimension = V::dimension;
         using rect_t = rect<dimension, scalar>;
         V pos;
-        rect_t rect(V size) const;
+        [[nodiscard]] rect_t rect(V size) const;
     };
 
     template <class V> struct _rect_size_inbetween_ { V pos; };
 
     template <class> struct is_rect_t : std::false_type {};
-    template <int N, class T> struct is_rect_t<rect<N, T>> : std::true_type {};
-    template <class T> constexpr bool is_rect_v = is_rect_t<T>::value;
-    template <class T> concept rect_t = is_rect_v<T>;
+    template <uint N, class T> struct is_rect_t<rect<N, T>> : std::true_type {};
+    template <class T> concept rect_t = is_rect_t<T>::value;
 
     template <rect_t> struct rect_iter;
 
-#define ARITH(T, U) stdu::arithmetic_t<T, U>
-#define ARITH_T(T, U, O) typename ARITH(T, U)::O##_t
-
 #define RECT_OP(OP) \
     template <class U> auto operator OP(U v) const { \
-        static_assert(std::is_arithmetic_v<U> || is_vec_v<U>, "rect::operator" #OP " not supported"); \
+        static_assert(std::is_arithmetic_v<U> || vec_t<U>, "rect::operator" #OP " not supported"); \
         return rect<N, decltype((min OP v).x)> { min OP v, max OP v }; \
     } \
     template <class U> rect& operator OP##=(U v) { return *this = *this + v; }
 
+#define NODISC [[nodiscard]]
+
     template <class T>
-    _rect_size_inbetween_<T> as_size(T val) {
+    _rect_size_inbetween_<T> as_size(const T& val) {
         return { val };
     }
 
     template <class T>
-    _rect_origin_inbetween_<T> as_origin(T val) {
+    _rect_origin_inbetween_<T> as_origin(const T& val) {
         return { val };
-    }
-
-    template <class T>
-    T min_t(T a, T b) {
-        if constexpr (is_vec_v<T>) return T::min(a, b);
-        else return std::min(a, b);
-    }
-
-    template <class T>
-    T max_t(T a, T b) {
-        if constexpr (is_vec_v<T>) return T::max(a, b);
-        else return std::max(a, b);
     }
     
-    template <int N, class T>
+    template <uint N, class T>
     struct rect {
-        static int constexpr dimension = N;
+        static uint constexpr dimension = N;
         static bool constexpr is1D = N == 1;
         using scalar = T;
-        using vec = std::conditional_t<is1D, T, typename vecn<N, T>::type>;
+        using vec = vecn<N, T>;
         vec min, max;
 
         rect() : min(0), max(0) {}
@@ -70,21 +57,21 @@ namespace Maths {
         rect(const vec& min, const _rect_size_inbetween_<vec>& size) : min(min), max(min + size.pos) {}
         rect(const _rect_origin_inbetween_<vec>& origin, const vec& size) { *this = origin.rect(size); }
 
-        bool operator==(const rect& other) const { return min == other.min && max == other.max; }
-        bool operator[](const int i) const { return corner(i); }
+        NODISC bool operator==(const rect& other) const { return min == other.min && max == other.max; }
+        NODISC vec operator[](const int i) const { return corner(i); }
         
         RECT_OP(+)
         RECT_OP(-)
         RECT_OP(*)
         RECT_OP(/)
         
-        [[nodiscard]] scalar n_distance(int n) const { if constexpr (is1D) return max - min; else return max[n] - min[n]; }
-        [[nodiscard]] scalar width()    const { return n_distance(0); }
-        [[nodiscard]] scalar height()   const requires (N >= 2) { return n_distance(1); }
-        [[nodiscard]] scalar depth()    const requires (N >= 3) { return n_distance(2); }
-        [[nodiscard]] scalar duration() const requires (N >= 4) { return n_distance(3); }
+        NODISC scalar n_distance(int n) const { return max[n] - min[n]; }
+        NODISC scalar width()    const { return n_distance(0); }
+        NODISC scalar height()   const requires (N >= 2) { return n_distance(1); }
+        NODISC scalar depth()    const requires (N >= 3) { return n_distance(2); }
+        NODISC scalar duration() const requires (N >= 4) { return n_distance(3); }
 
-        scalar n_volume() const {
+        NODISC scalar n_volume() const {
             static_assert(1 <= N && N <= 4, "invalid dimension");
             if constexpr (N == 1) return width();
             else if constexpr (N == 2) return width() * height();
@@ -92,49 +79,45 @@ namespace Maths {
             else if constexpr (N == 4) return width() * height() * depth() * duration();
             else return 0;
         }
-        scalar area()        const requires (N == 2) { return n_volume(); }
-        scalar volume()      const requires (N == 3) { return n_volume(); }
-        scalar hypervolume() const requires (N == 4) { return n_volume(); }
+        NODISC scalar area()        const requires (N == 2) { return n_volume(); }
+        NODISC scalar volume()      const requires (N == 3) { return n_volume(); }
+        NODISC scalar hypervolume() const requires (N == 4) { return n_volume(); }
         
-        vec size()   const { return  max - min; }
-        vec center() const { return (max + min) / 2; }
-        vec corner(int i) const {
-            if constexpr (is1D) return i ? max : min;
-            else {
-                int b = 0;
-                return min.apply(
-                    [&b, i](scalar x, scalar y) { return 1 << b++ & i ? y : x; },
-                    max);
+        NODISC vec size()   const { return (vec)(max - min); }
+        NODISC vec center() const { return (vec)((max + min) / 2); }
+        NODISC vec corner(int i) const {
+            vec result;
+            for (uint b = 0; b < N; ++b) {
+                result[b] = i & (1 << b) ? max[b] : min[b];
             }
+            return result;
         } // each bit is a y/n decision on min or max (0 = min, 1 is max)
 
-        vec clamp(const vec& val) const { return Maths::max_t(Maths::min_t(val, max), min); }
+        NODISC vec clamp(const vec& val) const { return vec::max(vec::min(val, max), min); }
 
-        rect& correct() { vec m = min; min = Maths::min_t(min, max); max = Maths::max_t(m, max); return *this; } // fixes min max errors
-        rect corrected() { return { Maths::min_t(min, max), Maths::max_t(min, max) }; }
+        rect& correct() { vec m = min; min = vec::min(min, max); max = vec::max(m, max); return *this; } // fixes min max errors
+        NODISC rect corrected() const { return { vec::min(min, max), vec::max(min, max) }; }
         
-        bool contains(const rect& other) const { return min < other.min && other.max < max; }
-        bool contains(const vec&  other) const { return min < other && other < max; }
+        NODISC bool contains(const rect& other) const { return min < other.min && other.max < max; }
+        NODISC bool contains(const vec&  other) const { return min < other && other < max; }
         
-        rect& offset  (const vec& off) { max += off; min += off; return *this; }
-        rect  offseted(const vec& off) const { return { min + off, max + off }; }
+        rect& offset(const vec& off) { max += off; min += off; return *this; }
+        NODISC rect offseted(const vec& off) const { return { (vec)(min + off), (vec)(max + off) }; }
 
-        rect expand(const rect& other) const { return { Maths::min_t(min, other.min), Maths::max_t(max, other.max) }; }
-        rect shrink(const rect& other) const { return { Maths::min_t(min, other.min), Maths::max_t(max, other.max) }; }
+        NODISC rect expand(const rect& other) const { return { vec::min(min, other.min), vec::max(max, other.max) }; }
+        NODISC rect shrink(const rect& other) const { return { vec::min(min, other.min), vec::max(max, other.max) }; }
 
-        rect inset(T radius)          const { return { min + radius, max - radius }; }
-        rect inset(const vec& radius) const { return { min + radius, max - radius }; }
-        rect extrude(T radius)          const { return { min - radius, max + radius }; }
-        rect extrude(const vec& radius) const { return { min - radius, max + radius }; }
+        NODISC rect inset(T radius)          const { return { (vec)(min + radius), (vec)(max - radius) }; }
+        NODISC rect inset(const vec& radius) const { return { (vec)(min + radius), (vec)(max - radius) }; }
+        NODISC rect extrude(T radius)          const { return { (vec)(min - radius), (vec)(max + radius) }; }
+        NODISC rect extrude(const vec& radius) const { return { (vec)(min - radius), (vec)(max + radius) }; }
 
-        bool overlaps(const rect& other) const { return (min < other.max) && (max > other.min); }
+        NODISC bool overlaps(const rect& other) const { return (min < other.max) && (max > other.min); }
 
-        rect_iter<rect> begin() const;
-        rect_iter<rect> end() const;
+        NODISC rect_iter<rect> begin() const;
+        NODISC rect_iter<rect> end() const;
     };
 #undef RECT_OP
-#undef ARITH
-#undef ARITH_T
     template <rect_t R>
     struct rect_iter {
         using value_t = typename R::vec;
@@ -167,14 +150,77 @@ namespace Maths {
 
     template <class V> typename _rect_origin_inbetween_<V>::rect_t
     _rect_origin_inbetween_<V>::rect(V size) const {
-        return { pos + size / 2, pos - size / 2 };
+        return { (V)(pos + size / 2), (V)(pos - size / 2) };
     }
 
-    template <int N, class T> rect_iter<rect<N, T>> rect<N, T>::begin() const {
+    template <uint N, class T> rect_iter<rect<N, T>> rect<N, T>::begin() const {
         return { this, min };
     }
 
-    template <int N, class T> rect_iter<rect<N, T>> rect<N, T>::end() const {
+    template <uint N, class T> rect_iter<rect<N, T>> rect<N, T>::end() const {
         return { this, max };
     }
+
+    template <uint N, class T>
+    typename vecn_base<N, T>::vec_t vecn_base<N, T>::clamp(const rect<N, T>& r, const vec_t& x) {
+        return r.clamp(x);
+    }
+
+    template <uint N, class T>
+    bool vecn_base<N, T>::is_in(const rect<N, T>& region) const {
+        return region.min <= as_vec() && as_vec() <= region.max;
+    }
+
+    template <uint N, class T> _rect_origin_inbetween_<typename vecn_base<N, T>::vec_t> vecn_base<N, T>::as_origin() const { return { as_vec() }; }
+    template <uint N, class T> _rect_size_inbetween_<typename vecn_base<N, T>::vec_t> vecn_base<N, T>::as_size() const { return { as_vec() }; }
+    template <uint N, class T> rect<N, T> vecn_base<N, T>::to(const vec_t& other) const { return { as_vec(), other }; }
+    template <uint N, class T> rect<N, T> vecn_base<N, T>::to(const _rect_size_inbetween_<vec_t>& other) const { return { as_vec(), other }; }
+
+    template <class T> using range = rect<1, T>;
+    template <class T> using rect2 = rect<2, T>;
+    template <class T> using rect3 = rect<3, T>;
+    template <class T> using rect4 = rect<4, T>;
+    using irange = range<int>;
+    using urange = range<uint>;
+    using brange = range<uchar>;
+    using rangez = range<usize>;
+    using rangef = range<float>;
+    using ranged = range<double>;
+    using rect2f = rect2<float>;
+    using rect3f = rect3<float>;
+    using rect4f = rect4<float>;
+    using rect2d = rect2<double>;
+    using rect3d = rect3<double>;
+    using rect4d = rect4<double>;
+    using rect2i = rect2<int>;
+    using rect3i = rect3<int>;
+    using rect4i = rect4<int>;
+    using rect2u = rect2<uint>;
+    using rect3u = rect3<uint>;
+    using rect4u = rect4<uint>;
+    using rect2b = rect2<uchar>;
+    using rect3b = rect3<uchar>;
+    using rect4b = rect4<uchar>;
+
+    template struct rect<1, int>;
+    template struct rect<1, uint>;
+    template struct rect<1, uchar>;
+    template struct rect<1, usize>;
+    template struct rect<1, float>;
+    template struct rect<1, double>;
+    template struct rect<2, float>;
+    template struct rect<3, float>;
+    template struct rect<4, float>;
+    template struct rect<2, double>;
+    template struct rect<3, double>;
+    template struct rect<4, double>;
+    template struct rect<2, int>;
+    template struct rect<3, int>;
+    template struct rect<4, int>;
+    template struct rect<2, uint>;
+    template struct rect<3, uint>;
+    template struct rect<4, uint>;
+    template struct rect<2, uchar>;
+    template struct rect<3, uchar>;
+    template struct rect<4, uchar>;
 }
