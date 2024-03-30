@@ -95,7 +95,7 @@ namespace Graphics {
                       std::conditional_t<type == ShaderUniformType::FLOAT_FLAG, float, void>>>;
 
             if constexpr (rows > 1) {
-                return (const float*)nullptr;
+                return std::span<const float> {};
             } else if constexpr(cols > 1) {
                 if constexpr (array) return std::span<const Maths::vecn<cols, T>> {};
                 else return use_const_ref<Maths::vecn<cols, T>> {};
@@ -199,11 +199,9 @@ namespace Graphics {
             SetUniformOf<ConvertUniformType<N> | VECTOR_FLAG | SINGLE_FLAG>(name, num);
         }
 
-        template <Maths::vec_t V>
-        void SetUniform(stringr name, const V& vec) {
+        template <uint N, class T>
+        void SetUniform(stringr name, const Maths::vecn<N, T>& vec) {
             using enum ShaderUniformType;
-            using T = typename V::scalar;
-            constexpr int N = V::dimension;
             SetUniformOf<ConvertUniformType<T> | VECTOR_FLAG | (COLS_1 * N)>(name, vec);
         }
 
@@ -213,17 +211,27 @@ namespace Graphics {
             SetUniformOf<ConvertUniformType<T> | VECTOR_FLAG | SINGLE_FLAG | ARRAY_FLAG>(name, val);
         }
 
-        template <Maths::vec_t V>
-        void SetUniform(stringr name, std::span<const V> val) {
+        template <uint N, class T>
+        void SetUniform(stringr name, std::span<const Maths::vecn<N, T>> val) {
             using enum ShaderUniformType;
-            using T = typename V::scalar;
-            constexpr int N = V::dimension;
             SetUniformOf<ConvertUniformType<T> | VECTOR_FLAG | (COLS_1 * N) | ARRAY_FLAG>(name, val);
         }
 
-        void SetUniform(stringr name, const Maths::mat4x4& val) {
-            SetUniformMat4x4(name, val.get_in_col());
+        template <uint N, uint M>
+        void SetUniform(stringr name, const Maths::matrix<N, M>& val) {
+            using enum ShaderUniformType;
+            SetUniformOf<FLOAT_FLAG | (ROWS_1 * N) | (COLS_1 * M) | ARRAY_FLAG>(name, val.data());
         }
+
+        void SetUniformMat2x2(stringr name, const Maths::mat2x2& mat) { SetUniformMat2x2(name, mat.data()); }
+        void SetUniformMat2x3(stringr name, const Maths::mat2x3& mat) { SetUniformMat2x3(name, mat.data()); }
+        void SetUniformMat2x4(stringr name, const Maths::mat2x4& mat) { SetUniformMat2x4(name, mat.data()); }
+        void SetUniformMat3x2(stringr name, const Maths::mat3x2& mat) { SetUniformMat3x2(name, mat.data()); }
+        void SetUniformMat3x3(stringr name, const Maths::mat3x3& mat) { SetUniformMat3x3(name, mat.data()); }
+        void SetUniformMat3x4(stringr name, const Maths::mat3x4& mat) { SetUniformMat3x4(name, mat.data()); }
+        void SetUniformMat4x2(stringr name, const Maths::mat4x2& mat) { SetUniformMat4x2(name, mat.data()); }
+        void SetUniformMat4x3(stringr name, const Maths::mat4x3& mat) { SetUniformMat4x3(name, mat.data()); }
+        void SetUniformMat4x4(stringr name, const Maths::mat4x4& mat) { SetUniformMat4x4(name, mat.data()); }
 #pragma endregion
 
 #define GLSL_SHADER(VERSION, V, F) "#shader vertex\n" "#version " #VERSION " core\n" STDU_TOSTR(STDU_REMOVE_SCOPE(V)) "\n#shader fragment\n" "#version " #VERSION " core\n" STDU_TOSTR(STDU_REMOVE_SCOPE(F))
@@ -361,9 +369,11 @@ namespace Graphics {
         ShaderValueVariant(const Maths::colorf&  val) : datFloatPtr(val.begin()), type(ShaderUniformType::UNIF_4F), size(4) {}
         ShaderValueVariant(const Maths::color3f& val) : datFloatPtr(val.begin()), type(ShaderUniformType::UNIF_3F), size(3) {}
 
-        ShaderValueVariant(const Maths::mat4x4& val) {
-            type = ShaderUniformType::UNIF_MAT4x4;
-            datFloatPtr = val.get_in_col();
+        template <uint N, uint M>
+        ShaderValueVariant(const Maths::matrix<N, M>& val) {
+            using enum ShaderUniformType;
+            type = FLOAT_FLAG | (ROWS_1 * N) | (COLS_1 * M) | ARRAY_FLAG;
+            datFloatPtr = val.data().data();
             size = 1;
         }
 

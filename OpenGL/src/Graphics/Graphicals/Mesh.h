@@ -49,7 +49,7 @@ namespace Graphics {
         Mesh& ApplyTransform() { return ApplyTransform(modelTransform); }
         Mesh& Move(const Maths::fvec3& offset) { return ApplyTransform(Maths::mat3D::translate_mat(offset)); }
         Mesh& Scale(const Maths::fvec3& scale) { return ApplyTransform(Maths::mat3D::scale_mat(scale)); }
-        Mesh& Rotate(const Maths::fvec3& rot) { return ApplyTransform(Maths::mat3D::rotate_identity(rot)); }
+        Mesh& Rotate(const Maths::fvec3& rot)  { return ApplyTransform(Maths::mat3D::rotate_mat(rot)); }
 
         void AddTo(DynamicVertexBuffer& vbuffer, DynamicIndexBuffer& ibuffer) const;
 

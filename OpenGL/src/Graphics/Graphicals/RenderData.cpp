@@ -68,8 +68,8 @@ namespace Graphics {
 
     void RenderData::EnableShader() {
 	    shader.Bind();
-	    shader.SetUniformMat4x4("u_projection", projection.get_in_col());
-	    shader.SetUniformMat4x4("u_view", camera.get_in_col());
+	    shader.SetUniformMat4x4("u_projection", projection);
+	    shader.SetUniformMat4x4("u_view", camera);
 	}
 
     void RenderData::DisableShader() {

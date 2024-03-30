@@ -193,7 +193,7 @@ namespace Graphics {
     DEFINE_UNIF_FN(1UI_ARR, 1uiv, (int)val.size(), val.data()) DEFINE_UNIF_FN(2UI_ARR, 2uiv, (int)val.size(), (const uint*) val.data()) DEFINE_UNIF_FN(3UI_ARR, 3uiv, (int)val.size(), (const uint*) val.data()) DEFINE_UNIF_FN(4UI_ARR, 4uiv, (int)val.size(), (const uint*) val.data())
     DEFINE_UNIF_FN(1F_ARR,  1fv,  (int)val.size(), val.data()) DEFINE_UNIF_FN(2F_ARR,  2fv,  (int)val.size(), (const float*)val.data()) DEFINE_UNIF_FN(3F_ARR,  3fv,  (int)val.size(), (const float*)val.data()) DEFINE_UNIF_FN(4F_ARR,  4fv,  (int)val.size(), (const float*)val.data())
 
-    DEFINE_UNIF_FN(MAT2x2, Matrix2fv,   1, false, val) DEFINE_UNIF_FN(MAT2x3, Matrix2x3fv, 1, false, val) DEFINE_UNIF_FN(MAT2x4, Matrix2x4fv, 1, false, val)
-    DEFINE_UNIF_FN(MAT3x2, Matrix3x2fv, 1, false, val) DEFINE_UNIF_FN(MAT3x3, Matrix3fv,   1, false, val) DEFINE_UNIF_FN(MAT3x4, Matrix3x4fv, 1, false, val)
-    DEFINE_UNIF_FN(MAT4x2, Matrix4x2fv, 1, false, val) DEFINE_UNIF_FN(MAT4x3, Matrix4x3fv, 1, false, val) DEFINE_UNIF_FN(MAT4x4, Matrix4fv,   1, false, val)
+    DEFINE_UNIF_FN(MAT2x2, Matrix2fv,   1, false, val.data()) DEFINE_UNIF_FN(MAT2x3, Matrix2x3fv, 1, false, val.data()) DEFINE_UNIF_FN(MAT2x4, Matrix2x4fv, 1, false, val.data())
+    DEFINE_UNIF_FN(MAT3x2, Matrix3x2fv, 1, false, val.data()) DEFINE_UNIF_FN(MAT3x3, Matrix3fv,   1, false, val.data()) DEFINE_UNIF_FN(MAT3x4, Matrix3x4fv, 1, false, val.data())
+    DEFINE_UNIF_FN(MAT4x2, Matrix4x2fv, 1, false, val.data()) DEFINE_UNIF_FN(MAT4x3, Matrix4x3fv, 1, false, val.data()) DEFINE_UNIF_FN(MAT4x4, Matrix4fv,   1, false, val.data())
 }

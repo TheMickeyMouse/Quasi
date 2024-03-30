@@ -162,7 +162,7 @@ namespace Maths {
     }
 
     template <uint N, class T>
-    typename vecn_base<N, T>::vec_t vecn_base<N, T>::clamp(const rect<N, T>& r, const vec_t& x) {
+    typename vecn_base<N, T>::vect vecn_base<N, T>::clamp(const rect<N, T>& r, const vect& x) {
         return r.clamp(x);
     }
 
@@ -171,10 +171,10 @@ namespace Maths {
         return region.min <= as_vec() && as_vec() <= region.max;
     }
 
-    template <uint N, class T> _rect_origin_inbetween_<typename vecn_base<N, T>::vec_t> vecn_base<N, T>::as_origin() const { return { as_vec() }; }
-    template <uint N, class T> _rect_size_inbetween_<typename vecn_base<N, T>::vec_t> vecn_base<N, T>::as_size() const { return { as_vec() }; }
-    template <uint N, class T> rect<N, T> vecn_base<N, T>::to(const vec_t& other) const { return { as_vec(), other }; }
-    template <uint N, class T> rect<N, T> vecn_base<N, T>::to(const _rect_size_inbetween_<vec_t>& other) const { return { as_vec(), other }; }
+    template <uint N, class T> _rect_origin_inbetween_<typename vecn_base<N, T>::vect> vecn_base<N, T>::as_origin() const { return { as_vec() }; }
+    template <uint N, class T> _rect_size_inbetween_<typename vecn_base<N, T>::vect> vecn_base<N, T>::as_size() const { return { as_vec() }; }
+    template <uint N, class T> rect<N, T> vecn_base<N, T>::to(const vect& other) const { return { as_vec(), other }; }
+    template <uint N, class T> rect<N, T> vecn_base<N, T>::to(const _rect_size_inbetween_<vect>& other) const { return { as_vec(), other }; }
 
     template <class T> using range = rect<1, T>;
     template <class T> using rect2 = rect<2, T>;

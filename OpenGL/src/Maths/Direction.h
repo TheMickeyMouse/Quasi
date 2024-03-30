@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <type_traits>
 
+#include "NumTypes.h"
 #include "stdu/enum_utils.h"
 
 namespace Maths {
@@ -82,4 +83,9 @@ namespace Maths {
         E::ZERO == (E) 8;
         E::UNIT == (E) 9;
     };
+
+    template <uint N>
+    using DirectionND = std::conditional_t<N == 2, Direction2D,
+                        std::conditional_t<N == 3, Direction3D,
+                        std::conditional_t<N == 4, Direction4D, void>>>;
 }

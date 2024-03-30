@@ -93,7 +93,7 @@ namespace Graphics {
 
         if (ImGui::TreeNode("FOV & Zoom")) {
             ImGui::SliderFloat("FOV", &fov, fovRange.min, fovRange.max);
-            ImGui::DragFloatRange2("FOV Range", &fovRange.min.x, &fovRange.max.x, 0.5f, 0.0f, 90.0f);
+            ImGui::DragFloatRange2("FOV Range", &fovRange.min.value(), &fovRange.max.value(), 0.5f, 0.0f, 90.0f);
             ImGui::DragFloat("Zoom Lerp", &smoothZoom);
             ImGui::DragFloat("Zoom Factor", &zoomRatio);
 
@@ -132,7 +132,7 @@ namespace Graphics {
                 speed,
                 sensitivity,
                 fov,
-                fovRange.min.x, fovRange.max.x,
+                fovRange.min.value(), fovRange.max.value(),
                 zoomRatio,
                 smoothZoom)
             .c_str());

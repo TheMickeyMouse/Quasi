@@ -181,13 +181,11 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/src/Maths;"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Utils/Textures;"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/IO;"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/stdu;"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/imgui;"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/vendor;"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/test;"
     "${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies/GLFW/include;"
     "${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies/GLEW/include"
-)
-target_include_directories(${PROJECT_NAME} PRIVATE
     ${FREETYPE_INCLUDE_DIRS}
 )
 
@@ -241,6 +239,13 @@ if(MSVC)
         /SUBSYSTEM:WINDOWS
     )
 endif()
+
+add_custom_command(
+    TARGET OpenGL PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${PROJECT_SOURCE_DIR}\\bin\\${CMAKE_VS_PLATFORM_NAME}\\$<CONFIG>\\OpenGL.dll"
+    "${PROJECT_SOURCE_DIR}\\out\\$<CONFIG>\\${CMAKE_VS_PLATFORM_NAME}\\out\\Testing\\"
+)
 
 ################################################################################
 # Dependencies

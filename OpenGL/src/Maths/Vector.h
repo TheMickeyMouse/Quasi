@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <type_traits>
-#include <string>
 #include <format>
+#include <array>
 
 #include "Corner.h"
 #include "Direction.h"
@@ -12,7 +12,23 @@
 
 namespace Maths {
 #pragma region Concepts and Decls
-    template <uint N, class T> struct vecn;
+    template <uint N, class T> struct vecn_base;
+    template <uint N, class T> struct vecn : vecn_base<N, T> {
+        std::array<T, N> elems;
+
+        vecn(T base = 0) { elems.fill(base); }
+        template <class... R> vecn(R... args)
+        requires ((std::is_convertible_v<T, R> && ...) && sizeof...(R) == N) : elems { args... } {}
+
+        [[nodiscard]] auto tup() const {
+            return [&]<uint... Is>(std::integer_sequence<uint, Is...>){
+                return std::make_tuple(elems[Is]...);
+            }(std::make_integer_sequence<uint, N> {});
+        }
+
+        static vecn ZERO() { return { 0 }; }
+        static vecn ONE()  { return { 1 }; }
+    };
     
     template <class> struct is_vec_t : std::false_type {};
     template <uint N, class T> struct is_vec_t<vecn<N, T>> : std::true_type {};
@@ -156,13 +172,15 @@ namespace Maths {
         }
 
         template <uint N, uint M, class T, class U, class F>
-        vecn<N, decltype(F{}(T{}, T{}))> operate(F f, const vecn<N, T>& a, const vecn<M, U>& b, int = 0) {
+        vecn<N, decltype(F{}(T{}, U{}))> operate(F f, const vecn<N, T>& a, const vecn<M, U>& b, int = 0) {
             constexpr uint NM = std::max(N, M);
-            using vec = vecn<NM, std::common_type_t<T, U>>;
-            vec ca = vec::ZERO(), cb = vec::ZERO();
+            vecn<NM, T> ca = vecn<NM, T>::ZERO();
+            vecn<NM, U> cb = vecn<NM, U>::ZERO();
             rangecopy(ca, a, std::identity {}, std::make_integer_sequence<uint, N> {});
             rangecopy(cb, b, std::identity {}, std::make_integer_sequence<uint, M> {});
-            return operate(f, ca, cb, int {});
+            return [&]<uint... I>(std::integer_sequence<uint, I...>) {
+                return vecn<N, decltype(F{}(T{}, U{}))> { f(a[I], b[I])... };
+            }(std::make_integer_sequence<uint, N> {});
         }
 
         template <class F, class T, class U> requires requires { operate(F {}, U {}, T {}, int {} /* specify to not choose this function */); }
@@ -179,6 +197,16 @@ namespace Maths {
         void operate_inplace(F f, vecn<N, T>& a, std::convertible_to<T> auto b, int = 0) {
             return [&]<uint... I>(std::integer_sequence<uint, I...>) {
                 stdu::empty _ = { (a[I] = f(a[I], b))... };
+            }(std::make_integer_sequence<uint, N> {});
+        }
+
+        template <uint N, uint M, class T, class U, class F>
+        requires (M <= N && std::is_convertible_v<decltype(F{}(T{}, U{})), T>)
+        void operate_inplace(F f, vecn<N, T>& a, const vecn<M, U>& b, int = 0 /* here to explicitly say for no recursion*/) {
+            vecn<N, U> cb = vecn<N, U>::ZERO();
+            rangecopy(cb, b, std::identity {}, std::make_integer_sequence<uint, N> {});
+            return [&]<uint... I>(std::integer_sequence<uint, I...>) {
+                stdu::empty _ = { (a[I] = f(a[I], cb[I]))... };
             }(std::make_integer_sequence<uint, N> {});
         }
 
@@ -206,16 +234,24 @@ namespace Maths {
     struct vecn_base {
     public:
         using scalar = T;
-        using vec_t = vecn<N, T>;
+        using vect = vecn<N, T>;
         static constexpr uint size() { return N; }
         static constexpr uint dimension = N;
 
         static constexpr bool traits_float  = std::is_floating_point_v<T>,
                               traits_signed = std::is_signed_v<T>;
-        using float_type = std::common_type_t<float, T>;
 
-        static vec_t from_span(std::span<const T> span) {
-            vec_t out;
+    private:
+        static auto float_type_helper() {
+            if constexpr (std::is_arithmetic_v<T>) return std::common_type_t<float, T> {};
+            else if constexpr (vec_t<T>) return vecn<T::dimension, std::common_type_t<typename T::scalar, float>> {};
+            else return nullptr;
+        }
+    public:
+        using float_type = decltype(float_type_helper());
+
+        static vect from_span(std::span<const T> span) {
+            vect out;
             vecops::rangecopy(out, span, std::make_integer_sequence<uint, N> {});
             return out;
         }
@@ -235,8 +271,22 @@ namespace Maths {
         stdu::ref<T> at(uint i) { return i < N ? at_unchecked(i) : nullptr; }
         NODISC stdu::ref<const T> at(uint i) const { return i < N ? at_unchecked(i) : nullptr; }
 
-        vec_t& as_vec() { return *(vec_t*)this; }
-        NODISC const vec_t& as_vec() const { return *(const vec_t*)this; }
+        T& first() { return operator[](0); }
+        T& last()  { return operator[](N - 1); }
+        NODISC const T& first() const { return operator[](0); }
+        NODISC const T& last()  const { return operator[](N - 1); }
+
+        NODISC vecn<N + 1, T> extend(const T& ex) const {
+            vecn<N + 1, T> base;
+            vecops::rangecopy(base, as_vec(), std::identity {}, std::make_integer_sequence<uint, N> {});
+            base.last() = ex;
+            return base;
+        }
+
+        NODISC vecn<N - 1, T> shrink() const { return (vecn<N - 1, T>)as_vec(); }
+
+        vect& as_vec() { return *(vect*)this; }
+        NODISC const vect& as_vec() const { return *(const vect*)this; }
 
         template <class U> NODISC operator vecn<N, U>() const { return vecops::typecast<N, T, U>(as_vec()); }
         template <uint M>  NODISC operator vecn<M, T>() const { return vecops::sizecast<N, M, T>(as_vec()); }
@@ -256,10 +306,10 @@ namespace Maths {
         template <class V> vecn<N, T>& operator/=(const V& v) { vecops::operate_inplace(vecops::div {}, as_vec(), v); return as_vec(); }
         template <class V> vecn<N, T>& operator%=(const V& v) { vecops::operate_inplace(vecops::mod {}, as_vec(), v); return as_vec(); }
 
-        NODISC bool eq(const vec_t& other) const { return as_vec() == other; }
-        NODISC bool neq(const vec_t& other) const { return !eq(other); }
-        NODISC std::strong_ordering  ord_cmp(const vec_t& other) const { return as_vec()->tup() <=> other.tup(); }
-        NODISC std::partial_ordering abs_cmp(const vec_t& other) const {
+        NODISC bool eq(const vect& other) const { return as_vec() == other; }
+        NODISC bool neq(const vect& other) const { return !eq(other); }
+        NODISC std::strong_ordering  ord_cmp(const vect& other) const { return as_vec()->tup() <=> other.tup(); }
+        NODISC std::partial_ordering abs_cmp(const vect& other) const {
             return as_vec() == other ? std::partial_ordering::equivalent :
                    as_vec() <  other ? std::partial_ordering::less :
                    as_vec() >  other ? std::partial_ordering::greater :
@@ -276,32 +326,32 @@ namespace Maths {
 
         NODISC float_type len() const { return std::sqrt((float_type)lensq()); }
         NODISC T          lensq() const { return dot(as_vec()); }
-        NODISC float_type dist(const vec_t& to) const { return (as_vec() - to).len(); }
-        NODISC float_type distsq(const vec_t& to) const { return (as_vec() - to).lensq(); }
+        NODISC float_type dist(const vect& to) const { return (as_vec() - to).len(); }
+        NODISC float_type distsq(const vect& to) const { return (as_vec() - to).lensq(); }
         NODISC bool       in_range(const T& other, T d) const { return dist(other) <= d; }
-        NODISC vec_t      norm() const { return as_vec() / len(); }
-        NODISC vec_t      norm(float d) const { return norm() * d; }
+        NODISC vect       norm() const { return as_vec() / len(); }
+        NODISC vect       norm(float d) const { return norm() * d; }
 
         NODISC T sum() const { return vecops::accum(vecops::add {}, as_vec(), (T)0); }
-        NODISC T dot(const vec_t& other) const { return (as_vec() * other).sum(); }
+        NODISC T dot(const vect& other) const { return (as_vec() * other).sum(); }
 
-        NODISC vecn<N, float_type> lerp(const vec_t& other, float t) const { return as_vec() + (other - as_vec()) * t; }
-        vec_t& lerp_to(const vec_t& other, float t) requires traits_float { return as_vec() = lerp(other, t); }
-        NODISC vecn<N, float_type> towards(const vec_t& other, float max_d) const { vec_t u = (other - *this).norm(); return *this + u * max_d; }
-        vec_t& move_towards(const vec_t& other, float max_d) requires traits_float { return as_vec() = towards(other, max_d); }
+        NODISC vecn<N, float_type> lerp(const vect& other, float t) const { return as_vec() + (other - as_vec()) * t; }
+        vect& lerp_to(const vect& other, float t) requires traits_float { return as_vec() = lerp(other, t); }
+        NODISC vecn<N, float_type> towards(const vect& other, float max_d) const { vect u = (other - *this).norm(); return *this + u * max_d; }
+        vect& move_towards(const vect& other, float max_d) requires traits_float { return as_vec() = towards(other, max_d); }
 
-        NODISC vec_t clamped() const { return clamp(as_vec().ZERO(), as_vec().ONE(), as_vec()); }
-        vec_t& clamp() { return as_vec() = clamped(); }
+        NODISC vect clamped() const { return clamp(as_vec().ZERO(), as_vec().ONE(), as_vec()); }
+        vect& clamp() { return as_vec() = clamped(); }
         NODISC vecn<N, float> len_clamped() const { return as_vec() / std::max(1, len()); }
-        vec_t& len_clamp() { return as_vec() = len_clamped(); }
-        NODISC static vec_t max(const vec_t& a, const vec_t& b) { return vecops::operate(vecops::max {}, a, b); }
-        NODISC static vec_t min(const vec_t& a, const vec_t& b) { return vecops::operate(vecops::min {}, a, b); }
-        NODISC static vec_t clamp(const rect<N, T>& r, const vec_t& x);
+        vect& len_clamp() { return as_vec() = len_clamped(); }
+        NODISC static vect max(const vect& a, const vect& b) { return vecops::operate(vecops::max {}, a, b); }
+        NODISC static vect min(const vect& a, const vect& b) { return vecops::operate(vecops::min {}, a, b); }
+        NODISC static vect clamp(const rect<N, T>& r, const vect& x);
 
-        NODISC _rect_origin_inbetween_<vec_t> as_origin() const;
-        NODISC _rect_size_inbetween_<vec_t> as_size() const;
-        NODISC rect<N, T> to(const vec_t& other) const;
-        NODISC rect<N, T> to(const _rect_size_inbetween_<vec_t>& other) const;
+        NODISC _rect_origin_inbetween_<vect> as_origin() const;
+        NODISC _rect_size_inbetween_<vect> as_size() const;
+        NODISC rect<N, T> to(const vect& other) const;
+        NODISC rect<N, T> to(const _rect_size_inbetween_<vect>& other) const;
         NODISC bool is_in(const rect<N, T>& region) const;
 
         NODISC bool all() const requires std::is_same_v<T, bool> { return vecops::accum([](bool a, bool b) { return a && b; }, as_vec(), true); }
@@ -341,8 +391,10 @@ namespace Maths {
 
         [[nodiscard]] std::string str() const { return std::format("(x: {})", x); }
 
-        NODISC operator const T&() const { return x; }
-        operator T&() { return x; }
+        NODISC const T& value() const { return x; }
+        T& value() { return x; }
+        NODISC operator const T&() const { return value(); }
+        operator T&() { return value(); }
 
         static vecn ZERO() { return {  0 }; }
         static vecn ONE()  { return { +1 }; }
@@ -355,7 +407,7 @@ namespace Maths {
         using base::dimension, base::traits_float, base::traits_signed;
         using float_type = typename base::float_type;
         using float_vec = vecn<dimension, float_type>;
-        T x, y;
+        T x; T y;
 
         vecn(T s = 0) : x(s), y(s) {}
         vecn(T x, T y) : x(x), y(y) {}
@@ -444,7 +496,7 @@ namespace Maths {
         using base::dimension, base::traits_float, base::traits_signed;
         using float_type = typename base::float_type;
         using float_vec = vecn<dimension, float_type>;
-        T x, y, z;
+        T x; T y; T z;
 
         vecn(T s = 0) : x(s), y(s), z(s) {}
         vecn(T x, T y, T z) : x(x), y(y), z(z) {}
@@ -534,7 +586,7 @@ namespace Maths {
         using base::dimension, base::traits_float, base::traits_signed;
         using float_type = typename base::float_type;
         using float_vec = vecn<dimension, float_type>;
-        T x, y, z, w;
+        T x; T y; T z; T w;
 
         vecn(T s = 0, T w = 0) : x(s), y(s), z(s), w(w) {}
         vecn(T x, T y, T z, T w = 1) : x(x), y(y), z(z), w(w) {}

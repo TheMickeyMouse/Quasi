@@ -33,7 +33,9 @@ namespace Maths {
 
     MATH_CONSTANT(ROOT_5, 2.23606'79774'99789'69640'91737);
     MATH_CONSTANT(PHI,    1.61803'39887'49894'84820'45868);
-    
+
+    MATH_CONSTANT(DEG2RAD, PI / 180);
+    MATH_CONSTANT(RAD2DEG, 180 / PI);
 
     CONSTANT float INF     = NUM_LIMITS(float, infinity);
     CONSTANT float EPSILON = NUM_LIMITS(float, epsilon); // min value such that 1 + EPSILON != 1

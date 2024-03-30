@@ -75,4 +75,9 @@ namespace Maths {
         std::is_enum_v<E>;
         E::CENTER == (E) 16;
     };
+
+    template <uint N>
+    using CornerND = std::conditional_t<N == 2, Corner2D,
+                     std::conditional_t<N == 3, Corner3D,
+                     std::conditional_t<N == 4, Corner4D, void>>>;
 }

@@ -115,8 +115,8 @@ namespace Graphics {
         s.Bind();
         s.SetUniformArgs(args);
         if (setDefaultShaderArgs) {
-            s.SetUniformMat4x4("u_projection", r.projection.get_in_col());
-            s.SetUniformMat4x4("u_view", r.camera.get_in_col());
+            s.SetUniformMat4x4("u_projection", r.projection);
+            s.SetUniformMat4x4("u_view", r.camera);
         }
         Render::Draw(r, s);
     }
