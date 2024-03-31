@@ -54,7 +54,7 @@ namespace Graphics {
     template <class T>
     template <stdu::fn<T, Maths::fvec3> F> void Mesh<T>::AddTri(const Primitives::Tri& tri, F&& f) {
         std::array v = tri.GetVertices();
-        const uint i = vertices.size();
+        const uint i = (uint)vertices.size();
         vertices.emplace_back(f(v[0]));
         vertices.emplace_back(f(v[1]));
         vertices.emplace_back(f(v[2]));

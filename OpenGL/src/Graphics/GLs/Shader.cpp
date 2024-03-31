@@ -27,11 +27,15 @@ namespace Graphics {
 
     Shader::Shader(std::string_view program) {
         const ShaderProgramSource shadersrc = ParseShader(program);
-        rendererID = CreateShader(shadersrc.vertexShader, shadersrc.fragmentShader);
+        rendererID = CreateShader(
+            shadersrc.GetShader(ShaderType::VERTEX),
+            shadersrc.GetShader(ShaderType::FRAGMENT),
+            shadersrc.GetShader(ShaderType::GEOMETRY)
+        );
     }
 
-    Shader::Shader(std::string_view vert, std::string_view frag) {
-        rendererID = CreateShader(vert, frag);
+    Shader::Shader(std::string_view vert, std::string_view frag, std::string_view geom) {
+        rendererID = CreateShader(vert, frag, geom);
     }
 
     int Shader::GetUniformLocation(std::string_view name) {
@@ -71,7 +75,7 @@ namespace Graphics {
 
     ShaderProgramSource Shader::ParseShader(std::string_view program) {
         uint lastLine = 0;
-        Maths::rangez ssv, ssf, *ss = nullptr;
+        Maths::rangez ssv, ssf, ssg, *ss = nullptr;
         for (uint i = 0; i < program.size(); ++i) {
             if (program[i] != '\n') continue;
             std::string_view line = std::string_view { program }.substr(lastLine, i - lastLine);
@@ -83,17 +87,24 @@ namespace Graphics {
                     ss = &ssv;
                 } else if (line.find("fragment") != std::string::npos) {
                     ss = &ssf;
-                } else continue;
-                ss->min = i + 1;
+                } else if (line.find("geometry") != std::string::npos) {
+                    ss = &ssg;
+                }
+                if (ss) ss->min = i + 1;
             }
         }
         if (ss) ss->max = program.size();
 
-        const ShaderProgramSource s = {
-            std::string_view(program).substr(ssv.min, ssv.width()),
-            std::string_view(program).substr(ssf.min, ssf.width())
+        std::string concatedProgram;
+        concatedProgram.resize(ssv.width() + ssf.width() + ssg.width());
+        std::copy(program.data() + ssv.min, program.data() + ssv.max, concatedProgram.data());
+        std::copy(program.data() + ssf.min, program.data() + ssf.max, concatedProgram.data() + ssv.width());
+        std::copy(program.data() + ssg.min, program.data() + ssg.max, concatedProgram.data() + ssv.width() + ssf.width());
+
+        return {
+            concatedProgram,
+            { ssv.width(), ssv.width() + ssf.width() }
         };
-        return s;
     }
 
 
@@ -108,13 +119,13 @@ namespace Graphics {
     Shader Shader::FromFile(stringr filepath) {
         Shader s {};
         const ShaderProgramSource shadersrc = ParseFromFile(filepath);
-        s.rendererID = CreateShader(shadersrc.vertexShader, shadersrc.fragmentShader);
+        s.rendererID = CreateShader(shadersrc.GetShader(ShaderType::VERTEX), shadersrc.GetShader(ShaderType::FRAGMENT), shadersrc.GetShader(ShaderType::GEOMETRY));
         return s;
     }
 
-    Shader Shader::FromFile(stringr vert, stringr frag) {
+    Shader Shader::FromFile(stringr vert, stringr frag, stringr geom) {
         Shader s {};
-        s.rendererID = CreateShader(stdu::readfile(vert), stdu::readfile(frag));
+        s.rendererID = CreateShader(stdu::readfile(vert), stdu::readfile(frag), stdu::readfile(geom));
         return s;
     }
 
@@ -131,8 +142,9 @@ namespace Graphics {
         if (result == GL_FALSE) {
             int len;
             glGetShaderiv(id, GL_INFO_LOG_LENGTH, &len);
-            char* msg = (char*)_malloca(len * sizeof(char));
-            glGetShaderInfoLog(id, len, &len, msg);
+            std::string msg;
+            msg.reserve(len);
+            glGetShaderInfoLog(id, len, &len, msg.data());
             GLLogger().Error({"Compiling {} shader yielded compiler errors:\n{}"}, type, msg);
 
             glDeleteShader(id);
@@ -142,13 +154,15 @@ namespace Graphics {
         return id;
     }
 
-    uint Shader::CreateShader(std::string_view vtx, std::string_view frg) {
+    uint Shader::CreateShader(std::string_view vtx, std::string_view frg, std::string_view geo) {
         const uint program = glCreateProgram();
         const uint vs = CompileShaderVert(vtx);
         const uint fs = CompileShaderFrag(frg);
+        const uint gm = geo.empty() ? 0 : CompileShaderGeom(geo);
 
         GL_CALL(glAttachShader(program, vs));
         GL_CALL(glAttachShader(program, fs));
+        if (gm) GL_CALL(glAttachShader(program, gm));
         GL_CALL(glLinkProgram(program));
         GL_CALL(glValidateProgram(program));
         

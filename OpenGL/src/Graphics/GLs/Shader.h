@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <string>
-#include <unordered_map>
+#include <map>
+#include <vector>
 #include <core.h>
 #include <stdu/macros.h>
 
@@ -120,8 +121,25 @@ namespace Graphics {
         (ShaderUniformType)0;
 
     struct ShaderProgramSource {
-        std::string_view vertexShader;
-        std::string_view fragmentShader;
+        std::string fullSource;
+        usize sepPoints[2]; // vertex | fragment | geometery, all seperated with index.
+
+    private:
+        [[nodiscard]] int to_id(ShaderType type) const { switch (type) {
+            case ShaderType::VERTEX: return 0;
+            case ShaderType::FRAGMENT: return 1;
+            case ShaderType::GEOMETRY: return 2;
+            default: return 3;
+        } }
+    public:
+        [[nodiscard]] usize GetSepPoint(int idx) const {
+            return idx < 0 ? 0 : idx >= 2 ? fullSource.size() : sepPoints[idx];
+        }
+
+        [[nodiscard]] std::string_view GetShader(ShaderType type) const {
+            const usize beg = GetSepPoint(to_id(type) - 1);
+            return std::string_view { fullSource }.substr(beg, GetSepPoint(to_id(type)) - beg);
+        }
     };
 
     struct ShaderHandler : GLObjectHandler<ShaderHandler> {
@@ -136,21 +154,12 @@ namespace Graphics {
     struct ShaderParameter;
 
     class Shader : public GLObject<ShaderHandler> {
-    private:
-        struct str_hash {
-            using hash_type = std::hash<std::string_view>;
-            using is_transparent = void;
+        std::map<std::string, int, std::less<>> uniformCache;
 
-            std::size_t operator()(const char* str) const        { return hash_type {} (str); }
-            std::size_t operator()(std::string_view str) const   { return hash_type {} (str); }
-            std::size_t operator()(const std::string& str) const { return hash_type {} (str); }
-        };
-
-        std::unordered_map<std::string, int, str_hash, std::equal_to<>> uniformCache;
     public:
         Shader() = default;
         OPENGL_API explicit Shader(std::string_view program);
-        OPENGL_API explicit Shader(std::string_view vert, std::string_view frag);
+        OPENGL_API explicit Shader(std::string_view vert, std::string_view frag, std::string_view geom = {});
 
         using stringr = const std::string&; // the 'r' stands for reference
 
@@ -168,6 +177,7 @@ namespace Graphics {
         template <ShaderUniformType U>
         void SetUniformOf(stringr name, ShaderUniformArgOf<U> val) { SetUniformAtLoc<U>(GetUniformLoc(name), val); }
 
+#pragma region Uniforms
 #define UNIF_INSTANTIATE \
         DEFINE_UNIF_FN(Int,      1I)      DEFINE_UNIF_FN(Ivec2,    2I)      DEFINE_UNIF_FN(Ivec3,    3I)      DEFINE_UNIF_FN(Ivec4, 4I) \
         DEFINE_UNIF_FN(Uint,     1UI)     DEFINE_UNIF_FN(Uvec2,    2UI)     DEFINE_UNIF_FN(Uvec3,    3UI)     DEFINE_UNIF_FN(Uvec4, 4UI) \
@@ -190,7 +200,6 @@ namespace Graphics {
         OPENGL_API void SetUniformDyn(const ShaderParameter& arg);
         OPENGL_API void SetUniformArgs(const ShaderArgs& args);
 
-#pragma region Extra Uniform Helpers
         OPENGL_API void SetUniformTex(stringr name, const class Texture& texture);
 
         template <class N>
@@ -234,6 +243,7 @@ namespace Graphics {
         void SetUniformMat4x4(stringr name, const Maths::mat4x4& mat) { SetUniformMat4x4(name, mat.data()); }
 #pragma endregion
 
+#pragma region Shader Sources
 #define GLSL_SHADER(VERSION, V, F) "#shader vertex\n" "#version " #VERSION " core\n" STDU_TOSTR(STDU_REMOVE_SCOPE(V)) "\n#shader fragment\n" "#version " #VERSION " core\n" STDU_TOSTR(STDU_REMOVE_SCOPE(F))
 
         inline const static std::string StdColored =
@@ -285,9 +295,10 @@ namespace Graphics {
                     }
                 )
             );
+#pragma endregion // Shader Sources
 
         OPENGL_API static Shader FromFile(stringr filepath);
-        OPENGL_API static Shader FromFile(stringr vert, stringr frag);
+        OPENGL_API static Shader FromFile(stringr vert, stringr frag, stringr geom = {});
 
         OPENGL_API int GetUniformLoc(stringr name) { return GetUniformLocation(name); }
     private:
@@ -297,7 +308,8 @@ namespace Graphics {
         OPENGL_API static uint CompileShader(std::string_view source, ShaderType type);
         static uint CompileShaderVert(std::string_view source) { return CompileShader(source, ShaderType::VERTEX); }
         static uint CompileShaderFrag(std::string_view source) { return CompileShader(source, ShaderType::FRAGMENT); }
-        OPENGL_API static uint CreateShader(std::string_view vtx, std::string_view frg);
+        static uint CompileShaderGeom(std::string_view source) { return CompileShader(source, ShaderType::GEOMETRY); }
+        OPENGL_API static uint CreateShader(std::string_view vtx, std::string_view frg, std::string_view geo = {});
     };
 
 #undef DEFINE_UNIF_FN
