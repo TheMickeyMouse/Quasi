@@ -32,10 +32,13 @@ namespace Maths {
         static constexpr bool traits_has_alpha = color_traits<Color>::has_alpha,
                               traits_is_floating = color_traits<Color>::is_floating;
         using scalar = typename color_traits<Color>::scalar;
-        static constexpr scalar CHANNEL_MAX_VALUE =
-            std::conditional_t<traits_is_floating,
-                std::integral_constant<float, 1.0f>,
-                std::integral_constant<byte, (byte)255>>::value;
+    private:
+        static constexpr scalar get_channel_max() {
+            if constexpr (traits_is_floating) return 1.0f;
+            else return (byte)255;
+        }
+    public:
+        static constexpr scalar CHANNEL_MAX_VALUE = get_channel_max();
         static constexpr uint dimension = 3 + traits_has_alpha;
 
         using without_alpha_t = color_from<false, traits_is_floating>;
@@ -87,15 +90,15 @@ namespace Maths {
         NODISC OPENGL_API fvec4 as_rgbaf() const;
         NODISC OPENGL_API fvec3 as_hsl()   const;
         NODISC OPENGL_API fvec4 as_hsla()  const;
-        OPENGL_API static Color from_hsl(float hue, float saturation = 1, float lightness = 1) requires !traits_has_alpha; /* hue: [0-360], sat: [0-1], L: [0-1] */
+        OPENGL_API static Color from_hsl(float hue, float saturation = 1, float lightness = 1) requires (!traits_has_alpha); /* hue: [0-360], sat: [0-1], L: [0-1] */
         OPENGL_API static Color from_hsl(float hue, float saturation = 1, float lightness = 1, float alpha = 1) requires traits_has_alpha; /* hue: [0-360], sat: [0-1], L: [0-1] */
-        OPENGL_API static Color from_hsl(const fvec3& hsl) requires !traits_has_alpha; /* hue: [0-360], sat: [0-1], L: [0-1] */
+        OPENGL_API static Color from_hsl(const fvec3& hsl) requires (!traits_has_alpha); /* hue: [0-360], sat: [0-1], L: [0-1] */
         OPENGL_API static Color from_hsl(const fvec4& hsla) requires traits_has_alpha; /* hue: [0-360], sat: [0-1], L: [0-1] */
         NODISC OPENGL_API fvec3 as_hsv()  const;
         NODISC OPENGL_API fvec4 as_hsva() const;
-        OPENGL_API static Color from_hsv(float hue, float saturation = 1, float value = 1) requires !traits_has_alpha; /* hue: [0-360], sat: [0-1], val: [0-1] */
+        OPENGL_API static Color from_hsv(float hue, float saturation = 1, float value = 1) requires (!traits_has_alpha); /* hue: [0-360], sat: [0-1], val: [0-1] */
         OPENGL_API static Color from_hsv(float hue, float saturation = 1, float value = 1, float alpha = 1) requires traits_has_alpha; /* hue: [0-360], sat: [0-1], val: [0-1] */
-        OPENGL_API static Color from_hsv(const fvec3& hsv) requires !traits_has_alpha; /* hue: [0-360], sat: [0-1], val: [0-1] */
+        OPENGL_API static Color from_hsv(const fvec3& hsv) requires (!traits_has_alpha); /* hue: [0-360], sat: [0-1], val: [0-1] */
         OPENGL_API static Color from_hsv(const fvec4& hsva) requires traits_has_alpha; /* hue: [0-360], sat: [0-1], val: [0-1] */
 
         NODISC OPENGL_API without_alpha_t rgb() const;
@@ -103,7 +106,7 @@ namespace Maths {
         NODISC OPENGL_API with_alpha_t rgb1() const;
 
         NODISC OPENGL_API operator without_alpha_t() const requires traits_has_alpha;
-        NODISC OPENGL_API operator with_alpha_t() const requires !traits_has_alpha;
+        NODISC OPENGL_API operator with_alpha_t() const requires (!traits_has_alpha);
         NODISC OPENGL_API operator alternate_data_form() const;
 
 #pragma region Color Constants

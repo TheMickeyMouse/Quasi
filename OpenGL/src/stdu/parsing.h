@@ -2,6 +2,7 @@
 #include <charconv>
 #include <optional>
 #include <type_traits>
+#include <limits>
 
 namespace stdu {
     template <class T, T Null>
@@ -40,10 +41,10 @@ namespace stdu {
     inline int parse_int(std::string_view v) { return parse_num_unchecked<int, -1>(v); }
     inline short parse_i16(std::string_view v) { return parse_num_unchecked<short, -1>(v); }
     inline long long parse_i64(std::string_view v) { return parse_num_unchecked<long long, -1>(v); }
-    inline unsigned int parse_uint(std::string_view v) { return parse_num_unchecked<unsigned int, ~0>(v); }
-    inline unsigned short parse_u16(std::string_view v) { return parse_num_unchecked<unsigned short, ~0>(v); }
-    inline unsigned long long parse_u64(std::string_view v) { return parse_num_unchecked<unsigned long long, ~0>(v); }
-    inline float parse_float(std::string_view v) { return parse_num_unchecked<float, NAN>(v); }
-    inline double parse_f64(std::string_view v) { return parse_num_unchecked<double, NAN>(v); }
-    inline long double parse_f128(std::string_view v) { return parse_num_unchecked<long double, NAN>(v); }
+    inline unsigned int parse_uint(std::string_view v) { return parse_num_unchecked<uint, ~0U>(v); }
+    inline unsigned short parse_u16(std::string_view v) { return parse_num_unchecked<ushort, (ushort)~0U>(v); }
+    inline unsigned long long parse_u64(std::string_view v) { return parse_num_unchecked<uint64, ~0ULL>(v); }
+    inline float parse_float(std::string_view v) { return parse_num_unchecked<float, std::numeric_limits<float>::quiet_NaN()>(v); }
+    inline double parse_f64(std::string_view v) { return parse_num_unchecked<double, std::numeric_limits<double>::quiet_NaN()>(v); }
+    inline long double parse_f128(std::string_view v) { return parse_num_unchecked<long double, std::numeric_limits<long double>::quiet_NaN()>(v); }
 }

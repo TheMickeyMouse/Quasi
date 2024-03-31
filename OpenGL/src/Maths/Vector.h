@@ -358,11 +358,11 @@ namespace Maths {
         NODISC bool any() const requires std::is_same_v<T, bool> { return vecops::accum([](bool a, bool b) { return a || b; }, as_vec(), true); }
     };
 
-    template <uint N, class T> auto operator+(std::convertible_to<T> auto val, const vecn<N, T>& vec) requires !vec_t<decltype(val)> { return vec + val; }
-    template <uint N, class T> auto operator-(std::convertible_to<T> auto val, const vecn<N, T>& vec) requires !vec_t<decltype(val)> { return vecn<N, T> { val } - vec; }
-    template <uint N, class T> auto operator*(std::convertible_to<T> auto val, const vecn<N, T>& vec) requires !vec_t<decltype(val)> { return vec * val; }
-    template <uint N, class T> auto operator/(std::convertible_to<T> auto val, const vecn<N, T>& vec) requires !vec_t<decltype(val)> { return vecn<N, T> { val } / vec; }
-    template <uint N, class T> auto operator%(std::convertible_to<T> auto val, const vecn<N, T>& vec) requires !vec_t<decltype(val)> { return vecn<N, T> { val } % vec; }
+    template <uint N, class T> auto operator+(std::convertible_to<T> auto val, const vecn<N, T>& vec) requires (!vec_t<decltype(val)>) { return vec + val; }
+    template <uint N, class T> auto operator-(std::convertible_to<T> auto val, const vecn<N, T>& vec) requires (!vec_t<decltype(val)>) { return vecn<N, T> { val } - vec; }
+    template <uint N, class T> auto operator*(std::convertible_to<T> auto val, const vecn<N, T>& vec) requires (!vec_t<decltype(val)>) { return vec * val; }
+    template <uint N, class T> auto operator/(std::convertible_to<T> auto val, const vecn<N, T>& vec) requires (!vec_t<decltype(val)>) { return vecn<N, T> { val } / vec; }
+    template <uint N, class T> auto operator%(std::convertible_to<T> auto val, const vecn<N, T>& vec) requires (!vec_t<decltype(val)>) { return vecn<N, T> { val } % vec; }
 #pragma endregion
 
 #pragma region Vector Impl

@@ -20,7 +20,7 @@ namespace Graphics {
     template <class H> requires std::is_base_of_v<GLObjectHandler<H>, H>
     class GLObject {
     public:
-        [[no_unique_address]] H handler {};
+        [[msvc::no_unique_address]] H handler {};
         glID rendererID = GL_NULL;
 
         explicit GLObject() = default;

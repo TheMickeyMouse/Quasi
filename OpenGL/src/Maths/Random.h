@@ -21,7 +21,7 @@ namespace Maths {
 
         static std::seed_seq& get_seed() { return seeder; }
         void set_seed(const uint val) { device.seed(val); }
-        template <class Sq> void set_seed(Sq& seeder) { device.seed(seeder()); }
+        template <class Sq> void set_seed(Sq& newSeeder) { device.seed(newSeeder()); }
         void reseed() { device.seed(seeder); }
 
         void discard(std::integral auto num) { device.discard((uint64)num); }
@@ -57,7 +57,7 @@ namespace Maths {
             else return getf_inclusive<common_t>((common_t)min, (common_t)max);
         }
 
-        bool getprob(std::floating_point auto probability) { return bool_dist_t { probability } (device()); }
+        bool getprob(std::floating_point auto probability) { return bool_dist_t { probability } (device); }
 
         template <class F> auto get(F f) -> decltype(f(0)) { return f(device); }
 
@@ -103,8 +103,6 @@ namespace Maths {
         }
 
         template<typename T, std::size_t N>
-        static T* get(T (&arr)[N]) {
-            return arr + geti<std::size_t>(0, N);
-        }
+        T* get(T (&arr)[N]) { return arr + geti<std::size_t>(0, N); }
     };
 }

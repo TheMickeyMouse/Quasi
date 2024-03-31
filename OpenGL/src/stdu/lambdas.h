@@ -1,8 +1,8 @@
 #pragma once
 #include "macros.h"
 
-#define λ(...) STDU_LAMBDA(__VA_ARGS__)
-#define λL(...) STDU_LAMBDA_L(__VA_ARGS__)
+#define LAMB(...) STDU_LAMBDA(__VA_ARGS__)
+#define LAMB_L(...) STDU_LAMBDA_L(__VA_ARGS__)
 
 #define STDU_LAMBDA(...) STDU_CAT(STDU_LAMBDA_, __STDU_GET_LAMBDA_ARGS_NUM__(__VA_ARGS__))(__VA_ARGS__)
 #define STDU_LAMBDA_L(...) STDU_CAT(STDU_LAMBDA_L, __STDU_GET_LAMBDA_ARGS_NUM__(__VA_ARGS__))(__VA_ARGS__)

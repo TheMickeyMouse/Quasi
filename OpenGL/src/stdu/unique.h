@@ -7,7 +7,7 @@ namespace stdu {
     requires requires(H h, T t) { { h() } -> std::convertible_to<T>; { h(t) } -> std::same_as<void>; }
     struct unique {
         T val;
-        [[no_unique_address]] H handler {};
+        [[msvc::no_unique_address]] H handler {};
 
         unique() : val(H {} ()) {}
         unique(T t) : val(t) {}

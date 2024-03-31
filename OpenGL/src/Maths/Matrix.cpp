@@ -229,11 +229,10 @@ namespace Maths {
             return mat[Xs][Ys];
         } else {
             float determ = 0.0f;
-            // ReSharper disable once CppDFAUnusedValue, CppDFAUnreadVariable
             bool alt = false;
 
             // main calculation, checks if cell is ignored, then recursively gets determinant
-            auto acc = [&]<matrix_entry E>() {
+            const auto acc = [&]<matrix_entry E>() {
                 if ((... || (E.I == Ig.I)) || (... || (E.J == Ig.J))) return;
 
                 determ += (alt ? -1.0f : 1.0f) * mat[E.I][E.J] * this->subdet<E, Ig...>();
@@ -241,7 +240,7 @@ namespace Maths {
             };
 
             // check if row is used, if it isn't go through all the rows and do calculation
-            auto find = [&]<uint J>() {
+            const auto find = [&]<uint J>() {
                 if ((... || (J == Ig.J))) return false;
 
                 [&]<uint... Is>(std::integer_sequence<uint, Is...>) {
@@ -300,11 +299,11 @@ namespace Maths {
     template <uint N, uint M>
     template <uint P>
     matrix<N, P> matrix<N, M>::operator*(const matrix<M, P>& m) const {
-        matrix<N, P> mat;
+        matrix<N, P> res;
         for (uint i = 0; i < P; ++i) {
-            mat[i] = (*this) * m[i];
+            res[i] = (*this) * m[i];
         }
-        return mat;
+        return res;
     }
 
     template struct matrix<2, 2>;

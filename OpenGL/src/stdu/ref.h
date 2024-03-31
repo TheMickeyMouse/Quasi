@@ -12,7 +12,7 @@ namespace stdu {
         ref(std::nullptr_t) : obj(nullptr) {}
         ref(std::nullopt_t) : obj(nullptr) {}
 
-        T& value() requires !std::is_const_v<T> { return *obj; }
+        T& value() requires (!std::is_const_v<T>) { return *obj; }
         [[nodiscard]] const T& value() const { return *obj; }
         [[nodiscard]] const T& value_or(const T& none) const { return obj == nullptr ? none : *obj; }
         [[nodiscard]] bool is_null() const { return obj == nullptr; }
@@ -25,9 +25,9 @@ namespace stdu {
         void set_ref(ref r) { obj = &*r; }
         void reset_null() { obj = nullptr; }
 
-        T& operator*() requires !std::is_const_v<T> { return *obj; }
+        T& operator*() requires (!std::is_const_v<T>) { return *obj; }
         const T& operator*() const { return *obj; }
-        T* operator->() requires !std::is_const_v<T> { return obj; }
+        T* operator->() requires (!std::is_const_v<T>) { return obj; }
         const T* operator->() const { return obj; }
 
         bool operator==(const ref& r) const { return this->equals(r); }

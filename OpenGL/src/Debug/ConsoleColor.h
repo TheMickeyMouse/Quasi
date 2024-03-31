@@ -62,8 +62,8 @@ namespace Debug {
 
     inline ColoredText Dye(const std::string& s, ConsoleColor color) { return { color, s }; }
 
-    inline std::ostream& operator<<(std::ostream& out, ConsoleColor color) { return out << std::format("{}", color); }
-    inline std::ostream& operator<<(std::ostream& out, const ColoredText& text) { return out << std::format("{}", text); }
+    inline std::ostream& operator<<(std::ostream& out, ConsoleColor color);
+    inline std::ostream& operator<<(std::ostream& out, const ColoredText& text);
 }
 
 namespace std {
@@ -82,4 +82,8 @@ namespace std {
             return formatter<std::string>::format(std::format("{}{}{}", t.color, t.string, Debug::ConsoleColor::RESET), ctx);
         }
     };
+}
+
+namespace Debug {
+    inline std::ostream& operator<<(std::ostream& out, ConsoleColor color);
 }

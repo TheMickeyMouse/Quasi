@@ -35,11 +35,11 @@ namespace Debug {
     inline constexpr std::array<ConsoleColor, (int)Severity::SEVERITY_NUM> SEVERITY_COLOR = []{
         std::array<ConsoleColor, (int)Severity::SEVERITY_NUM> arr;
         arr[(int)Severity::OFF]      = ConsoleColor::RESET;
-        arr[(int)Severity::TRACE]    = ConsoleColor::FG_GREEN;
-        arr[(int)Severity::DEBUG]    = ConsoleColor::FG_CYAN;
+        arr[(int)Severity::TRACE]    = FgColor(ConsoleColor::GREEN);
+        arr[(int)Severity::DEBUG]    = FgColor(ConsoleColor::CYAN);
         arr[(int)Severity::INFO]     = ConsoleColor::RESET;
-        arr[(int)Severity::WARN]     = ConsoleColor::FG_YELLOW;
-        arr[(int)Severity::ERROR]    = ConsoleColor::FG_RED;
+        arr[(int)Severity::WARN]     = FgColor(ConsoleColor::YELLOW);
+        arr[(int)Severity::ERROR]    = FgColor(ConsoleColor::RED);
         arr[(int)Severity::CRITICAL] = Bold(ConsoleColor::FG_RED);
         return arr;
     }();

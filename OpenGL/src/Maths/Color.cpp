@@ -254,34 +254,34 @@ namespace Maths {
     template <class Color> fvec3 color_base<Color>::as_hsl()  const { return color_utils::rgb2hsl(color_utils::convert_type<float>(color().r), color_utils::convert_type<float>(color().g), color_utils::convert_type<float>(color().b)); }
     template <class Color> fvec4 color_base<Color>::as_hsla() const { return as_hsl().with_w(color_utils::convert_type<float>(alpha())); }
 
-    template <class Color> Color color_base<Color>::from_hsl(float hue, float saturation, float lightness) requires !traits_has_alpha {
+    template <class Color> Color color_base<Color>::from_hsl(float hue, float saturation, float lightness) requires (!traits_has_alpha) {
         return color_utils::hsl2rgb(hue / 360.0f, saturation, lightness).to_color3();
     }
     template <class Color> Color color_base<Color>::from_hsl(float hue, float saturation, float lightness, float alpha) requires traits_has_alpha {
         return color_utils::hsl2rgb(hue / 360.0f, saturation, lightness).with_w(alpha).to_color();
     }
 
-    template <class Color> Color color_base<Color>::from_hsl(const fvec3& hsl) requires !traits_has_alpha { return from_hsl(hsl.x, hsl.y, hsl.z); }
+    template <class Color> Color color_base<Color>::from_hsl(const fvec3& hsl) requires (!traits_has_alpha) { return from_hsl(hsl.x, hsl.y, hsl.z); }
     template <class Color> Color color_base<Color>::from_hsl(const fvec4& hsla) requires traits_has_alpha { return from_hsl(hsla.x, hsla.y, hsla.z, hsla.w); }
 
     template <class Color> fvec3 color_base<Color>::as_hsv()  const { return color_utils::rgb2hsv(color_utils::convert_type<float>(color().r), color_utils::convert_type<float>(color().g), color_utils::convert_type<float>(color().b)); }
     template <class Color> fvec4 color_base<Color>::as_hsva() const { return as_hsv().with_w(color_utils::convert_type<float>(alpha())); }
 
-    template <class Color> Color color_base<Color>::from_hsv(float hue, float saturation, float value) requires !traits_has_alpha {
+    template <class Color> Color color_base<Color>::from_hsv(float hue, float saturation, float value) requires (!traits_has_alpha) {
         return color_utils::hsv2rgb(hue / 360.0f, saturation, value).to_color3();
     }
     template <class Color> Color color_base<Color>::from_hsv(float hue, float saturation, float value, float alpha) requires traits_has_alpha {
         return color_utils::hsv2rgb(hue / 360.0f, saturation, value).with_w(alpha).to_color();
     }
 
-    template <class Color> Color color_base<Color>::from_hsv(const fvec3& hsv) requires !traits_has_alpha { return from_hsv(hsv.x, hsv.y, hsv.z); }
+    template <class Color> Color color_base<Color>::from_hsv(const fvec3& hsv) requires (!traits_has_alpha) { return from_hsv(hsv.x, hsv.y, hsv.z); }
     template <class Color> Color color_base<Color>::from_hsv(const fvec4& hsva) requires traits_has_alpha { return from_hsv(hsva.x, hsva.y, hsva.z, hsva.w); }
     template <class Color> typename color_base<Color>::without_alpha_t color_base<Color>::rgb() const { return { color().r, color().g, color().b }; }
     template <class Color> typename color_base<Color>::with_alpha_t color_base<Color>::with_alpha(scalar alpha) const { return { color().r, color().g, color().b, alpha }; }
     template <class Color> typename color_base<Color>::with_alpha_t color_base<Color>::rgb1() const { return { color().r, color().g, color().b, CHANNEL_MAX_VALUE }; }
 
     template <class Color> color_base<Color>::operator without_alpha_t() const requires traits_has_alpha { return rgb(); }
-    template <class Color> color_base<Color>::operator with_alpha_t() const requires !traits_has_alpha { return rgb1(); }
+    template <class Color> color_base<Color>::operator with_alpha_t() const requires (!traits_has_alpha) { return rgb1(); }
     template <class Color> color_base<Color>::operator alternate_data_form() const {
         using alt = typename color_traits<alternate_data_form>::scalar;
         return color_utils::make_color<alternate_data_form>(
@@ -306,8 +306,8 @@ namespace Maths {
         }
     }
 
-    template OPENGL_API struct color_base<color3>;
-    template OPENGL_API struct color_base<color3f>;
-    template OPENGL_API struct color_base<color>;
-    template OPENGL_API struct color_base<colorf>;
+    template struct color_base<color3>;
+    template struct color_base<color3f>;
+    template struct color_base<color>;
+    template struct color_base<colorf>;
 }
