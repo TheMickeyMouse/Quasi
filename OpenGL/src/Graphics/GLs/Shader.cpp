@@ -44,7 +44,7 @@ namespace Graphics {
             return it->second;
 
         const int location = GL_CALL(glGetUniformLocation(rendererID, name.data()));
-        GLLogger().AssertFmt(location != -1, {"Uniform location for '{}' was -1"}, name);
+        GLLogger().AssertFmt(location != -1, {"Uniform location for '{}' was -1"}, name.substr(name.size() - 1));
         uniformCache[std::string { name }] = location;
         return location;
     }
@@ -143,7 +143,7 @@ namespace Graphics {
             int len;
             glGetShaderiv(id, GL_INFO_LOG_LENGTH, &len);
             std::string msg;
-            msg.reserve(len);
+            msg.resize(len - 1);
             glGetShaderInfoLog(id, len, &len, msg.data());
             GLLogger().Error({"Compiling {} shader yielded compiler errors:\n{}"}, type, msg);
 

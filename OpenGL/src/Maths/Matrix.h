@@ -44,6 +44,8 @@ namespace Maths {
         matrix(const Vs&... cols) requires (std::is_convertible_v<Vs, col> && ...) : mat { cols... } {}
         matrix(const vecn<M, col>& mat) : mat(mat) {}
 
+        static matrix identity() requires is_square { return matrix {}; }
+
         NODISC OPENGL_API std::span<const float, N * M> data() const;
         NODISC OPENGL_API std::span<const col, M> get_cols() const;
 

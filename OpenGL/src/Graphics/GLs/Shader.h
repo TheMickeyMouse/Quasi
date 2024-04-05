@@ -334,6 +334,8 @@ namespace Graphics {
         uint size;
 
 #pragma region Init
+        ShaderValueVariant(bool val) : datInt(val), type(ShaderUniformType::UNIF_1I), size(1) {}
+
         template <class N> requires std::is_arithmetic_v<N>
         ShaderValueVariant(N num) {
             using enum ShaderUniformType;

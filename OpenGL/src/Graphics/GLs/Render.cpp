@@ -21,8 +21,12 @@ namespace Graphics::Render {
         GL_CALL(glClear((int)bit));
     }
 
-    void SetRenderWireframe(const bool isWireframe) {
-        GL_CALL(glPolygonMode(GL_FRONT_AND_BACK, isWireframe ? GL_LINE : GL_FILL));
+    void SetRenderMode(const RenderMode mode) {
+        GL_CALL(glPolygonMode(GL_FRONT_AND_BACK, (uint)mode));
+    }
+
+    void SetPointSize(float size) {
+        GL_CALL(glPointSize(size));
     }
 
     void SetClearColor(const Maths::colorf& color) {

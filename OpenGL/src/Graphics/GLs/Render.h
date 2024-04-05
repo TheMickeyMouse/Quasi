@@ -70,6 +70,10 @@ namespace Graphics {
         CONST_ALPHA        = 0x8003,
         INVERT_CONST_ALPHA = 0x8004
     };
+
+    enum class RenderMode {
+        POINTS = 0x1B00, LINES = 0x1B01, FILL = 0x1B02
+    };
 }
 
 namespace Graphics::Render {
@@ -89,7 +93,11 @@ namespace Graphics::Render {
 #undef GL_CLEAR_SWITCH
 
     OPENGL_API void SetClearColor(const Maths::colorf& color);
-    OPENGL_API void SetRenderWireframe(bool isWireframe);
+    OPENGL_API void SetRenderMode(RenderMode mode);
+    OPENGL_API void SetPointSize(float size);
+    inline void SetRenderFill()   { SetRenderMode(RenderMode::FILL); }
+    inline void SetRenderLines()  { SetRenderMode(RenderMode::LINES); }
+    inline void SetRenderPoints() { SetRenderMode(RenderMode::POINTS); }
 
 #define GL_CAP_SWITCH(N, E) GL_SWITCH(Enable, N, Capability::E) GL_SWITCH(Disable, N, Capability::E)
     OPENGL_API void Enable(Capability cap);

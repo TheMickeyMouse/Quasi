@@ -35,6 +35,8 @@ namespace Graphics::MeshUtils {
     MESH_UTIL_FN(Circle, 2D, uint(subdivisions));
     MESH_UTIL_FN(CubeNormless, 3D);
     MESH_UTIL_FN(Cube, 3D);
+    MESH_UTIL_FN(Sphere, 3D, Maths::uvec2(sections));
+    MESH_UTIL_FN(Icosphere, 3D, uint(subdivisions));
 
 #undef MESH_UTIL_FN
 #undef VECTOR_FOR

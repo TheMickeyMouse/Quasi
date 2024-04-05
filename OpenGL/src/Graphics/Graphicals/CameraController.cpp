@@ -85,8 +85,8 @@ namespace Graphics {
 
         if (!ImGui::TreeNode(title)) return;
 
-        ImGui::SliderFloat("Light Yaw",   &yaw,   -Maths::PI,             Maths::PI);
-        ImGui::SliderFloat("Light Pitch", &pitch, -Maths::HALF_PI * 0.9f, Maths::HALF_PI * 0.9f);
+        ImGui::SliderFloat("Camera Yaw",   &yaw,   -Maths::PI,             Maths::PI);
+        ImGui::SliderFloat("Camera Pitch", &pitch, -Maths::HALF_PI * 0.9f, Maths::HALF_PI * 0.9f);
         ImGui::DragFloat3("Position", position.begin(), 0.5f);
         ImGui::DragFloat("Speed", &speed, 0.5f);
         ImGui::SliderFloat("Sensitivity", &sensitivity, 0, 1);

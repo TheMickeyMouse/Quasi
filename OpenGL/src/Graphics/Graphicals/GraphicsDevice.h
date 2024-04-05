@@ -20,8 +20,10 @@ namespace Graphics {
 
         Maths::ivec2 windowSize;
         GLFWwindow* mainWindow;
-        bool useWireRender = false;
-        
+
+        RenderMode renderMode = RenderMode::FILL;
+        float pointSize = 10.0f;
+
         FontDevice fontDevice = {};
         IO::IO ioDevice {};
         std::unique_ptr<Maths::random_gen> randDevice {};
@@ -66,8 +68,8 @@ namespace Graphics {
         FontDevice& GetFontDevice() { return fontDevice; }
         [[nodiscard]] const FontDevice& GetFontDevice() const { return fontDevice; }
 
-        OPENGL_API void SetWireframe(bool usewire);
-        OPENGL_API static void DrawWireframe(bool usewire);
+        OPENGL_API void SetDrawMode(RenderMode mode);
+        OPENGL_API static void RenderInMode(RenderMode mode);
 
         OPENGL_API void DebugMenu();
 

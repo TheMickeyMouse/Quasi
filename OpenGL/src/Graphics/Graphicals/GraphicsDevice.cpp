@@ -58,7 +58,7 @@ namespace Graphics {
         dest.mainWindow = from.mainWindow;
         from.mainWindow = nullptr;
 
-        dest.useWireRender = from.useWireRender;
+        dest.renderMode = from.renderMode;
 
         dest.fontDevice = std::move(from.fontDevice);
         dest.ioDevice = std::move(from.ioDevice);
@@ -75,7 +75,7 @@ namespace Graphics {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        DrawWireframe(useWireRender);
+        RenderInMode(renderMode);
 
         ioDevice.Update();
     }
@@ -121,30 +121,6 @@ namespace Graphics {
         Render::Draw(r, s);
     }
 
-    // void GraphicsDevice::BindTexture(Texture& texture, int slot) {
-    //     if (slot == -1) {
-    //         const auto free = std::ranges::find_if(textures, [](Texture* t) { return t == nullptr; });
-    //         slot = free - textures.begin();
-    //     }
-    //     texture.Register(slot, this);
-    //     textures[slot] = &texture;
-    // }
-
-    // void GraphicsDevice::UnbindTexture(int slot) {
-    //     Texture* t = textures[slot];
-    //     textures[slot] = nullptr;
-    //     if (t)
-    //         t->Remove();
-    // }
-    //
-    // void GraphicsDevice::UnbindAllTextures() {
-    //     for (Texture*& t : textures) {
-    //         if (!t) continue;
-    //         t->Destroy();
-    //         t = nullptr;
-    //     }
-    // }
-
     void GraphicsDevice::ClearColor(const Maths::colorf& color) {
         Render::SetClearColor(color);
     }
@@ -153,12 +129,12 @@ namespace Graphics {
         return mainWindow && !glfwWindowShouldClose(mainWindow);
     }
 
-    void GraphicsDevice::SetWireframe(bool usewire) {
-        useWireRender = usewire;
+    void GraphicsDevice::SetDrawMode(const RenderMode mode) {
+        renderMode = mode;
     }
 
-    void GraphicsDevice::DrawWireframe(bool usewire) {
-        Render::SetRenderWireframe(usewire);
+    void GraphicsDevice::RenderInMode(const RenderMode mode) {
+        Render::SetRenderMode(mode);
     }
 
     void GraphicsDevice::DebugMenu() {
@@ -168,7 +144,16 @@ namespace Graphics {
         if (!enabled) goto skipDebugs; // i know goto is not great but its more readable imo  // NOLINT(cppcoreguidelines-avoid-goto, hicpp-avoid-goto)
         
         ImGui::Text("Application Averages %.2fms/frame (%d FPS)", 1000.0 * ioDevice.Time.deltaTime, (int)ioDevice.Time.Framerate());
-        if (ImGui::Button(useWireRender ? "Draw Fill" : "Draw Wireframe")) { useWireRender = !useWireRender; }
+        ImGui::Text("Draw as: "); ImGui::SameLine();
+        ImGui::RadioButton("Fill",   (int*)&renderMode, (int)RenderMode::FILL);  ImGui::SameLine();
+        ImGui::RadioButton("Lines",  (int*)&renderMode, (int)RenderMode::LINES); ImGui::SameLine();
+        ImGui::RadioButton("Points", (int*)&renderMode, (int)RenderMode::POINTS);
+
+        {
+            const float ps = pointSize;
+            ImGui::DragFloat("Point Size", &pointSize, 0.1f, 0);
+            if (ps != pointSize) Render::SetPointSize(pointSize);
+        }
 
         if (ImGui::CollapsingHeader("Mouse Input")) {
             ImGui::Text("Mouse Position is at: (%f, %f),",

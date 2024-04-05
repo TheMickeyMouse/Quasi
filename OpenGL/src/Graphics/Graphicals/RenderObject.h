@@ -48,6 +48,10 @@ namespace Graphics {
 		[[nodiscard]] const std::vector<GenericMesh>& GetMeshes() const { return rd->GetMeshes(); }
 	                        Shader& GetShader()                         { return rd->GetShader(); }
 	    [[nodiscard]] const Shader& GetShader()                   const { return rd->GetShader(); }
+    	                    Maths::mat3D& GetView()                     { return rd->GetView(); }
+    	[[nodiscard]] const Maths::mat3D& GetView()               const { return rd->GetView(); }
+    	                    Maths::mat3D& GetProjection()               { return rd->GetProjection(); }
+    	[[nodiscard]] const Maths::mat3D& GetProjection()         const { return rd->GetProjection(); }
         
                             RenderData& GetRenderData()       { return *rd; }
         [[nodiscard]] const RenderData& GetRenderData() const { return *rd; }

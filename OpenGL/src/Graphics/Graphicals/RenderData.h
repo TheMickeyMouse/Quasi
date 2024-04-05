@@ -73,6 +73,10 @@ namespace Graphics {
 		[[nodiscard]] const GraphicsDevice& GetGraphicsDevice() const { return *device; }
 		std::vector<GenericMesh>& GetMeshes() { return meshes; }
 		[[nodiscard]] const std::vector<GenericMesh>& GetMeshes() const { return meshes; }
+		Maths::mat3D& GetView() { return camera; }
+		[[nodiscard]] const Maths::mat3D& GetView() const { return camera; }
+		Maths::mat3D& GetProjection() { return projection; }
+		[[nodiscard]] const Maths::mat3D& GetProjection() const { return projection; }
 
 		OPENGL_API void ClearData(bool shallowClear = true);
 		template <class T> void BindMeshes(std::span<Mesh<T>> newMeshes);
