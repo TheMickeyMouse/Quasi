@@ -1,3 +1,5 @@
+#include <GLFW/glfw3.h>
+
 #include "Mouse.h"
 #include "Keyboard.h"
 #include "TimeType.h"

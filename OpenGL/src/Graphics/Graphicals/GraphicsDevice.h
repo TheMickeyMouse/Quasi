@@ -2,8 +2,6 @@
 
 #include "Render.h"
 
-#include <GLFW/glfw3.h>
-
 #include "IO.h"
 #include "Random.h"
 #include "Graphics/Utils/Fonts/FontDevice.h"

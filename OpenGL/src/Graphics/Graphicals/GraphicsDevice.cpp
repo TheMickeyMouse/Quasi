@@ -1,5 +1,6 @@
 ﻿// because gl.h cant be included before glew.h, weird ordering
 #include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
 #include "Render.h"
 #include "GraphicsDevice.h"

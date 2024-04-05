@@ -2,6 +2,9 @@
 
 #include "GLDebug.h"
 
+#include "ft2build.h"
+#include FT_FREETYPE_H
+
 namespace Graphics {
     OPENGL_API FontDevice* FontDevice::Instance = nullptr;
 

@@ -5,146 +5,161 @@ find_package(Freetype REQUIRED)
 ################################################################################
 # Source groups
 ################################################################################
-set(no_group_source_files
-    "src/core.h"
-    "src/Debug/ConsoleColor.h"
-    "src/Debug/internal_debug_break.h"
-    "src/Debug/Logger.cpp"
-    "src/Debug/Logger.h"
-    "src/Graphics/GLs/FrameBuffer.cpp"
-    "src/Graphics/GLs/FrameBuffer.h"
-    "src/Graphics/GLs/GLDebug.cpp"
-    "src/Graphics/GLs/GLDebug.h"
-    "src/Graphics/GLs/GLObject.cpp"
-    "src/Graphics/GLs/GLObject.h"
-    "src/Graphics/GLs/GLTypeID.h"
-    "src/Graphics/GLs/RenderBuffer.cpp"
-    "src/Graphics/GLs/RenderBuffer.h"
-    "src/Graphics/Graphicals/CameraController.cpp"
-    "src/Graphics/Graphicals/CameraController.h"
-    "src/Graphics/Graphicals/Light.cpp"
-    "src/Graphics/Graphicals/Light.h"
-    "src/Graphics/Graphicals/MeshUtils.h"
-    "src/Graphics/Graphicals/MeshUtilsImpl.h"
-    "src/Graphics/Utils/Model Loading/MTLMaterialLoader.cpp"
-    "src/Graphics/Utils/Model Loading/MTLMaterialLoader.h"
-    "src/Graphics/Utils/Model Loading/OBJModel.cpp"
-    "src/Graphics/Utils/Model Loading/OBJModel.h"
-    "src/Graphics/Utils/Model Loading/OBJModelLoader.cpp"
-    "src/Graphics/Utils/Model Loading/OBJModelLoader.h"
-    "src/Graphics/Utils/Textures/TextureConstants.h"
-    "src/IO/TimeType.cpp"
-    "src/IO/TimeType.h"
-    "src/Maths/Geometry.h"
-    "src/Maths/Parsing.h"
-    "src/Maths/Random.h"
-    "src/stdu/parsing.h"
-    "src/stdu/unique.h"
-    "src/vendor/imgui/imgui_stdlib.cpp"
-    "src/vendor/imgui/imgui_stdlib.h"
-)
-source_group("" FILES ${no_group_source_files})
+set(HEADER_FILES
+    src/core.h
 
-set(Header_Files
-    "src/Graphics/GLs/DynamicIndexBuffer.h"
-    "src/Graphics/GLs/DynamicVertexBuffer.h"
-    "src/Graphics/GLs/IndexBuffer.h"
-    "src/Graphics/GLs/Render.h"
-    "src/Graphics/GLs/Shader.h"
-    "src/Graphics/GLs/VertexArray.h"
-    "src/Graphics/GLs/VertexBuffer.h"
-    "src/Graphics/GLs/VertexBufferLayout.h"
-    "src/Graphics/GLs/VertexElement.h"
-    "src/Graphics/GLs/VertexConverter.h"
-    "src/Graphics/Graphicals/GenericMesh.h"
-    "src/Graphics/Graphicals/GraphicsDevice.h"
-    "src/Graphics/Graphicals/Mesh.h"
-    "src/Graphics/Graphicals/MeshUtils.h"
-    "src/Graphics/Graphicals/MeshUtilsImpl.h"
-    "src/Graphics/Graphicals/RenderData.h"
-    "src/Graphics/Graphicals/RenderObject.h"
-    "src/Graphics/Graphicals/TriIndices.h"
-    "src/Graphics/Primitives/Quad.h"
-    "src/Graphics/Primitives/Tri.h"
-    "src/Graphics/Utils/Fonts/Font.h"
-    "src/Graphics/Utils/Fonts/FontDevice.h"
-    "src/Graphics/Utils/Fonts/TextAlign.h"
-    "src/Graphics/Utils/Fonts/TextRenderer.h"
-    "src/Graphics/Utils/Fonts/TextStyle.h"
-    "src/Graphics/Utils/Textures/Texture.h"
-    "src/IO/IO.h"
-    "src/IO/Keyboard.h"
-    "src/IO/Mouse.h"
-    "src/Maths/Constants.h"
-    "src/Maths/Corner.h"
-    "src/Maths/Direction.h"
-    "src/Maths/Matrix.h"
-    "src/Maths/NumTypes.h"
-    "src/Maths/Rect.h"
-    "src/Maths/Vector.h"
-    "src/stdu/enum_utils.h"
-    "src/stdu/io.h"
-    "src/stdu/macros.h"
-    "src/stdu/ref.h"
-    "src/stdu/rich_string.h"
-    "src/stdu/sorted_vector.h"
-    "src/stdu/types.h"
-    "src/stdu/lambdas.h"
-    "src/vendor/imgui/imconfig.h"
-    "src/vendor/imgui/imgui.h"
-    "src/vendor/imgui/imgui_impl_glfw.h"
-    "src/vendor/imgui/imgui_impl_opengl3.h"
-    "src/vendor/imgui/imgui_internal.h"
-    "src/vendor/imgui/imstb_rectpack.h"
-    "src/vendor/imgui/imstb_textedit.h"
-    "src/vendor/imgui/imstb_truetype.h"
-    "src/vendor/stb_image/stb_image.h"
-    "src/Maths/Color.h"
-)
-source_group("Header Files" FILES ${Header_Files})
+    src/Debug/ConsoleColor.h
+    src/Debug/internal_debug_break.h
+    src/Debug/Logger.h
 
-set(Source_Files
-    "src/Graphics/GLs/DynamicIndexBuffer.cpp"
-    "src/Graphics/GLs/DynamicVertexBuffer.cpp"
-    "src/Graphics/GLs/IndexBuffer.cpp"
-    "src/Graphics/GLs/Render.cpp"
-    "src/Graphics/GLs/Shader.cpp"
-    "src/Graphics/GLs/VertexArray.cpp"
-    "src/Graphics/GLs/VertexBuffer.cpp"
-    "src/Graphics/GLs/VertexBufferLayout.cpp"
-    "src/Graphics/Graphicals/GenericMesh.cpp"
-    "src/Graphics/Graphicals/GraphicsDevice.cpp"
-    "src/Graphics/Graphicals/RenderData.cpp"
-    "src/Graphics/Primitives/Quad.cpp"
-    "src/Graphics/Primitives/Tri.cpp"
-    "src/Graphics/Utils/Fonts/Font.cpp"
-    "src/Graphics/Utils/Fonts/FontDevice.cpp"
-    "src/Graphics/Utils/Fonts/TextAlign.cpp"
-    "src/Graphics/Utils/Fonts/TextRenderer.cpp"
-    "src/Graphics/Utils/Textures/Texture.cpp"
-    "src/IO/IO.cpp"
-    "src/IO/Keyboard.cpp"
-    "src/IO/Mouse.cpp"
-    "src/Maths/Color.cpp"
-    "src/Maths/Matrix.cpp"
-    "src/stdu/rich_string.cpp"
-    "src/vendor/imgui/imgui.cpp"
-    "src/vendor/imgui/imgui_demo.cpp"
-    "src/vendor/imgui/imgui_draw.cpp"
-    "src/vendor/imgui/imgui_impl_glfw.cpp"
-    "src/vendor/imgui/imgui_impl_opengl3.cpp"
-    "src/vendor/imgui/imgui_tables.cpp"
-    "src/vendor/imgui/imgui_widgets.cpp"
-    "src/vendor/imgui/main.cpp"
-    "src/vendor/stb_image/stb_image.cpp"
-        src/Maths/Vector.cpp
+    src/Graphics/GLs/DynamicIndexBuffer.h
+    src/Graphics/GLs/DynamicVertexBuffer.h
+    src/Graphics/GLs/IndexBuffer.h
+    src/Graphics/GLs/Render.h
+    src/Graphics/GLs/Shader.h
+    src/Graphics/GLs/VertexArray.h
+    src/Graphics/GLs/VertexBuffer.h
+    src/Graphics/GLs/VertexBufferLayout.h
+    src/Graphics/GLs/VertexElement.h
+    src/Graphics/GLs/VertexConverter.h
+    src/Graphics/GLs/FrameBuffer.h
+    src/Graphics/GLs/GLDebug.h
+    src/Graphics/GLs/GLObject.h
+    src/Graphics/GLs/GLTypeID.h
+    src/Graphics/GLs/RenderBuffer.h
+
+    src/Graphics/Graphicals/GenericMesh.h
+    src/Graphics/Graphicals/GraphicsDevice.h
+    src/Graphics/Graphicals/Mesh.h
+    src/Graphics/Graphicals/RenderData.h
+    src/Graphics/Graphicals/RenderObject.h
+    src/Graphics/Graphicals/TriIndices.h
+    src/Graphics/Graphicals/CameraController.h
+    src/Graphics/Graphicals/Light.h
+
+    src/Graphics/Primitives/Quad.h
+    src/Graphics/Primitives/Tri.h
+    src/Graphics/Utils/ModelLoading/MTLMaterialLoader.h
+    src/Graphics/Utils/ModelLoading/OBJModel.h
+    src/Graphics/Utils/ModelLoading/OBJModelLoader.h
+    src/Graphics/Utils/Textures/TextureConstants.h
+    src/Graphics/Utils/Textures/Texture.h
+    src/Graphics/Utils/Fonts/Font.h
+    src/Graphics/Utils/Fonts/FontDevice.h
+    src/Graphics/Utils/Fonts/TextAlign.h
+    src/Graphics/Utils/Fonts/TextRenderer.h
+    src/Graphics/Utils/Fonts/TextStyle.h
+    src/Graphics/Utils/Meshes/Circle.h
+    src/Graphics/Utils/Meshes/MeshConstructor.h
+    src/Graphics/Utils/Meshes/Cube.h
+    src/Graphics/Utils/Meshes/CubeNormless.h
+    src/Graphics/Utils/Meshes/Sphere.h
+    src/Graphics/Utils/Meshes/Icosphere.h
+
+    src/IO/IO.h
+    src/IO/Keyboard.h
+    src/IO/Mouse.h
+    src/IO/TimeType.h
+
+    src/Maths/Constants.h
+    src/Maths/Corner.h
+    src/Maths/Direction.h
+    src/Maths/Matrix.h
+    src/Maths/NumTypes.h
+    src/Maths/Rect.h
+    src/Maths/Vector.h
+    src/Maths/Geometry.h
+    src/Maths/Parsing.h
+    src/Maths/Random.h
+    src/Maths/Color.h
+
+    src/stdu/parsing.h
+    src/stdu/unique.h
+    src/stdu/enum_utils.h
+    src/stdu/io.h
+    src/stdu/macros.h
+    src/stdu/ref.h
+    src/stdu/rich_string.h
+    src/stdu/sorted_vector.h
+    src/stdu/types.h
+    src/stdu/lambdas.h
+
+    src/vendor/imgui/imconfig.h
+    src/vendor/imgui/imgui.h
+    src/vendor/imgui/imgui_impl_glfw.h
+    src/vendor/imgui/imgui_impl_opengl3.h
+    src/vendor/imgui/imgui_internal.h
+    src/vendor/imgui/imstb_rectpack.h
+    src/vendor/imgui/imstb_textedit.h
+    src/vendor/imgui/imstb_truetype.h
+    src/vendor/imgui/imgui_stdlib.h
+
+    src/vendor/stb_image/stb_image.h
 )
-source_group("Source Files" FILES ${Source_Files})
+source_group("Header Files" FILES ${HEADER_FILES})
+
+set(SOURCE_FILES
+    src/Debug/Logger.cpp
+
+    src/Graphics/GLs/FrameBuffer.cpp
+    src/Graphics/GLs/GLDebug.cpp
+    src/Graphics/GLs/GLObject.cpp
+    src/Graphics/GLs/RenderBuffer.cpp
+    src/Graphics/GLs/DynamicIndexBuffer.cpp
+    src/Graphics/GLs/DynamicVertexBuffer.cpp
+    src/Graphics/GLs/VertexArray.cpp
+    src/Graphics/GLs/IndexBuffer.cpp
+    src/Graphics/GLs/VertexBuffer.cpp
+    src/Graphics/GLs/VertexBufferLayout.cpp
+    src/Graphics/GLs/Render.cpp
+    src/Graphics/GLs/Shader.cpp
+
+    src/Graphics/Graphicals/CameraController.cpp
+    src/Graphics/Graphicals/Light.cpp
+    src/Graphics/Graphicals/GenericMesh.cpp
+    src/Graphics/Graphicals/GraphicsDevice.cpp
+    src/Graphics/Graphicals/RenderData.cpp
+
+    src/Graphics/Primitives/Quad.cpp
+    src/Graphics/Primitives/Tri.cpp
+
+    src/Graphics/Utils/ModelLoading/MTLMaterialLoader.cpp
+    src/Graphics/Utils/ModelLoading/OBJModel.cpp
+    src/Graphics/Utils/ModelLoading/OBJModelLoader.cpp
+    src/Graphics/Utils/Fonts/Font.cpp
+    src/Graphics/Utils/Fonts/FontDevice.cpp
+    src/Graphics/Utils/Fonts/TextAlign.cpp
+    src/Graphics/Utils/Fonts/TextRenderer.cpp
+    src/Graphics/Utils/Textures/Texture.cpp
+
+    src/IO/IO.cpp
+    src/IO/Keyboard.cpp
+    src/IO/Mouse.cpp
+    src/IO/TimeType.cpp
+
+    src/Maths/Vector.cpp
+    src/Maths/Matrix.cpp
+    src/Maths/Color.cpp
+
+    src/stdu/rich_string.cpp
+
+    src/vendor/imgui/imgui.cpp
+    src/vendor/imgui/imgui_demo.cpp
+    src/vendor/imgui/imgui_draw.cpp
+    src/vendor/imgui/imgui_impl_glfw.cpp
+    src/vendor/imgui/imgui_impl_opengl3.cpp
+    src/vendor/imgui/imgui_tables.cpp
+    src/vendor/imgui/imgui_widgets.cpp
+    src/vendor/imgui/imgui_stdlib.cpp
+
+    src/vendor/stb_image/stb_image.cpp
+)
+source_group("Source Files" FILES ${SOURCE_FILES})
 
 set(ALL_FILES
     ${no_group_source_files}
-    ${Header_Files}
-    ${Source_Files}
+    ${HEADER_FILES}
+    ${SOURCE_FILES}
 )
 
 ################################################################################
@@ -170,23 +185,26 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 #######################################################################
 # Include directories
 ################################################################################
-target_include_directories(${PROJECT_NAME} PUBLIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/src;"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/Debug;"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Utils/Fonts;"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Utils/Model Loading"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/GLs;"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Graphicals;"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Primitives;"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/Maths;"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/Utils/Textures;"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/IO;"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/stdu;"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/imgui;"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/vendor;"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies/GLFW/include;"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies/GLEW/include"
+target_include_directories(${PROJECT_NAME}
+        PRIVATE
+    "${PROJECT_SOURCE_DIR}/Dependencies/GLFW/include/"
+    "${PROJECT_SOURCE_DIR}/Dependencies/GLEW/include/"
     ${FREETYPE_INCLUDE_DIRS}
+        PUBLIC
+    src/
+    src/Debug/
+    src/Graphics/GLs/
+    src/Graphics/Graphicals/
+    src/Graphics/Primitives/
+    src/Graphics/Utils/
+    src/Graphics/Utils/Fonts/
+    src/Graphics/Utils/Textures/
+    src/Graphics/Utils/ModelLoading/
+    src/Maths/
+    src/IO/
+    src/stdu/
+    src/vendor/imgui/
+    src/vendor/
 )
 
 ################################################################################

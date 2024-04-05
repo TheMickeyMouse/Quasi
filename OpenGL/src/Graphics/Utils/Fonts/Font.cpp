@@ -1,7 +1,8 @@
 #include "Font.h"
 #include "TextRenderer.h"
 
-#include <numeric>
+#include "ft2build.h"
+#include FT_FREETYPE_H
 
 #include "GLDebug.h"
 

@@ -1,17 +1,16 @@
 #pragma once
 #include <algorithm>
 
-#include "ft2build.h"
 #include "NumTypes.h"
 #include <core.h>
 
-#include FT_FREETYPE_H
+struct FT_LibraryRec_;
 
 namespace Graphics {
     class Font;
-    
+
     class OPENGL_API FontDevice {
-        FT_Library libHandle = nullptr;
+        FT_LibraryRec_* libHandle = nullptr;
         uint dpi = 96; // default value
     public:
         FontDevice();
@@ -26,7 +25,7 @@ namespace Graphics {
         void SetDPI(uint newDpi) { dpi = newDpi; }
         
         static FontDevice* Instance;
-        static FT_Library Library();
+        static FT_LibraryRec_* Library();
         static uint DPI();
 
         friend Font;
