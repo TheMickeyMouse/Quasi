@@ -36,22 +36,22 @@ namespace Graphics {
 		void ClearInd(bool shallowClear = true) { rd->ClearInd(shallowClear); }
 		[[nodiscard]] uint GetIndLength() const { return rd->GetIndLength(); }
 
-                            DynamicVertexBuffer& GetVertObj()           { return rd->GetVertObj(); }
-        [[nodiscard]] const DynamicVertexBuffer& GetVertObj()     const { return rd->GetVertObj(); }
-		                    DynamicIndexBuffer&  GetIndObj()            { return rd->GetIndObj(); }
-		[[nodiscard]] const DynamicIndexBuffer&  GetIndObj()      const { return rd->GetIndObj(); }
-		                    VertexArray&         GetVertArr()           { return rd->GetVertArr(); }
-		[[nodiscard]] const VertexArray&         GetVertArr()     const { return rd->GetVertArr(); }
-		                    GraphicsDevice& GetGraphicsDevice()         { return rd->GetGraphicsDevice(); }
-		[[nodiscard]] const GraphicsDevice& GetGraphicsDevice()   const { return rd->GetGraphicsDevice(); }
-		                    std::vector<GenericMesh>& GetMeshes()       { return rd->GetMeshes(); }
-		[[nodiscard]] const std::vector<GenericMesh>& GetMeshes() const { return rd->GetMeshes(); }
-	                        Shader& GetShader()                         { return rd->GetShader(); }
-	    [[nodiscard]] const Shader& GetShader()                   const { return rd->GetShader(); }
-    	                    Maths::mat3D& GetView()                     { return rd->GetView(); }
-    	[[nodiscard]] const Maths::mat3D& GetView()               const { return rd->GetView(); }
-    	                    Maths::mat3D& GetProjection()               { return rd->GetProjection(); }
-    	[[nodiscard]] const Maths::mat3D& GetProjection()         const { return rd->GetProjection(); }
+                            DynamicVertexBuffer& VertObj()           { return rd->VertObj(); }
+        [[nodiscard]] const DynamicVertexBuffer& VertObj()     const { return rd->VertObj(); }
+		                    DynamicIndexBuffer&  IndObj()            { return rd->IndObj(); }
+		[[nodiscard]] const DynamicIndexBuffer&  IndObj()      const { return rd->IndObj(); }
+		                    VertexArray&         VertArr()           { return rd->VertArr(); }
+		[[nodiscard]] const VertexArray&         VertArr()     const { return rd->VertArr(); }
+		                    class GraphicsDevice& GraphicsDevice()       { return rd->GraphicsDevice(); }
+		[[nodiscard]] const class GraphicsDevice& GraphicsDevice() const { return rd->GraphicsDevice(); }
+		                    std::vector<GenericMesh>& Meshes()       { return rd->Meshes(); }
+		[[nodiscard]] const std::vector<GenericMesh>& Meshes() const { return rd->Meshes(); }
+	                        class Shader& Shader()                   { return rd->Shader(); }
+	    [[nodiscard]] const class Shader& Shader()             const { return rd->Shader(); }
+    	                    Maths::mat3D& ViewMat()                  { return rd->ViewMat(); }
+    	[[nodiscard]] const Maths::mat3D& ViewMat()            const { return rd->ViewMat(); }
+    	                    Maths::mat3D& ProjectionMat()            { return rd->ProjectionMat(); }
+    	[[nodiscard]] const Maths::mat3D& ProjectionMat()      const { return rd->ProjectionMat(); }
         
                             RenderData& GetRenderData()       { return *rd; }
         [[nodiscard]] const RenderData& GetRenderData() const { return *rd; }
@@ -63,8 +63,11 @@ namespace Graphics {
         void BindMeshes(std::initializer_list<Mesh<T>*> meshes) { for (auto* m : meshes) BindMeshes(*m); }
 		template <stdu::array_like U> void BindMeshes(U& ms) { BindMeshes(stdu::to_span(ms)); }
         
-		void Render(Shader& rShader, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { rd->Render(rShader, args, setDefaultShaderArgs); }
+		void Render(class Shader& rShader, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { rd->Render(rShader, args, setDefaultShaderArgs); }
 		void Render(const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { rd->Render(args, setDefaultShaderArgs); }
+
+    	void RenderInstanced(class Shader& rShader, int instances, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { rd->RenderInstanced(rShader, instances, args, setDefaultShaderArgs); }
+    	void RenderInstanced(int instances, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { rd->RenderInstanced(instances, args, setDefaultShaderArgs); }
         
 		void AddNewMeshes(const Mesh<T>& mesh) { rd->AddNewMeshes<T>(std::span { &mesh, 1 }); }
 		void AddNewMeshes(std::span<const Mesh<T>> meshes) { rd->AddNewMeshes<T>(meshes); }

@@ -63,20 +63,20 @@ namespace Graphics {
 		void ClearInd(bool shallowClear = true) { ibo.ClearData(shallowClear); }
 		[[nodiscard]] uint GetIndLength() const { return ibo.GetLength(); }
 
-		DynamicVertexBuffer& GetVertObj() { return vbo; }
-		[[nodiscard]] const DynamicVertexBuffer& GetVertObj() const { return vbo; }
-		DynamicIndexBuffer& GetIndObj() { return ibo; }
-		[[nodiscard]] const DynamicIndexBuffer& GetIndObj() const { return ibo; }
-		VertexArray& GetVertArr() { return varray; }
-		[[nodiscard]] const VertexArray& GetVertArr() const { return varray; }
-		GraphicsDevice& GetGraphicsDevice() { return *device; }
-		[[nodiscard]] const GraphicsDevice& GetGraphicsDevice() const { return *device; }
-		std::vector<GenericMesh>& GetMeshes() { return meshes; }
-		[[nodiscard]] const std::vector<GenericMesh>& GetMeshes() const { return meshes; }
-		Maths::mat3D& GetView() { return camera; }
-		[[nodiscard]] const Maths::mat3D& GetView() const { return camera; }
-		Maths::mat3D& GetProjection() { return projection; }
-		[[nodiscard]] const Maths::mat3D& GetProjection() const { return projection; }
+		DynamicVertexBuffer& VertObj() { return vbo; }
+		[[nodiscard]] const DynamicVertexBuffer& VertObj() const { return vbo; }
+		DynamicIndexBuffer& IndObj() { return ibo; }
+		[[nodiscard]] const DynamicIndexBuffer& IndObj() const { return ibo; }
+		VertexArray& VertArr() { return varray; }
+		[[nodiscard]] const VertexArray& VertArr() const { return varray; }
+		class GraphicsDevice& GraphicsDevice() { return *device; }
+		[[nodiscard]] const class GraphicsDevice& GraphicsDevice() const { return *device; }
+		std::vector<GenericMesh>& Meshes() { return meshes; }
+		[[nodiscard]] const std::vector<GenericMesh>& Meshes() const { return meshes; }
+		Maths::mat3D& ViewMat() { return camera; }
+		[[nodiscard]] const Maths::mat3D& ViewMat() const { return camera; }
+		Maths::mat3D& ProjectionMat() { return projection; }
+		[[nodiscard]] const Maths::mat3D& ProjectionMat() const { return projection; }
 
 		OPENGL_API void ClearData(bool shallowClear = true);
 		template <class T> void BindMeshes(std::span<Mesh<T>> newMeshes);
@@ -97,13 +97,16 @@ namespace Graphics {
 		OPENGL_API void Render(Shader& replaceShader, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true);
 		void Render(const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { Render(shader, args, setDefaultShaderArgs); }
 
+		OPENGL_API void RenderInstanced(Shader& replaceShader, int instances, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true);
+		void RenderInstanced(int instances, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { RenderInstanced(shader, instances, args, setDefaultShaderArgs); }
+
 	    void SetCamera(const Maths::mat3D& cam) { camera = cam; }
 	    void SetProjection(const Maths::mat3D& proj) { projection = proj; }
 
-	    Shader& GetShader() { return shader; }
-	    [[nodiscard]] const Shader& GetShader() const { return shader; }
+	    class Shader& Shader() { return shader; }
+	    [[nodiscard]] const class Shader& Shader() const { return shader; }
 	    
-	    void UseShader(std::string_view code) { shader = Shader { code }; }
+	    void UseShader(std::string_view code) { shader = Graphics::Shader { code }; }
 	    void UseShaderFromFile(const std::string& file) { shader = Shader::FromFile(file); }
 	    void UseShaderFromFile(const std::string& vert, const std::string& frag, const std::string& geom = {})
 		{ shader = Shader::FromFile(vert, frag, geom); }

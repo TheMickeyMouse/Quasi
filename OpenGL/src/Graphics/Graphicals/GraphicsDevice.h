@@ -51,8 +51,15 @@ namespace Graphics {
         OPENGL_API RenderData& GetRender(uint index);
 
         OPENGL_API void Render(RenderData& r, Shader& s, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true);
-        void Render(RenderData& r, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { Render(r, r.GetShader(), args, setDefaultShaderArgs); }
-        void Render(uint index) { Render(GetRender(index)); }
+        void Render(RenderData& r, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { Render(r, r.Shader(), args, setDefaultShaderArgs); }
+        void Render(uint index, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { Render(GetRender(index), args, setDefaultShaderArgs); }
+        OPENGL_API void RenderInstanced(RenderData& r, int instances, Shader& s, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true);
+        void RenderInstanced(RenderData& r, int instances, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) {
+            RenderInstanced(r, instances, r.Shader(), args, setDefaultShaderArgs);
+        }
+        void RenderInstanced(uint index, int instances, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) {
+            RenderInstanced(GetRender(index), instances, args, setDefaultShaderArgs);
+        }
 
         OPENGL_API void ClearColor(const Maths::colorf& color);
 

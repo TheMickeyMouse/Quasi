@@ -17,7 +17,7 @@ namespace Graphics {
 
 	RenderData::~RenderData() {
 		if (device) {
-		    GraphicsDevice* gd = device;
+		    class GraphicsDevice* gd = device;
 		    device = nullptr;
 		    gd->DeleteRender(deviceIndex);
 		}
@@ -40,8 +40,12 @@ namespace Graphics {
 		ibo.ClearData(shallowClear);
 	}
 
-	void RenderData::Render(Shader& replaceShader, const ShaderArgs& args, bool setDefaultShaderArgs) {
+	void RenderData::Render(class Shader& replaceShader, const ShaderArgs& args, bool setDefaultShaderArgs) {
 		device->Render(*this, replaceShader, args, setDefaultShaderArgs);
+	}
+
+	void RenderData::RenderInstanced(class Shader& replaceShader, int instances, const ShaderArgs& args, bool setDefaultShaderArgs) {
+		device->RenderInstanced(*this, instances, replaceShader, args, setDefaultShaderArgs);
 	}
 
 	void RenderData::UnbindMesh(int index) {
@@ -60,7 +64,7 @@ namespace Graphics {
 	}
 
 	void RenderData::Destroy() {
-		GraphicsDevice* prev = device; // prevent infinte loop: deleterender -> erase renderdata -> destructor
+		class GraphicsDevice* prev = device; // prevent infinte loop: deleterender -> erase renderdata -> destructor
 		device = nullptr;
 		prev->DeleteRender(deviceIndex);
 		deviceIndex = 0;

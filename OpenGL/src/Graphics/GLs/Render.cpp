@@ -7,14 +7,28 @@ namespace Graphics::Render {
         vertexArr.Bind();
         indexBuff.Bind();
         shader.Bind();
-        GL_CALL(glDrawElements(GL_TRIANGLES, indexBuff.GetLength(), (int)GLTypeID::UINT, nullptr));
+        GL_CALL(glDrawElements(GL_TRIANGLES, (int)indexBuff.GetLength(), (int)GLTypeID::UINT, nullptr));
     }
 
     void Draw(const VertexArray& vertexArr, const DynamicIndexBuffer& indexBuff, const Shader& shader) {
         vertexArr.Bind();
         indexBuff.Bind();
         shader.Bind();
-        GL_CALL(glDrawElements(GL_TRIANGLES, indexBuff.GetUsedLength(), (int)GLTypeID::UINT, nullptr));
+        GL_CALL(glDrawElements(GL_TRIANGLES, (int)indexBuff.GetUsedLength(), (int)GLTypeID::UINT, nullptr));
+    }
+
+    void DrawInstanced(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader, int instances) {
+        vertexArr.Bind();
+        indexBuff.Bind();
+        shader.Bind();
+        GL_CALL(glDrawElementsInstanced(GL_TRIANGLES, (int)indexBuff.GetLength(), (int)GLTypeID::UINT, nullptr, instances));
+    }
+
+    void DrawInstanced(const VertexArray& vertexArr, const DynamicIndexBuffer& indexBuff, const Shader& shader, int instances) {
+        vertexArr.Bind();
+        indexBuff.Bind();
+        shader.Bind();
+        GL_CALL(glDrawElementsInstanced(GL_TRIANGLES, (int)indexBuff.GetUsedLength(), (int)GLTypeID::UINT, nullptr, instances));
     }
 
     void Clear(const BufferBit bit) {

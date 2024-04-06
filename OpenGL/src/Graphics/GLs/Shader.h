@@ -3,6 +3,7 @@
 #include <map>
 #include <vector>
 #include <core.h>
+#include <ranges>
 #include <stdu/macros.h>
 
 #include "GLObject.h"
@@ -96,7 +97,7 @@ namespace Graphics {
                       std::conditional_t<type == ShaderUniformType::FLOAT_FLAG, float, void>>>;
 
             if constexpr (rows > 1) {
-                return std::span<const float> {};
+                return std::span<const Maths::matrix<rows, cols>> {};
             } else if constexpr(cols > 1) {
                 if constexpr (array) return std::span<const Maths::vecn<cols, T>> {};
                 else return use_const_ref<Maths::vecn<cols, T>> {};
@@ -232,15 +233,15 @@ namespace Graphics {
             SetUniformOf<FLOAT_FLAG | (ROWS_1 * N) | (COLS_1 * M) | ARRAY_FLAG>(name, val.data());
         }
 
-        void SetUniformMat2x2(stringr name, const Maths::mat2x2& mat) { SetUniformMat2x2(name, mat.data()); }
-        void SetUniformMat2x3(stringr name, const Maths::mat2x3& mat) { SetUniformMat2x3(name, mat.data()); }
-        void SetUniformMat2x4(stringr name, const Maths::mat2x4& mat) { SetUniformMat2x4(name, mat.data()); }
-        void SetUniformMat3x2(stringr name, const Maths::mat3x2& mat) { SetUniformMat3x2(name, mat.data()); }
-        void SetUniformMat3x3(stringr name, const Maths::mat3x3& mat) { SetUniformMat3x3(name, mat.data()); }
-        void SetUniformMat3x4(stringr name, const Maths::mat3x4& mat) { SetUniformMat3x4(name, mat.data()); }
-        void SetUniformMat4x2(stringr name, const Maths::mat4x2& mat) { SetUniformMat4x2(name, mat.data()); }
-        void SetUniformMat4x3(stringr name, const Maths::mat4x3& mat) { SetUniformMat4x3(name, mat.data()); }
-        void SetUniformMat4x4(stringr name, const Maths::mat4x4& mat) { SetUniformMat4x4(name, mat.data()); }
+        void SetUniformMat2x2(stringr name, const Maths::mat2x2& mat) { SetUniformMat2x2(name, std::ranges::single_view { mat }); }
+        void SetUniformMat2x3(stringr name, const Maths::mat2x3& mat) { SetUniformMat2x3(name, std::ranges::single_view { mat }); }
+        void SetUniformMat2x4(stringr name, const Maths::mat2x4& mat) { SetUniformMat2x4(name, std::ranges::single_view { mat }); }
+        void SetUniformMat3x2(stringr name, const Maths::mat3x2& mat) { SetUniformMat3x2(name, std::ranges::single_view { mat }); }
+        void SetUniformMat3x3(stringr name, const Maths::mat3x3& mat) { SetUniformMat3x3(name, std::ranges::single_view { mat }); }
+        void SetUniformMat3x4(stringr name, const Maths::mat3x4& mat) { SetUniformMat3x4(name, std::ranges::single_view { mat }); }
+        void SetUniformMat4x2(stringr name, const Maths::mat4x2& mat) { SetUniformMat4x2(name, std::ranges::single_view { mat }); }
+        void SetUniformMat4x3(stringr name, const Maths::mat4x3& mat) { SetUniformMat4x3(name, std::ranges::single_view { mat }); }
+        void SetUniformMat4x4(stringr name, const Maths::mat4x4& mat) { SetUniformMat4x4(name, std::ranges::single_view { mat }); }
 #pragma endregion
 
 #pragma region Shader Sources
@@ -365,7 +366,7 @@ namespace Graphics {
             if      constexpr (std::is_same_v<T, float>) datFloatPtr = val.begin();
             else if constexpr (std::is_same_v<T, int>)   datIntPtr   = val.begin();
             else if constexpr (std::is_same_v<T, uint>)  datUintPtr  = val.begin();
-            size = val.size();
+            size = (uint)val.size();
         }
 
         template <Maths::vec_t V>
@@ -382,13 +383,23 @@ namespace Graphics {
 
         ShaderValueVariant(const Maths::colorf&  val) : datFloatPtr(val.begin()), type(ShaderUniformType::UNIF_4F), size(4) {}
         ShaderValueVariant(const Maths::color3f& val) : datFloatPtr(val.begin()), type(ShaderUniformType::UNIF_3F), size(3) {}
+        ShaderValueVariant(std::span<const Maths::colorf>  dat) : datFloatPtr((const float*)dat.data()), type(ShaderUniformType::UNIF_4F_ARR), size(4 * (uint)dat.size()) {}
+        ShaderValueVariant(std::span<const Maths::color3f> dat) : datFloatPtr((const float*)dat.data()), type(ShaderUniformType::UNIF_3F_ARR), size(3 * (uint)dat.size()) {}
 
         template <uint N, uint M>
         ShaderValueVariant(const Maths::matrix<N, M>& val) {
             using enum ShaderUniformType;
             type = FLOAT_FLAG | (ROWS_1 * N) | (COLS_1 * M) | ARRAY_FLAG;
             datFloatPtr = val.data().data();
-            size = 1;
+            size = N * M;
+        }
+
+        template <uint N, uint M>
+        ShaderValueVariant(std::span<const Maths::matrix<N, M>> data) {
+            using enum ShaderUniformType;
+            type = FLOAT_FLAG | (ROWS_1 * N) | (COLS_1 * M) | ARRAY_FLAG;
+            datFloatPtr = (const float*)data.data();
+            size = N * M * (uint)data.size();
         }
 
         OPENGL_API ShaderValueVariant(const Texture& tex);
@@ -397,20 +408,17 @@ namespace Graphics {
     private:
         template <class> struct as_impl {};
 
-#define DEFINE_AS_IMPL(T, ...) struct as_impl<T> { [[nodiscard]] T as(const ShaderValueVariant& s) const { return __VA_ARGS__; } };
-        template <> DEFINE_AS_IMPL(int,          s.datInt)
-        template <> DEFINE_AS_IMPL(uint,         s.datUint)
-        template <> DEFINE_AS_IMPL(float,        s.datFloat)
-        template <> DEFINE_AS_IMPL(const int*,   s.datIntPtr)
-        template <> DEFINE_AS_IMPL(const uint*,  s.datUintPtr)
-        template <> DEFINE_AS_IMPL(const float*, s.datFloatPtr)
-        template <class T> DEFINE_AS_IMPL(std::span<T>, { as_impl<T*> {}.as(s), s.size })
-        template <class T> DEFINE_AS_IMPL(Maths::vec2<T>, [&]{ const T* t = as_impl<const T*> {}.as(s); return Maths::vec2<T> { t[0], t[1] }; }())
-        template <class T> DEFINE_AS_IMPL(Maths::vec3<T>, [&]{ const T* t = as_impl<const T*> {}.as(s); return Maths::vec3<T> { t[0], t[1], t[2] }; }())
-        template <class T> DEFINE_AS_IMPL(Maths::vec4<T>, [&]{ const T* t = as_impl<const T*> {}.as(s); return Maths::vec4<T> { t[0], t[1], t[2], t[3] }; }())
-        template <class T> DEFINE_AS_IMPL(std::span<const Maths::vec2<T>>, stdu::span_cast<const Maths::vec2<T>>(as_impl<std::span<const T>> {}.as(s)))
-        template <class T> DEFINE_AS_IMPL(std::span<const Maths::vec3<T>>, stdu::span_cast<const Maths::vec3<T>>(as_impl<std::span<const T>> {}.as(s)))
-        template <class T> DEFINE_AS_IMPL(std::span<const Maths::vec4<T>>, stdu::span_cast<const Maths::vec4<T>>(as_impl<std::span<const T>> {}.as(s)))
+#define DEFINE_AS_IMPL(T, ...) struct as_impl<STDU_REMOVE_SCOPE(T)> { [[nodiscard]] STDU_REMOVE_SCOPE(T) as(const ShaderValueVariant& s) const { return __VA_ARGS__; } };
+        template <> DEFINE_AS_IMPL((int),          s.datInt)
+        template <> DEFINE_AS_IMPL((uint),         s.datUint)
+        template <> DEFINE_AS_IMPL((float),        s.datFloat)
+        template <> DEFINE_AS_IMPL((const int*),   s.datIntPtr)
+        template <> DEFINE_AS_IMPL((const uint*),  s.datUintPtr)
+        template <> DEFINE_AS_IMPL((const float*), s.datFloatPtr)
+        template <class T> DEFINE_AS_IMPL((std::span<T>), { as_impl<T*> {}.as(s), s.size })
+        template <uint N, class T> DEFINE_AS_IMPL((Maths::vecn<N, T>), [&]{ auto t = as_impl<std::span<const T>> {}.as(s); return Maths::vecn<N, T>::from_span(t); }())
+        template <uint N, class T> DEFINE_AS_IMPL((std::span<const Maths::vecn<N, T>>), stdu::span_cast<const Maths::vecn<N, T>>(as_impl<std::span<const T>> {}.as(s)))
+        template <uint N, uint M>  DEFINE_AS_IMPL((std::span<const Maths::matrix<N, M>>), stdu::span_cast<const Maths::matrix<N, M>>(as_impl<std::span<const float>> {}.as(s)))
 #undef DEFINE_AS_IMPL
     public:
 

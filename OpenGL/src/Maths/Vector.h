@@ -252,7 +252,7 @@ namespace Maths {
 
         static vect from_span(std::span<const T> span) {
             vect out;
-            vecops::rangecopy(out, span, std::make_integer_sequence<uint, N> {});
+            vecops::rangecopy(out, span, std::identity {}, std::make_integer_sequence<uint, N> {});
             return out;
         }
 
@@ -356,6 +356,10 @@ namespace Maths {
 
         NODISC bool all() const requires std::is_same_v<T, bool> { return vecops::accum([](bool a, bool b) { return a && b; }, as_vec(), true); }
         NODISC bool any() const requires std::is_same_v<T, bool> { return vecops::accum([](bool a, bool b) { return a || b; }, as_vec(), true); }
+
+        static vect random(struct random_gen& rg, const rect<N, T>& range);
+        static vect random_on_unit(random_gen& rg) requires traits_float;
+        static vect random_in_unit(random_gen& rg) requires traits_float;
     };
 
     template <uint N, class T> auto operator+(std::convertible_to<T> auto val, const vecn<N, T>& vec) requires (!vec_t<decltype(val)>) { return vec + val; }

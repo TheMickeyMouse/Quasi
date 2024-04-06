@@ -102,7 +102,24 @@ namespace Maths {
             return arr;
         }
 
-        template<typename T, std::size_t N>
+        template <class T, std::size_t N>
         T* get(T (&arr)[N]) { return arr + geti<std::size_t>(0, N); }
     };
+
+    template <uint N, class T>
+    typename vecn_base<N, T>::vect vecn_base<N, T>::random(random_gen& rg, const rect<N, T>& range) {
+        return [&]<uint... Is>(std::integer_sequence<uint, Is...>) {
+            return vecn<N, T> { rg.getn(range.min[Is], range.max[Is])... };
+        }(std::make_integer_sequence<uint, N> {});
+    }
+
+    template <uint N, class T>
+    typename vecn_base<N, T>::vect vecn_base<N, T>::random_on_unit(random_gen& rg) requires traits_float {
+        return random(rg, { -1, 1 }).norm(); // also uniform
+    }
+
+    template <uint N, class T>
+    typename vecn_base<N, T>::vect vecn_base<N, T>::random_in_unit(random_gen& rg) requires traits_float {
+        return random_on_unit(rg) * std::pow(rg.getf((T)0, (T)1), (T)1 / (T)N); // uniform distribution
+    }
 }

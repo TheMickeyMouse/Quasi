@@ -79,8 +79,20 @@ namespace Graphics {
 namespace Graphics::Render {
     OPENGL_API void Draw(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader);
     OPENGL_API void Draw(const VertexArray& vertexArr, const DynamicIndexBuffer& indexBuff, const Shader& shader);
-    inline void Draw(const RenderData& dat) { Draw(dat.GetVertArr(), dat.GetIndObj(), dat.GetShader()); }
-    inline void Draw(const RenderData& dat, const Shader& s) { Draw(dat.GetVertArr(), dat.GetIndObj(), s); }
+    OPENGL_API void DrawInstanced(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader, int instances);
+    OPENGL_API void DrawInstanced(const VertexArray& vertexArr, const DynamicIndexBuffer& indexBuff, const Shader& shader, int instances);
+    inline void Draw(const RenderData& dat, const Shader& s) {
+        Draw(dat.VertArr(), dat.IndObj(), s);
+    }
+    inline void Draw(const RenderData& dat) {
+        Draw(dat, dat.Shader());
+    }
+    inline void DrawInstanced(const RenderData& dat, const Shader& s, int instances) {
+        DrawInstanced(dat.VertArr(), dat.IndObj(), s, instances);
+    }
+    inline void DrawInstanced(const RenderData& dat, int instances) {
+        DrawInstanced(dat, dat.Shader(), instances);
+    }
 
 #pragma region GL Functions
 #define GL_SWITCH(F, NAME, E) inline void F##NAME() { F(E); }

@@ -122,6 +122,16 @@ namespace Graphics {
         Render::Draw(r, s);
     }
 
+    void GraphicsDevice::RenderInstanced(RenderData& r, int instances, Shader& s, const ShaderArgs& args, bool setDefaultShaderArgs) {
+        s.Bind();
+        s.SetUniformArgs(args);
+        if (setDefaultShaderArgs) {
+            s.SetUniformMat4x4("u_projection", r.projection);
+            s.SetUniformMat4x4("u_view", r.camera);
+        }
+        Render::DrawInstanced(r, s, instances);
+    }
+
     void GraphicsDevice::ClearColor(const Maths::colorf& color) {
         Render::SetClearColor(color);
     }

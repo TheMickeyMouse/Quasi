@@ -127,7 +127,7 @@ namespace Graphics {
         from.deviceIndex = 0;
 
         if (dest.render)
-            dest.render->GetMeshes()[dest.deviceIndex].Set(&dest);
+            dest.render->Meshes()[dest.deviceIndex].Set(&dest);
     }
 
     template <class T> Mesh<T>& Mesh<T>::Replace(Mesh&& mesh) {
@@ -146,8 +146,8 @@ namespace Graphics {
 
     template <class T>
     void Mesh<T>::Bind(RenderData& rend) {
-        deviceIndex = (uint)rend.GetMeshes().size();
-        rend.GetMeshes().push_back(this);
+        deviceIndex = (uint)rend.Meshes().size();
+        rend.Meshes().push_back(this);
         this->render = &rend;
     }
 

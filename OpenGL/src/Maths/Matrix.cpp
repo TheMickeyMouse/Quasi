@@ -9,6 +9,13 @@ namespace Maths {
         }
     }
 
+    template<uint N, uint M>
+    matrix<N, M> matrix<N, M>::from_span(std::span<const float> data) {
+        return [&]<uint... I>(std::integer_sequence<uint, I...>) {
+            return matrix<N, M> { col::from_span(data.subspan(N * I))... };
+        }(std::make_integer_sequence<uint, M> {});
+    }
+
     template <uint N, uint M> std::span<const float, N * M> matrix<N, M>::data() const {
         return std::span { mat.first().begin(), N * M }.template first<N * M>();
     }

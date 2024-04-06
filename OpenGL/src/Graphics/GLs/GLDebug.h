@@ -71,8 +71,11 @@ namespace Graphics {
             return res;
         }
     }
-
+#ifdef NDEBUG
+#define GL_CALL(X) X
+#else
 #define GL_CALL(X) GLCall([&]{ return X; }, #X)
+#endif
 }
 
 template <>
