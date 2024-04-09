@@ -10,7 +10,9 @@ namespace Graphics {
         BGR = RGB_REVERSE,
         RGBA = 0x1908,
         RGBA_REVERSE = 0x80E1,
-        BGRA = RGBA_REVERSE
+        BGRA = RGBA_REVERSE,
+
+        DEPTH = 0x1902,
     };
 
     enum class TextureIFormat {
@@ -82,6 +84,7 @@ namespace Graphics {
 
     enum class TextureParamName {
         BASE_LEVEL = 0x813C,
+        BORDER_COLOR = 0x1004,
         COMPARE_FUNC = 0x884D,
         COMPARE_MODE = 0x884C,
         LOD_BIAS = 0x8501,
@@ -94,6 +97,7 @@ namespace Graphics {
         SWIZZLE_G = 0x8E43,
         SWIZZLE_B = 0x8E44,
         SWIZZLE_A = 0x8E45,
+        SWIZZLE_RGBA = 0x8E46,
         WRAP_S = 0x2802,
         WRAP_T = 0x2803,
         WRAP_R = 0x8072,

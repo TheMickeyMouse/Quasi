@@ -12,10 +12,10 @@
   * [ ] `[TODO]` Physics Engine
   * [ ] `[TODO]` Real-time editing (shaders?)
 - Low Priority (Would be nice to have)
-  * [ ] `[TODO]` Add Instancing
   * [ ] `[TODO]` Custom GUI
 - Misc (I have no idea)
 - Done (Finished!)
+  * [X] ~~`[TODO]` Add Instancing~~
   * [X] ~~`[DONE]` Add Tests for Geometry shaders~~
   * [X] ~~`[DONE]` Add Geometry shader support~~
   * [X] ~~`[DONE]` Make Matrix Variations `matrix<N, M, T>`~~

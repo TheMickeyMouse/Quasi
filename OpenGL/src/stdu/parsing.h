@@ -44,7 +44,7 @@ namespace stdu {
     inline unsigned int parse_uint(std::string_view v) { return parse_num_unchecked<uint, ~0U>(v); }
     inline unsigned short parse_u16(std::string_view v) { return parse_num_unchecked<ushort, (ushort)~0U>(v); }
     inline unsigned long long parse_u64(std::string_view v) { return parse_num_unchecked<uint64, ~0ULL>(v); }
-    inline float parse_float(std::string_view v) { return parse_num_unchecked<float, std::numeric_limits<float>::quiet_NaN()>(v); }
-    inline double parse_f64(std::string_view v) { return parse_num_unchecked<double, std::numeric_limits<double>::quiet_NaN()>(v); }
-    inline long double parse_f128(std::string_view v) { return parse_num_unchecked<long double, std::numeric_limits<long double>::quiet_NaN()>(v); }
+    inline float parse_float(std::string_view v) { return parse_num_unchecked<float, (float)NAN>(v); }
+    inline double parse_f64(std::string_view v) { return parse_num_unchecked<double, (double)NAN>(v); }
+    inline long double parse_f128(std::string_view v) { return parse_num_unchecked<long double, (long double)NAN>(v); }
 }

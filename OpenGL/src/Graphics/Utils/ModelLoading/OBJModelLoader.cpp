@@ -94,7 +94,9 @@ namespace Graphics {
             case OBJPropertyType::Face: {
                 const auto arr = Maths::parse_vec<Maths::ivec3, 3>(
                     data,
-                    [=](std::string_view v) { return Maths::parse_vec<int, 3>(v, "/"sv, ""sv, ""sv); },
+                    [](std::string_view v) {
+                        return Maths::parse_vec<int, 3>(v, stdu::parse_int, "/"sv, ""sv, ""sv);
+                    },
                     " "sv, ""sv, ""sv)
                     .value_or(Maths::vec3<Maths::ivec3> { Maths::ivec3 { -1 } });
                 prop.data = TriFace {
@@ -200,9 +202,9 @@ namespace Graphics {
         std::transform(beg, end, obj.mesh.GetVertices().begin(),
             [&](Maths::uvec3 triple) {
                 return OBJVertex {
-                    vertex[triple.x - 1],
-                    vertexTexture[triple.y - 1],
-                    vertexNormal[triple.z - 1]
+                    triple.x == -1 ? Maths::fvec3 {} : vertex[triple.x - 1],
+                    triple.y == -1 ? Maths::fvec2 {} : vertexTexture[triple.y - 1],
+                    triple.z == -1 ? Maths::fvec3 {} : vertexNormal[triple.z - 1]
                 };
             });
 

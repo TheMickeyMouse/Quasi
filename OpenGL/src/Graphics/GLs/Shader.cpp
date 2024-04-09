@@ -44,7 +44,7 @@ namespace Graphics {
             return it->second;
 
         const int location = GL_CALL(glGetUniformLocation(rendererID, name.data()));
-        GLLogger().AssertFmt(location != -1, {"Uniform location for '{}' was -1"}, name.substr(name.size() - 1));
+        GLLogger().AssertFmt(location != -1, {"Uniform location for '{}' was -1"}, name.substr(0, name.size() - 1));
         uniformCache[std::string { name }] = location;
         return location;
     }

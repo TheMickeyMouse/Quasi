@@ -74,6 +74,30 @@ namespace Graphics {
     enum class RenderMode {
         POINTS = 0x1B00, LINES = 0x1B01, FILL = 0x1B02
     };
+
+    enum class BufferMode {
+        NONE           = 0x0,
+        FRONT_LEFT     = 0x0400,
+        FRONT_RIGHT    = 0x0401,
+        BACK_LEFT      = 0x0402,
+        BACK_RIGHT     = 0x0403,
+        FRONT          = 0x0404,
+        BACK           = 0x0405,
+        LEFT           = 0x0406,
+        RIGHT          = 0x0407,
+        FRONT_AND_BACK = 0x0408,
+    };
+
+    enum class FacingMode {
+        BACK  = 0x0404,
+        FRONT = 0x0405,
+        FRONT_AND_BACK = 0x0408,
+    };
+
+    enum class OrientationMode {
+        CLOCKWISE = 0x0900,
+        COUNTER_CLOCKWISE = 0x0901,
+    };
 }
 
 namespace Graphics::Render {
@@ -134,6 +158,12 @@ namespace Graphics::Render {
     OPENGL_API void UseBlendConstColor(const Maths::colorf& ref);
     OPENGL_API void UseBlendFunc(BlendFactor src, BlendFactor dest);
 
+    OPENGL_API void SetCullFace(FacingMode facing);
+    OPENGL_API void SetFrontFacing(OrientationMode orientation);
+
+    OPENGL_API void SetColorWrite(BufferMode mode);
+
+    OPENGL_API void SetViewport(const Maths::rect2i& viewport);
 #undef GL_SWITCH
 #pragma endregion
 }

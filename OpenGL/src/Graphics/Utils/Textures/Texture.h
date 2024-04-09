@@ -33,6 +33,10 @@ namespace Graphics {
 
         template <class E> requires std::is_enum_v<E>
         TextureParamPair(TextureParamName name, E val) : pname(name), val((int)val) {}
+        TextureParamPair(TextureParamName name, int val) : pname(name), val(val) {}
+        TextureParamPair(TextureParamName name, float val) : pname(name), val(val) {}
+        TextureParamPair(TextureParamName name, const int* val) : pname(name), val(val) {}
+        TextureParamPair(TextureParamName name, const float* val) : pname(name), val(val) {}
 
         static TextureParamPair NearestSample() { return { TextureParamName::XT_SAMPLE_FILTER, TextureSample::NEAREST }; }
         static TextureParamPair LinearSample()  { return { TextureParamName::XT_SAMPLE_FILTER, TextureSample::LINEAR }; }

@@ -95,6 +95,8 @@ set(HEADER_FILES
     src/vendor/imgui/imgui_stdlib.h
 
     src/vendor/stb_image/stb_image.h
+        src/Graphics/Utils/Meshes/Quad.h
+        src/Graphics/Utils/Meshes/Plane.h
 )
 source_group("Header Files" FILES ${HEADER_FILES})
 

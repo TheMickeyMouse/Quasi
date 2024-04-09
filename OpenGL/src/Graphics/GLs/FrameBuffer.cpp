@@ -24,8 +24,8 @@ namespace Graphics {
         GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
     }
 
-    void FrameBuffer::Attach(const Texture& tex) const {
-        GL_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex.rendererID, 0));
+    void FrameBuffer::Attach(const Texture& tex, AttachmentType type) const {
+        GL_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, (int)type, tex.TargetI(), tex.rendererID, 0));
     }
 
     void FrameBuffer::Attach(const RenderBuffer& rbo, AttachmentType type) const {

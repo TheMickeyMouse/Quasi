@@ -67,6 +67,7 @@ namespace Graphics {
         [[nodiscard]] OPENGL_API bool WindowIsOpen() const;
     
         [[nodiscard]] Maths::ivec2 GetWindowSize() const { return windowSize; }
+        [[nodiscard]] float GetAspectRatio() const { return (float)windowSize.x / (float)windowSize.y; }
         GLFWwindow* GetWindow() { return mainWindow; }
         [[nodiscard]] const GLFWwindow* GetWindow() const { return mainWindow; }
 

@@ -82,4 +82,16 @@ namespace Graphics::Render {
     void UseBlendFunc(const BlendFactor src, const BlendFactor dest) {
         GL_CALL(glBlendFunc((int)src, (int)dest));
     }
+
+    void SetCullFace(FacingMode facing) {
+        GL_CALL(glCullFace((int)facing));
+    }
+
+    void SetFrontFacing(OrientationMode orientation) {
+        GL_CALL(glFrontFace((int)orientation));
+    }
+
+    void SetColorWrite(BufferMode mode) {
+        GL_CALL(glDrawBuffer((int)mode));
+    }
 }

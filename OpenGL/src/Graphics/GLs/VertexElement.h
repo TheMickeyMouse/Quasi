@@ -141,6 +141,16 @@ namespace Graphics {
         GL_VERTEX_TRANSFORM_FIELDS((Position))
     };
 
+    struct VertexColorNormal3D {
+        Maths::fvec3  Position;
+        Maths::colorf Color;
+        Maths::fvec3  Normal;
+
+        GL_VERTEX_T(VertexColorNormal3D);
+        GL_VERTEX_FIELD((Position)(Color)(Normal));
+        GL_VERTEX_TRANSFORM_FIELDS((Position)(Normal, NormalTransformer))
+    };
+
     struct VertexTextureNormal3D {
         Maths::fvec3 Position;
         Maths::fvec2 TextureCoordinate;

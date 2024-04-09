@@ -13,7 +13,7 @@ namespace Graphics {
     
     void DynamicVertexBuffer::SetDataUnchecked(stdu::cbyte_span data) {
         Bind();
-        glBufferSubData(GL_ARRAY_BUFFER, 0, (int)data.size_bytes(), data.data());
+        GL_CALL(glBufferSubData(GL_ARRAY_BUFFER, 0, (int)data.size_bytes(), data.data()));
     }
 
     void DynamicVertexBuffer::ClearData(bool shallowClear) {
@@ -21,11 +21,12 @@ namespace Graphics {
         dataOffset = 0;
         if (shallowClear) return;
         const std::vector<uchar> clear(bufferSize * vertSize, 0);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, (int)(bufferSize * vertSize), clear.data());
+        GL_CALL(glBufferSubData(GL_ARRAY_BUFFER, 0, (int)(bufferSize * vertSize), clear.data()));
     }
 
     void DynamicVertexBuffer::AddDataUnchecked(stdu::cbyte_span data) {
-        glBufferSubData(GL_ARRAY_BUFFER, (int)(dataOffset * vertSize), (int)data.size_bytes(), data.data());
+        Bind();
+        GL_CALL(glBufferSubData(GL_ARRAY_BUFFER, (int)(dataOffset * vertSize), (int)data.size_bytes(), data.data()));
         dataOffset += (uint)(data.size_bytes() / vertSize);
     }
 }

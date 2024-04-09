@@ -41,7 +41,7 @@ namespace Graphics {
         FrameBuffer() = default;
         FrameBuffer(stdu::empty) : GLObject({}) {}
 
-        OPENGL_API void Attach(const Texture& tex) const;
+        OPENGL_API void Attach(const Texture& tex, AttachmentType type = AttachmentType::COLOR_0) const;
         OPENGL_API void Attach(const RenderBuffer& rbo, AttachmentType type) const;
         OPENGL_API void Complete() const;
     };
