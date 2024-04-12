@@ -11,5 +11,7 @@ namespace Graphics {
 		OPENGL_API IndexBuffer(std::span<const uint> data);
 
 		[[nodiscard]] uint GetLength() const { return length; }
+
+		friend class GraphicsDevice;
 	};
 }

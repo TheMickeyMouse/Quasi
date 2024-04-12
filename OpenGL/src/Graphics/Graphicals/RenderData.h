@@ -26,7 +26,7 @@ namespace Graphics {
 		friend GraphicsDevice;
 	public:
 		explicit RenderData(uint vsize, uint isize, uint vertSize,
-				   std::type_index vertType, const VertexBufferLayout& layout) :
+				   VertexDebugTypeIndex vertType, const VertexBufferLayout& layout) :
 			vbo(vsize, vertSize, vertType), ibo(isize) {
 			varray.Bind();
 			varray.AddBuffer(layout);
@@ -47,7 +47,7 @@ namespace Graphics {
 		OPENGL_API void Bind() const;
 		OPENGL_API void Unbind() const;
 
-		[[nodiscard]] std::type_index GetType() const { return vbo.GetType(); }
+		[[nodiscard]] VertexDebugTypeIndex GetType() const { return vbo.GetType(); }
 
 		template <class T> void SetVert(std::span<const T> data) { vbo.SetData(data); }
 		template <stdu::array_like T> void SetVert(const T& arr) { vbo.SetData(arr); }
@@ -112,18 +112,21 @@ namespace Graphics {
 		{ shader = Shader::FromFile(vert, frag, geom); }
 	    OPENGL_API void EnableShader();
 	    OPENGL_API void DisableShader();
+
+		friend class GraphicsDevice;
 	};
 
 	template <class T>
 	RenderData RenderData::Create(uint vsize, uint isize) {
 		// times 3 to account for triangles
-		return RenderData(vsize, isize * 3, sizeof(T), typeid(T), VertexLayoutOf<T>);
+		return RenderData(vsize, isize * 3, sizeof(T), VertexDebugTypeInfo::of<T>(), VertexLayoutOf<T>());
 	}
 
     template <class T>
     std::unique_ptr<RenderData> RenderData::CreateHeap(uint vsize, uint isize) {
 	    // times 3 to account for triangles
-	    return std::make_unique<RenderData>(vsize, isize * 3, (uint)sizeof(T), typeid(T), VertexLayoutOf<T>);
+	    return std::make_unique<RenderData>(
+			vsize, isize * 3, (uint)sizeof(T), VertexDebugTypeInfo::of<T>(), VertexLayoutOf<T>());
 	}
 
 	template <class T>

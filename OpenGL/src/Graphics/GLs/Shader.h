@@ -311,6 +311,8 @@ namespace Graphics {
         static uint CompileShaderFrag(std::string_view source) { return CompileShader(source, ShaderType::FRAGMENT); }
         static uint CompileShaderGeom(std::string_view source) { return CompileShader(source, ShaderType::GEOMETRY); }
         OPENGL_API static uint CreateShader(std::string_view vtx, std::string_view frg, std::string_view geo = {});
+
+        friend class GraphicsDevice;
     };
 
 #undef DEFINE_UNIF_FN

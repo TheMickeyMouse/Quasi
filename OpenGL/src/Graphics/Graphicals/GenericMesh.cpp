@@ -18,4 +18,8 @@ namespace Graphics {
 
 	uint& GenericMesh::deviceIndex() { return ptr->deviceIndex; }
 	uint GenericMesh::deviceIndex() const { return ptr->deviceIndex; }
+
+	usize GenericMesh::vSizeBytes() const { return ptr->vertices.size(); }
+	std::span<const byte> GenericMesh::vDataBytes() const { return stdu::span_cast<const byte>(std::span { ptr->vertices }); }
+	usize GenericMesh::iSize() const { return ptr->indices.size(); }
 }

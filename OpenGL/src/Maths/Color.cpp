@@ -189,7 +189,7 @@ namespace Maths {
             return color().r == other.r && color().g == other.g && color().b == other.b;
     }
 
-    template <class Color> bool color_base<Color>::operator==(const Color& other) const { return eq(other); }
+    template <class Color> bool color_base<Color>::operator==(const color_base& other) const { return eq(other.color()); }
     template <class Color> bool color_base<Color>::neq(const Color& other) const { return !eq(other); }
 
     template <class Color> bool color_base<Color>::loose_eq(const Color& other) const {

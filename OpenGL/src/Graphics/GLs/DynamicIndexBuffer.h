@@ -33,5 +33,7 @@ namespace Graphics {
 
         [[nodiscard]] uint GetLength() const { return bufferSize; }
         [[nodiscard]] uint GetUsedLength() const { return dataOffset; }
+
+        friend class GraphicsDevice;
     };
 }

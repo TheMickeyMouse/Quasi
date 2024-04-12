@@ -6,7 +6,7 @@
 #include "GLDebug.h"
 
 namespace Graphics {
-    DynamicVertexBuffer::DynamicVertexBuffer(uint size, uint typeSize, std::type_index type)
+    DynamicVertexBuffer::DynamicVertexBuffer(uint size, uint typeSize, VertexDebugTypeIndex type)
         : GLObject({}), bufferSize(size), vertSize(typeSize), vertType(type) {
         GL_CALL(glBufferData(GL_ARRAY_BUFFER, typeSize * size, nullptr, GL_DYNAMIC_DRAW));
     }

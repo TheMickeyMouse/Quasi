@@ -44,5 +44,7 @@ namespace Graphics {
         OPENGL_API void Attach(const Texture& tex, AttachmentType type = AttachmentType::COLOR_0) const;
         OPENGL_API void Attach(const RenderBuffer& rbo, AttachmentType type) const;
         OPENGL_API void Complete() const;
+
+        friend class GraphicsDevice;
     };
 }

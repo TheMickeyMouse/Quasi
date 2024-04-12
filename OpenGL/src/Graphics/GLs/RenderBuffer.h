@@ -17,5 +17,6 @@ namespace Graphics {
         OPENGL_API RenderBuffer(TextureIFormat format, Maths::ivec2 size);
 
         friend class FrameBuffer;
+        friend class GraphicsDevice;
     };
 }

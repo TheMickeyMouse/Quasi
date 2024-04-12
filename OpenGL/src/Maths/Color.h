@@ -73,7 +73,7 @@ namespace Maths {
         NODISC OPENGL_API bool eq(const Color& other) const;
         NODISC OPENGL_API bool loose_eq(const Color& other) const;
         NODISC OPENGL_API bool neq(const Color& other) const;
-        NODISC OPENGL_API bool operator==(const Color& other) const;
+        NODISC OPENGL_API bool operator==(const color_base& other) const;
 
         NODISC OPENGL_API Color neg() const;
         NODISC OPENGL_API Color lerp(const Color& other, float t) const;

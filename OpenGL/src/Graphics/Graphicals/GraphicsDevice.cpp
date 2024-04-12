@@ -59,7 +59,7 @@ namespace Graphics {
         dest.mainWindow = from.mainWindow;
         from.mainWindow = nullptr;
 
-        dest.renderMode = from.renderMode;
+        dest.renderOptions = from.renderOptions;
 
         dest.fontDevice = std::move(from.fontDevice);
         dest.ioDevice = std::move(from.ioDevice);
@@ -76,7 +76,7 @@ namespace Graphics {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        RenderInMode(renderMode);
+        RenderInMode(renderOptions.renderMode);
 
         ioDevice.Update();
     }
@@ -101,6 +101,8 @@ namespace Graphics {
     void GraphicsDevice::DeleteRender(uint index) {
         renders[index]->device = nullptr;
         renders.erase(renders.begin() + (int)index);
+        for (uint i = index; i < renders.size(); ++i)
+            renders[i]->deviceIndex = i;
     }
 
     void GraphicsDevice::DeleteAllRenders() {
@@ -141,7 +143,7 @@ namespace Graphics {
     }
 
     void GraphicsDevice::SetDrawMode(const RenderMode mode) {
-        renderMode = mode;
+        renderOptions.renderMode = mode;
     }
 
     void GraphicsDevice::RenderInMode(const RenderMode mode) {
@@ -149,85 +151,142 @@ namespace Graphics {
     }
 
     void GraphicsDevice::DebugMenu() {
-        static bool enabled = false;
-        if (ImGui::Button(enabled ? "Hide Debug Menu" : "Show Debug Menu")) enabled = !enabled;
-
-        if (!enabled) goto skipDebugs; // i know goto is not great but its more readable imo  // NOLINT(cppcoreguidelines-avoid-goto, hicpp-avoid-goto)
-        
-        ImGui::Text("Application Averages %.2fms/frame (%d FPS)", 1000.0 * ioDevice.Time.deltaTime, (int)ioDevice.Time.Framerate());
-        ImGui::Text("Draw as: "); ImGui::SameLine();
-        ImGui::RadioButton("Fill",   (int*)&renderMode, (int)RenderMode::FILL);  ImGui::SameLine();
-        ImGui::RadioButton("Lines",  (int*)&renderMode, (int)RenderMode::LINES); ImGui::SameLine();
-        ImGui::RadioButton("Points", (int*)&renderMode, (int)RenderMode::POINTS);
-
-        {
-            const float ps = pointSize;
-            ImGui::DragFloat("Point Size", &pointSize, 0.1f, 0);
-            if (ps != pointSize) Render::SetPointSize(pointSize);
+        if (ImGui::Button(ShowDebugMenu ? "Hide Debug Menu" : "Show Debug Menu")) {
+            ShowDebugMenu = !ShowDebugMenu;
         }
 
-        if (ImGui::CollapsingHeader("Mouse Input")) {
-            ImGui::Text("Mouse Position is at: (%f, %f),",
-                ioDevice.Mouse.GetMousePosPx().x,
-                ioDevice.Mouse.GetMousePosPx().y);
-            ImGui::Text("   relative at: (%f, %f),",
-                ioDevice.Mouse.GetMousePos().x,
-                ioDevice.Mouse.GetMousePos().y);
-            ImGui::Text("which is%s in the window", ioDevice.Mouse.IsInWindow() ? "" : " not");
-            ImGui::NewLine();
-            
-            ImGui::Text("Left Mouse Pressed: %s",   ioDevice.Mouse.LeftPressed()   ? "True" : "False");
-            ImGui::Text("Right Mouse Pressed: %s",  ioDevice.Mouse.RightPressed()  ? "True" : "False");
-            ImGui::Text("Middle Mouse Pressed: %s", ioDevice.Mouse.MiddlePressed() ? "True" : "False");
+        if (ShowDebugMenu) ShowDebugWindow();
 
-            ImGui::Text("Mouse Scroll is: (%f, %f),",
-                ioDevice.Mouse.GetMouseScroll().x,
-                ioDevice.Mouse.GetMouseScroll().y);
-            ImGui::Text("       delta is: (%f, %f)",
-                ioDevice.Mouse.GetMouseScrollDelta().x,
-                ioDevice.Mouse.GetMouseScrollDelta().y);
+        if (ImGui::Button("Quit Application"))
+            Quit();
+    }
 
-            if (ImGui::TreeNode("Advanced")) {
+    void GraphicsDevice::ShowDebugWindow() {
+        ImGui::Begin("Debug Menu", &ShowDebugMenu);
+
+        ImGui::BeginTabBar("Debug Items");
+
+        if (ImGui::BeginTabItem("Basics")) {
+            ImGui::Text("Application Averages %.2fms/frame (%d FPS)", 1000.0 * ioDevice.Time.deltaTime, (int)std::ceil(ioDevice.Time.Framerate()));
+            ImGui::Text("Draw as: "); ImGui::SameLine();
+            ImGui::RadioButton("Fill",   (int*)&renderOptions.renderMode, (int)RenderMode::FILL);  ImGui::SameLine();
+            ImGui::RadioButton("Lines",  (int*)&renderOptions.renderMode, (int)RenderMode::LINES); ImGui::SameLine();
+            ImGui::RadioButton("Points", (int*)&renderOptions.renderMode, (int)RenderMode::POINTS);
+
+            if (renderOptions.renderMode == RenderMode::POINTS) {
+                const float ps = renderOptions.pointSize;
+                ImGui::DragFloat("Point Size", &renderOptions.pointSize, 0.1f, 0);
+                if (ps != renderOptions.pointSize) Render::SetPointSize(renderOptions.pointSize);
+            }
+
+            {
+                const Maths::colorf prevClearColor = renderOptions.clearColor;
+                ImGui::ColorEdit4("Clear Color", renderOptions.clearColor.begin());
+                if (renderOptions.clearColor != prevClearColor)
+                    Render::SetClearColor(renderOptions.clearColor);
+            }
+
+            static bool showImGuiDebugMenu = false;
+            ImGui::Checkbox("Show ImGui Debug Menu", &showImGuiDebugMenu);
+
+            if (showImGuiDebugMenu) ImGui::ShowDemoWindow();
+
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Inputs")) {
+            ImGui::BulletText("Mouse");
+            ImGui::Indent();
+            {
+                ImGui::Text("Mouse Position is at: (%f, %f),",
+                    ioDevice.Mouse.GetMousePosPx().x,
+                    ioDevice.Mouse.GetMousePosPx().y);
+                ImGui::Text("   relative at: (%f, %f),",
+                    ioDevice.Mouse.GetMousePos().x,
+                    ioDevice.Mouse.GetMousePos().y);
+                ImGui::Text("which is%s in the window", ioDevice.Mouse.IsInWindow() ? "" : " not");
+                ImGui::NewLine();
+
+                ImGui::Text("Left Mouse Pressed: %s",   ioDevice.Mouse.LeftPressed()   ? "True" : "False");
+                ImGui::Text("Right Mouse Pressed: %s",  ioDevice.Mouse.RightPressed()  ? "True" : "False");
+                ImGui::Text("Middle Mouse Pressed: %s", ioDevice.Mouse.MiddlePressed() ? "True" : "False");
+
+                ImGui::Text("Mouse Scroll is: (%f, %f),",
+                    ioDevice.Mouse.GetMouseScroll().x,
+                    ioDevice.Mouse.GetMouseScroll().y);
+                ImGui::Text("       delta is: (%f, %f)",
+                    ioDevice.Mouse.GetMouseScrollDelta().x,
+                    ioDevice.Mouse.GetMouseScrollDelta().y);
+
                 ImGui::Text("Pressed: ");
                 for (int i = 0; i < IO::MouseType::LAST_MOUSE; ++i) {
                     if (!ioDevice.Mouse.ButtonPressed(i)) continue;
                     ImGui::Text("   %s", IO::MouseType::MouseButtonToStr(i));
                 }
-
-                ImGui::TextDisabled("// The following below actually works, you just can't see it.");
-
-                ImGui::Text("On Pressed: ");
-                for (int i = 0; i < IO::MouseType::LAST_MOUSE; ++i) {
-                    if (!ioDevice.Mouse.ButtonOnPress(i)) continue;
-                    ImGui::Text("   %s", IO::MouseType::MouseButtonToStr(i));
-                }
-
-                ImGui::Text("On Release: ");
-                for (int i = 0; i < IO::MouseType::LAST_MOUSE; ++i) {
-                    if (!ioDevice.Mouse.ButtonOnRelease(i)) continue;
-                    ImGui::Text("   %s", IO::MouseType::MouseButtonToStr(i));
-                }
-                
-                ImGui::TreePop();
             }
-        }
+            ImGui::Unindent();
 
-        if (ImGui::CollapsingHeader("Keyboard Input")) {
-            ImGui::Text("Keys Pressed Are:");
-
-            for (const auto key : ioDevice.Keyboard.KeysPressed()) {
-                ImGui::Text("   %s", IO::KeyboardType::KeyToStr(key));
+            ImGui::BulletText("Keyboard");
+            ImGui::Indent();
+            {
+                ImGui::Text("Keys Pressed Are:");
+                for (const auto key : ioDevice.Keyboard.KeysPressed()) {
+                    ImGui::Text("   %s", IO::KeyboardType::KeyToStr(key));
+                }
             }
+            ImGui::Unindent();
+
+            ImGui::EndTabItem();
         }
 
-        if (ImGui::CollapsingHeader("ImGui Demo")) {
-            ImGui::ShowDemoWindow();
-        }
-        // ImGui::ShowDemoWindow();
+        if (ImGui::BeginTabItem("Data")) {
+            uint vCount = 0, tCount = 0;
+            for (uint i = 0; i < renders.size(); ++i) {
+                const RenderHandle& data = renders[i];
+                const VertexDebugTypeIndex vType = data->GetType();
+                if (ImGui::TreeNode((const void*)(intptr_t)i, "Render #%d", i)) {
+                    vCount += data->vbo.dataOffset;
+                    tCount += data->ibo.dataOffset / 3;
+                    ImGui::Text("%d Vertices, %d Triangles", data->vbo.dataOffset, data->ibo.dataOffset / 3);
+                    ImGui::Text("Vertex Type: %.*s (size %d)", vType->name.size(), vType->name.data(), data->vbo.vertSize);
 
-        skipDebugs:
-        if (ImGui::Button("Quit Application"))
-            Quit();
+                    ImGui::Text("Vertex Properties:");
+                    ImGui::Indent();
+                    using namespace std::string_view_literals;
+                    uint j = 0;
+                    for (const auto pName : std::views::split(vType->propNames, "\0"sv)) {
+                        const VertexBufferComponent& comp = vType->bufferLayout.GetComponents()[j];
+                        const char* nameofCompType = GLTypeName(comp.type);
+                        ImGui::Text("%s:%s%c%s%c%s",
+                            pName.data(),
+                            comp.count == 1 ? ""  : " Vector",
+                            comp.count == 1 ? ' ' : '0' + comp.count,
+                            comp.count == 1 ? ""  : " of ",
+                            std::toupper(nameofCompType[0]),
+                            nameofCompType + 1);
+                        ++j;
+                    }
+                    ImGui::Unindent();
+
+                    for (uint k = 0; k < data->meshes.size(); ++k) {
+                        GenericMesh& mesh = data->meshes[k];
+                        if (ImGui::TreeNode((const void*)(intptr_t)k, "Mesh #%d", k)) {
+                            ImGui::Text("%d Vertices, %d Triangles", mesh.vSizeBytes() / vType->size, mesh.iSize());
+
+                            ImGui::TreePop();
+                        }
+                    }
+
+                    ImGui::TreePop();
+                }
+            }
+            ImGui::Text("Total: %d Vertices, %d Triangles", vCount, tCount);
+            ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
+
+        ImGui::End();
     }
 
     GraphicsDevice GraphicsDevice::Initialize(Maths::ivec2 winSize) {

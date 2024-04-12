@@ -52,6 +52,12 @@
 #define __GL_VBL1__END__
 #define __GL_VBL2__END__
 
+#define __GL_VERTEX_STRING_LIST__(SEQ) STDU_CAT(__GL_VSL1__ SEQ, END__)
+#define __GL_VSL1__(X) #X "\0" __GL_VSL2__
+#define __GL_VSL2__(X) #X "\0" __GL_VSL1__
+#define __GL_VSL1__END__
+#define __GL_VSL2__END__
+
 #define GL_VERTEX_FIELD(X) \
     private: struct types { __GL_VERTEX_TYPES__(X) }; public: \
     inline static const auto __VERTEX_LAYOUT__ = Graphics::VertexBufferLayout({STDU_UNARY(STDU_DEFER(__REMOVE_FIRST__)(__GL_VERTEX_FIELDS__(X)))}); \
@@ -61,7 +67,13 @@
         __vertex_type__ operator()(const auto& args) { \
             return Graphics::VertexBuilder::BlueprintBuilder<__vertex_type__>(args __GL_VERTEX_BUILD_LIST__(X)); \
         } \
-    };
+    }; \
+    static std::size_t __sizeof_self__() { return sizeof(__vertex_type__); } \
+    inline static Graphics::VertexDebugTypeInfo __typeinfo__ = { \
+        __sizeof_self__(), \
+        __VERTEX_LAYOUT__, \
+        stdu::nameof<__vertex_type__>(), \
+        { __GL_VERTEX_STRING_LIST__(X), sizeof(__GL_VERTEX_STRING_LIST__(X)) - 2 } };
 
 namespace Graphics {
     template <class T> concept InstanceofVertex = T::_internalVertexFlag;
@@ -102,7 +114,7 @@ namespace Graphics {
 
         GL_VERTEX_T(Vertex2D);
         GL_VERTEX_FIELD((Position));
-        GL_VERTEX_TRANSFORM_FIELDS((Position))
+        GL_VERTEX_TRANSFORM_FIELDS((Position));
     };
 
     struct Vertex3D {
@@ -110,7 +122,7 @@ namespace Graphics {
 
         GL_VERTEX_T(Vertex3D);
         GL_VERTEX_FIELD((Position));
-        GL_VERTEX_TRANSFORM_FIELDS((Position))
+        GL_VERTEX_TRANSFORM_FIELDS((Position));
     };
 
     struct VertexColorTexture3D {
@@ -120,7 +132,7 @@ namespace Graphics {
 
         GL_VERTEX_T(VertexColorTexture3D);
         GL_VERTEX_FIELD((Position)(Color)(TextureCoordinate));
-        GL_VERTEX_TRANSFORM_FIELDS((Position))
+        GL_VERTEX_TRANSFORM_FIELDS((Position));
     };
 
     struct VertexTexture2D {
@@ -129,7 +141,7 @@ namespace Graphics {
 
         GL_VERTEX_T(VertexTexture2D);
         GL_VERTEX_FIELD((Position)(TextureCoordinate));
-        GL_VERTEX_TRANSFORM_FIELDS((Position))
+        GL_VERTEX_TRANSFORM_FIELDS((Position));
     };
 
     struct VertexColor3D {
@@ -138,7 +150,7 @@ namespace Graphics {
 
         GL_VERTEX_T(VertexColor3D);
         GL_VERTEX_FIELD((Position)(Color));
-        GL_VERTEX_TRANSFORM_FIELDS((Position))
+        GL_VERTEX_TRANSFORM_FIELDS((Position));
     };
 
     struct VertexColorNormal3D {
@@ -148,7 +160,7 @@ namespace Graphics {
 
         GL_VERTEX_T(VertexColorNormal3D);
         GL_VERTEX_FIELD((Position)(Color)(Normal));
-        GL_VERTEX_TRANSFORM_FIELDS((Position)(Normal, NormalTransformer))
+        GL_VERTEX_TRANSFORM_FIELDS((Position)(Normal, NormalTransformer));
     };
 
     struct VertexTextureNormal3D {
@@ -158,7 +170,7 @@ namespace Graphics {
 
         GL_VERTEX_T(VertexTextureNormal3D);
         GL_VERTEX_FIELD((Position)(TextureCoordinate)(Normal));
-        GL_VERTEX_TRANSFORM_FIELDS((Position)(Normal, NormalTransformer))
+        GL_VERTEX_TRANSFORM_FIELDS((Position)(Normal, NormalTransformer));
     };
 
     struct VertexNormal3D {
@@ -167,14 +179,14 @@ namespace Graphics {
 
         GL_VERTEX_T(VertexNormal3D);
         GL_VERTEX_FIELD((Position)(Normal));
-        GL_VERTEX_TRANSFORM_FIELDS((Position)(Normal, NormalTransformer))
+        GL_VERTEX_TRANSFORM_FIELDS((Position)(Normal, NormalTransformer));
     };
 
     template <InstanceofVertex T>
     using VertexComponents = typename T::__vertex_params__;
 
     template <InstanceofVertex T>
-    const VertexBufferLayout& VertexLayoutOf = T::__VERTEX_LAYOUT__;
+    const VertexBufferLayout& VertexLayoutOf() { return T::__VERTEX_LAYOUT__; }
 
     template <class T>
     T VertexMul(const T& v, const Maths::mat4x4& mat, const Maths::mat4x4& nmat) {

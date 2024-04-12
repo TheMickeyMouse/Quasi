@@ -76,6 +76,17 @@ namespace Graphics {
 #else
 #define GL_CALL(X) GLCall([&]{ return X; }, #X)
 #endif
+
+    struct VertexDebugTypeInfo {
+        usize size;
+        const class VertexBufferLayout& bufferLayout;
+        std::string_view name;
+        std::string_view propNames;
+
+        template <class T> static const VertexDebugTypeInfo* of() { return &T::__typeinfo__; }
+    };
+
+    using VertexDebugTypeIndex = const VertexDebugTypeInfo*;
 }
 
 template <>

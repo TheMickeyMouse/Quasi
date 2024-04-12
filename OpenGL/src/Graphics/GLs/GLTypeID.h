@@ -2,6 +2,7 @@
 // ReSharper disable CppClangTidyClangDiagnosticUnusedMacros
 // ReSharper disable CppClangTidyBugproneReservedIdentifier
 #pragma once
+#include "enum_utils.h"
 #include "NumTypes.h"
 #include "stdu/macros.h"
 #include "stdu/types.h"
@@ -18,6 +19,17 @@ namespace Graphics {
         SHORT  = 0x1402,
         USHORT = 0x1403,
     };
+    inline STDU_ENUM_TOSTR(GLTypeID, GLTypeName,
+        (UNDEFINED, "null")
+        (FLOAT, "float")
+        (DOUBLE, "double")
+        (INT, "int")
+        (UINT, "uint")
+        (BYTE, "byte")
+        (UBYTE, "ubyte")
+        (SHORT, "short")
+        (USHORT, "ushort"),
+        "null")
 
     using GLTypeMap = stdu::typemap<
         stdu::typelist           <float,           double,           int,           uint,           char,           uchar,           int16,           uint16>,

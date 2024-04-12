@@ -2,6 +2,7 @@
 #include "NumTypes.h"
 #include <utility>
 #include <core.h>
+#include <span>
 
 namespace Graphics {
 	template <class T> class Mesh;
@@ -29,6 +30,10 @@ namespace Graphics {
 			return *reinterpret_cast<Mesh<T>*>(ptr);
 		}
 
+		template <class T> const Mesh<T>& As() const {
+			return *reinterpret_cast<const Mesh<T>*>(ptr);
+		}
+
 		OPENGL_API void Set(void* mesh);
 		template <class T> void Set(Mesh<T>* mesh) {
 			Set((void*)mesh);
@@ -36,5 +41,9 @@ namespace Graphics {
 
 		OPENGL_API uint& deviceIndex();
 		[[nodiscard]] OPENGL_API uint deviceIndex() const;
+
+		[[nodiscard]] OPENGL_API usize vSizeBytes() const;
+		[[nodiscard]] OPENGL_API std::span<const byte> vDataBytes() const;
+		[[nodiscard]] OPENGL_API usize iSize() const;
 	};
 }

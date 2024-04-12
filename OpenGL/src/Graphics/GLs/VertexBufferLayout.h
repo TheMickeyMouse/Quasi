@@ -46,7 +46,7 @@ namespace Graphics {
     
     class VertexBufferLayout {
     private:
-        std::vector<VertexBufferComponent> _components;
+        std::vector<VertexBufferComponent> components;
         uint stride = 0;
     public:
         VertexBufferLayout() = default;
@@ -73,14 +73,14 @@ namespace Graphics {
 
 #undef VBE
 
-        [[nodiscard]] const std::vector<VertexBufferComponent>& GetComponents() const { return _components; }
+        [[nodiscard]] const std::vector<VertexBufferComponent>& GetComponents() const { return components; }
         [[nodiscard]] uint GetStride() const { return stride; }
     };
 
     template <class T>
     void VertexBufferLayout::Push(uint count, bool normalized, bool integral) {
         constexpr GLTypeID type = GLTypeIDOf<T>;
-        _components.emplace_back(type, count, normalized, integral);
+        components.emplace_back(type, count, normalized, integral);
         stride += count * SizeOf(type);
     }
 }

@@ -19,5 +19,7 @@ namespace Graphics {
         OPENGL_API void AddBuffer(const VertexBufferLayout& layout);
         OPENGL_API void AddBuffer(const VertexBuffer& vb, const VertexBufferLayout& layout);
         OPENGL_API void AddBuffer(const DynamicVertexBuffer& vb, const VertexBufferLayout& layout);
+
+        friend class GraphicsDevice;
     };
 }

@@ -19,14 +19,18 @@ namespace Graphics {
         Maths::ivec2 windowSize;
         GLFWwindow* mainWindow;
 
-        RenderMode renderMode = RenderMode::FILL;
-        float pointSize = 10.0f;
+        struct GLRenderOptions {
+            RenderMode renderMode = RenderMode::FILL;
+            float pointSize = 10.0f;
+            Maths::colorf clearColor;
+        } renderOptions;
 
         FontDevice fontDevice = {};
         IO::IO ioDevice {};
         std::unique_ptr<Maths::random_gen> randDevice {};
 
         inline static stdu::ref<GraphicsDevice> Instance = nullptr;
+        inline static bool ShowDebugMenu = false;
     public:
         OPENGL_API explicit GraphicsDevice(GLFWwindow* window, Maths::ivec2 winSize);
         using stringr = const std::string&;
@@ -78,6 +82,9 @@ namespace Graphics {
         OPENGL_API static void RenderInMode(RenderMode mode);
 
         OPENGL_API void DebugMenu();
+    private:
+        OPENGL_API void ShowDebugWindow();
+    public:
 
         static GraphicsDevice& GetDeviceInstance() { return *Instance; }
         static GLFWwindow* GetMainWindow() { return Instance->mainWindow; }
