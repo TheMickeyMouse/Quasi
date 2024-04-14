@@ -55,6 +55,8 @@ set(HEADER_FILES
     src/Graphics/Utils/Meshes/CubeNormless.h
     src/Graphics/Utils/Meshes/Sphere.h
     src/Graphics/Utils/Meshes/Icosphere.h
+    src/Graphics/Utils/Meshes/Quad.h
+    src/Graphics/Utils/Meshes/Plane.h
 
     src/IO/IO.h
     src/IO/Keyboard.h
@@ -72,6 +74,9 @@ set(HEADER_FILES
     src/Maths/Parsing.h
     src/Maths/Random.h
     src/Maths/Color.h
+
+    src/Physics/CircleCollider2D.h
+    src/Physics/Collider2D.h
 
     src/stdu/parsing.h
     src/stdu/unique.h
@@ -95,8 +100,6 @@ set(HEADER_FILES
     src/vendor/imgui/imgui_stdlib.h
 
     src/vendor/stb_image/stb_image.h
-        src/Graphics/Utils/Meshes/Quad.h
-        src/Graphics/Utils/Meshes/Plane.h
 )
 source_group("Header Files" FILES ${HEADER_FILES})
 
@@ -142,6 +145,9 @@ set(SOURCE_FILES
     src/Maths/Vector.cpp
     src/Maths/Matrix.cpp
     src/Maths/Color.cpp
+
+    src/Physics/CircleCollider2D.cpp
+    src/Physics/Collider2D.cpp
 
     src/stdu/rich_string.cpp
 

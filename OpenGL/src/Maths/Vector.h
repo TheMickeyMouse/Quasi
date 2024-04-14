@@ -328,7 +328,7 @@ namespace Maths {
         NODISC T          lensq() const { return dot(as_vec()); }
         NODISC float_type dist(const vect& to) const { return (as_vec() - to).len(); }
         NODISC float_type distsq(const vect& to) const { return (as_vec() - to).lensq(); }
-        NODISC bool       in_range(const T& other, T d) const { return dist(other) <= d; }
+        NODISC bool       in_range(const vect& other, T d) const { return dist(other) <= d; }
         NODISC vect       norm() const { return as_vec() / len(); }
         NODISC vect       norm(float d) const { return norm() * d; }
 
@@ -347,6 +347,8 @@ namespace Maths {
         NODISC static vect max(const vect& a, const vect& b) { return vecops::operate(vecops::max {}, a, b); }
         NODISC static vect min(const vect& a, const vect& b) { return vecops::operate(vecops::min {}, a, b); }
         NODISC static vect clamp(const rect<N, T>& r, const vect& x);
+
+        NODISC vect map(const rect<N, T>& input, const rect<N, T>& output) const;
 
         NODISC _rect_origin_inbetween_<vect> as_origin() const;
         NODISC _rect_size_inbetween_<vect> as_size() const;

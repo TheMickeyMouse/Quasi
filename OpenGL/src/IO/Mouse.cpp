@@ -63,18 +63,18 @@ namespace IO {
         glfwSetInputMode(inputWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 
-    Maths::dvec2 MouseType::GetMousePosPx() {
+    Maths::dvec2 MouseType::GetMousePosPx() const {
         Maths::dvec2 pos;
-        glfwGetCursorPos(inputWindow(), &pos.x, &pos.y);
+        glfwGetCursorPos((GLFWwindow*)inputWindow(), &pos.x, &pos.y);
         return pos;
     }
 
-    Maths::dvec2 MouseType::GetMousePos() {
+    Maths::dvec2 MouseType::GetMousePos() const {
         const auto r01 = GetMousePosPx() / io->gdevice->GetWindowSize(); // range 0 - 1
         return r01 * 2.0 - 1.0;
     }
 
-    bool MouseType::IsInWindow() {
+    bool MouseType::IsInWindow() const {
         auto [mouseX,  mouseY ] = GetMousePosPx();
         auto [borderX, borderY] = io->gdevice->GetWindowSize();
         return 0 <= mouseX && mouseX <= borderX &&

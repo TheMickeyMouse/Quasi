@@ -23,6 +23,7 @@ namespace Graphics {
             RenderMode renderMode = RenderMode::FILL;
             float pointSize = 10.0f;
             Maths::colorf clearColor;
+            int drawCalls;
         } renderOptions;
 
         FontDevice fontDevice = {};

@@ -77,6 +77,8 @@ namespace Graphics {
         std::vector<TriIndices>& GetIndices() { return indices; }
         [[nodiscard]] const std::vector<TriIndices>& GetIndices() const { return indices; }
 
+        void Clear();
+
         friend class GraphicsDevice;
         friend class RenderData;
         friend class GenericMesh;
@@ -203,5 +205,11 @@ namespace Graphics {
         newVerts.resize(vertices.size());
         std::transform(vertices.begin(), vertices.end(), newVerts.begin(), std::forward<F>(f));
         return Mesh<U>(newVerts, indices);
+    }
+
+    template<class T>
+    void Mesh<T>::Clear() {
+        vertices.clear();
+        indices.clear();
     }
 }

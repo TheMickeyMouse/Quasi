@@ -143,11 +143,6 @@ namespace Maths {
         const value_t& operator*() const { return curr; }
     };
 
-    // template <class V> rect<_rect_origin_inbetween_<V>::dimension, std::conditional_t<is_vec_v<V>, typename V::scalar, V>>
-    // _rect_origin_inbetween_<V>::rect(V size) const {
-    //     return { pos + size / 2, pos - size / 2 };
-    // }
-
     template <class V> typename _rect_origin_inbetween_<V>::rect_t
     _rect_origin_inbetween_<V>::rect(V size) const {
         return { (V)(pos + size / 2), (V)(pos - size / 2) };
@@ -169,6 +164,11 @@ namespace Maths {
     template <uint N, class T>
     bool vecn_base<N, T>::is_in(const rect<N, T>& region) const {
         return region.min <= as_vec() && as_vec() <= region.max;
+    }
+
+    template <uint N, class T>
+    typename vecn_base<N, T>::vect vecn_base<N, T>::map(const rect<N, T>& input, const rect<N, T>& output) const {
+        return (as_vec() - input.min) / input.size() * output.size() + output.min;
     }
 
     template <uint N, class T> _rect_origin_inbetween_<typename vecn_base<N, T>::vect> vecn_base<N, T>::as_origin() const { return { as_vec() }; }

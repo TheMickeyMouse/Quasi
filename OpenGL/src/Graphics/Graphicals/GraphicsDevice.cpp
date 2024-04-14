@@ -79,6 +79,8 @@ namespace Graphics {
         RenderInMode(renderOptions.renderMode);
 
         ioDevice.Update();
+
+        renderOptions.drawCalls = 0;
     }
 
     void GraphicsDevice::EndRender() {
@@ -122,6 +124,7 @@ namespace Graphics {
             s.SetUniformMat4x4("u_view", r.camera);
         }
         Render::Draw(r, s);
+        ++renderOptions.drawCalls;
     }
 
     void GraphicsDevice::RenderInstanced(RenderData& r, int instances, Shader& s, const ShaderArgs& args, bool setDefaultShaderArgs) {
@@ -132,6 +135,7 @@ namespace Graphics {
             s.SetUniformMat4x4("u_view", r.camera);
         }
         Render::DrawInstanced(r, s, instances);
+        ++renderOptions.drawCalls;
     }
 
     void GraphicsDevice::ClearColor(const Maths::colorf& color) {
@@ -244,9 +248,9 @@ namespace Graphics {
             for (uint i = 0; i < renders.size(); ++i) {
                 const RenderHandle& data = renders[i];
                 const VertexDebugTypeIndex vType = data->GetType();
+                vCount += data->vbo.dataOffset;
+                tCount += data->ibo.dataOffset / 3;
                 if (ImGui::TreeNode((const void*)(intptr_t)i, "Render #%d", i)) {
-                    vCount += data->vbo.dataOffset;
-                    tCount += data->ibo.dataOffset / 3;
                     ImGui::Text("%d Vertices, %d Triangles", data->vbo.dataOffset, data->ibo.dataOffset / 3);
                     ImGui::Text("Vertex Type: %.*s (size %d)", vType->name.size(), vType->name.data(), data->vbo.vertSize);
 
@@ -281,6 +285,7 @@ namespace Graphics {
                 }
             }
             ImGui::Text("Total: %d Vertices, %d Triangles", vCount, tCount);
+            ImGui::Text("Draw Calls: %d", renderOptions.drawCalls);
             ImGui::EndTabItem();
         }
 

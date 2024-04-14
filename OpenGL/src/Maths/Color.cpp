@@ -1,4 +1,6 @@
 #include "Color.h"
+
+#include "Random.h"
 #include "Vector.h"
 
 namespace Maths {
@@ -164,20 +166,20 @@ namespace Maths {
 
     template <class Color> std::string color_base<Color>::hexcode() const {
         if constexpr (traits_has_alpha) return std::format("{}{}{}{}{}{}{}{}",
+            color_utils::hexdigit_2(color().r),
             color_utils::hexdigit_1(color().r),
-            color_utils::hexdigit_1(color().r),
+            color_utils::hexdigit_2(color().g),
             color_utils::hexdigit_1(color().g),
-            color_utils::hexdigit_1(color().g),
+            color_utils::hexdigit_2(color().b),
             color_utils::hexdigit_1(color().b),
-            color_utils::hexdigit_1(color().b),
-            color_utils::hexdigit_1(color().a),
+            color_utils::hexdigit_2(color().a),
             color_utils::hexdigit_1(color().a)
         ); else return std::format("{}{}{}{}{}{}",
+            color_utils::hexdigit_2(color().r),
             color_utils::hexdigit_1(color().r),
-            color_utils::hexdigit_1(color().r),
+            color_utils::hexdigit_2(color().g),
             color_utils::hexdigit_1(color().g),
-            color_utils::hexdigit_1(color().g),
-            color_utils::hexdigit_1(color().b),
+            color_utils::hexdigit_2(color().b),
             color_utils::hexdigit_1(color().b)
         );
     }
@@ -290,6 +292,11 @@ namespace Maths {
             color_utils::convert_type<alt>(color().b),
             color_utils::convert_type<alt>(alpha())
         );
+    }
+
+    template<class Color>
+    Color color_base<Color>::random(random_gen& rg, float sat, float val) {
+        return from_hsv(rg.getf(0.0f, 360.0f), sat, val);
     }
 
     template <class Color> Color color_base<Color>::color_id(int id) {

@@ -43,9 +43,9 @@ namespace IO {
         OPENGL_API void Hide();
         OPENGL_API void Show(); // will also unlock the cursor
 
-        [[nodiscard]] OPENGL_API Maths::dvec2 GetMousePosPx();
-        [[nodiscard]] OPENGL_API Maths::dvec2 GetMousePos();
-        [[nodiscard]] OPENGL_API bool IsInWindow();
+        [[nodiscard]] OPENGL_API Maths::dvec2 GetMousePosPx() const;
+        [[nodiscard]] OPENGL_API Maths::dvec2 GetMousePos() const;
+        [[nodiscard]] OPENGL_API bool IsInWindow() const;
 
         [[nodiscard]] OPENGL_API Maths::dvec2 GetMouseScroll() const;
         [[nodiscard]] OPENGL_API Maths::dvec2 GetMouseScrollDelta() const;

@@ -109,6 +109,8 @@ namespace Maths {
         NODISC OPENGL_API operator with_alpha_t() const requires (!traits_has_alpha);
         NODISC OPENGL_API operator alternate_data_form() const;
 
+        OPENGL_API static Color random(random_gen& rg, float sat, float val);
+
 #pragma region Color Constants
         OPENGL_API static Color color_id(int id);
 
