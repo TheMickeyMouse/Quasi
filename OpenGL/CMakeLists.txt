@@ -75,8 +75,11 @@ set(HEADER_FILES
     src/Maths/Random.h
     src/Maths/Color.h
 
-    src/Physics/CircleCollider2D.h
-    src/Physics/Collider2D.h
+    src/Physics/World2D.h
+    src/Physics/Shape2D.h
+    src/Physics/Body2D.h
+    src/Physics/Collision2D.h
+    src/Physics/Transform2D.h
 
     src/stdu/parsing.h
     src/stdu/unique.h
@@ -146,8 +149,10 @@ set(SOURCE_FILES
     src/Maths/Matrix.cpp
     src/Maths/Color.cpp
 
-    src/Physics/CircleCollider2D.cpp
-    src/Physics/Collider2D.cpp
+    src/Physics/World2D.cpp
+    src/Physics/Body2D.cpp
+    src/Physics/Collision2D.cpp
+    src/Physics/Transform2D.cpp
 
     src/stdu/rich_string.cpp
 

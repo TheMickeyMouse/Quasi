@@ -315,7 +315,7 @@ namespace Maths {
                    as_vec() >  other ? std::partial_ordering::greater :
                    std::partial_ordering::unordered;
         }
-        NODISC bool iszero() const { return eq(as_vec()->ZERO()); }
+        NODISC bool iszero() const { return eq(as_vec().ZERO()); }
 
         template <class V> NODISC bool operator==(const V& v) const { return vecops::operate(vecops::eq  {}, as_vec(), v).all(); }
         template <class V> NODISC bool operator!=(const V& v) const { return vecops::operate(vecops::neq {}, as_vec(), v).all(); }
