@@ -21,13 +21,13 @@ namespace Physics2D {
     private:
         BodyType type = BodyType::NONE;
         class World* world = nullptr;
-        float simTime = 0.0f;
 
         std::unique_ptr<Shape> shape;
 
+    public:
         Body(const Maths::fvec2& p, float m, BodyType type, World* world, std::unique_ptr<Shape>&& shape)
             : position(p), mass(m), type(type), world(world), shape(std::move(shape)) {}
-    public:
+
         void AddVelocity(const Maths::fvec2& vel) { velocity += vel; }
         void Stop() { velocity = 0; }
 
@@ -36,6 +36,14 @@ namespace Physics2D {
         [[nodiscard]] OPENGL_API Transform GetTransform() const;
 
         OPENGL_API void Update(float dt);
+
+        [[nodiscard]] const Shape& GetShape() const { return *shape; }
+        template <class S> const S& ShapeAs() const { return *dynamic_cast<const S*>(&GetShape()); }
+
+        [[nodiscard]] bool IsStatic()  const { return type == BodyType::STATIC; }
+        [[nodiscard]] bool IsDynamic() const { return type == BodyType::DYNAMIC; }
+
+        [[nodiscard]] Maths::rect2f ComputeBoundingBox() const;
 
         friend class World;
         friend void Collision::StaticResolve (Body&, Body&, const Collision::Event&);

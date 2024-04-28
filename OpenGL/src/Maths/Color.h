@@ -212,7 +212,7 @@ namespace Maths {
     struct colorf : color_base<colorf> {
         float r, g, b, a;
 
-        colorf(float s = 255, float a = 1) : r(s), g(s), b(s), a(a) {}
+        colorf(float s = 0, float a = 1) : r(s), g(s), b(s), a(a) {}
         colorf(float r, float g, float b, float a = 1) : r(r), g(g), b(b), a(a) {}
         colorf(std::floating_point auto r, std::floating_point auto g,
                std::floating_point auto b, std::floating_point auto a = 1) : colorf((float)r, (float)g, (float)b, (float)a) {}

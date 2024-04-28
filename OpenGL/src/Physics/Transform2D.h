@@ -1,5 +1,6 @@
 #pragma once
 #include "core.h"
+#include "Rect.h"
 #include "Vector.h"
 
 namespace Physics2D {
@@ -13,5 +14,6 @@ namespace Physics2D {
         [[nodiscard]] OPENGL_API Transform Inverse() const;
         [[nodiscard]] OPENGL_API Transform operator*(const Transform& t) const;
         [[nodiscard]] OPENGL_API Maths::fvec2 operator*(const Maths::fvec2& p) const;
+        [[nodiscard]] OPENGL_API Maths::rect2f operator*(const Maths::rect2f& r) const;
     };
 } // Physics2D

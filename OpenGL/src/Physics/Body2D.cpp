@@ -19,4 +19,8 @@ namespace Physics2D {
         velocity += acceleration * dt;
         position += velocity * dt;
     }
+
+    Maths::rect2f Body::ComputeBoundingBox() const {
+        return GetTransform() * shape->ComputeBoundingBox();
+    }
 } // Physics2D

@@ -1,4 +1,7 @@
 #include "Collision2D.h"
+
+#include <algorithm>
+
 #include "Body2D.h"
 
 #include <typeindex>
@@ -25,44 +28,27 @@ namespace Physics2D::Collision {
     }
 
     Event Circle2Edge(const CircleShape& c1, TransformRef t1, const EdgeShape& e2, TransformRef t2) {
-        // equation for line = start + (end - start) * t; 0 <= t <= 1
-        // given x*x + y*y = radius*radius, x and y is offseted by transform2
-        // (sx * (1 - t) + ex * t)^2 + (sy * (1 - t) + ey * t)^2 = radius^2
-        // sx^2 * (1 - 2t + t^2) + ex^2 * t^2 + 2*sx*ex*t - 2*sx*ex*t^2 +
-        // sy^2 * (1 - 2t + t^2) + ey^2 * t^2 + 2*sy*ey*t - 2*sy*ey*t^2 = r^2
-        // (sx^2 + sy^2 + ex^2 + ey^2 - 2*sx*ex - 2*sy*ey) * t^2 +
-        // (2*sx*ex + 2*sy*ey - 2 * sx^2 * sy^2) * t +
-        // (sx^2 * sy^2 - r^2) = 0
-        const Maths::fvec2 start = t2 * e2.start - t1.position, end = t2 * e2.end - t1.position;
-        const float a = start.lensq() + end.lensq() - 2 * start.dot(end),
-                    b = 2 * start.dot(end) - 2 * start.lensq(),
-                    c = start.lensq() - c1.radius * c1.radius,
-                    p = b / a * 0.5f,
-                    q = std::sqrtf(b * b - 4 * a * c) / a * 0.5f,
-                    solution1 = p - q,
-                    solution2 = p + q;
-        const bool i1 = 0 <= solution1 && solution1 <= 1, i2 = 0 <= solution2 && solution2 <= 1;
-        if (i1 ^ i2) {
-            const float& outSolution = i1 ? solution2 : solution1;
-            const Maths::fvec2& linePoint = outSolution < 0 ? start : end;
-            return Event { linePoint.norm(c1.radius) + t1.position, linePoint + t1.position };
-        }
-        const Maths::fvec2 linePoint = start.lerp(end, p);
-        return linePoint.lensq() <= c1.radius * c1.radius ?
-            Event { linePoint.norm(c1.radius) + t1.position, linePoint + t1.position } :
-            Event::None;
+        const Maths::fvec2 start = t2 * e2.start, end = t2 * e2.end,
+                           toCircle = t1.position - start;
+        const float t = toCircle.dot(end - start) / (end - start).lensq();
+        const Maths::fvec2 closestPoint = start.lerp(end, std::clamp(t, 0.0f, 1.0f));
+        return Circle2Circle(c1, t1, CircleShape { 0.0f }, closestPoint);
     }
 
     void StaticResolve(Body& body, Body& target, const Event& cEvent) {
-        const Maths::fvec2 sep = cEvent.Seperator() * 0.5f;
-        body.position += sep;
-        target.position -= sep;
+        const Maths::fvec2 sep = cEvent.Seperator();
+        const bool bodyDyn = body.type == BodyType::DYNAMIC, targetDyn = target.type == BodyType::DYNAMIC;
+        body.position   += bodyDyn   ? sep / (float)(bodyDyn + targetDyn) : 0.0f;
+        target.position -= targetDyn ? sep / (float)(bodyDyn + targetDyn) : 0.0f;
     }
 
     void DynamicResolve(Body& body, Body& target, const Event& cEvent) {
-        const Maths::fvec2 collisionDir = cEvent.Seperator().norm();
-        const float p = 2 * (target.velocity.dot(collisionDir) - body.velocity.dot(collisionDir)) / (body.mass + target.mass);
-        body.velocity += p * target.mass * collisionDir;
-        target.velocity -= p * body.mass * collisionDir;
+        const Maths::fvec2 collisionDir = cEvent.Seperator();
+        const float mb = body.mass, mt = target.mass;
+        const Maths::fvec2 p = (2 * collisionDir.dot(target.velocity - body.velocity)) / ((mb + mt) * collisionDir.lensq()) * collisionDir;
+        using enum BodyType;
+        const bool sb = body.type == STATIC, st = target.type == STATIC;
+        body.velocity   += sb ? 0 : (mt + (st ? mb : 0)) * p;
+        target.velocity -= st ? 0 : (mb + (sb ? mt : 0)) * p;
     }
 } // Physics2D

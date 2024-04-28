@@ -20,4 +20,8 @@ namespace Physics2D {
     Maths::fvec2 Transform::operator*(const Maths::fvec2& p) const {
         return p.x * rotation - p.y * rotation.perpend() + position;
     }
+
+    Maths::rect2f Transform::operator*(const Maths::rect2f& r) const {
+        return Maths::rect2f { (*this) * r.min, (*this) * r.max }.corrected();
+    }
 } // Physics2D

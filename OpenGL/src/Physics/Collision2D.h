@@ -9,10 +9,6 @@ namespace Physics2D {
 namespace Physics2D::Collision {
     using TransformRef = const Transform&;
 
-    struct Pair {
-        Body &base, &target;
-    };
-
     struct Event {
         bool collides;
         Maths::fvec2 contactPointBase, contactPointTarget;

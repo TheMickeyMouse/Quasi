@@ -2,7 +2,6 @@
 #include "NumTypes.h"
 #include <core.h>
 
-#include <typeindex>
 #include <span>
 
 #include "GLDebug.h"
