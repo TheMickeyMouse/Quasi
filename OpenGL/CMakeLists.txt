@@ -6,9 +6,8 @@ find_package(Freetype REQUIRED)
 # Source groups
 ################################################################################
 set(HEADER_FILES
-    src/core.h
 
-    src/Debug/ConsoleColor.h
+        src/Debug/ConsoleColor.h
     src/Debug/internal_debug_break.h
     src/Debug/Logger.h
 
@@ -170,7 +169,6 @@ set(SOURCE_FILES
 source_group("Source Files" FILES ${SOURCE_FILES})
 
 set(ALL_FILES
-    ${no_group_source_files}
     ${HEADER_FILES}
     ${SOURCE_FILES}
 )
@@ -178,7 +176,7 @@ set(ALL_FILES
 ################################################################################
 # Target
 ################################################################################
-add_library(${PROJECT_NAME} SHARED ${ALL_FILES})
+add_library(${PROJECT_NAME} STATIC ${ALL_FILES})
 
 use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
 set(ROOT_NAMESPACE OpenGL)
@@ -271,12 +269,12 @@ if(MSVC)
     )
 endif()
 
-add_custom_command(
-    TARGET OpenGL POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-    "${PROJECT_SOURCE_DIR}\\bin\\${CMAKE_VS_PLATFORM_NAME}\\$<CONFIG>\\OpenGL.dll"
-    "${PROJECT_SOURCE_DIR}\\out\\$<CONFIG>\\${CMAKE_VS_PLATFORM_NAME}\\out\\Testing\\"
-)
+#add_custom_command(
+#    TARGET OpenGL POST_BUILD
+#    COMMAND ${CMAKE_COMMAND} -E copy
+#    "${PROJECT_SOURCE_DIR}\\bin\\${CMAKE_VS_PLATFORM_NAME}\\$<CONFIG>\\OpenGL.dll"
+#    "${PROJECT_SOURCE_DIR}\\out\\$<CONFIG>\\${CMAKE_VS_PLATFORM_NAME}\\out\\Testing\\"
+#)
 
 ################################################################################
 # Dependencies

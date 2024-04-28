@@ -6,7 +6,7 @@
 
 #include "enum_utils.h"
 #include "NumTypes.h"
-#include <core.h>
+
 
 namespace stdu {
     bool matches(std::string::const_iterator iter, std::string::const_iterator end, const char* matchExpr);
@@ -60,32 +60,32 @@ namespace stdu {
             (TEXT_COLOR,       "<p style=\"color:rgba({}, {}, {}, {})\">")
             (HIGHLIGHT_COLOR,  "<p style=\"background-color:rgba({}, {}, {}, {})\">"), "\\")
 
-        OPENGL_API static uint sizeof_style(style s);
-        OPENGL_API static bool is_switch(style s);
-        OPENGL_API static bool is_state(style s, bool state);
-        OPENGL_API static style set_state(style s, bool state);
+        static uint sizeof_style(style s);
+        static bool is_switch(style s);
+        static bool is_state(style s, bool state);
+        static style set_state(style s, bool state);
 
-        OPENGL_API static rich_string parse_markdown(const std::string& markdown);
-        OPENGL_API static rich_string parse_html(const std::string& html);
+        static rich_string parse_markdown(const std::string& markdown);
+        static rich_string parse_html(const std::string& html);
 
         std::string& raw_string() { return rawString; }
         [[nodiscard]] const std::string& raw_string() const { return rawString; }
 
         void append(const char c) { rawString += c; }
         template <class It> void append(It begin, It end) { rawString += std::string_view { begin, end }; }
-        OPENGL_API void add_tag(style s, std::initializer_list<uchar> data, int off = 0);
-        OPENGL_API void add_tag(style s, bool state, int off = 0);
+        void add_tag(style s, std::initializer_list<uchar> data, int off = 0);
+        void add_tag(style s, bool state, int off = 0);
 
-        [[nodiscard]] OPENGL_API uint lines() const;
+        [[nodiscard]] uint lines() const;
 
-        [[nodiscard]] OPENGL_API std::string debug_rawstr() const;
+        [[nodiscard]] std::string debug_rawstr() const;
 
         struct const_iter;
         struct rich_char;
         struct style_state;
         
-        [[nodiscard]] OPENGL_API const_iter begin() const;
-        [[nodiscard]] OPENGL_API const_iter end() const;
+        [[nodiscard]] const_iter begin() const;
+        [[nodiscard]] const_iter end() const;
     };
 
     enum class code_lang {
@@ -129,7 +129,7 @@ namespace stdu {
         uchar font = 0;
         short fontSizeP64 = 0; // big endian, aka 0x12'34 and not 0x34'12
 
-        OPENGL_API void add_state(style s, const uchar* data);
+        void add_state(style s, const uchar* data);
     };
 
     struct rich_string::rich_char {
@@ -144,8 +144,8 @@ namespace stdu {
         uint styleOffset = 0;
 
         bool operator==(const const_iter& other) const { return iter == other.iter; }
-        OPENGL_API rich_char operator*() const;
-        OPENGL_API const_iter& operator++();
+        rich_char operator*() const;
+        const_iter& operator++();
     };
     
     STDU_IMPL_ENUM_OPERATORS(rich_string::style);

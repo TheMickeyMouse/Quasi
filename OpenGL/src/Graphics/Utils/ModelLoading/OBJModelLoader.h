@@ -4,7 +4,7 @@
 
 #include "MTLMaterialLoader.h"
 #include "OBJModel.h"
-#include <core.h>
+
 #include "Vector.h"
 
 namespace Graphics {
@@ -63,24 +63,24 @@ namespace Graphics {
     public:
         OBJModelLoader() = default;
 
-        OPENGL_API void LoadFile(const std::string& filepath);
-        OPENGL_API void Load(std::string_view string);
-        OPENGL_API void LoadMaterialFile(std::string_view filepath);
-        OPENGL_API void LoadMaterial(std::string_view string);
+        void LoadFile(const std::string& filepath);
+        void Load(std::string_view string);
+        void LoadMaterialFile(std::string_view filepath);
+        void LoadMaterial(std::string_view string);
 
-        OPENGL_API void ParseProperty(std::string_view line);
-        OPENGL_API void ParseProperties(std::string_view string);
+        void ParseProperty(std::string_view line);
+        void ParseProperties(std::string_view string);
         static OBJProperty CreateProperty(OBJPropertyType type, std::string_view data);
 
-        OPENGL_API void CreateModel();
-        OPENGL_API void CreateObject(std::span<const OBJProperty> objprop);
-        OPENGL_API void ResolveObjectIndices(OBJObject& obj);
+        void CreateModel();
+        void CreateObject(std::span<const OBJProperty> objprop);
+        void ResolveObjectIndices(OBJObject& obj);
 
         OBJModel& GetModel() { return model; }
         [[nodiscard]] const OBJModel& GetModel() const { return model; }
 
-        OPENGL_API OBJModel&& RetrieveModel();
+        OBJModel&& RetrieveModel();
 
-        [[nodiscard]] OPENGL_API std::string DebugStr() const;
+        [[nodiscard]] std::string DebugStr() const;
     };
 }

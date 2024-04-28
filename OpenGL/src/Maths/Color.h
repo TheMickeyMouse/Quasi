@@ -1,7 +1,7 @@
 #pragma once
 #include <span>
 #include "Vector.h"
-#include "core.h"
+
 
 namespace Maths {
     struct color3;
@@ -58,61 +58,61 @@ namespace Maths {
         NODISC const Color& color() const { return *(const Color*)this; }
         Color& color() { return *(Color*)this; }
     public:
-        OPENGL_API scalar* begin() { return (scalar*)this; }
-        OPENGL_API scalar* end()   { return begin() + dimension; }
-        NODISC OPENGL_API const scalar* begin()  const { return (const scalar*)this; }
-        NODISC OPENGL_API const scalar* cbegin() const { return (const scalar*)this; }
-        NODISC OPENGL_API const scalar* end()    const { return begin() + dimension; }
-        NODISC OPENGL_API const scalar* cend()   const { return cbegin() + dimension; }
+        scalar* begin() { return (scalar*)this; }
+        scalar* end()   { return begin() + dimension; }
+        NODISC const scalar* begin()  const { return (const scalar*)this; }
+        NODISC const scalar* cbegin() const { return (const scalar*)this; }
+        NODISC const scalar* end()    const { return begin() + dimension; }
+        NODISC const scalar* cend()   const { return cbegin() + dimension; }
 
         NODISC scalar alpha(scalar def = CHANNEL_MAX_VALUE) const;
 
-        OPENGL_API static Color from_hex(std::string_view hex);
-        NODISC OPENGL_API std::string hexcode() const;
+        static Color from_hex(std::string_view hex);
+        NODISC std::string hexcode() const;
 
-        NODISC OPENGL_API bool eq(const Color& other) const;
-        NODISC OPENGL_API bool loose_eq(const Color& other) const;
-        NODISC OPENGL_API bool neq(const Color& other) const;
-        NODISC OPENGL_API bool operator==(const color_base& other) const;
+        NODISC bool eq(const Color& other) const;
+        NODISC bool loose_eq(const Color& other) const;
+        NODISC bool neq(const Color& other) const;
+        NODISC bool operator==(const color_base& other) const;
 
-        NODISC OPENGL_API Color neg() const;
-        NODISC OPENGL_API Color lerp(const Color& other, float t) const;
-        NODISC OPENGL_API Color mul(const Color& other) const;
-        NODISC OPENGL_API Color screen(const Color& other) const;
-        NODISC OPENGL_API Color overlay(const Color& other) const;
-        NODISC OPENGL_API without_alpha_t mul_alpha() const;
+        NODISC Color neg() const;
+        NODISC Color lerp(const Color& other, float t) const;
+        NODISC Color mul(const Color& other) const;
+        NODISC Color screen(const Color& other) const;
+        NODISC Color overlay(const Color& other) const;
+        NODISC without_alpha_t mul_alpha() const;
 
-        NODISC OPENGL_API float luminance() const;
+        NODISC float luminance() const;
 
-        NODISC OPENGL_API bvec3 as_rgb()   const;
-        NODISC OPENGL_API bvec4 as_rgba()  const;
-        NODISC OPENGL_API fvec3 as_rgbf()  const;
-        NODISC OPENGL_API fvec4 as_rgbaf() const;
-        NODISC OPENGL_API fvec3 as_hsl()   const;
-        NODISC OPENGL_API fvec4 as_hsla()  const;
-        OPENGL_API static Color from_hsl(float hue, float saturation = 1, float lightness = 1) requires (!traits_has_alpha); /* hue: [0-360], sat: [0-1], L: [0-1] */
-        OPENGL_API static Color from_hsl(float hue, float saturation = 1, float lightness = 1, float alpha = 1) requires traits_has_alpha; /* hue: [0-360], sat: [0-1], L: [0-1] */
-        OPENGL_API static Color from_hsl(const fvec3& hsl) requires (!traits_has_alpha); /* hue: [0-360], sat: [0-1], L: [0-1] */
-        OPENGL_API static Color from_hsl(const fvec4& hsla) requires traits_has_alpha; /* hue: [0-360], sat: [0-1], L: [0-1] */
-        NODISC OPENGL_API fvec3 as_hsv()  const;
-        NODISC OPENGL_API fvec4 as_hsva() const;
-        OPENGL_API static Color from_hsv(float hue, float saturation = 1, float value = 1) requires (!traits_has_alpha); /* hue: [0-360], sat: [0-1], val: [0-1] */
-        OPENGL_API static Color from_hsv(float hue, float saturation = 1, float value = 1, float alpha = 1) requires traits_has_alpha; /* hue: [0-360], sat: [0-1], val: [0-1] */
-        OPENGL_API static Color from_hsv(const fvec3& hsv) requires (!traits_has_alpha); /* hue: [0-360], sat: [0-1], val: [0-1] */
-        OPENGL_API static Color from_hsv(const fvec4& hsva) requires traits_has_alpha; /* hue: [0-360], sat: [0-1], val: [0-1] */
+        NODISC bvec3 as_rgb()   const;
+        NODISC bvec4 as_rgba()  const;
+        NODISC fvec3 as_rgbf()  const;
+        NODISC fvec4 as_rgbaf() const;
+        NODISC fvec3 as_hsl()   const;
+        NODISC fvec4 as_hsla()  const;
+        static Color from_hsl(float hue, float saturation = 1, float lightness = 1) requires (!traits_has_alpha); /* hue: [0-360], sat: [0-1], L: [0-1] */
+        static Color from_hsl(float hue, float saturation = 1, float lightness = 1, float alpha = 1) requires traits_has_alpha; /* hue: [0-360], sat: [0-1], L: [0-1] */
+        static Color from_hsl(const fvec3& hsl) requires (!traits_has_alpha); /* hue: [0-360], sat: [0-1], L: [0-1] */
+        static Color from_hsl(const fvec4& hsla) requires traits_has_alpha; /* hue: [0-360], sat: [0-1], L: [0-1] */
+        NODISC fvec3 as_hsv()  const;
+        NODISC fvec4 as_hsva() const;
+        static Color from_hsv(float hue, float saturation = 1, float value = 1) requires (!traits_has_alpha); /* hue: [0-360], sat: [0-1], val: [0-1] */
+        static Color from_hsv(float hue, float saturation = 1, float value = 1, float alpha = 1) requires traits_has_alpha; /* hue: [0-360], sat: [0-1], val: [0-1] */
+        static Color from_hsv(const fvec3& hsv) requires (!traits_has_alpha); /* hue: [0-360], sat: [0-1], val: [0-1] */
+        static Color from_hsv(const fvec4& hsva) requires traits_has_alpha; /* hue: [0-360], sat: [0-1], val: [0-1] */
 
-        NODISC OPENGL_API without_alpha_t rgb() const;
-        NODISC OPENGL_API with_alpha_t with_alpha(scalar alpha = CHANNEL_MAX_VALUE) const;
-        NODISC OPENGL_API with_alpha_t rgb1() const;
+        NODISC without_alpha_t rgb() const;
+        NODISC with_alpha_t with_alpha(scalar alpha = CHANNEL_MAX_VALUE) const;
+        NODISC with_alpha_t rgb1() const;
 
-        NODISC OPENGL_API operator without_alpha_t() const requires traits_has_alpha;
-        NODISC OPENGL_API operator with_alpha_t() const requires (!traits_has_alpha);
-        NODISC OPENGL_API operator alternate_data_form() const;
+        NODISC operator without_alpha_t() const requires traits_has_alpha;
+        NODISC operator with_alpha_t() const requires (!traits_has_alpha);
+        NODISC operator alternate_data_form() const;
 
-        OPENGL_API static Color random(random_gen& rg, float sat, float val);
+        static Color random(random_gen& rg, float sat, float val);
 
 #pragma region Color Constants
-        OPENGL_API static Color color_id(int id);
+        static Color color_id(int id);
 
         static Color BLACK()      { return from_hex("000000"); } /* solid black: rgb(000, 000, 000) or #000000 */
         static Color DARK_GRAY()  { return from_hex("404040"); } /*   25% white: rgb(064, 064, 064) or #404040 */
@@ -219,8 +219,8 @@ namespace Maths {
     };
 
     namespace color_utils {
-        template <class T> OPENGL_API T convert_type(auto channel);
-        template <class T> OPENGL_API T channel_from_hexcode(char D0, char D1);
+        template <class T> T convert_type(auto channel);
+        template <class T> T channel_from_hexcode(char D0, char D1);
 
         template <class T, class U> T make_color(U r, U g, U b, U a) {
             using S = typename color_traits<T>::scalar;

@@ -1,21 +1,21 @@
 #pragma once
-#include <core.h>
+
 #include "Logger.h"
 
 namespace Graphics {
     // a very thin wrapper for an extern variable
     // (couldnt get them to work so here's an alternative)
     struct GLLoggerContainer {
-        OPENGL_API static Debug::Logger logger;
+        static Debug::Logger logger;
     };
 
-    OPENGL_API Debug::Logger& GLLogger();
+    Debug::Logger& GLLogger();
 
-    OPENGL_API void InitGLLog();
+    void InitGLLog();
 
-    OPENGL_API void GLInfo(const char* msg, const Debug::SourceLoc& loc = Debug::SourceLoc::current());
-    OPENGL_API void GLWarn(const char* msg, const Debug::SourceLoc& loc = Debug::SourceLoc::current());
-    OPENGL_API void GLError(const char* msg, const Debug::SourceLoc& loc = Debug::SourceLoc::current());
+    void GLInfo(const char* msg, const Debug::SourceLoc& loc = Debug::SourceLoc::current());
+    void GLWarn(const char* msg, const Debug::SourceLoc& loc = Debug::SourceLoc::current());
+    void GLError(const char* msg, const Debug::SourceLoc& loc = Debug::SourceLoc::current());
 
     // taken from https://www.khronos.org/opengl/wiki/OpenGL_Error#Catching_errors_(the_hard_way)
     enum class GLErrorCode {
@@ -54,10 +54,10 @@ namespace Graphics {
         (TABLE_TOO_LARGE,               "GL_TABLE_TO_LARGE"),
         "GL_UNDEFINED_ERROR")
 
-    OPENGL_API GLErrorCode GLGetErr();
-    OPENGL_API void GLClearErr();
-    OPENGL_API void GLReport(const Debug::SourceLoc& loc = Debug::SourceLoc::current());
-    OPENGL_API void GLReportFn(std::string_view signature, const Debug::SourceLoc& loc = Debug::SourceLoc::current());
+    GLErrorCode GLGetErr();
+    void GLClearErr();
+    void GLReport(const Debug::SourceLoc& loc = Debug::SourceLoc::current());
+    void GLReportFn(std::string_view signature, const Debug::SourceLoc& loc = Debug::SourceLoc::current());
 
     template <class F> auto GLCall(F&& f, std::string_view fsig, const Debug::SourceLoc& loc = Debug::SourceLoc::current()) -> decltype(f()) {
         GLClearErr();

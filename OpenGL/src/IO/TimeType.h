@@ -1,6 +1,6 @@
 #pragma once
 #include "NumTypes.h"
-#include <core.h>
+
 
 namespace IO {
     class TimeType;
@@ -13,9 +13,9 @@ namespace IO {
 
         explicit TimeType() = default;
 
-        OPENGL_API void Update();
-        OPENGL_API void SetTime(double time);
-        [[nodiscard]] OPENGL_API double Framerate() const;
+        void Update();
+        void SetTime(double time);
+        [[nodiscard]] double Framerate() const;
 
         [[nodiscard]] float DeltaTimef() const { return (float)deltaTime; }
         [[nodiscard]] float Frameratef() const { return (float)Framerate(); }

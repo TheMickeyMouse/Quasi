@@ -7,14 +7,14 @@
 #include <array>
 
 #include "ConsoleColor.h"
-#include <core.h>
+
 #include "stdu/macros.h"
 #include "stdu/ref.h"
 #include "stdu/types.h"
 #include <cassert>
 
 namespace Debug {
-    OPENGL_API void DebugBreak();
+    void DebugBreak();
 
     enum class Severity {
         OFF,
@@ -77,7 +77,7 @@ namespace Debug {
         bool alwaysFlush : 1 = false;
         int lPad = 50;
 
-        OPENGL_API static Logger InternalLog;
+        static Logger InternalLog;
     public:
 #ifdef NDEBUG
         static constexpr bool DEBUG = false;
@@ -98,18 +98,18 @@ namespace Debug {
         void SetAlwaysFlush(const bool flag) { alwaysFlush = flag; }
         void SetLocPad(const int pad) { lPad = pad; }
 
-        OPENGL_API static DateTime Now();
+        static DateTime Now();
 
-        OPENGL_API std::string FmtLog(const LogEntry& log);
-        [[nodiscard]] OPENGL_API std::string_view FmtFile(std::string_view fullname) const;
-        [[nodiscard]] OPENGL_API std::string FmtSourceLoc(const SourceLoc& loc) const;
-        OPENGL_API void LogNoOut  (Severity sv, const std::string& s, const SourceLoc& loc = SourceLoc::current());
-        OPENGL_API void ConsoleLog(Severity sv, const std::string& s, const SourceLoc& loc = SourceLoc::current());
-        OPENGL_API void Log       (Severity sv, const std::string& s, const SourceLoc& loc = SourceLoc::current());
+        std::string FmtLog(const LogEntry& log);
+        [[nodiscard]] std::string_view FmtFile(std::string_view fullname) const;
+        [[nodiscard]] std::string FmtSourceLoc(const SourceLoc& loc) const;
+        void LogNoOut  (Severity sv, const std::string& s, const SourceLoc& loc = SourceLoc::current());
+        void ConsoleLog(Severity sv, const std::string& s, const SourceLoc& loc = SourceLoc::current());
+        void Log       (Severity sv, const std::string& s, const SourceLoc& loc = SourceLoc::current());
 
-        OPENGL_API void Assert(bool assert, const std::string& msg, const SourceLoc& loc = SourceLoc::current());
+        void Assert(bool assert, const std::string& msg, const SourceLoc& loc = SourceLoc::current());
 
-        OPENGL_API void Write(std::ostream& out, Severity filter = Severity::SEVERITY_NUM);
+        void Write(std::ostream& out, Severity filter = Severity::SEVERITY_NUM);
 
         template <class ...Ts> void LogFmt(Severity s, FmtStr<Ts...> fmt, Ts&&... args) {
             this->Log(s, std::format(fmt.fmt, std::forward<Ts>(args)...), fmt.loc);
@@ -142,9 +142,9 @@ namespace Debug {
         template <class ...Ts> void Error   (FmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::ERROR,    fmt, std::forward<Ts>(args)...); }
         template <class ...Ts> void Critical(FmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::CRITICAL, fmt, std::forward<Ts>(args)...); }
 
-        OPENGL_API void Flush();
+        void Flush();
 
-        OPENGL_API static Logger& GetInternalLog();
+        static Logger& GetInternalLog();
     };
 
     inline void SetFilter(Severity s) { Logger::GetInternalLog().SetFilter(s); }
@@ -183,7 +183,7 @@ namespace Debug {
     template <class ...Ts> void Error   (FmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Error   (fmt, std::forward<Ts>(args)...); }
     template <class ...Ts> void Critical(FmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Critical(fmt, std::forward<Ts>(args)...); }
 
-    OPENGL_API void Flush();
+    void Flush();
 }
 
 template <>

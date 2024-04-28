@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GLObject.h"
-#include <core.h>
+
 
 namespace Graphics {
     class RenderBuffer;
@@ -30,10 +30,10 @@ namespace Graphics {
     };
 
     struct FrameBufferHandler : GLObjectHandler<FrameBufferHandler> {
-        [[nodiscard]] OPENGL_API glID Create() const;
-        OPENGL_API void Destroy(glID id) const;
-        OPENGL_API void Bind(glID id) const;
-        OPENGL_API void Unbind() const;
+        [[nodiscard]] glID Create() const;
+        void Destroy(glID id) const;
+        void Bind(glID id) const;
+        void Unbind() const;
     };
 
     class FrameBuffer : public GLObject<FrameBufferHandler> {
@@ -41,9 +41,9 @@ namespace Graphics {
         FrameBuffer() = default;
         FrameBuffer(stdu::empty) : GLObject({}) {}
 
-        OPENGL_API void Attach(const Texture& tex, AttachmentType type = AttachmentType::COLOR_0) const;
-        OPENGL_API void Attach(const RenderBuffer& rbo, AttachmentType type) const;
-        OPENGL_API void Complete() const;
+        void Attach(const Texture& tex, AttachmentType type = AttachmentType::COLOR_0) const;
+        void Attach(const RenderBuffer& rbo, AttachmentType type) const;
+        void Complete() const;
 
         friend class GraphicsDevice;
     };

@@ -1034,7 +1034,7 @@ extern "C" {
 /*! @} */
 
 #define GLFW_NO_API                          0
-#define GLFW_OPENGL_API             0x00030001
+#define GLFW_            0x00030001
 #define GLFW_OPENGL_ES_API          0x00030002
 
 #define GLFW_NO_ROBUSTNESS                   0

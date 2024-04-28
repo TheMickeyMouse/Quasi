@@ -5,7 +5,7 @@
 #include "NumTypes.h"
 #include "stdu/enum_utils.h"
 #include "stdu/ref.h"
-#include <core.h>
+
 
 struct GLFWwindow;
 
@@ -97,16 +97,16 @@ namespace IO {
     class IO;
 
     struct KeyboardType {
-        OPENGL_API explicit KeyboardType(IO& io);
+        explicit KeyboardType(IO& io);
         explicit KeyboardType(std::nullptr_t) {}
 
-        OPENGL_API static bool IsValidKey(Key key);
+        static bool IsValidKey(Key key);
         // ordering: alphabet chars -> nums -> punc -> keypad -> func -> util -> other
         // i want this to be constexpr but whatev
-        OPENGL_API static KeyIndex ToKeyIndex(Key key);
-        OPENGL_API static Key FromKeyIndex(KeyIndex ki);
-        OPENGL_API static Key FromModBits(ModifierKey mod);
-        OPENGL_API static KeyIndex IndexFromModBits(ModifierKey mod);
+        static KeyIndex ToKeyIndex(Key key);
+        static Key FromKeyIndex(KeyIndex ki);
+        static Key FromModBits(ModifierKey mod);
+        static KeyIndex IndexFromModBits(ModifierKey mod);
 
         static constexpr KeyIndex MAX_KEY_INDEX = 119; // ToKeyIndex(Key::NON_US_2); // should be 119
         static constexpr KeyIndex KEY_COUNT = MAX_KEY_INDEX + 1; // MAX_KEY_INDEX + 1; // should be 120
@@ -114,12 +114,12 @@ namespace IO {
 
         void Update();
 
-        [[nodiscard]] OPENGL_API bool KeyPressed(Key key) const;
-        [[nodiscard]] OPENGL_API bool KeyOnPress(Key key) const;
-        [[nodiscard]] OPENGL_API bool KeyOnRelease(Key key) const;
-        [[nodiscard]] OPENGL_API bool AnyPressed() const;
-        [[nodiscard]] OPENGL_API bool NonePressed() const;
-        [[nodiscard]] OPENGL_API std::vector<Key> KeysPressed() const;
+        [[nodiscard]] bool KeyPressed(Key key) const;
+        [[nodiscard]] bool KeyOnPress(Key key) const;
+        [[nodiscard]] bool KeyOnRelease(Key key) const;
+        [[nodiscard]] bool AnyPressed() const;
+        [[nodiscard]] bool NonePressed() const;
+        [[nodiscard]] std::vector<Key> KeysPressed() const;
 
         static const char* KeyToStr(Key key);
 
@@ -130,17 +130,17 @@ namespace IO {
         Keyset prevKeySet = {};
         std::queue<KeyIndex> queuedKeys = {};
 
-        OPENGL_API GLFWwindow* inputWindow();
-        [[nodiscard]] OPENGL_API const GLFWwindow* inputWindow() const;
+        GLFWwindow* inputWindow();
+        [[nodiscard]] const GLFWwindow* inputWindow() const;
 
         [[nodiscard]] bool getCurrKeyStatus(KeyIndex i) const { return getKeyStatusOf(currKeySet, i); }
         [[nodiscard]] bool getPrevKeyStatus(KeyIndex i) const { return getKeyStatusOf(prevKeySet, i); }
         [[nodiscard]] bool getCurrKeyStatus(Key k) const { return getKeyStatusOf(currKeySet, ToKeyIndex(k)); }
         [[nodiscard]] bool getPrevKeyStatus(Key k) const { return getKeyStatusOf(prevKeySet, ToKeyIndex(k)); }
 
-        OPENGL_API static bool getKeyStatusOf(const Keyset& ks, KeyIndex ki);
-        OPENGL_API static void setKeyStatusOf(Keyset& ks, KeyIndex ki, bool val);
+        static bool getKeyStatusOf(const Keyset& ks, KeyIndex ki);
+        static void setKeyStatusOf(Keyset& ks, KeyIndex ki, bool val);
 
-        OPENGL_API void OnGlfwKeyCallback(GLFWwindow* window, int key, int positionCode, int action, int modifierBits);
+        void OnGlfwKeyCallback(GLFWwindow* window, int key, int positionCode, int action, int modifierBits);
     };
 }

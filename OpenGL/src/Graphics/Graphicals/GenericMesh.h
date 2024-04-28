@@ -1,7 +1,7 @@
 #pragma once
 #include "NumTypes.h"
 #include <utility>
-#include <core.h>
+
 #include <span>
 
 namespace Graphics {
@@ -13,12 +13,12 @@ namespace Graphics {
 		Mesh<singlebyte>* ptr; // using the fact that mesh<T> is always 104 bytes
 	public:
 		GenericMesh(void* m) : ptr((Mesh<singlebyte>*)m) {}
-		OPENGL_API ~GenericMesh();
+		~GenericMesh();
 
 		GenericMesh(const GenericMesh&) = delete;
 		GenericMesh& operator=(const GenericMesh&) = delete;
 
-		OPENGL_API static void Transfer(GenericMesh& dest, GenericMesh&& from);
+		static void Transfer(GenericMesh& dest, GenericMesh&& from);
 		GenericMesh(GenericMesh&& mesh) noexcept { Transfer(*this, std::move(mesh)); }
 		GenericMesh& operator=(GenericMesh&& mesh) noexcept { Transfer(*this, std::move(mesh)); return *this; }
 
@@ -34,16 +34,16 @@ namespace Graphics {
 			return *reinterpret_cast<const Mesh<T>*>(ptr);
 		}
 
-		OPENGL_API void Set(void* mesh);
+		void Set(void* mesh);
 		template <class T> void Set(Mesh<T>* mesh) {
 			Set((void*)mesh);
 		}
 
-		OPENGL_API uint& deviceIndex();
-		[[nodiscard]] OPENGL_API uint deviceIndex() const;
+		uint& deviceIndex();
+		[[nodiscard]] uint deviceIndex() const;
 
-		[[nodiscard]] OPENGL_API usize vSizeBytes() const;
-		[[nodiscard]] OPENGL_API std::span<const byte> vDataBytes() const;
-		[[nodiscard]] OPENGL_API usize iSize() const;
+		[[nodiscard]] usize vSizeBytes() const;
+		[[nodiscard]] std::span<const byte> vDataBytes() const;
+		[[nodiscard]] usize iSize() const;
 	};
 }

@@ -195,7 +195,7 @@ namespace Graphics {
 
 #define DEFINE_UNIF_FN(IN, GL, ...) \
     template <>\
-    OPENGL_API void Shader::SetUniformAtLoc<ShaderUniformType::UNIF_##IN>(int uniformLoc, ShaderUniformArgOf<ShaderUniformType::UNIF_##IN> val) { \
+    void Shader::SetUniformAtLoc<ShaderUniformType::UNIF_##IN>(int uniformLoc, ShaderUniformArgOf<ShaderUniformType::UNIF_##IN> val) { \
         GL_CALL(glUniform##GL(uniformLoc, __VA_ARGS__)); \
     }
 

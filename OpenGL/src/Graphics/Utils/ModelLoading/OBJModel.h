@@ -31,9 +31,9 @@ namespace Graphics {
         std::vector<OBJObject> objects;
         std::vector<MTLMaterial> materials;
 
-        OPENGL_API void BindMeshes(RenderObject<OBJVertex>& scene);
-        OPENGL_API void AddMeshes(RenderObject<OBJVertex>& scene);
+        void BindMeshes(RenderObject<OBJVertex>& scene);
+        void AddMeshes(RenderObject<OBJVertex>& scene);
 
-        OPENGL_API std::vector<Mesh<OBJVertex>> RetrieveMeshes();
+        std::vector<Mesh<OBJVertex>> RetrieveMeshes();
     };
 }

@@ -34,13 +34,13 @@ namespace Graphics {
 
         TextAlign(const Maths::rect2f& rect) : rect(rect) {}
 
-        OPENGL_API TextAlign& Move(Maths::fvec2 offset);
+        TextAlign& Move(Maths::fvec2 offset);
 
-        OPENGL_API TextAlign& SpaceOut(float line = 1, PointPer64 letter = 0_p64);
-        OPENGL_API TextAlign& Align(std::initializer_list<AlignOptions> options);
-        OPENGL_API TextAlign& Align(std::initializer_list<AlignOptI> options);
-        OPENGL_API TextAlign& Align(uchar alignX, uchar alignY, uchar wrapping, bool cropX, bool cropY);
-        OPENGL_API TextAlign& ResetAlign();
+        TextAlign& SpaceOut(float line = 1, PointPer64 letter = 0_p64);
+        TextAlign& Align(std::initializer_list<AlignOptions> options);
+        TextAlign& Align(std::initializer_list<AlignOptI> options);
+        TextAlign& Align(uchar alignX, uchar alignY, uchar wrapping, bool cropX, bool cropY);
+        TextAlign& ResetAlign();
 
         [[nodiscard]] bool IsAlignCenter()       const { return !(alignOptions & ALIGN_JUSTIFY); }
         [[nodiscard]] bool IsAlignLeft()         const { return  (alignOptions & ALIGN_LEFT) && !(alignOptions & ALIGN_RIGHT); }
@@ -55,9 +55,9 @@ namespace Graphics {
         [[nodiscard]] bool IsCropX()             const { return   alignOptions & CROP_X; }
         [[nodiscard]] bool IsCropY()             const { return   alignOptions & CROP_Y; }
         
-        [[nodiscard]] OPENGL_API float GetXOff(float width) const;
-        [[nodiscard]] OPENGL_API float GetYOff(float height) const;
+        [[nodiscard]] float GetXOff(float width) const;
+        [[nodiscard]] float GetYOff(float height) const;
 
-        [[nodiscard]] OPENGL_API float GetAdvance(const Glyph& glyph, float scaleRatio) const;
+        [[nodiscard]] float GetAdvance(const Glyph& glyph, float scaleRatio) const;
     };
 }

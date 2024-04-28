@@ -2,7 +2,7 @@
 #include <vector>
 
 #include "GLTypeID.h"
-#include <core.h>
+
 
 #include "NumTypes.h"
 #include "Vector.h"
@@ -50,11 +50,11 @@ namespace Graphics {
         uint stride = 0;
     public:
         VertexBufferLayout() = default;
-        OPENGL_API VertexBufferLayout(std::initializer_list<VertexBufferComponent> comps);
+        VertexBufferLayout(std::initializer_list<VertexBufferComponent> comps);
 
         template <class T> void Push(uint count, bool normalized = false, bool integral = false);
-        OPENGL_API void Push(VertexBufferComponent comp);
-        OPENGL_API void PushLayout(const VertexBufferLayout& layout);
+        void Push(VertexBufferComponent comp);
+        void PushLayout(const VertexBufferLayout& layout);
 
 #define VBE VertexBufferComponent::
         

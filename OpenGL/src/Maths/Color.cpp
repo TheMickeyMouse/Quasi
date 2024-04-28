@@ -11,16 +11,16 @@ namespace Maths {
             else if constexpr (std::is_same_v<decltype(channel), float> && std::is_same_v<T, byte>) return (byte)(channel * 255.0f);
             else return nullptr;
         }
-        template OPENGL_API byte  convert_type<byte,  byte>(byte);
-        template OPENGL_API byte  convert_type<byte,  float>(float);
-        template OPENGL_API float convert_type<float, byte>(byte);
-        template OPENGL_API float convert_type<float, float>(float);
+        template byte  convert_type<byte,  byte>(byte);
+        template byte  convert_type<byte,  float>(float);
+        template float convert_type<float, byte>(byte);
+        template float convert_type<float, float>(float);
 
         template <class T> T channel_from_hexcode(char D0, char D1) {
             return convert_type<T>((byte)((D0 - (D0 < ':' ? '0' : 'W')) << 4 | (D1 - (D1 < ':' ? '0' : 'W'))));
         }
-        template OPENGL_API byte  channel_from_hexcode<byte> (char, char);
-        template OPENGL_API float channel_from_hexcode<float>(char, char);
+        template byte  channel_from_hexcode<byte> (char, char);
+        template float channel_from_hexcode<float>(char, char);
 
         fvec3 rgb2hsl(float r, float g, float b) {
             // https://stackoverflow.com/a/9493060

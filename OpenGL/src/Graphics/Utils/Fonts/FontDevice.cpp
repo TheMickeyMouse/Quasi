@@ -6,7 +6,7 @@
 #include FT_FREETYPE_H
 
 namespace Graphics {
-    OPENGL_API FontDevice* FontDevice::Instance = nullptr;
+    FontDevice* FontDevice::Instance = nullptr;
 
     FontDevice::FontDevice() {
         if (Instance) return;

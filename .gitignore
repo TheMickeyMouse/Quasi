@@ -1,4 +1,5 @@
 ﻿bin/
+OpenGL/src/Game/
 OpenGL/src/vendor/include/
 OpenGL/src/vendor/imgui/misc
 OpenGL/src/vendor/imgui/examples

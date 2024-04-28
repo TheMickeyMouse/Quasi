@@ -2,14 +2,14 @@
 #include <algorithm>
 
 #include "NumTypes.h"
-#include <core.h>
+
 
 struct FT_LibraryRec_;
 
 namespace Graphics {
     class Font;
 
-    class OPENGL_API FontDevice {
+    class FontDevice {
         FT_LibraryRec_* libHandle = nullptr;
         uint dpi = 96; // default value
     public:

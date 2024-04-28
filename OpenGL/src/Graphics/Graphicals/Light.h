@@ -49,8 +49,8 @@ namespace Graphics {
         static STDU_ENUM_TOSTR(LightType, ToStr, (SUNLIGHT, "Sun")(POINTLIGHT, "Point")(FLASHLIGHT, "Spot"), "null")
         static STDU_ENUM_TOSTR(LightType, Nameof, (SUNLIGHT, "SunLight")(POINTLIGHT, "PointLight")(FLASHLIGHT, "FlashLight"), "")
 
-        template <LightCaster L> OPENGL_API stdu::ref<L> AsUnchecked();
-        template <LightCaster L> [[nodiscard]] OPENGL_API stdu::ref<const L> AsUnchecked() const;
+        template <LightCaster L> stdu::ref<L> AsUnchecked();
+        template <LightCaster L> [[nodiscard]] stdu::ref<const L> AsUnchecked() const;
 
         template <LightCaster L> stdu::ref<L> As() { return LightIndex<L> == type ? AsUnchecked<L>() : nullptr; }
         template <LightCaster L> stdu::ref<const L> As() const { return LightIndex<L> == type ? AsUnchecked<L>() : nullptr; }
@@ -58,18 +58,18 @@ namespace Graphics {
         template <LightCaster L> [[nodiscard]] bool Is() const { return type == LightIndex<L>; }
         [[nodiscard]] bool Is(const LightType t) const { return type == t; }
 
-        [[nodiscard]] OPENGL_API Maths::fvec3 Position() const;
-        [[nodiscard]] OPENGL_API Maths::fvec3 Direction() const;
+        [[nodiscard]] Maths::fvec3 Position() const;
+        [[nodiscard]] Maths::fvec3 Direction() const;
 
         template <LightCaster L> void Set(const L& l) { type = LightIndex<L>; *As<L>() = l; }
         template <LightCaster L> Light& operator=(const L& l) { this->Set(l); return *this; }
 
-        OPENGL_API void ImGuiEdit(const char* title);
+        void ImGuiEdit(const char* title);
         template <LightCaster L> void ImGuiEditLight() = delete;
-        OPENGL_API void CopyState() const;
+        void CopyState() const;
     };
 
-    template <> OPENGL_API void Light::ImGuiEditLight<SunLight>();
-    template <> OPENGL_API void Light::ImGuiEditLight<PointLight>();
-    template <> OPENGL_API void Light::ImGuiEditLight<FlashLight>();
+    template <> void Light::ImGuiEditLight<SunLight>();
+    template <> void Light::ImGuiEditLight<PointLight>();
+    template <> void Light::ImGuiEditLight<FlashLight>();
 }

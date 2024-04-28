@@ -1,6 +1,6 @@
 #pragma once
 #include "Collision2D.h"
-#include "core.h"
+
 #include "Shape2D.h"
 #include "Transform2D.h"
 #include "Vector.h"
@@ -31,11 +31,11 @@ namespace Physics2D {
         void AddVelocity(const Maths::fvec2& vel) { velocity += vel; }
         void Stop() { velocity = 0; }
 
-        [[nodiscard]] OPENGL_API Collision::Event CollidesWith(const Body& target) const;
-        [[nodiscard]] OPENGL_API Collision::Event CollidesWith(const Shape& target, const Transform& t) const;
-        [[nodiscard]] OPENGL_API Transform GetTransform() const;
+        [[nodiscard]] Collision::Event CollidesWith(const Body& target) const;
+        [[nodiscard]] Collision::Event CollidesWith(const Shape& target, const Transform& t) const;
+        [[nodiscard]] Transform GetTransform() const;
 
-        OPENGL_API void Update(float dt);
+        void Update(float dt);
 
         [[nodiscard]] const Shape& GetShape() const { return *shape; }
         template <class S> const S& ShapeAs() const { return *dynamic_cast<const S*>(&GetShape()); }

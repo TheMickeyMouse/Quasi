@@ -50,16 +50,16 @@ namespace Graphics {
         MTLMaterialLoader() = default;
 
         void LoadFile(const std::string& filename) { Load(stdu::readfile(filename)); }
-        OPENGL_API void Load(std::string_view string);
+        void Load(std::string_view string);
 
-        OPENGL_API void ParseProperty(std::string_view line);
-        OPENGL_API void ParseProperties(std::string_view string);
+        void ParseProperty(std::string_view line);
+        void ParseProperties(std::string_view string);
         static MTLProperty CreateProperty(MTLPropertyType type, std::string_view data);
 
-        OPENGL_API void CreateMaterial(std::span<const MTLProperty> matprop);
-        OPENGL_API void CreateMaterials();
+        void CreateMaterial(std::span<const MTLProperty> matprop);
+        void CreateMaterials();
 
-        [[nodiscard]] OPENGL_API std::string DebugStr() const;
+        [[nodiscard]] std::string DebugStr() const;
 
         friend class OBJModelLoader;
     };

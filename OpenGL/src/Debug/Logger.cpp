@@ -4,7 +4,7 @@
 #include "stdu/io.h"
 
 namespace Debug {
-    OPENGL_API Logger Logger::InternalLog = [] {
+    Logger Logger::InternalLog = [] {
         Logger log { std::cout };
         log.SetName("Internal");
 

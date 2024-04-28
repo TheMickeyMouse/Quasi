@@ -101,10 +101,10 @@ namespace Graphics {
 }
 
 namespace Graphics::Render {
-    OPENGL_API void Draw(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader);
-    OPENGL_API void Draw(const VertexArray& vertexArr, const DynamicIndexBuffer& indexBuff, const Shader& shader);
-    OPENGL_API void DrawInstanced(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader, int instances);
-    OPENGL_API void DrawInstanced(const VertexArray& vertexArr, const DynamicIndexBuffer& indexBuff, const Shader& shader, int instances);
+    void Draw(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader);
+    void Draw(const VertexArray& vertexArr, const DynamicIndexBuffer& indexBuff, const Shader& shader);
+    void DrawInstanced(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader, int instances);
+    void DrawInstanced(const VertexArray& vertexArr, const DynamicIndexBuffer& indexBuff, const Shader& shader, int instances);
     inline void Draw(const RenderData& dat, const Shader& s) {
         Draw(dat.VertArr(), dat.IndObj(), s);
     }
@@ -122,22 +122,22 @@ namespace Graphics::Render {
 #define GL_SWITCH(F, NAME, E) inline void F##NAME() { F(E); }
 
 #define GL_CLEAR_SWITCH(N, E) GL_SWITCH(Clear, N, BufferBit::E)
-    OPENGL_API void Clear(BufferBit bit = BufferBit::ALL);
+    void Clear(BufferBit bit = BufferBit::ALL);
     GL_CLEAR_SWITCH(ColorBit, COLOR)
     GL_CLEAR_SWITCH(DepthBit, DEPTH)
     GL_CLEAR_SWITCH(StencilBit, STENCIL)
 #undef GL_CLEAR_SWITCH
 
-    OPENGL_API void SetClearColor(const Maths::colorf& color);
-    OPENGL_API void SetRenderMode(RenderMode mode);
-    OPENGL_API void SetPointSize(float size);
+    void SetClearColor(const Maths::colorf& color);
+    void SetRenderMode(RenderMode mode);
+    void SetPointSize(float size);
     inline void SetRenderFill()   { SetRenderMode(RenderMode::FILL); }
     inline void SetRenderLines()  { SetRenderMode(RenderMode::LINES); }
     inline void SetRenderPoints() { SetRenderMode(RenderMode::POINTS); }
 
 #define GL_CAP_SWITCH(N, E) GL_SWITCH(Enable, N, Capability::E) GL_SWITCH(Disable, N, Capability::E)
-    OPENGL_API void Enable(Capability cap);
-    OPENGL_API void Disable(Capability cap);
+    void Enable(Capability cap);
+    void Disable(Capability cap);
     GL_CAP_SWITCH(Blend, BLEND)
     GL_CAP_SWITCH(Depth, DEPTH)
     GL_CAP_SWITCH(Stencil, STENCIL)
@@ -145,25 +145,25 @@ namespace Graphics::Render {
     GL_CAP_SWITCH(Multisample, MULTISAMPLE)
 #undef GL_CAP_SWITCH
 
-    OPENGL_API void UseDepthFunc(CmpOperation op);
+    void UseDepthFunc(CmpOperation op);
 
-    OPENGL_API void UseStencilTest(CmpOperation op, int ref, int mask = 0xFF);
-    OPENGL_API void UseStencilWriteMask(int mask);
+    void UseStencilTest(CmpOperation op, int ref, int mask = 0xFF);
+    void UseStencilWriteMask(int mask);
     inline void EnableStencilWrite()  { UseStencilWriteMask(0xFF); }
     inline void DisableStencilWrite() { UseStencilWriteMask(0x00); }
-    OPENGL_API void UseStencilWriteOp(StencilOperation stencilFail, StencilOperation depthFail, StencilOperation pass);
+    void UseStencilWriteOp(StencilOperation stencilFail, StencilOperation depthFail, StencilOperation pass);
 
-    OPENGL_API void UseAlphaFunc(CmpOperation op, float ref);
+    void UseAlphaFunc(CmpOperation op, float ref);
 
-    OPENGL_API void UseBlendConstColor(const Maths::colorf& ref);
-    OPENGL_API void UseBlendFunc(BlendFactor src, BlendFactor dest);
+    void UseBlendConstColor(const Maths::colorf& ref);
+    void UseBlendFunc(BlendFactor src, BlendFactor dest);
 
-    OPENGL_API void SetCullFace(FacingMode facing);
-    OPENGL_API void SetFrontFacing(OrientationMode orientation);
+    void SetCullFace(FacingMode facing);
+    void SetFrontFacing(OrientationMode orientation);
 
-    OPENGL_API void SetColorWrite(BufferMode mode);
+    void SetColorWrite(BufferMode mode);
 
-    OPENGL_API void SetViewport(const Maths::rect2i& viewport);
+    void SetViewport(const Maths::rect2i& viewport);
 #undef GL_SWITCH
 #pragma endregion
 }

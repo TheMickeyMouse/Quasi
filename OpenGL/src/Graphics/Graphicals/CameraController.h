@@ -23,19 +23,19 @@ namespace Graphics {
 
         inline static bool showControls = false;
 
-        [[nodiscard]] OPENGL_API Maths::fvec3 Right() const;
+        [[nodiscard]] Maths::fvec3 Right() const;
 
-        OPENGL_API void Update(GraphicsDevice& gd, float dt);
-        OPENGL_API void Toggle(GraphicsDevice& gd);
+        void Update(GraphicsDevice& gd, float dt);
+        void Toggle(GraphicsDevice& gd);
 
-        [[nodiscard]] OPENGL_API Maths::mat3D GetViewMat() const;
-        [[nodiscard]] OPENGL_API Maths::mat3D GetProjMat() const;
+        [[nodiscard]] Maths::mat3D GetViewMat() const;
+        [[nodiscard]] Maths::mat3D GetProjMat() const;
 
         [[nodiscard]] bool UsesSmoothZoom() const { return !std::signbit(smoothZoom); }
 
-        OPENGL_API void ImGuiEdit(const char* title = "Camera Controller");
-        OPENGL_API void CopyState() const;
+        void ImGuiEdit(const char* title = "Camera Controller");
+        void CopyState() const;
 
-        OPENGL_API static void HintControls();
+        static void HintControls();
     };
 }

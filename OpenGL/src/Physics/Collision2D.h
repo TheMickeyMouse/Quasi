@@ -27,11 +27,11 @@ namespace Physics2D::Collision {
     };
     inline const Event Event::None = {};
 
-    OPENGL_API Event Between(const Shape& s1, TransformRef t1, const Shape& s2, TransformRef t2);
+    Event Between(const Shape& s1, TransformRef t1, const Shape& s2, TransformRef t2);
 
-    OPENGL_API Event Circle2Circle(const CircleShape& c1, TransformRef t1, const CircleShape& c2, TransformRef t2);
-    OPENGL_API Event Circle2Edge  (const CircleShape& c1, TransformRef t1, const EdgeShape&   e2, TransformRef t2);
+    Event Circle2Circle(const CircleShape& c1, TransformRef t1, const CircleShape& c2, TransformRef t2);
+    Event Circle2Edge  (const CircleShape& c1, TransformRef t1, const EdgeShape&   e2, TransformRef t2);
 
-    OPENGL_API void StaticResolve (Body& body, Body& target, const Event& cEvent);
-    OPENGL_API void DynamicResolve(Body& body, Body& target, const Event& cEvent);
+    void StaticResolve (Body& body, Body& target, const Event& cEvent);
+    void DynamicResolve(Body& body, Body& target, const Event& cEvent);
 } // Physics2D::Collision

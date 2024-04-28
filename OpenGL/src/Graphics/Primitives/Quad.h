@@ -14,13 +14,13 @@ namespace Graphics::Primitives {
         Quad() = default;
         Quad(const fvec3& center, const fvec3& x, const fvec3& y) : center(center), x(x), y(y) {}
 
-        OPENGL_API static Quad FromCornerToCorners(const fvec3& corner, const fvec3& toC1, const fvec3& toC2);
-        OPENGL_API static Quad FromCenterToCorners(const fvec3& center, const fvec3& toC1, const fvec3& toC2);
+        static Quad FromCornerToCorners(const fvec3& corner, const fvec3& toC1, const fvec3& toC2);
+        static Quad FromCenterToCorners(const fvec3& center, const fvec3& toC1, const fvec3& toC2);
 
-        [[nodiscard]] OPENGL_API std::array<fvec3, 4> GetVertices() const;
+        [[nodiscard]] std::array<fvec3, 4> GetVertices() const;
 
-        OPENGL_API void Transform(const Maths::mat3D& transform);
-        friend OPENGL_API Quad operator*(const Maths::mat3D& transform, const Quad& mesh);
+        void Transform(const Maths::mat3D& transform);
+        friend Quad operator*(const Maths::mat3D& transform, const Quad& mesh);
 
         template <class T> Mesh<T> IntoMesh(fvec3 T::* prop = &T::Position);
         template <class T, class F>
@@ -31,7 +31,7 @@ namespace Graphics::Primitives {
         Quad& Center() { center = 0; return *this; }
     };
 
-    OPENGL_API Quad operator*(const Maths::mat3D& transform, const Quad& mesh);
+    Quad operator*(const Maths::mat3D& transform, const Quad& mesh);
 
     template <class T>
     Mesh<T> Quad::IntoMesh(fvec3 T::* prop) {

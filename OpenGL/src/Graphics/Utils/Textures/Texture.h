@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "GLObject.h"
-#include <core.h>
+
 #include <variant>
 
 #include "GLTypeID.h"
@@ -16,15 +16,15 @@ namespace Graphics {
     struct TextureHandler : GLObjectHandler<TextureHandler> {
         TextureTarget target;
 
-        [[nodiscard]] OPENGL_API glID Create() const;
-        OPENGL_API void Destroy(glID id) const;
-        OPENGL_API void Bind(glID id) const;
-        OPENGL_API void Unbind() const;
+        [[nodiscard]] glID Create() const;
+        void Destroy(glID id) const;
+        void Bind(glID id) const;
+        void Unbind() const;
     };
 
     struct TextureSlotHandler {
         constexpr int operator()() const { return -1; }
-        OPENGL_API void operator()(int slot) const;
+        void operator()(int slot) const;
     };
 
     struct TextureParamPair {
@@ -65,7 +65,7 @@ namespace Graphics {
     };
 
     struct STBIImageHandler {
-        OPENGL_API void operator()(void* dat);
+        void operator()(void* dat);
     };
     using STBIImage = std::unique_ptr<void, STBIImageHandler>;
 
@@ -73,7 +73,7 @@ namespace Graphics {
     public:
         inline static int SlotCount = -1;
         inline static std::vector<Texture*> Slots {};
-        OPENGL_API static void Init();
+        static void Init();
     private:
         using slot_t = stdu::unique<int, TextureSlotHandler>;
 
@@ -81,39 +81,39 @@ namespace Graphics {
         int BPPixel = 0; //stands for bits per pixel'
         slot_t textureSlot = -1;
 
-        OPENGL_API void DefaultParams() const;
+        void DefaultParams() const;
 
-        OPENGL_API void LoadTexture(const void* img, const TextureInitParams& init = {});
+        void LoadTexture(const void* img, const TextureInitParams& init = {});
     public:
         Texture() = default;
-        OPENGL_API Texture(stdu::empty);
-        OPENGL_API explicit Texture(const void* raw, const Maths::uvec3& size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_3D });
+        Texture(stdu::empty);
+        explicit Texture(const void* raw, const Maths::uvec3& size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_3D });
         explicit Texture(const void* raw, const Maths::uvec2& size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_2D }) : Texture(raw, size.with_z(0), init) {}
         explicit Texture(const void* raw, uint size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_1D }) : Texture(raw, { size, 0, 0 }, init) {}
 
-        OPENGL_API static Texture LoadPNGBytes(stdu::byte_span datapng, const TextureInitParams& init = {});
-        OPENGL_API static Texture LoadPNG(const std::string& fname, const TextureInitParams& init = {});
+        static Texture LoadPNGBytes(stdu::byte_span datapng, const TextureInitParams& init = {});
+        static Texture LoadPNG(const std::string& fname, const TextureInitParams& init = {});
 
-        OPENGL_API static Texture LoadCubemapPNG(std::initializer_list<std::string> faces /* in order: rludfb */, const TextureInitParams& init = {});
+        static Texture LoadCubemapPNG(std::initializer_list<std::string> faces /* in order: rludfb */, const TextureInitParams& init = {});
 
-        OPENGL_API void Activate(int slot = -1);
-        OPENGL_API void Deactivate();
-        OPENGL_API static void DeactivateAll();
-        OPENGL_API static int FindEmptySlot();
+        void Activate(int slot = -1);
+        void Deactivate();
+        static void DeactivateAll();
+        static int FindEmptySlot();
 
-        OPENGL_API void SetParam(TextureParamName param, float val) const;
-        OPENGL_API void SetParam(TextureParamName param, int val) const;
-        OPENGL_API void SetParam(TextureParamName param, const float* vals) const;
-        OPENGL_API void SetParam(TextureParamName param, const int* vals) const;
+        void SetParam(TextureParamName param, float val) const;
+        void SetParam(TextureParamName param, int val) const;
+        void SetParam(TextureParamName param, const float* vals) const;
+        void SetParam(TextureParamName param, const int* vals) const;
         template <class E> requires std::is_enum_v<E>
         void SetParam(TextureParamName param, E val) const { SetParam(param, (int)val); }
 
-        OPENGL_API void SetParams(TextureParameters params);
+        void SetParams(TextureParameters params);
 
-        OPENGL_API void SetSample(TextureSample s) const;
-        OPENGL_API void SetWrapping(TextureBorder b) const;
+        void SetSample(TextureSample s) const;
+        void SetWrapping(TextureBorder b) const;
 
-        OPENGL_API void SetSubTexture(const void* data, const Maths::rect3u& rect, const TextureLoadParams& params = {});
+        void SetSubTexture(const void* data, const Maths::rect3u& rect, const TextureLoadParams& params = {});
         void SetSubTexture(const void* data, const Maths::rect2u& rect, const TextureLoadParams& params = {}) {
             SetSubTexture(data, Maths::rect3u { rect.min.with_z(0), rect.max.with_z(0) }, params);
         }
@@ -121,7 +121,7 @@ namespace Graphics {
             SetSubTexture(data, Maths::rect3u { { rect.min, 0, 0 }, { rect.max, 0, 0 } }, params);
         }
 
-        OPENGL_API void TexImage(const void* data, const Maths::uvec3& dim, const TextureLoadParams& params = {}, TextureTarget overrideTarget = TextureTarget::NONE);
+        void TexImage(const void* data, const Maths::uvec3& dim, const TextureLoadParams& params = {}, TextureTarget overrideTarget = TextureTarget::NONE);
         void TexImage(const void* data, uint width, const TextureLoadParams& params = {}) {
             TexImage(data, { width, 0, 0 }, params);
         }
@@ -129,7 +129,7 @@ namespace Graphics {
             TexImage(data, dim.with_z(0), params);
         }
 
-        OPENGL_API static void SetPixelStore(PixelStoreParam param, int val);
+        static void SetPixelStore(PixelStoreParam param, int val);
 
         [[nodiscard]] int Slot() const { return *textureSlot; }
 
@@ -141,7 +141,7 @@ namespace Graphics {
         [[nodiscard]] Maths::uvec2 Size2D() const { return size.xy(); }
         [[nodiscard]] uint Size1D() const { return size.x; }
 
-        [[nodiscard]] OPENGL_API int Dimension() const;
+        [[nodiscard]] int Dimension() const;
 
         friend class FrameBuffer;
     };

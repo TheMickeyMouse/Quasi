@@ -2,7 +2,7 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <core.h>
+
 #include <ranges>
 #include <stdu/macros.h>
 
@@ -144,10 +144,10 @@ namespace Graphics {
     };
 
     struct ShaderHandler : GLObjectHandler<ShaderHandler> {
-        [[nodiscard]] OPENGL_API glID Create() const;
-        OPENGL_API void Destroy(glID id) const;
-        OPENGL_API void Bind(glID id) const;
-        OPENGL_API void Unbind() const;
+        [[nodiscard]] glID Create() const;
+        void Destroy(glID id) const;
+        void Bind(glID id) const;
+        void Unbind() const;
     };
 
     struct ShaderArgs;
@@ -159,8 +159,8 @@ namespace Graphics {
 
     public:
         Shader() = default;
-        OPENGL_API explicit Shader(std::string_view program);
-        OPENGL_API explicit Shader(std::string_view vert, std::string_view frag, std::string_view geom = {});
+        explicit Shader(std::string_view program);
+        explicit Shader(std::string_view vert, std::string_view frag, std::string_view geom = {});
 
         using stringr = const std::string&; // the 'r' stands for reference
 
@@ -198,10 +198,10 @@ namespace Graphics {
 
         UNIF_INSTANTIATE
 
-        OPENGL_API void SetUniformDyn(const ShaderParameter& arg);
-        OPENGL_API void SetUniformArgs(const ShaderArgs& args);
+        void SetUniformDyn(const ShaderParameter& arg);
+        void SetUniformArgs(const ShaderArgs& args);
 
-        OPENGL_API void SetUniformTex(stringr name, const class Texture& texture);
+        void SetUniformTex(stringr name, const class Texture& texture);
 
         template <class N>
         void SetUniform(stringr name, N num) {
@@ -298,25 +298,25 @@ namespace Graphics {
             );
 #pragma endregion // Shader Sources
 
-        OPENGL_API static Shader FromFile(stringr filepath);
-        OPENGL_API static Shader FromFile(stringr vert, stringr frag, stringr geom = {});
+        static Shader FromFile(stringr filepath);
+        static Shader FromFile(stringr vert, stringr frag, stringr geom = {});
 
-        OPENGL_API int GetUniformLoc(stringr name) { return GetUniformLocation(name); }
+        int GetUniformLoc(stringr name) { return GetUniformLocation(name); }
     private:
-        OPENGL_API int GetUniformLocation(std::string_view name);
-        OPENGL_API static ShaderProgramSource ParseShader(std::string_view program);
-        OPENGL_API static ShaderProgramSource ParseFromFile(const std::string& filepath);
-        OPENGL_API static uint CompileShader(std::string_view source, ShaderType type);
+        int GetUniformLocation(std::string_view name);
+        static ShaderProgramSource ParseShader(std::string_view program);
+        static ShaderProgramSource ParseFromFile(const std::string& filepath);
+        static uint CompileShader(std::string_view source, ShaderType type);
         static uint CompileShaderVert(std::string_view source) { return CompileShader(source, ShaderType::VERTEX); }
         static uint CompileShaderFrag(std::string_view source) { return CompileShader(source, ShaderType::FRAGMENT); }
         static uint CompileShaderGeom(std::string_view source) { return CompileShader(source, ShaderType::GEOMETRY); }
-        OPENGL_API static uint CreateShader(std::string_view vtx, std::string_view frg, std::string_view geo = {});
+        static uint CreateShader(std::string_view vtx, std::string_view frg, std::string_view geo = {});
 
         friend class GraphicsDevice;
     };
 
 #undef DEFINE_UNIF_FN
-#define DEFINE_UNIF_FN(N, IN) template <> OPENGL_API void Shader::SetUniformAtLoc<ShaderUniformType::UNIF_##IN>(int uniformLoc, ShaderUniformArgOf<ShaderUniformType::UNIF_##IN> val);
+#define DEFINE_UNIF_FN(N, IN) template <> void Shader::SetUniformAtLoc<ShaderUniformType::UNIF_##IN>(int uniformLoc, ShaderUniformArgOf<ShaderUniformType::UNIF_##IN> val);
     UNIF_INSTANTIATE
 #undef DEFINE_UNIF_FN
 #undef UNIF_INSTANTIATE
@@ -404,7 +404,7 @@ namespace Graphics {
             size = N * M * (uint)data.size();
         }
 
-        OPENGL_API ShaderValueVariant(const Texture& tex);
+        ShaderValueVariant(const Texture& tex);
 #pragma endregion
 
     private:
@@ -453,7 +453,7 @@ namespace Graphics {
         std::vector<ShaderSubParam> params;
 
         ShaderArgs() {}
-        OPENGL_API ShaderArgs(std::initializer_list<ShaderParameter> p);
+        ShaderArgs(std::initializer_list<ShaderParameter> p);
 
         [[nodiscard]] usize size() const { return params.size(); }
 

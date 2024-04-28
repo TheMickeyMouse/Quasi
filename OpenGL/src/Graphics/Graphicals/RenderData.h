@@ -35,17 +35,17 @@ namespace Graphics {
 		RenderData(const RenderData&) = delete;
 		RenderData& operator=(const RenderData&) = delete;
 
-		OPENGL_API static void Transfer(RenderData& dest, RenderData&& from);
+		static void Transfer(RenderData& dest, RenderData&& from);
 		RenderData(RenderData&& rd) noexcept { Transfer(*this, std::move(rd)); }
 		RenderData& operator=(RenderData&& rd) noexcept { Transfer(*this, std::move(rd)); return *this; }
 
-		OPENGL_API ~RenderData();
+		~RenderData();
 
 		template <class T> static RenderData Create(uint vsize, uint isize);
 	    template <class T> static std::unique_ptr<RenderData> CreateHeap(uint vsize, uint isize);
 
-		OPENGL_API void Bind() const;
-		OPENGL_API void Unbind() const;
+		void Bind() const;
+		void Unbind() const;
 
 		[[nodiscard]] VertexDebugTypeIndex GetType() const { return vbo.GetType(); }
 
@@ -78,7 +78,7 @@ namespace Graphics {
 		Maths::mat3D& ProjectionMat() { return projection; }
 		[[nodiscard]] const Maths::mat3D& ProjectionMat() const { return projection; }
 
-		OPENGL_API void ClearData(bool shallowClear = true);
+		void ClearData(bool shallowClear = true);
 		template <class T> void BindMeshes(std::span<Mesh<T>> newMeshes);
 		template <stdu::array_like T> void BindMeshes(T& ms) { BindMeshes(stdu::to_span(ms)); }
 
@@ -87,17 +87,17 @@ namespace Graphics {
 		template <class T> void AddBoundMeshes() { for (GenericMesh& m : meshes) m.As<T>().AddTo(vbo, ibo); }
 		template <class T> void ResetData(bool shallowClear = true) { ClearData(shallowClear); AddBoundMeshes<T>(); }
 
-		OPENGL_API void UnbindMesh(int index);
-		OPENGL_API void UnbindMeshes(int indexStart, int indexEnd);
+		void UnbindMesh(int index);
+		void UnbindMeshes(int indexStart, int indexEnd);
 
-		OPENGL_API void UpdateMeshIndices();
+		void UpdateMeshIndices();
 
-		OPENGL_API void Destroy();
+		void Destroy();
 
-		OPENGL_API void Render(Shader& replaceShader, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true);
+		void Render(Shader& replaceShader, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true);
 		void Render(const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { Render(shader, args, setDefaultShaderArgs); }
 
-		OPENGL_API void RenderInstanced(Shader& replaceShader, int instances, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true);
+		void RenderInstanced(Shader& replaceShader, int instances, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true);
 		void RenderInstanced(int instances, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { RenderInstanced(shader, instances, args, setDefaultShaderArgs); }
 
 	    void SetCamera(const Maths::mat3D& cam) { camera = cam; }
@@ -110,8 +110,8 @@ namespace Graphics {
 	    void UseShaderFromFile(const std::string& file) { shader = Shader::FromFile(file); }
 	    void UseShaderFromFile(const std::string& vert, const std::string& frag, const std::string& geom = {})
 		{ shader = Shader::FromFile(vert, frag, geom); }
-	    OPENGL_API void EnableShader();
-	    OPENGL_API void DisableShader();
+	    void EnableShader();
+	    void DisableShader();
 
 		friend class GraphicsDevice;
 	};

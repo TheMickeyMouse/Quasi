@@ -2,7 +2,7 @@
 #include <type_traits>
 
 #include "NumTypes.h"
-#include "core.h"
+
 #include "stdu/types.h"
 
 namespace Graphics {
@@ -58,9 +58,9 @@ namespace Graphics {
 
     template <BufferType T>
     struct BufferHandler : GLObjectHandler<BufferHandler<T>> {
-        [[nodiscard]] OPENGL_API glID Create() const;
-        OPENGL_API void Destroy(glID id) const;
-        OPENGL_API void Bind(glID id) const;
-        OPENGL_API void Unbind() const;
+        [[nodiscard]] glID Create() const;
+        void Destroy(glID id) const;
+        void Bind(glID id) const;
+        void Unbind() const;
     };
 }

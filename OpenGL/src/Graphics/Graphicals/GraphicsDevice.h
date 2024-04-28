@@ -33,32 +33,32 @@ namespace Graphics {
         inline static stdu::ref<GraphicsDevice> Instance = nullptr;
         inline static bool ShowDebugMenu = false;
     public:
-        OPENGL_API explicit GraphicsDevice(GLFWwindow* window, Maths::ivec2 winSize);
+        explicit GraphicsDevice(GLFWwindow* window, Maths::ivec2 winSize);
         using stringr = const std::string&;
 
-        OPENGL_API void Quit();
-        OPENGL_API void Terminate();
-        OPENGL_API ~GraphicsDevice();
+        void Quit();
+        void Terminate();
+        ~GraphicsDevice();
 
         GraphicsDevice(const GraphicsDevice&) = delete;
         GraphicsDevice& operator=(const GraphicsDevice&) = delete;
-        OPENGL_API static void Transfer(GraphicsDevice& dest, GraphicsDevice&& from);
+        static void Transfer(GraphicsDevice& dest, GraphicsDevice&& from);
         GraphicsDevice(GraphicsDevice&& gd) noexcept { Transfer(*this, std::move(gd)); }
         GraphicsDevice& operator=(GraphicsDevice&& gd) noexcept { Transfer(*this, std::move(gd)); return *this; }
 
-        OPENGL_API void BeginRender();
-        OPENGL_API void EndRender();
+        void BeginRender();
+        void EndRender();
 
         template <class T> RenderObject<T> CreateNewRender(uint vsize = MAX_VERTEX_COUNT, uint isize = MAX_INDEX_COUNT);
-        OPENGL_API void BindRender(RenderData& render);
-        OPENGL_API void DeleteRender(uint index);
-        OPENGL_API void DeleteAllRenders();
-        OPENGL_API RenderData& GetRender(uint index);
+        void BindRender(RenderData& render);
+        void DeleteRender(uint index);
+        void DeleteAllRenders();
+        RenderData& GetRender(uint index);
 
-        OPENGL_API void Render(RenderData& r, Shader& s, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true);
+        void Render(RenderData& r, Shader& s, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true);
         void Render(RenderData& r, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { Render(r, r.Shader(), args, setDefaultShaderArgs); }
         void Render(uint index, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { Render(GetRender(index), args, setDefaultShaderArgs); }
-        OPENGL_API void RenderInstanced(RenderData& r, int instances, Shader& s, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true);
+        void RenderInstanced(RenderData& r, int instances, Shader& s, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true);
         void RenderInstanced(RenderData& r, int instances, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) {
             RenderInstanced(r, instances, r.Shader(), args, setDefaultShaderArgs);
         }
@@ -66,10 +66,10 @@ namespace Graphics {
             RenderInstanced(GetRender(index), instances, args, setDefaultShaderArgs);
         }
 
-        OPENGL_API void ClearColor(const Maths::colorf& color);
+        void ClearColor(const Maths::colorf& color);
 
         [[nodiscard]] bool IsClosed() const { return !mainWindow; }
-        [[nodiscard]] OPENGL_API bool WindowIsOpen() const;
+        [[nodiscard]] bool WindowIsOpen() const;
     
         [[nodiscard]] Maths::ivec2 GetWindowSize() const { return windowSize; }
         [[nodiscard]] float GetAspectRatio() const { return (float)windowSize.x / (float)windowSize.y; }
@@ -79,12 +79,12 @@ namespace Graphics {
         FontDevice& GetFontDevice() { return fontDevice; }
         [[nodiscard]] const FontDevice& GetFontDevice() const { return fontDevice; }
 
-        OPENGL_API void SetDrawMode(RenderMode mode);
-        OPENGL_API static void RenderInMode(RenderMode mode);
+        void SetDrawMode(RenderMode mode);
+        static void RenderInMode(RenderMode mode);
 
-        OPENGL_API void DebugMenu();
+        void DebugMenu();
     private:
-        OPENGL_API void ShowDebugWindow();
+        void ShowDebugWindow();
     public:
 
         static GraphicsDevice& GetDeviceInstance() { return *Instance; }
@@ -95,7 +95,7 @@ namespace Graphics {
         Maths::random_gen& GetRand() { return *randDevice; }
         [[nodiscard]] const Maths::random_gen& GetRand() const { return *randDevice; }
 
-        OPENGL_API static GraphicsDevice Initialize(Maths::ivec2 winSize = { 640, 480 });
+        static GraphicsDevice Initialize(Maths::ivec2 winSize = { 640, 480 });
 
         friend class Texture;
     };

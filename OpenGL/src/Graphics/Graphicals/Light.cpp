@@ -5,13 +5,13 @@
 
 namespace Graphics {
     template <LightCaster L>
-    OPENGL_API stdu::ref<L> Light::AsUnchecked() {
+    stdu::ref<L> Light::AsUnchecked() {
         return *(L*)&lightAddressBegin;  // NOLINT(clang-diagnostic-cast-qual)
         // not very pretty but hey, its all i got ok?
     }
 
     template <LightCaster L>
-    OPENGL_API stdu::ref<const L> Light::AsUnchecked() const {
+    stdu::ref<const L> Light::AsUnchecked() const {
         return *(const L*)&lightAddressBegin;
     }
 
@@ -183,10 +183,10 @@ namespace Graphics {
         ImGui::SliderFloat("Outer Cutoff", &flashLight.outerCut, 0, Maths::PI);
     }
 
-    template OPENGL_API stdu::ref<SunLight> Light::AsUnchecked<SunLight>();
-    template OPENGL_API stdu::ref<PointLight> Light::AsUnchecked<PointLight>();
-    template OPENGL_API stdu::ref<FlashLight> Light::AsUnchecked<FlashLight>();
-    template OPENGL_API stdu::ref<const SunLight> Light::AsUnchecked<SunLight>() const;
-    template OPENGL_API stdu::ref<const PointLight> Light::AsUnchecked<PointLight>() const;
-    template OPENGL_API stdu::ref<const FlashLight> Light::AsUnchecked<FlashLight>() const;
+    template stdu::ref<SunLight> Light::AsUnchecked<SunLight>();
+    template stdu::ref<PointLight> Light::AsUnchecked<PointLight>();
+    template stdu::ref<FlashLight> Light::AsUnchecked<FlashLight>();
+    template stdu::ref<const SunLight> Light::AsUnchecked<SunLight>() const;
+    template stdu::ref<const PointLight> Light::AsUnchecked<PointLight>() const;
+    template stdu::ref<const FlashLight> Light::AsUnchecked<FlashLight>() const;
 }
