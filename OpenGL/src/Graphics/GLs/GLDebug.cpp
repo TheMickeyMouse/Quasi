@@ -42,7 +42,7 @@ namespace Graphics {
     void GLReport(const Debug::SourceLoc& loc) {
         GLErrorCode err;
         while ((err = GLGetErr()) != GLErrorCode::NO_ERROR) {
-            GLLogger().Error({"GL Error code {} was uncaught.", loc}, err);
+            GLLogger().Error({ std::format_string<GLErrorCode&> { "GL Error code {} was uncaught." }, loc}, err);
         }
     }
 
@@ -50,7 +50,7 @@ namespace Graphics {
         GLErrorCode err;
         while ((err = GLGetErr()) != GLErrorCode::NO_ERROR) {
             GLLogger().Error(
-                {"GL Error code {} was uncaught when calling {} (see https://docs.gl/gl3/{}).", loc},
+                { std::format_string<GLErrorCode&, std::string_view&, std::string_view> {"GL Error code {} was uncaught when calling {} (see https://docs.gl/gl3/{})."}, loc},
                 err, signature, signature.substr(0, signature.find('(')));
         }
     }

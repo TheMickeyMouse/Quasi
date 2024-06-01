@@ -55,7 +55,8 @@ namespace Debug {
     struct FmtStr {
         std::format_string<Ts...> fmt;
         SourceLoc loc;
-        FmtStr(std::format_string<Ts...> f, const SourceLoc& l = SourceLoc::current()) : fmt(f), loc(l) {}
+        FmtStr(std::format_string<Ts...> f, const SourceLoc& l) : fmt(f), loc(l) {}
+        consteval FmtStr(const char* f, const SourceLoc& l = SourceLoc::current()) : fmt(f), loc(l) {}
     };
 
     template <class... Ts>
