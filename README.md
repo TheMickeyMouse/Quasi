@@ -1,2 +1,2 @@
-# OpenGL-Template
-An OpenGL Template Written In C++
+# OpenGL Render Engine
+An OpenGL Rendering Engine Written In C++

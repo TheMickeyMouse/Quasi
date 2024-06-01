@@ -1,7 +1,5 @@
 set(PROJECT_NAME OpenGL)
 
-find_package(Freetype REQUIRED)
-
 ################################################################################
 # Source groups
 ################################################################################
@@ -200,7 +198,6 @@ target_include_directories(${PROJECT_NAME}
         PRIVATE
     "${PROJECT_SOURCE_DIR}/Dependencies/GLFW/include/"
     "${PROJECT_SOURCE_DIR}/Dependencies/GLEW/include/"
-    ${FREETYPE_INCLUDE_DIRS}
         PUBLIC
     src/
     src/Debug/
@@ -216,6 +213,7 @@ target_include_directories(${PROJECT_NAME}
     src/stdu/
     src/vendor/imgui/
     src/vendor/
+    src/vendor/freetype/
 )
 
 ################################################################################
@@ -287,7 +285,7 @@ set(ADDITIONAL_LIBRARY_DEPENDENCIES
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
     "${ADDITIONAL_LIBRARY_DEPENDENCIES};"
-    ${FREETYPE_LIBRARIES}
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/freetype/freetype.lib"
 )
 
 target_link_directories(${PROJECT_NAME} PUBLIC

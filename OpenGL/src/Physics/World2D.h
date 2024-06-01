@@ -9,6 +9,7 @@ namespace Physics2D {
 
     class World {
         std::vector<BodyHandle> bodies;
+    public:
         Maths::fvec2 gravity;
         float drag = 0.0f;
     private:

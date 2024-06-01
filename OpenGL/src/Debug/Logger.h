@@ -58,6 +58,9 @@ namespace Debug {
         FmtStr(std::format_string<Ts...> f, const SourceLoc& l = SourceLoc::current()) : fmt(f), loc(l) {}
     };
 
+    template <class... Ts>
+    using ImplicitFmtStr = std::type_identity_t<FmtStr<Ts...>>;
+
     struct LogEntry {
         std::string log;
         Severity severity;
@@ -111,11 +114,11 @@ namespace Debug {
 
         void Write(std::ostream& out, Severity filter = Severity::SEVERITY_NUM);
 
-        template <class ...Ts> void LogFmt(Severity s, FmtStr<Ts...> fmt, Ts&&... args) {
+        template <class ...Ts> void LogFmt(Severity s, ImplicitFmtStr<Ts...> fmt, Ts&&... args) {
             this->Log(s, std::format(fmt.fmt, std::forward<Ts>(args)...), fmt.loc);
         }
 
-        template <class ...Ts> void AssertFmt(bool assert, FmtStr<Ts...> fmt, Ts&&... args) {
+        template <class ...Ts> void AssertFmt(bool assert, ImplicitFmtStr<Ts...> fmt, Ts&&... args) {
             this->Assert(assert, std::format(fmt.fmt, std::forward<Ts>(args)...), fmt.loc);
         }
 
@@ -135,12 +138,12 @@ namespace Debug {
             );
         }
 
-        template <class ...Ts> void Trace   (FmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::TRACE,    fmt, std::forward<Ts>(args)...); }
-        template <class ...Ts> void Debug   (FmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::DEBUG,    fmt, std::forward<Ts>(args)...); }
-        template <class ...Ts> void Info    (FmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::INFO,     fmt, std::forward<Ts>(args)...); }
-        template <class ...Ts> void Warn    (FmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::WARN,     fmt, std::forward<Ts>(args)...); }
-        template <class ...Ts> void Error   (FmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::ERROR,    fmt, std::forward<Ts>(args)...); }
-        template <class ...Ts> void Critical(FmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::CRITICAL, fmt, std::forward<Ts>(args)...); }
+        template <class ...Ts> void Trace   (ImplicitFmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::TRACE,    fmt, std::forward<Ts>(args)...); }
+        template <class ...Ts> void Debug   (ImplicitFmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::DEBUG,    fmt, std::forward<Ts>(args)...); }
+        template <class ...Ts> void Info    (ImplicitFmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::INFO,     fmt, std::forward<Ts>(args)...); }
+        template <class ...Ts> void Warn    (ImplicitFmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::WARN,     fmt, std::forward<Ts>(args)...); }
+        template <class ...Ts> void Error   (ImplicitFmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::ERROR,    fmt, std::forward<Ts>(args)...); }
+        template <class ...Ts> void Critical(ImplicitFmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::CRITICAL, fmt, std::forward<Ts>(args)...); }
 
         void Flush();
 
@@ -162,11 +165,11 @@ namespace Debug {
 
     inline void Write(std::ostream& out, Severity filter = Severity::SEVERITY_NUM) { Logger::GetInternalLog().Write(out, filter); }
 
-    template <class ...Ts> void LogFmt(Severity s, FmtStr<Ts...> fmt, Ts&&... args) {
+    template <class ...Ts> void LogFmt(Severity s, ImplicitFmtStr<Ts...> fmt, Ts&&... args) {
         Logger::GetInternalLog().LogFmt(s, fmt, std::forward<Ts>(args)...);
     }
 
-    template <class ...Ts> void AssertFmt(bool assert, FmtStr<Ts...> fmt, Ts&&... args) {
+    template <class ...Ts> void AssertFmt(bool assert, ImplicitFmtStr<Ts...> fmt, Ts&&... args) {
         Logger::GetInternalLog().Assert(assert, fmt, std::forward<Ts>(args)...);
     }
 
@@ -176,12 +179,12 @@ namespace Debug {
     template <class T>
     void AssertNeq(const T& val, const T& cmp, const SourceLoc& loc = SourceLoc::current()) { Logger::GetInternalLog().AssertNeq(val, cmp, loc); }
 
-    template <class ...Ts> void Trace   (FmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Trace   (fmt, std::forward<Ts>(args)...); }
-    template <class ...Ts> void Debug   (FmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Debug   (fmt, std::forward<Ts>(args)...); }
-    template <class ...Ts> void Info    (FmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Info    (fmt, std::forward<Ts>(args)...); }
-    template <class ...Ts> void Warn    (FmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Warn    (fmt, std::forward<Ts>(args)...); }
-    template <class ...Ts> void Error   (FmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Error   (fmt, std::forward<Ts>(args)...); }
-    template <class ...Ts> void Critical(FmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Critical(fmt, std::forward<Ts>(args)...); }
+    template <class ...Ts> void Trace   (ImplicitFmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Trace   (fmt, std::forward<Ts>(args)...); }
+    template <class ...Ts> void Debug   (ImplicitFmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Debug   (fmt, std::forward<Ts>(args)...); }
+    template <class ...Ts> void Info    (ImplicitFmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Info    (fmt, std::forward<Ts>(args)...); }
+    template <class ...Ts> void Warn    (ImplicitFmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Warn    (fmt, std::forward<Ts>(args)...); }
+    template <class ...Ts> void Error   (ImplicitFmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Error   (fmt, std::forward<Ts>(args)...); }
+    template <class ...Ts> void Critical(ImplicitFmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Critical(fmt, std::forward<Ts>(args)...); }
 
     void Flush();
 }

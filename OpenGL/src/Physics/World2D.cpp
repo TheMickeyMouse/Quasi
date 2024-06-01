@@ -41,7 +41,8 @@ namespace Physics2D {
 
             for (int i = 1; i < bodies.size(); ++i) {
                 for (int j = i - 1; j >= 0; --j) {
-                    if (cmpr(*bodies[j]) < cmpr(*bodies[j + 1])) break;
+                    // this is different than lt ('<') because nan always returns false
+                    if (!(cmpr(*bodies[j]) >= cmpr(*bodies[j + 1]))) break;
                     std::swap(bodies[j], bodies[j + 1]);
                 }
             }
