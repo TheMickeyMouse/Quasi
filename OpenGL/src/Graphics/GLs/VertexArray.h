@@ -1,24 +1,22 @@
 ﻿#pragma once
-#include "DynamicVertexBuffer.h"
+#include "VertexBuffer.h"
 #include "VertexBuffer.h"
 #include "VertexBufferLayout.h"
 
-namespace Graphics {
-    struct VertexArrayHandler : GLObjectHandler<VertexArrayHandler> {
-        [[nodiscard]] glID Create() const;
-        void Destroy(glID id) const;
-        void Bind(glID id) const;
+namespace Quasi::Graphics {
+    struct VertexArrayHandler {
+        [[nodiscard]] GraphicsID Create() const;
+        void Destroy(GraphicsID id) const;
+        void Bind(GraphicsID id) const;
         void Unbind() const;
     };
 
     class VertexArray : public GLObject<VertexArrayHandler> {
     public:
         VertexArray() = default;
-        VertexArray(stdu::empty) : GLObject({}) {}
 
         void AddBuffer(const VertexBufferLayout& layout);
         void AddBuffer(const VertexBuffer& vb, const VertexBufferLayout& layout);
-        void AddBuffer(const DynamicVertexBuffer& vb, const VertexBufferLayout& layout);
 
         friend class GraphicsDevice;
     };

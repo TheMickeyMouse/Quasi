@@ -1,17 +1,31 @@
-#pragma once
+﻿#pragma once
 #include "GLObject.h"
-#include "NumTypes.h"
 
+#include "TriIndices.h"
 
-namespace Graphics {
-	class IndexBuffer : public GLObject<BufferHandler<BufferType::INDEX>> {
-	private:
-		uint length = 0;
-	public:
-		IndexBuffer(std::span<const uint> data);
+namespace Quasi::Graphics {
+    struct TriIndices;
 
-		[[nodiscard]] uint GetLength() const { return length; }
+    class IndexBuffer : public GLObject<BufferHandler<BufferType::INDEX>> {
+    private:
+        u32 bufferSize = 0;
+        u32 dataOffset = 0;
+        u32 indexOffset = 0;
+    public:
+        IndexBuffer() = default;
+        explicit IndexBuffer(u32 size);
 
-		friend class GraphicsDevice;
-	};
+        void SetData(Span<const u32> data, u32 dOffset = 0);
+        void SetData(Span<const TriIndices> data, u32 dOffset = 0) { SetData(CastSpan<const u32>(data), dOffset); }
+
+        void ClearData(); // this doesnt actually clear the dataz, just makes it not
+
+        void AddData(Span<const u32> data, u32 maxIndex = ~0);
+        void AddData(Span<const TriIndices> data, u32 maxIndex = ~0) { AddData(CastSpan<const u32>(data), maxIndex); }
+
+        [[nodiscard]] u32 GetLength() const { return bufferSize; }
+        [[nodiscard]] u32 GetUsedLength() const { return dataOffset; }
+
+        friend class GraphicsDevice;
+    };
 }

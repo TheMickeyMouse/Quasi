@@ -5,7 +5,7 @@
 #include "Transform2D.h"
 #include "Vector.h"
 
-namespace Physics2D {
+namespace Quasi::Physics2D {
     enum class BodyType {
         STATIC,
         DYNAMIC,
@@ -14,21 +14,22 @@ namespace Physics2D {
         NONE = -1
     };
 
+    class World;
+
     class Body {
     public:
-        Maths::fvec2 position, velocity, acceleration;
+        Math::fVector2 position, velocity, acceleration;
         float mass = 1.0f;
     private:
         BodyType type = BodyType::NONE;
-        class World* world = nullptr;
-
-        std::unique_ptr<Shape> shape;
-
+        Ref<World> world = nullptr;
     public:
-        Body(const Maths::fvec2& p, float m, BodyType type, World* world, std::unique_ptr<Shape>&& shape)
-            : position(p), mass(m), type(type), world(world), shape(std::move(shape)) {}
+        Ref<Shape> shape; // heap managed
 
-        void AddVelocity(const Maths::fvec2& vel) { velocity += vel; }
+        Body(const Math::fVector2& p, float m, BodyType type, Ref<World> world, Ref<Shape> shape)
+            : position(p), mass(m), type(type), world(world), shape(shape) {}
+
+        void AddVelocity(const Math::fVector2& vel) { velocity += vel; }
         void Stop() { velocity = 0; }
 
         [[nodiscard]] Collision::Event CollidesWith(const Body& target) const;
@@ -37,13 +38,10 @@ namespace Physics2D {
 
         void Update(float dt);
 
-        [[nodiscard]] const Shape& GetShape() const { return *shape; }
-        template <class S> const S& ShapeAs() const { return *dynamic_cast<const S*>(&GetShape()); }
-
         [[nodiscard]] bool IsStatic()  const { return type == BodyType::STATIC; }
         [[nodiscard]] bool IsDynamic() const { return type == BodyType::DYNAMIC; }
 
-        [[nodiscard]] Maths::rect2f ComputeBoundingBox() const;
+        [[nodiscard]] Math::fRect2D ComputeBoundingBox() const;
 
         friend class World;
         friend void Collision::StaticResolve (Body&, Body&, const Collision::Event&);
@@ -51,7 +49,7 @@ namespace Physics2D {
     };
 
     struct BodyCreateOptions {
-        Maths::fvec2 position {};
+        Math::fVector2 position {};
         BodyType type = BodyType::DYNAMIC;
         float density = 1.0f;
     };

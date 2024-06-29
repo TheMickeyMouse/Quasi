@@ -2,22 +2,20 @@
 
 #include <numeric>
 
-#include "stdu/io.h"
-
 #include "GL/glew.h"
 #include "GLDebug.h"
-#include "Texture.h"
+#include "Textures/Texture.h"
 
-namespace Graphics {
-    glID ShaderHandler::Create() const {
-        return GL_NULL;
+namespace Quasi::Graphics {
+    GraphicsID ShaderHandler::Create() const {
+        return GraphicsNoID;
     }
 
-    void ShaderHandler::Destroy(glID id) const {
+    void ShaderHandler::Destroy(GraphicsID id) const {
         GL_CALL(glDeleteProgram(id));
     }
 
-    void ShaderHandler::Bind(glID id) const {
+    void ShaderHandler::Bind(GraphicsID id) const {
         GL_CALL(glUseProgram(id));
     }
 
@@ -25,7 +23,7 @@ namespace Graphics {
         GL_CALL(glUseProgram(0));
     }
 
-    Shader::Shader(std::string_view program) {
+    Shader::Shader(Str program) {
         const ShaderProgramSource shadersrc = ParseShader(program);
         rendererID = CreateShader(
             shadersrc.GetShader(ShaderType::VERTEX),
@@ -34,18 +32,18 @@ namespace Graphics {
         );
     }
 
-    Shader::Shader(std::string_view vert, std::string_view frag, std::string_view geom) {
+    Shader::Shader(Str vert, Str frag, Str geom) {
         rendererID = CreateShader(vert, frag, geom);
     }
 
-    int Shader::GetUniformLocation(std::string_view name) {
+    int Shader::GetUniformLocation(Str name) {
         const auto it = uniformCache.find(name);
         if (it != uniformCache.end())
             return it->second;
 
         const int location = GL_CALL(glGetUniformLocation(rendererID, name.data()));
-        GLLogger().AssertFmt(location != -1, {"Uniform location for '{}' was -1"}, name.substr(0, name.size() - 1));
-        uniformCache[std::string { name }] = location;
+        GLLogger().AssertFmt(location != -1, "invalid uniform location for '{}'", name);
+        uniformCache[String { name }] = location;
         return location;
     }
 
@@ -54,15 +52,15 @@ namespace Graphics {
         const int loc = GetUniformLocation(arg.name);
         #define SWITCH_STATE(I) case UNIF_##I: SetUniformAtLoc<UNIF_##I>(loc, arg.value.as<ShaderUniformArgOf<UNIF_##I>>()); break;
         switch (arg.value.type) {
-            SWITCH_STATE(1I)  SWITCH_STATE(2I)  SWITCH_STATE(3I)  SWITCH_STATE(4I)
-            SWITCH_STATE(1UI) SWITCH_STATE(2UI) SWITCH_STATE(3UI) SWITCH_STATE(4UI)
-            SWITCH_STATE(1F)  SWITCH_STATE(2F)  SWITCH_STATE(3F)  SWITCH_STATE(4F)
+            SWITCH_STATE(1I)      SWITCH_STATE(2I)      SWITCH_STATE(3I)      SWITCH_STATE(4I)
+            SWITCH_STATE(1UI)     SWITCH_STATE(2UI)     SWITCH_STATE(3UI)     SWITCH_STATE(4UI)
+            SWITCH_STATE(1F)      SWITCH_STATE(2F)      SWITCH_STATE(3F)      SWITCH_STATE(4F)
             SWITCH_STATE(1I_ARR)  SWITCH_STATE(2I_ARR)  SWITCH_STATE(3I_ARR)  SWITCH_STATE(4I_ARR)
             SWITCH_STATE(1UI_ARR) SWITCH_STATE(2UI_ARR) SWITCH_STATE(3UI_ARR) SWITCH_STATE(4UI_ARR)
             SWITCH_STATE(1F_ARR)  SWITCH_STATE(2F_ARR)  SWITCH_STATE(3F_ARR)  SWITCH_STATE(4F_ARR)
-            SWITCH_STATE(MAT2x2) SWITCH_STATE(MAT2x3) SWITCH_STATE(MAT2x4)
-            SWITCH_STATE(MAT3x2) SWITCH_STATE(MAT3x3) SWITCH_STATE(MAT3x4)
-            SWITCH_STATE(MAT4x2) SWITCH_STATE(MAT4x3) SWITCH_STATE(MAT4x4)
+            SWITCH_STATE(MAT2x2)  SWITCH_STATE(MAT2x3)  SWITCH_STATE(MAT2x4)
+            SWITCH_STATE(MAT3x2)  SWITCH_STATE(MAT3x3)  SWITCH_STATE(MAT3x4)
+            SWITCH_STATE(MAT4x2)  SWITCH_STATE(MAT4x3)  SWITCH_STATE(MAT4x4)
             default:;
         }
     }
@@ -73,21 +71,21 @@ namespace Graphics {
         }
     }
 
-    ShaderProgramSource Shader::ParseShader(std::string_view program) {
-        uint lastLine = 0;
-        Maths::rangez ssv, ssf, ssg, *ss = nullptr;
-        for (uint i = 0; i < program.size(); ++i) {
+    ShaderProgramSource Shader::ParseShader(Str program) {
+        usize lastLine = 0;
+        Math::zRange ssv, ssf, ssg, *ss = nullptr;
+        for (usize i = 0; i < program.size(); ++i) {
             if (program[i] != '\n') continue;
-            std::string_view line = std::string_view { program }.substr(lastLine, i - lastLine);
+            Str line = program.substr(lastLine, i - lastLine);
             lastLine = i + 1;
 
-            if (line.find("#shader") != std::string::npos) {
+            if (line.find("#shader") != String::npos) {
                 if (ss) ss->max = line.data() - program.data();
-                if (line.find("vertex") != std::string::npos) {
+                if (line.find("vertex") != String::npos) {
                     ss = &ssv;
-                } else if (line.find("fragment") != std::string::npos) {
+                } else if (line.find("fragment") != String::npos) {
                     ss = &ssf;
-                } else if (line.find("geometry") != std::string::npos) {
+                } else if (line.find("geometry") != String::npos) {
                     ss = &ssg;
                 }
                 if (ss) ss->min = i + 1;
@@ -95,7 +93,7 @@ namespace Graphics {
         }
         if (ss) ss->max = program.size();
 
-        std::string concatedProgram;
+        String concatedProgram;
         concatedProgram.resize(ssv.width() + ssf.width() + ssg.width());
         std::copy(program.data() + ssv.min, program.data() + ssv.max, concatedProgram.data());
         std::copy(program.data() + ssf.min, program.data() + ssf.max, concatedProgram.data() + ssv.width());
@@ -108,31 +106,35 @@ namespace Graphics {
     }
 
 
-    ShaderProgramSource Shader::ParseFromFile(stringr filepath) {
-        return ParseShader(stdu::readfile(filepath));
+    ShaderProgramSource Shader::ParseFromFile(Str filepath) {
+        return ParseShader(Text::ReadFile(filepath).Assert());
     }
 
-    void Shader::SetUniformTex(stringr name, const Texture& texture) {
+    void Shader::SetUniformTex(Str name, const Texture& texture) {
         SetUniformInt(name, texture.Slot());
     }
 
-    Shader Shader::FromFile(stringr filepath) {
+    Shader Shader::FromFile(Str filepath) {
         Shader s {};
         const ShaderProgramSource shadersrc = ParseFromFile(filepath);
         s.rendererID = CreateShader(shadersrc.GetShader(ShaderType::VERTEX), shadersrc.GetShader(ShaderType::FRAGMENT), shadersrc.GetShader(ShaderType::GEOMETRY));
         return s;
     }
 
-    Shader Shader::FromFile(stringr vert, stringr frag, stringr geom) {
+    Shader Shader::FromFile(Str vert, Str frag, Str geom) {
         Shader s {};
-        s.rendererID = CreateShader(stdu::readfile(vert), stdu::readfile(frag), stdu::readfile(geom));
+        s.rendererID = CreateShader(
+            Text::ReadFile(vert).Assert(),
+            Text::ReadFile(frag).Assert(),
+            geom.empty() ? "" : Text::ReadFile(geom).Assert()
+        );
         return s;
     }
 
-    uint Shader::CompileShader(std::string_view source, ShaderType type) {
-        const uint id = glCreateShader((int)type);
+    GraphicsID Shader::CompileShader(Str source, ShaderType type) {
+        const GraphicsID id = glCreateShader((int)type);
         const char* src = source.data();
-        const int length = (int)source.length();
+        const int length = (int)source.size();
         glShaderSource(id, 1, &src, &length);
         glCompileShader(id);
 
@@ -142,10 +144,10 @@ namespace Graphics {
         if (result == GL_FALSE) {
             int len;
             glGetShaderiv(id, GL_INFO_LOG_LENGTH, &len);
-            std::string msg;
+            String msg;
             msg.resize(len - 1);
             glGetShaderInfoLog(id, len, &len, msg.data());
-            GLLogger().Error({"Compiling {} shader yielded compiler errors:\n{}"}, type, msg);
+            GLLogger().Error("Compiling {} shader yielded compiler errors:\n{}", type, msg);
 
             glDeleteShader(id);
             return 0;
@@ -154,42 +156,37 @@ namespace Graphics {
         return id;
     }
 
-    uint Shader::CreateShader(std::string_view vtx, std::string_view frg, std::string_view geo) {
-        const uint program = glCreateProgram();
-        const uint vs = CompileShaderVert(vtx);
-        const uint fs = CompileShaderFrag(frg);
-        const uint gm = geo.empty() ? 0 : CompileShaderGeom(geo);
+    GraphicsID Shader::CreateShader(Str vtx, Str frg, Str geo) {
+        const GraphicsID program = glCreateProgram();
+        const GraphicsID vs = CompileShaderVert(vtx);
+        const GraphicsID fs = CompileShaderFrag(frg);
+        const GraphicsID gm = geo.empty() ? 0 : CompileShaderGeom(geo);
 
-        GL_CALL(glAttachShader(program, vs));
-        GL_CALL(glAttachShader(program, fs));
+                GL_CALL(glAttachShader(program, vs));
+                GL_CALL(glAttachShader(program, fs));
         if (gm) GL_CALL(glAttachShader(program, gm));
+
         GL_CALL(glLinkProgram(program));
         GL_CALL(glValidateProgram(program));
         
-        GL_CALL(glDeleteShader(vs));
-        GL_CALL(glDeleteShader(fs));
+                GL_CALL(glDeleteShader(vs));
+                GL_CALL(glDeleteShader(fs));
+        if (gm) GL_CALL(glDeleteShader(fs));
 
         return program;
     }
 
-    ShaderArgs::ShaderArgs(std::initializer_list<ShaderParameter> p) {
-        nullSepName.reserve(
-            std::accumulate(
-                p.begin(), p.end(), usize { 0 },
-                [](usize i, const ShaderParameter& sp) { return i + sp.name.size() + 1; }));
+    ShaderArgs::ShaderArgs(IList<ShaderParameter> p) {
         params.reserve(p.size());
-
-        usize idx = 0;
-        for (const ShaderParameter& sp : p) {
-            nullSepName += sp.name;
-            nullSepName += '\0';
-            params.emplace_back(Maths::rangez { idx, idx += sp.name.size() + 1 }, sp.value);
+        for (const auto param : p) {
+            args.Push(param.name);
+            params.emplace_back(param.value);
         }
     }
 
     ShaderValueVariant::ShaderValueVariant(const Texture& tex) {
         type = ShaderUniformType::UNIF_1I;
-        datInt = tex.Slot();
+        data = std::bit_cast<const void*>((usize)tex.Slot());
         size = 1;
     }
 

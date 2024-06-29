@@ -2,11 +2,11 @@
 
 #include <GLFW/glfw3.h>
 
-#include "Mouse.h"
+#include "IO.h"
 
 #include "imgui_impl_glfw.h"
 
-namespace IO {
+namespace Quasi::IO {
     GLFWwindow* MouseType::inputWindow() { return io->gdevice->GetWindow(); }
     const GLFWwindow* MouseType::inputWindow() const { return io->gdevice->GetWindow(); }
 
@@ -34,7 +34,7 @@ namespace IO {
 
         scrollDelta = 0;
         while (!queuedScrolls.empty()) {
-            const Maths::dvec2 scrollEvent = queuedScrolls.front();
+            const Math::dVector2 scrollEvent = queuedScrolls.front();
             scrollDelta += scrollEvent;
             scroll += scrollEvent;
             queuedScrolls.pop();
@@ -63,13 +63,13 @@ namespace IO {
         glfwSetInputMode(inputWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 
-    Maths::dvec2 MouseType::GetMousePosPx() const {
-        Maths::dvec2 pos;
+    Math::dVector2 MouseType::GetMousePosPx() const {
+        Math::dVector2 pos;
         glfwGetCursorPos((GLFWwindow*)inputWindow(), &pos.x, &pos.y);
         return pos;
     }
 
-    Maths::dvec2 MouseType::GetMousePos() const {
+    Math::dVector2 MouseType::GetMousePos() const {
         const auto r01 = GetMousePosPx() / io->gdevice->GetWindowSize(); // range 0 - 1
         return r01 * 2.0 - 1.0;
     }
@@ -81,11 +81,11 @@ namespace IO {
                0 <= mouseY && mouseY <= borderY;
     }
 
-    Maths::dvec2 MouseType::GetMouseScroll() const {
+    Math::dVector2 MouseType::GetMouseScroll() const {
         return scroll;
     }
 
-    Maths::dvec2 MouseType::GetMouseScrollDelta() const {
+    Math::dVector2 MouseType::GetMouseScrollDelta() const {
         return scrollDelta;
     }
 
@@ -116,7 +116,7 @@ namespace IO {
     bool MouseType::IsStandardMouseButton(int btn) { return LEFT_MOUSE <= btn && btn <= MIDDLE_MOUSE; }
     bool MouseType::IsValidMouseButton(int btn) { return LEFT_MOUSE <= btn && btn <= LAST_MOUSE; }
 
-    const char* MouseType::MouseButtonToStr(int btn) {
+    Str MouseType::MouseButtonToStr(int btn) {
         switch (btn) {
             case LEFT_MOUSE:   return "Left Mouse Button";
             case RIGHT_MOUSE:  return "Right Mouse Button";

@@ -1,37 +1,37 @@
 #pragma once
 #include <vector>
-#include "stdu/rich_string.h"
+#include "Utils/RichString.h"
 
 #include "Font.h"
 #include "TextAlign.h"
 #include "Vector.h"
 
-namespace Graphics {
+namespace Quasi::Graphics {
     struct TextRenderer {
         struct Word {
-            uint index;
+            u32 index;
             float width;
         };
         
         const Font& font;  // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
         float scaleRatio = 1;
         float lineSpacing = 0, spaceAdvance = 0;
-        Maths::fvec2 pen;
-        uint meshIndex = 0;
-        uint lineCount = 0;
+        Math::fVector2 pen;
+        u32 meshIndex = 0;
+        u32 lineCount = 0;
         float totalHeight = 1;
 
-        uint lastLineIndex = 0, lastSpaceIndex = 0;
-        std::vector<Word> lineWords;
-        std::vector<uint> lineIndices;
+        u32 lastLineIndex = 0, lastSpaceIndex = 0;
+        Vec<Word> lineWords;
+        Vec<u32> lineIndices;
         float lineWidth = 0;
 
         PointPer64 fontSize = 0;
 
         TextAlign align = { { 0, INFINITY } };
         using Vertex = Font::Vertex;
-        std::vector<Vertex> textVertices, bgVertices;
-        std::vector<TriIndices> bgIndices;
+        Vec<Vertex> textVertices, bgVertices;
+        Vec<TriIndices> bgIndices;
         
         struct CharQuad {
             Vertex v0, v1, v2, v3;
@@ -63,24 +63,23 @@ namespace Graphics {
         void FixAlignX();
         void JustifyAlignX();
         void AlignX();
-        bool WordWrap(float advance, std::string::const_iterator& it,
-                      const std::string::const_iterator& begin);
+        bool WordWrap(float advance, IterOf<Str>& it, IterOf<Str> begin);
         
         void FixAlignY();
-        void ClipY(Maths::rect2f& pos, Maths::rect2f& tex,
+        void ClipY(Math::fRect2D& pos, Math::fRect2D& tex,
                    bool clipTop, bool clipBottom) const;
         
-        void PushCharQuad(const Maths::rect2f& pos, const Maths::rect2f& tex);
-        void AddChar(std::string::const_iterator& it, const std::string::const_iterator& begin);
-        void AddRichChar(const stdu::rich_string::const_iter& it);
+        void PushCharQuad(const Math::fRect2D& pos, const Math::fRect2D& tex);
+        void AddChar(IterOf<Str>& it, IterOf<Str> begin);
+        void AddRichChar(const Text::RichString::Iter& it);
         
         void TriggerNewLine();
         void TriggerSpace();
         
-        std::vector<Font::Vertex> RenderText(const std::string& string);
-        std::vector<Font::Vertex> RenderRichText(const stdu::rich_string& string);
+        Vec<Font::Vertex> RenderText(Str string);
+        Vec<Font::Vertex> RenderRichText(const Text::RichString& string);
 
-        void AddRoundedRect(const Maths::rect2f& region, float roundRadius, const Maths::colorf& color);
+        void AddRoundedRect(const Math::fRect2D& region, float roundRadius, const Math::fColor& color);
 
         friend class Font;
     };

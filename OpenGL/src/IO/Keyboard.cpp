@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <GLFW/glfw3.h>
 
 #include "GraphicsDevice.h"
@@ -7,7 +6,7 @@
 
 #include "imgui_impl_glfw.h"
 
-namespace IO {
+namespace Quasi::IO {
     GLFWwindow* KeyboardType::inputWindow() { return io->gdevice->GetWindow(); }
     const GLFWwindow* KeyboardType::inputWindow() const { return io->gdevice->GetWindow(); }
     
@@ -23,13 +22,10 @@ namespace IO {
         prevKeySet = currKeySet;
         while (!queuedKeys.empty()) {
             const KeyIndex ki = queuedKeys.front();
-            setKeyStatusOf(currKeySet, ki & 127, ki & 128);
+            currKeySet[ki & 127] = ki & 128;
             queuedKeys.pop();
         }
     }
-
-    bool KeyboardType::getKeyStatusOf(const Keyset& ks, KeyIndex ki)     { return ks[ki / 64ULL] & 1ULL << (ki & 63); }
-    void KeyboardType::setKeyStatusOf(Keyset& ks, KeyIndex ki, bool val) { ks[ki / 64ULL] = (ks[ki / 64ULL] & ~(1ULL << (ki & 63))) | (uint64)val << (ki & 63); }
 
     void KeyboardType::OnGlfwKeyCallback(GLFWwindow* window, int key, int positionCode, int action, int modifierBits) {
         ImGui_ImplGlfw_KeyCallback(window, key, positionCode, action, modifierBits);
@@ -41,19 +37,14 @@ namespace IO {
     bool KeyboardType::KeyPressed(Key key)   const { return getCurrKeyStatus(key); }
     bool KeyboardType::KeyOnPress(Key key)   const { return !getPrevKeyStatus(key) && getCurrKeyStatus(key); }
     bool KeyboardType::KeyOnRelease(Key key) const { return !getCurrKeyStatus(key) && getPrevKeyStatus(key); }
-    bool KeyboardType::AnyPressed()  const { return std::ranges::any_of (currKeySet, [](auto x){ return x != 0; }); }
-    bool KeyboardType::NonePressed() const { return std::ranges::none_of(currKeySet, [](auto x){ return x != 0; }); }
-    
-    std::vector<Key> KeyboardType::KeysPressed() const {
-        std::vector<Key> keys = {};
-        uchar chunki = 0;
-        for (const auto chunk64 : currKeySet) {
-            for (uchar i = 0; i < 64; ++i) {
-                if (chunk64 & 1ULL << i) keys.push_back(FromKeyIndex(i + chunki * 64));
+    bool KeyboardType::AnyPressed()  const { return currKeySet.any(); }
+    bool KeyboardType::NonePressed() const { return currKeySet.none(); }
+    void KeyboardType::VisitKeysPressed(Func<void(Key k)> callback) const {
+        for (usize i = 0; i < KEY_COUNT; ++i) {
+            if (currKeySet[i]) {
+                callback(FromKeyIndex(i));
             }
-            ++chunki;
         }
-        return keys;
     }
 
     bool KeyboardType::IsValidKey(Key key) {
@@ -152,7 +143,7 @@ namespace IO {
         return ToKeyIndex(FromModBits(mod));
     }
     
-    const char* KeyboardType::KeyToStr(Key key) {
+    Str KeyboardType::KeyToStr(Key key) {
 #define BASIC_KEY_CASE(K) case Key::K: return #K
 #define PS_KEY_CASE(PK, PN, K) case Key::PK##K: return #PN#K
 #define SPECIAL_KEY_CASE(K, N) case Key::K: return N

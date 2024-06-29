@@ -2,7 +2,7 @@
 
 #include "Collision2D.h"
 
-namespace Physics2D {
+namespace Quasi::Physics2D {
     Collision::Event Body::CollidesWith(const Body& target) const {
         return CollidesWith(*target.shape, target.GetTransform());
     }
@@ -20,7 +20,7 @@ namespace Physics2D {
         position += velocity * dt;
     }
 
-    Maths::rect2f Body::ComputeBoundingBox() const {
+    Math::fRect2D Body::ComputeBoundingBox() const {
         return GetTransform() * shape->ComputeBoundingBox();
     }
 } // Physics2D

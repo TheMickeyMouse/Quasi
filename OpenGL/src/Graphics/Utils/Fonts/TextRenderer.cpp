@@ -1,8 +1,9 @@
 #include "TextRenderer.h"
 
 #include "Constants.h"
+#include "Math/Constants.h"
 
-namespace Graphics {
+namespace Quasi::Graphics {
     void TextRenderer::CharQuad::MoveY(float y) {
         v0.Position.y += y;
         v1.Position.y += y;
@@ -124,8 +125,7 @@ namespace Graphics {
             }
     }
 
-    bool TextRenderer::WordWrap(float advance, std::string::const_iterator& it,
-                                const std::string::const_iterator& begin) {
+    bool TextRenderer::WordWrap(float advance, IterOf<Str>& it, IterOf<Str> begin) {
         if (align.IsWordWrap() && lineWidth + advance > align.rect.width()) { // word wrapping (complex part over here)
             if (it == begin) return false;
             auto backUntilSpace       = it - 1; // new iterator for looping until we reach a space
@@ -165,7 +165,7 @@ namespace Graphics {
         }
     }
 
-    void TextRenderer::ClipY(Maths::rect2f& pos, Maths::rect2f& tex, bool clipTop, bool clipBottom) const {
+    void TextRenderer::ClipY(Math::fRect2D& pos, Math::fRect2D& tex, bool clipTop, bool clipBottom) const {
         if (clipTop && pos.max.y > align.rect.max.y) {
             const float offset = pos.max.y - align.rect.max.y;
             const float percentage = offset / pos.height();
@@ -181,15 +181,15 @@ namespace Graphics {
         }
     }
 
-    void TextRenderer::PushCharQuad(const Maths::rect2f& pos, const Maths::rect2f& tex) {
+    void TextRenderer::PushCharQuad(const Math::fRect2D& pos, const Math::fRect2D& tex) {
         textVertices.emplace_back(pos.corner(0), tex.corner(0), 1.0f, Vertex::RENDER_TEXT); // y flipped cuz opengl textures are flipped
         textVertices.emplace_back(pos.corner(1), tex.corner(1), 1.0f, Vertex::RENDER_TEXT);
         textVertices.emplace_back(pos.corner(2), tex.corner(2), 1.0f, Vertex::RENDER_TEXT); // NOLINT(clang-diagnostic-xor-used-as-pow)
         textVertices.emplace_back(pos.corner(3), tex.corner(3), 1.0f, Vertex::RENDER_TEXT);
     }
 
-    void TextRenderer::AddChar(std::string::const_iterator& it, const std::string::const_iterator& begin) {
-        using namespace Maths;
+    void TextRenderer::AddChar(IterOf<Str>& it, IterOf<Str> begin) {
+        using namespace Math;
         const char glyph = *it;
         if (glyph == '\n') {
             TriggerNewLine(); // new line
@@ -212,9 +212,9 @@ namespace Graphics {
             TriggerNewLine(); // new line for wrapping
         }
 
-        const fvec2 rsize = rect.rect.size() * font.textureSize.as<float>(); // real-scale size of the quad
-        rect2f texture = rect.rect;
-        rect2f pos = rect.offset.as<float>().to(fvec2 { rsize.x, -rsize.y }.as_size()) * scaleRatio + pen;
+        const fVector2 rsize = rect.rect.size() * font.textureSize.as<float>(); // real-scale size of the quad
+        fRect2D texture = rect.rect;
+        fRect2D pos = rect.offset.as<float>().to(fVector2 { rsize.x, -rsize.y }.as_size()) * scaleRatio + pen;
 
         if (align.IsCropY() && !align.IsVerticalJustified()) {
             ClipY(pos, texture, wouldClipTop, wouldClipBottom);
@@ -229,8 +229,8 @@ namespace Graphics {
         if (align.IsAlignJustified()) lineWords.back().width += advance; // the current word also has to be updated}
     }
 
-    void TextRenderer::AddRichChar(const stdu::rich_string::const_iter& it) {
-        using namespace Maths;
+    void TextRenderer::AddRichChar(const Text::RichString::Iter& it) {
+        using namespace Math;
         const auto [glyph, style] = *it;
         if (glyph == '\n') {
             TriggerNewLine(); // new line
@@ -258,9 +258,9 @@ namespace Graphics {
             TriggerNewLine(); // new line for wrapping
         }
 
-        const fvec2 rsize = rect.rect.size() * font.textureSize.as<float>(); // real-scale size of the quad
-        rect2f texture = rect.rect;
-        rect2f pos = rect.offset.as<float>().to(fvec2 { rsize.x, -rsize.y }.as_size()) * scaleRatio + pen;
+        const fVector2 rsize = rect.rect.size() * font.textureSize.as<float>(); // real-scale size of the quad
+        fRect2D texture = rect.rect;
+        fRect2D pos = rect.offset.asf().to(fVector2 { rsize.x, -rsize.y }.as_size()) * scaleRatio + pen;
 
         if (align.IsCropY() && !align.IsVerticalJustified()) {
             ClipY(pos, texture, wouldClipTop, wouldClipBottom);
@@ -296,9 +296,9 @@ namespace Graphics {
         lastSpaceIndex = meshIndex; // update index
     }
 
-    std::vector<Font::Vertex> TextRenderer::RenderText(const std::string& string) {
-        using namespace Maths;
-        lineCount = (uint)(std::ranges::count(string, '\n') + 1); //line count for vertical alignment
+    Vec<Font::Vertex> TextRenderer::RenderText(Str string) {
+        using namespace Math;
+        lineCount = (u32)(std::ranges::count(string, '\n') + 1); //line count for vertical alignment
         Prepare();
         
         if (align.IsAlignJustified()) lineWords.emplace_back(0, 0.0f); // add new beginning 'word'
@@ -312,15 +312,15 @@ namespace Graphics {
         return textVertices;
     }
 
-    std::vector<Font::Vertex> TextRenderer::RenderRichText(const stdu::rich_string& string) {
-        using namespace Maths;
-        lineCount = string.lines(); //line count for vertical alignment
+    Vec<Font::Vertex> TextRenderer::RenderRichText(const Text::RichString& string) {
+        using namespace Math;
+        lineCount = string.Lines(); // line count for vertical alignment
         Prepare();
         
         if (align.IsAlignJustified()) lineWords.emplace_back(0, 0.0f); // add new beginning 'word'
 
-        std::vector<rangef> monos;
-        uint monoNum = 0;
+        Vec<fRange> monos;
+        u32 monoNum = 0;
         const float monoPadding = fontSize.pointsf() * 0.33f;
         auto it = string.begin();
         for (; it != string.end(); ++it) { // loop each char in string (keep in mind not ranged for loop)
@@ -338,12 +338,12 @@ namespace Graphics {
                     monos.back().max = pen.x;
                 }
                 const float restWidth = align.GetXOff(lineWidth - align.letterSpacing.pointsf());
-                for (const rangef monoSpan : monos) {
+                for (const fRange monoSpan : monos) {
                     const auto [_, ascend, descent] = font.GetDefaultMetric();
                     AddRoundedRect(
                         { monoSpan.min + restWidth, monoSpan.max + restWidth,
                           pen.y + descent.pointsf() * scaleRatio, pen.y + ascend.pointsf() * scaleRatio },
-                        fontSize.pointsf() * 0.3f, colorf::from_hex("27303d")
+                        fontSize.pointsf() * 0.3f, fColor::from_hex("27303d")
                     );
                 }
                 monos.clear();
@@ -359,22 +359,22 @@ namespace Graphics {
             monos.back().max = pen.x;
         }
         const float restWidth = align.GetXOff(lineWidth - align.letterSpacing.pointsf());
-        for (const rangef monoSpan : monos) {
+        for (const fRange monoSpan : monos) {
             const auto [_, ascend, descent] = font.GetDefaultMetric();
             AddRoundedRect(
                 { monoSpan.min + restWidth, monoSpan.max + restWidth,
                   pen.y + descent.pointsf() * scaleRatio, pen.y + ascend.pointsf() * scaleRatio },
-                fontSize.pointsf() * 0.3f, colorf::from_hex("27303d")
+                fontSize.pointsf() * 0.3f, fColor::from_hex("27303d")
             );
         }
         
         return textVertices;
     }
 
-    void TextRenderer::AddRoundedRect(const Maths::rect2f& region, float roundRadius, const Maths::colorf& color) {
-        using namespace Maths;
+    void TextRenderer::AddRoundedRect(const Math::fRect2D& region, float roundRadius, const Math::fColor& color) {
+        using namespace Math;
         // rectangle
-        const fvec2 y = fvec2::unit_y(roundRadius);
+        const fVector2 y = fVector2::unit_y(roundRadius);
         constexpr int renderType = Vertex::RENDER_FILL;
         const uint off = (uint)bgVertices.size();
         bgVertices.emplace_back(region.corner(0) + y, 0.0f, color, renderType);
@@ -382,7 +382,7 @@ namespace Graphics {
         bgVertices.emplace_back(region.corner(2) - y, 0.0f, color, renderType);
         bgVertices.emplace_back(region.corner(3) - y, 0.0f, color, renderType);
 
-        const fvec2 x = fvec2::unit_x(roundRadius);
+        const fVector2 x = fVector2::unit_x(roundRadius);
         bgVertices.emplace_back(region.corner(2) + x,     0.0f, color, renderType);
         bgVertices.emplace_back(region.corner(2) + x - y, 0.0f, color, renderType);
         bgVertices.emplace_back(region.corner(3) - x,     0.0f, color, renderType);
@@ -404,17 +404,17 @@ namespace Graphics {
         constexpr float angle = HALF_PI / (float)cuts;
         uint ind = 12 + off;
         for (int corner = 0; corner < 4; ++corner) {
-            fvec2 origin = region.inset(roundRadius).corner(corner);
+            fVector2 origin = region.inset(roundRadius).corner(corner);
             bgVertices.emplace_back(origin, 0.0f, color, renderType);
             for (int i = 0; i < cuts; ++i) {
                 bgVertices.emplace_back(
-                    fvec2::from_polar(roundRadius,
+                    fVector2::from_polar(roundRadius,
                         angle * (float)i + HALF_PI * (float)(map >> corner * 8 & 255))
                     + origin, 0.0f, color, renderType);
                 bgIndices.emplace_back(ind, ind + 1 + i, ind + 2 + i );
             }
             bgVertices.emplace_back(
-                fvec2::from_polar(roundRadius,
+                fVector2::from_polar(roundRadius,
                     HALF_PI * (float)(1 + (map >> corner * 8 & 255)))
                 + origin, 0.0f, color, renderType);
             ind += cuts + 2;

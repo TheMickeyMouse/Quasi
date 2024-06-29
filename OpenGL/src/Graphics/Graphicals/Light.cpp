@@ -1,46 +1,24 @@
 #include "Light.h"
 
+#include <cmath>
+
 #include "Constants.h"
 #include "imgui.h"
 
-namespace Graphics {
-    template <LightCaster L>
-    stdu::ref<L> Light::AsUnchecked() {
-        return *(L*)&lightAddressBegin;  // NOLINT(clang-diagnostic-cast-qual)
-        // not very pretty but hey, its all i got ok?
+namespace Quasi::Graphics {
+    Math::fVector3 Light::Position() const {
+        return Visit([]<class L> (const L& light) {
+            if constexpr (std::is_convertible_v<L, SunLight>) return -light.direction;
+            else return light.position;
+        });
     }
 
-    template <LightCaster L>
-    stdu::ref<const L> Light::AsUnchecked() const {
-        return *(const L*)&lightAddressBegin;
-    }
-
-    Maths::fvec3 Light::Position() const {
-        switch (type) {
-            case LightType::SUNLIGHT:
-                return -sunLight.direction;
-            case LightType::POINTLIGHT:
-                return pointLight.position;
-            case LightType::FLASHLIGHT:
-                return flashLight.position;
-            case LightType::NONE:
-                return NAN;
-        }
-        return NAN;
-    }
-
-    Maths::fvec3 Light::Direction() const {
-        switch (type) {
-            case LightType::SUNLIGHT:
-                return sunLight.direction;
-            case LightType::POINTLIGHT:
-                return -pointLight.position;
-            case LightType::FLASHLIGHT:
-                return Maths::fvec3::from_spheric(1, flashLight.yaw, flashLight.pitch);
-            case LightType::NONE:
-                return 0;
-        }
-        return NAN;
+    Math::fVector3 Light::Direction() const {
+        return Visit(
+            [](const SunLight&   sun)   { return sun.direction; },
+            [](const PointLight& point) { return -point.position; },
+            [](const FlashLight& flash) { return Math::fVector3::from_spheric(1, flash.yaw, flash.pitch); }
+        );
     }
 
     void Light::ImGuiEdit(const char* const title) {
@@ -49,122 +27,20 @@ namespace Graphics {
 
         ImGui::BeginTabBar("Light Edit");
 
-        for (uint i = 0; i < LightTypeCount(); ++i) {
-            if (ImGui::TabItemButton(ToStr((LightType)i))) {
-                type = (LightType)i;
-            }
-        }
-
-        ImGui::ColorEdit3("Color", color.begin());
-        ImGui::DragFloat("Intensity", &color.a, 0.01f);
-        switch (type) {
-            case LightType::SUNLIGHT:
-                ImGuiEditLight<SunLight>();
-            break;
-            case LightType::POINTLIGHT:
-                ImGuiEditLight<PointLight>();
-            break;
-            case LightType::FLASHLIGHT:
-                ImGuiEditLight<FlashLight>();
-            break;
-            case LightType::NONE:
-                break;
-        }
-
-        ImGui::EndTabBar();
-        if (ImGui::Button("Copy State to Clipboard")) CopyState();
-        ImGui::TreePop();
-    }
-
-    void Light::CopyState() const {
-        switch (type) {
-            case LightType::SUNLIGHT: {
-                ImGui::SetClipboardText(
-                    std::format(
-                        "light = Graphics::SunLight {{\n"
-                        "   .direction = {{ {}, {}, {} }},\n"
-                        "}};\n"
-                        "light.color = {{ {}, {}, {} }};\n",
-                        sunLight.direction.x, sunLight.direction.y, sunLight.direction.z,
-                        color.r, color.g, color.b)
-                    .c_str()
-                );
-                break;
-            }
-            case LightType::POINTLIGHT: {
-                ImGui::SetClipboardText(
-                    std::format(
-                        "light = Graphics::PointLight {{\n"
-                        "   .position = {{ {}, {}, {} }},\n"
-                        "   .constant = {},\n"
-                        "   .linear = {},\n"
-                        "   .quadratic = {},\n"
-                        "}};\n"
-                        "light.color = {{ {}, {}, {} }};\n",
-                        pointLight.position.x, pointLight.position.y, pointLight.position.z,
-                        pointLight.constant, pointLight.linear, pointLight.quadratic,
-                        color.r, color.g, color.b)
-                    .c_str()
-                );
-                break;
-            }
-            case LightType::FLASHLIGHT: {
-                ImGui::SetClipboardText(
-                    std::format(
-                        "light = Graphics::FlashLight {{\n"
-                        "   .position = {{ {}, {}, {} }},\n"
-                        "   .yaw = {}, .pitch = {},\n"
-                        "   .innerCut = {}, .outerCut = {}\n"
-                        "}};\n"
-                        "light.color = {{ {}, {}, {} }};\n",
-                        flashLight.position.x, flashLight.position.y, flashLight.position.z,
-                        flashLight.yaw, flashLight.pitch,
-                        flashLight.innerCut, flashLight.outerCut,
-                        color.r, color.g, color.b)
-                    .c_str()
-                );
-                break;
-            }
-            case LightType::NONE:
-                break;
-        }
-    }
-
-    template <> void Light::ImGuiEditLight<SunLight>() {
-        if (!Is<SunLight>()) Set(SunLight { .direction = Direction() });
-
-        auto [len, yaw, pitch] = sunLight.direction.spheric();
-        yaw = std::isnan(yaw) ? 0 : yaw;
-        pitch = std::isnan(pitch) ? 0 : pitch;
-        ImGui::SliderFloat("Yaw", &yaw, -Maths::PI, Maths::PI);
-        ImGui::SliderFloat("Pitch", &pitch, -Maths::HALF_PI, Maths::HALF_PI);
-        ImGui::SliderFloat("Length", &len, 0, 10);
-        sunLight.direction = Maths::fvec3::from_spheric(len, yaw, pitch);
-    }
-
-    template <> void Light::ImGuiEditLight<PointLight>() {
-        if (!Is<PointLight>())
+        using namespace Math;
+        if (ImGui::TabItemButton("Sun") && !Is<SunLight>())
+            Set(SunLight {
+                .direction = Direction()
+            });
+        if (ImGui::TabItemButton("Point") && !Is<PointLight>())
             Set(PointLight {
                 .position = Position(),
                 .constant = 1.0f,
                 .linear = 0.0f,
                 .quadratic = 0.001f
             });
-
-        ImGui::DragFloat3("Position", flashLight.position.begin());
-        if (ImGui::TreeNode("Light Attenuation")) {
-            ImGui::DragFloat("Constant",  &pointLight.constant, 0.01f);
-            ImGui::DragFloat("Linear",    &pointLight.linear, 0.01f);
-            ImGui::DragFloat("Quadratic", &pointLight.quadratic, 0.01f);
-
-            ImGui::TreePop();
-        }
-    }
-
-    template <> void Light::ImGuiEditLight<FlashLight>() {
-        using Maths::operator ""_deg;
-        if (!Is<FlashLight>()) {
-            auto [_, yaw, pitch] = Direction().spheric();
+        if (ImGui::TabItemButton("Spot") && !Is<FlashLight>()) {
+            const auto [_, yaw, pitch] = Direction().spheric();
             Set(FlashLight {
                 .position = Position(),
                 .yaw = yaw, .pitch = pitch,
@@ -172,21 +48,86 @@ namespace Graphics {
             });
         }
 
-        ImGui::DragFloat3("Position",  flashLight.position.begin());
+        ImGui::ColorEdit3("Color", color.begin());
+        ImGui::DragFloat("Intensity", &color.a, 0.01f);
 
-        flashLight.yaw = std::isnan(flashLight.yaw) ? 0 : flashLight.yaw;
-        flashLight.pitch = std::isnan(flashLight.pitch) ? 0 : flashLight.pitch;
-        ImGui::SliderFloat("Yaw", &flashLight.yaw, -Maths::PI, Maths::PI);
-        ImGui::SliderFloat("Pitch", &flashLight.pitch, -Maths::HALF_PI, Maths::HALF_PI);
+        Visit([] (auto& light) { ImGuiEditVisitor(light); });
 
-        ImGui::SliderFloat("Inner Cutoff", &flashLight.innerCut, 0, Maths::PI);
-        ImGui::SliderFloat("Outer Cutoff", &flashLight.outerCut, 0, Maths::PI);
+        ImGui::EndTabBar();
+        if (ImGui::Button("Copy State to Clipboard")) CopyState();
+        ImGui::TreePop();
     }
 
-    template stdu::ref<SunLight> Light::AsUnchecked<SunLight>();
-    template stdu::ref<PointLight> Light::AsUnchecked<PointLight>();
-    template stdu::ref<FlashLight> Light::AsUnchecked<FlashLight>();
-    template stdu::ref<const SunLight> Light::AsUnchecked<SunLight>() const;
-    template stdu::ref<const PointLight> Light::AsUnchecked<PointLight>() const;
-    template stdu::ref<const FlashLight> Light::AsUnchecked<FlashLight>() const;
+    void Light::CopyState() const {
+        ImGui::SetClipboardText(Visit(
+            [&](const SunLight& sun) {
+                return std::format(
+                    "light = Graphics::SunLight {{\n"
+                    "   .direction = {{ {}, {}, {} }},\n"
+                    "}};\n"
+                    "light.color = {{ {}, {}, {} }};\n",
+                    sun.direction.x, sun.direction.y, sun.direction.z,
+                    color.r, color.g, color.b);
+            },
+            [&](const PointLight& point) {
+                return std::format(
+                    "light = Graphics::PointLight {{\n"
+                    "   .position = {{ {}, {}, {} }},\n"
+                    "   .constant = {},\n"
+                    "   .linear = {},\n"
+                    "   .quadratic = {},\n"
+                    "}};\n"
+                    "light.color = {{ {}, {}, {} }};\n",
+                    point.position.x, point.position.y, point.position.z,
+                    point.constant, point.linear, point.quadratic,
+                    color.r, color.g, color.b);
+            },
+            [&](const FlashLight& flash) {
+                return std::format(
+                        "light = Graphics::FlashLight {{\n"
+                        "   .position = {{ {}, {}, {} }},\n"
+                        "   .yaw = {}, .pitch = {},\n"
+                        "   .innerCut = {}, .outerCut = {}\n"
+                        "}};\n"
+                        "light.color = {{ {}, {}, {} }};\n",
+                        flash.position.x, flash.position.y, flash.position.z,
+                        flash.yaw, flash.pitch,
+                        flash.innerCut, flash.outerCut,
+                        color.r, color.g, color.b);
+            }
+        ).c_str());
+    }
+
+    template <> void Light::ImGuiEditVisitor<SunLight>(SunLight& light) {
+        auto [len, yaw, pitch] = light.direction.spheric();
+        yaw   = std::isnan(yaw)   ? 0 : yaw;
+        pitch = std::isnan(pitch) ? 0 : pitch;
+        ImGui::SliderFloat("Yaw",    &yaw,   -Math::PI,      Math::PI);
+        ImGui::SliderFloat("Pitch",  &pitch, -Math::HALF_PI, Math::HALF_PI);
+        ImGui::SliderFloat("Length", &len, 0, 10);
+        light.direction = Math::fVector3::from_spheric(len, yaw, pitch);
+    }
+
+    template <> void Light::ImGuiEditVisitor<PointLight>(PointLight& light) {
+        ImGui::DragFloat3("Position", light.position.begin());
+        if (ImGui::TreeNode("Light Attenuation")) {
+            ImGui::DragFloat("Constant",  &light.constant,  0.01f);
+            ImGui::DragFloat("Linear",    &light.linear,    0.01f);
+            ImGui::DragFloat("Quadratic", &light.quadratic, 0.01f);
+
+            ImGui::TreePop();
+        }
+    }
+
+    template <> void Light::ImGuiEditVisitor<FlashLight>(FlashLight& light) {
+        ImGui::DragFloat3("Position",  light.position.begin());
+
+        light.yaw   = std::isnan(light.yaw)   ? 0 : light.yaw;
+        light.pitch = std::isnan(light.pitch) ? 0 : light.pitch;
+        ImGui::SliderFloat("Yaw",   &light.yaw,   -Math::PI,      Math::PI);
+        ImGui::SliderFloat("Pitch", &light.pitch, -Math::HALF_PI, Math::HALF_PI);
+
+        ImGui::SliderFloat("Inner Cutoff", &light.innerCut, 0, Math::PI);
+        ImGui::SliderFloat("Outer Cutoff", &light.outerCut, 0, Math::PI);
+    }
 }

@@ -4,19 +4,20 @@
 
 #include <GL/glew.h>
 #include "GLDebug.h"
+#include "Textures/Texture.h"
 
-namespace Graphics {
-    glID FrameBufferHandler::Create() const {
-        glID id;
+namespace Quasi::Graphics {
+    GraphicsID FrameBufferHandler::Create() const {
+        GraphicsID id;
         GL_CALL(glGenFramebuffers(1, &id));
         return id;
     }
 
-    void FrameBufferHandler::Destroy(glID id) const {
+    void FrameBufferHandler::Destroy(GraphicsID id) const {
         GL_CALL(glDeleteFramebuffers(1, &id));
     }
 
-    void FrameBufferHandler::Bind(glID id) const {
+    void FrameBufferHandler::Bind(GraphicsID id) const {
         GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, id));
     }
 
@@ -35,7 +36,7 @@ namespace Graphics {
     void FrameBuffer::Complete() const {
         const int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
         if (status != GL_FRAMEBUFFER_COMPLETE) {
-            GLLogger().Error({"Framebuffer was incomplete with code 0x{04X}."}, status);
+            GLLogger().Error("Framebuffer was incomplete with code 0x{:04X}.", status);
         }
     }
 }

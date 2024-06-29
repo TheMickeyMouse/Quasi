@@ -7,7 +7,7 @@
 
 #include "GraphicsDevice.h"
 
-namespace IO {
+namespace Quasi::IO {
     IO::IO(Graphics::GraphicsDevice& gd) :
         gdevice(gd),
         Keyboard(*this),

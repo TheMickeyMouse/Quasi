@@ -2,23 +2,20 @@
 #include <ranges>
 
 #include "OBJModel.h"
-#include "Parsing.h"
 
-namespace Graphics {
-    void MTLMaterialLoader::Load(std::string_view string) {
+namespace Quasi::Graphics {
+    void MTLMaterialLoader::Load(Str string) {
         ParseProperties(string);
         CreateMaterials();
     }
 
-    void MTLMaterialLoader::ParseProperty(std::string_view line) {
+    void MTLMaterialLoader::ParseProperty(Str line) {
         const usize spaceIdx = line.find_first_of(' ');
-        const std::string_view prefix = line.substr(0, spaceIdx),
-                               data   = line.substr(spaceIdx + 1);
-
-        MTLPropertyType type = MTLPropertyType::None;
+        const Str prefix = line.substr(0, spaceIdx),
+                  data   = line.substr(spaceIdx + 1);
 
 #define MATCH_BEGIN if (false) {}
-#define MATCH_PREFIX(M, T) else if (prefix == (M)) { type = MTLPropertyType::T; }
+#define MATCH_PREFIX(M, T) else if (prefix == (M)) properties.emplace_back(CreateProperty<T>(data));
         MATCH_BEGIN
         MATCH_PREFIX("newmtl", NewMaterial)
 
@@ -34,133 +31,64 @@ namespace Graphics {
         MATCH_PREFIX("illum", IlluminationType)
 #undef MATCH_BEGIN
 #undef MATCH_PREFIX
-
-        if (type == MTLPropertyType::None) return;
-
-        properties.emplace_back(CreateProperty(type, data));
     }
 
-    void MTLMaterialLoader::ParseProperties(std::string_view string) {
+    void MTLMaterialLoader::ParseProperties(Str string) {
         using namespace std::literals;
         for (const auto line : std::views::split(string, "\r\n"sv)) {
-            ParseProperty(std::string_view { line.begin(), line.end() });
+            ParseProperty(Str { line.begin(), line.end() });
         }
     }
 
-    MTLMaterialLoader::MTLProperty MTLMaterialLoader::CreateProperty(MTLPropertyType type, std::string_view data) {
-        MTLProperty prop;
-        prop.type = type;
-        using namespace std::literals;
-        switch (type) {
-            case MTLPropertyType::NewMaterial:
-                prop.data = std::string { data };
-            return prop;
-            case MTLPropertyType::AmbientCol:
-            case MTLPropertyType::DiffuseCol:
-            case MTLPropertyType::SpecularCol:
-            case MTLPropertyType::EmissiveCol: {
-                const auto color = Maths::parse_vec<float, 3>(data, " "sv, ""sv, ""sv);
-                if (!color.has_value()) return {};
-                prop.data = color->to_color3();
-                return prop;
-            }
-            case MTLPropertyType::SpecularExp:
-            case MTLPropertyType::OpticalDen:
-            case MTLPropertyType::Dissolve:
-                prop.data = stdu::parse_float(data);
-            return prop;
-            case MTLPropertyType::IlluminationType:
-                prop.data = stdu::parse_int(data);
-            return prop;
-            case MTLPropertyType::None:;
-        }
-        return {};
-    }
-
-    void MTLMaterialLoader::CreateMaterial(std::span<const MTLProperty> matprop) {
-        if (matprop.empty() || matprop.front().type != MTLPropertyType::NewMaterial) return;
+    void MTLMaterialLoader::CreateMaterial(Span<const MTLProperty> matprop) {
+        if (matprop.empty() || !matprop.front().Is<NewMaterial>()) return;
 
         materials.emplace_back();
         MTLMaterial& mat = materials.back();
-        mat.name = std::get<std::string>(matprop.front().data);
+        mat.name = matprop.front().As<NewMaterial>()->name;
 
+#define MATCH_PROP(T, P, M) else if (const auto val_##T = prop.As<T>()) { mat.M = val_##T->P; }
         for (const MTLProperty& prop : matprop.subspan(1)) {
-            switch (prop.type) {
-                case MTLPropertyType::AmbientCol:
-                    mat.Ka = std::get<Maths::color3f>(prop.data);
-                    break;
-                case MTLPropertyType::DiffuseCol:
-                    mat.Kd = std::get<Maths::color3f>(prop.data);
-                    break;
-                case MTLPropertyType::SpecularCol:
-                    mat.Ks = std::get<Maths::color3f>(prop.data);
-                    break;
-                case MTLPropertyType::EmissiveCol:
-                    mat.Ke = std::get<Maths::color3f>(prop.data);
-                    break;
-                case MTLPropertyType::SpecularExp:
-                    mat.Ns = std::get<float>(prop.data);
-                    break;
-                case MTLPropertyType::OpticalDen:
-                    mat.Ni = std::get<float>(prop.data);
-                    break;
-                case MTLPropertyType::Dissolve:
-                    mat.d = std::get<float>(prop.data);
-                    break;
-                case MTLPropertyType::IlluminationType:
-                    mat.illum = std::get<int>(prop.data);
-                    break;
-                default:;
-            }
+            if (false) {}
+            MATCH_PROP(AmbientCol,       color,    Ka)
+            MATCH_PROP(DiffuseCol,       color,    Kd)
+            MATCH_PROP(SpecularCol,      color,    Ks)
+            MATCH_PROP(EmissiveCol,      color,    Ke)
+            MATCH_PROP(SpecularExp,      exp,      Ns)
+            MATCH_PROP(OpticalDen,       density,  Ni)
+            MATCH_PROP(Dissolve,         dissolve, d)
+            MATCH_PROP(IlluminationType, itype,    illum)
         }
+#undef MATCH_PROP
     }
 
     void MTLMaterialLoader::CreateMaterials() {
-        uint lastMat = 0;
-        for (uint i = 1; i < properties.size(); ++i) {
-            if (properties[i].type != MTLPropertyType::NewMaterial) continue;
-            const std::span<MTLProperty> mat = std::span { properties }.subspan(lastMat, i - 1 - lastMat);
+        u32 lastMat = 0;
+        for (u32 i = 1; i < properties.size(); ++i) {
+            if (!properties[i].Is<NewMaterial>()) continue;
+            const Span<MTLProperty> mat = Span { properties }.subspan(lastMat, i - 1 - lastMat);
             lastMat = i;
             CreateMaterial(mat);
         }
-        CreateMaterial(std::span { properties }.subspan(lastMat));
+        CreateMaterial(Span { properties }.subspan(lastMat));
     }
 
-    std::string MTLMaterialLoader::DebugStr() const {
-        std::stringstream ss {};
+    String MTLMaterialLoader::DebugStr() const {
+        String ss {};
+#define MATCH_PROP(T, S, P) else if (const auto val_##T = p.As<T>()) { const auto& $ = val_##T; ss += S; ss += ": "; ss += P; }
         for (const MTLProperty& p : properties) {
-            switch (p.type) {
-                case MTLPropertyType::NewMaterial:
-                    ss << "newmtl, " << std::get<std::string>(p.data);
-                    break;
-                case MTLPropertyType::AmbientCol:
-                    ss << "ambient, " << std::get<Maths::color3f>(p.data).hexcode();
-                    break;
-                case MTLPropertyType::DiffuseCol:
-                    ss << "diffuse, " << std::get<Maths::color3f>(p.data).hexcode();
-                    break;
-                case MTLPropertyType::SpecularCol:
-                    ss << "specular, " << std::get<Maths::color3f>(p.data).hexcode();
-                    break;
-                case MTLPropertyType::EmissiveCol:
-                    ss << "emissive, " << std::get<Maths::color3f>(p.data).hexcode();
-                    break;
-                case MTLPropertyType::SpecularExp:
-                    ss << "specular exp, " << std::get<float>(p.data);
-                    break;
-                case MTLPropertyType::OpticalDen:
-                    ss << "optical density, " << std::get<float>(p.data);
-                    break;
-                case MTLPropertyType::Dissolve:
-                    ss << "dissolve, " << std::get<float>(p.data);
-                    break;
-                case MTLPropertyType::IlluminationType:
-                    ss << "illum, " << std::get<int>(p.data);
-                    break;
-                case MTLPropertyType::None:;
-            }
-            ss << '\n';
+            if (false) {}
+            MATCH_PROP(NewMaterial,      "newmtl",       $->name)
+            MATCH_PROP(AmbientCol,       "ambient",      $->color.hexcode())
+            MATCH_PROP(DiffuseCol,       "diffuse",      $->color.hexcode())
+            MATCH_PROP(SpecularCol,      "specular",     $->color.hexcode())
+            MATCH_PROP(EmissiveCol,      "emmisive",     $->color.hexcode())
+            MATCH_PROP(SpecularExp,      "specular exp", $->exp)
+            MATCH_PROP(OpticalDen,       "optical den",  $->density)
+            MATCH_PROP(Dissolve,         "dissolve",     $->dissolve)
+            MATCH_PROP(IlluminationType, "illumtype",    std::to_string($->itype))
         }
-        return ss.str();
+        return ss;
     }
+#undef MATCH_PROP
 }

@@ -6,7 +6,7 @@
 
 #include "GLDebug.h"
 
-namespace Graphics {
+namespace Quasi::Graphics {
     void FontDeleter::operator()(FT_FaceRec_* ptr) const {
         if (ptr) FT_Done_Face(ptr);
     }
@@ -30,24 +30,24 @@ namespace Graphics {
     }
 
     void Font::RenderBitmap() {
-        using namespace Maths;
+        using namespace Math;
         int pen = 0; // x value of pen
 
         constexpr int loadSDF = FT_LOAD_RENDER | FT_LOAD_TARGET_(FT_RENDER_MODE_SDF); // used for sdf rendering
         constexpr int sdfExtrude = 16;
 
         textureSize = 0;
-        std::vector<uint> heights;
+        Vec<u32> heights;
         heights.reserve(faceHandles.size());
         for (const FaceHandle& faceHandle : faceHandles) {
             const FT_GlyphSlot glyphHandle = faceHandle->glyph;
-            uint y = 0;
-            uint x = 0;
+            u32 y = 0;
+            u32 x = 0;
             for (char charCode = 32; charCode < 127; ++charCode) { // loop through each character
                 // new method: SDFs extrude 8 pixels in all directions, so you can load normally and then add 16
                 // (no need to load twice!)
                 if (const int error = FT_Load_Char(faceHandle.get(), charCode, FT_LOAD_DEFAULT)) { 
-                    GLLogger().Error({"Loading char with err code {}"}, error);
+                    GLLogger().Error("Loading char with err code {}", error);
                     continue;  /* ignore errors */
                 }
 
@@ -81,15 +81,15 @@ namespace Graphics {
             );
             for (char charCode = 32; charCode < 127; ++charCode) { // loop through again, this time drawing textures
                 if (const int error = FT_Load_Char(faceHandle.get(), charCode, loadSDF)) { // loads again
-                    GLLogger().Error({"Loading char with err code {}"}, error);
+                    GLLogger().Error("Loading char with err code {}", error);
                     continue;
                 }
             
-                const uvec2 size = { glyphHandle->bitmap.width, glyphHandle->bitmap.rows }; // construct size in pixels of the texture
-                atlas.SetSubTexture(glyphHandle->bitmap.buffer, uvec2 { pen, heights[i] }.to(size.as_size()), { .format = TextureFormat::RED }); // draw the sub texture
+                const uVector2 size = { glyphHandle->bitmap.width, glyphHandle->bitmap.rows }; // construct size in pixels of the texture
+                atlas.SetSubTexture(glyphHandle->bitmap.buffer, uVector2 { pen, heights[i] }.to(size.as_size()), { .format = TextureFormat::RED }); // draw the sub texture
 
                 Glyph& glyph = glyphs[charCode - 32 + i * NUM_GLYPHS]; // write rendering memory
-                glyph.rect = fvec2 { pen, heights[i] }.to(size.asf().as_size()) / textureSize.asf(); // rect of texture in atlas
+                glyph.rect = fVector2 { pen, heights[i] }.to(size.asf().as_size()) / textureSize.asf(); // rect of texture in atlas
                 glyph.advance = { (float)glyphHandle->advance.x / 64.0f, (float)glyphHandle->advance.y / 64.0f }; // pen move
                 glyph.offset  = { glyphHandle->bitmap_left, glyphHandle->bitmap_top }; // offset from pen
 
@@ -100,11 +100,11 @@ namespace Graphics {
         Texture::SetPixelStore(PixelStoreParam::UNPACK_ALIGNMENT, 4);
     }
 
-    const Glyph& Font::GetGlyphRect(char c, FontStyle style, int id) const {
-        return glyphs[c - 32 + NUM_GLYPHS * (id * 4 + (int)style)];
+    const Glyph& Font::GetGlyphRect(char c, FontStyle style, u32 id) const {
+        return glyphs[c - 32 + NUM_GLYPHS * (id * 4 + (u32)style)];
     }
 
-    Mesh<Font::Vertex> Font::RenderText(const std::string& string, PointPer64 size, const TextAlign& align) const {
+    Mesh<Font::Vertex> Font::RenderText(Str string, PointPer64 size, const TextAlign& align) const {
         TextRenderer text { *this };
         text.SetAlign(align);
         text.SetFontSize(size);
@@ -119,7 +119,7 @@ namespace Graphics {
         return Mesh { std::move(text.textVertices), std::move(ind) }; // return the text mesh
     }
 
-    Mesh<Font::Vertex> Font::RenderRichText(const stdu::rich_string& string, PointPer64 size, const TextAlign& align) const {
+    Mesh<Font::Vertex> Font::RenderRichText(const Text::RichString& string, PointPer64 size, const TextAlign& align) const {
         TextRenderer text { *this };
         text.SetAlign(align);
         text.SetFontSize(size);
@@ -139,9 +139,9 @@ namespace Graphics {
         return Mesh { std::move(text.bgVertices), std::move(text.bgIndices) }; // return the text mesh
     }
 
-    Font Font::LoadFile(const std::string& filename) {
+    Font Font::LoadFile(Str filename) {
         FT_Face face = nullptr;
-        const int error = FT_New_Face(FontDevice::Library(), filename.c_str(), 0, &face);
+        const int error = FT_New_Face(FontDevice::Library(), filename.data(), 0, &face);
         if (!error) {
             Font font;
             font.SetDefaultFontStyle(face);
@@ -149,9 +149,9 @@ namespace Graphics {
         }
         
         if (error == FT_Err_Unknown_File_Format)
-            GLLogger().Error({"Font {} doesn't have valid format"}, filename);
+            GLLogger().Error("Font {} doesn't have valid format", filename);
         else
-            GLLogger().Error({"Font loaded with err code {}"}, error);
+            GLLogger().Error("Font loaded with err code {}", error);
         return {};
     }
 
@@ -164,7 +164,7 @@ namespace Graphics {
             return font;
         }
         
-        GLLogger().Error({"Font loaded with err code {}"}, error);
+        GLLogger().Error("Font loaded with err code {}", error);
         return {};
     }
 
@@ -172,18 +172,18 @@ namespace Graphics {
         faceHandles.resize(faceHandles.size() + 4);
     }
 
-    void Font::AddFontStyle(int id, const std::string& filePath, FontStyle style) {
+    void Font::AddFontStyle(u32 id, Str filePath, FontStyle style) {
         FT_Face face;
-        const int error = FT_New_Face(FontDevice::Library(), filePath.c_str(), 0, &face);
+        const int error = FT_New_Face(FontDevice::Library(), filePath.data(), 0, &face);
         if (!error) {
-            if (faceHandles.size() <= (uint)id * 4 + (uint)style) faceHandles.resize(id * 4 + (int)style + 1);
+            if (faceHandles.size() <= (u32)id * 4 + (u32)style) faceHandles.resize(id * 4 + (u32)style + 1);
             SetFontStyle(id, face, style);
         } else {
-            GLLogger().Error({"Font loaded with err code {}"}, error);
+            GLLogger().Error("Font loaded with err code {}", error);
         }
     }
 
-    void Font::SetFontStyle(int id, FT_Face face, FontStyle style) {
-        faceHandles[id << 2 | (int)style].reset(face);
+    void Font::SetFontStyle(u32 id, FT_Face face, FontStyle style) {
+        faceHandles[id << 2 | (u32)style].reset(face);
     }
 }

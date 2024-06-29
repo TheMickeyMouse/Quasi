@@ -1,54 +1,51 @@
 #pragma once
-#include <type_traits>
 
-#include "NumTypes.h"
+#include "Utils/Type.h"
 
-#include "stdu/types.h"
+namespace Quasi::Graphics {
+    using GraphicsID = u32;
+    constexpr GraphicsID GraphicsNoID = 0;
 
-namespace Graphics {
-    using glID = uint;
-    constexpr glID GL_NULL = 0;
-
-    template <class H>
-    struct GLObjectHandler {
-        [[nodiscard]] glID Create() const { return ((const H*)this)->Create(); }
-        void Destroy(glID id) const { ((const H*)this)->Destroy(id); }
-        void Bind(glID id) const { ((const H*)this)->Bind(id); }
-        void Unbind() const { ((const H*)this)->Unbind(); }
+    template <class H> concept GLObjectHandler = requires (H h, GraphicsID id) {
+        { h.Create()    } -> std::same_as<GraphicsID>;
+        { h.Destroy(id) } -> std::same_as<void>;
+        { h.Bind(id)    } -> std::same_as<void>;
+        { h.Unbind()    } -> std::same_as<void>;
     };
 
-    template <class H> requires std::is_base_of_v<GLObjectHandler<H>, H>
+    template <GLObjectHandler H>
     class GLObject {
     public:
-        [[msvc::no_unique_address]] H handler {};
-        glID rendererID = GL_NULL;
+        GraphicsID rendererID = GraphicsNoID;
+        [[no_unique_address]] H handler {};
 
         explicit GLObject() = default;
-        GLObject(stdu::empty) : rendererID(handler.Create()) {}
+        void Create() { rendererID = handler.Create(); }
         ~GLObject() { Delete(); }
 
         GLObject(const GLObject&) = delete;
         GLObject& operator=(const GLObject&) = delete;
-        GLObject(GLObject&& obj) noexcept : handler(obj.handler), rendererID(obj.rendererID) {
-            obj.rendererID = GL_NULL;
+        GLObject(GLObject&& obj) noexcept : rendererID(obj.rendererID), handler(std::move(obj.handler)) {
+            obj.rendererID = GraphicsNoID;
         }
         GLObject& operator=(GLObject&& obj) noexcept {
-            rendererID = obj.rendererID; obj.rendererID = GL_NULL;
-            handler = std::move(obj.handler);
+            this->~GLObject();
+            new (this) GLObject(std::move(obj));
             return *this;
         }
 
         void Bind() const { handler.Bind(rendererID); }
         void Unbind() const { handler.Unbind(); }
 
-        void Delete() { handler.Destroy(rendererID); rendererID = GL_NULL; }
+        void Delete() { handler.Destroy(rendererID); rendererID = GraphicsNoID; }
 
-        [[nodiscard]] bool IsNull() const { return rendererID == GL_NULL; }
+        [[nodiscard]] bool IsNull() const { return rendererID == GraphicsNoID; }
 
-        [[nodiscard]] const H& Handler() const { return handler; }
         H& Handler() { return handler; }
+        [[nodiscard]] const H& Handler() const { return handler; }
 
-        [[nodiscard]] operator glID() const { return rendererID; }
+        [[nodiscard]] operator bool() const { return !IsNull(); }
+        [[nodiscard]] operator GraphicsID() const { return rendererID; }
     };
 
     enum class BufferType {
@@ -57,10 +54,10 @@ namespace Graphics {
     };
 
     template <BufferType T>
-    struct BufferHandler : GLObjectHandler<BufferHandler<T>> {
-        [[nodiscard]] glID Create() const;
-        void Destroy(glID id) const;
-        void Bind(glID id) const;
+    struct BufferHandler {
+        [[nodiscard]] GraphicsID Create() const;
+        void Destroy(GraphicsID id) const;
+        void Bind(GraphicsID id) const;
         void Unbind() const;
     };
 }

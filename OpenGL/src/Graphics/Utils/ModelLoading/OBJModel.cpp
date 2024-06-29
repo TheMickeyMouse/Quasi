@@ -1,20 +1,20 @@
 #include "OBJModel.h"
 
-namespace Graphics {
+namespace Quasi::Graphics {
     void OBJModel::BindMeshes(RenderObject<OBJVertex>& scene) {
         for (OBJObject& o : objects) {
-             scene.BindMeshes(o.mesh);
+             scene.BindMesh(o.mesh);
         }
     }
 
     void OBJModel::AddMeshes(RenderObject<OBJVertex>& scene) {
         for (OBJObject& o : objects) {
-            scene.AddNewMeshes(o.mesh);
+            scene.AddNewMesh(o.mesh);
         }
     }
 
-    std::vector<Mesh<OBJVertex>> OBJModel::RetrieveMeshes() {
-        std::vector<Mesh<OBJVertex>> meshes;
+    Vec<Mesh<OBJVertex>> OBJModel::RetrieveMeshes() {
+        Vec<Mesh<OBJVertex>> meshes;
         meshes.reserve(objects.size());
         for (OBJObject& obj : objects) {
             meshes.emplace_back(std::move(obj.mesh));

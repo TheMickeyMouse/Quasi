@@ -1,15 +1,15 @@
 #pragma once
 #include "Mesh.h"
-#include "Vector.h"
+#include "Math/Vector.h"
 #include "VertexElement.h"
 
-namespace Graphics {
+namespace Quasi::Graphics {
     using OBJVertex = VertexTextureNormal3D;
 
     struct MTLMaterial { // https://en.wikipedia.org/wiki/Wavefront_.obj_file
-        std::string name;
+        String name;
         // ambient, diffuse, specular, emissive color
-        Maths::color3f Ka, Kd, Ks, Ke;
+        Math::fColor3 Ka, Kd, Ks, Ke;
         // specular exponent, optical density
         float Ns, Ni;
         // dissolve
@@ -20,7 +20,7 @@ namespace Graphics {
 
     struct OBJModel;
     struct OBJObject {
-        std::string name;
+        String name;
         Mesh<OBJVertex> mesh;
         bool smoothShading;
         int materialIndex = -1;
@@ -28,12 +28,12 @@ namespace Graphics {
     };
 
     struct OBJModel {
-        std::vector<OBJObject> objects;
-        std::vector<MTLMaterial> materials;
+        Vec<OBJObject> objects;
+        Vec<MTLMaterial> materials;
 
         void BindMeshes(RenderObject<OBJVertex>& scene);
         void AddMeshes(RenderObject<OBJVertex>& scene);
 
-        std::vector<Mesh<OBJVertex>> RetrieveMeshes();
+        Vec<Mesh<OBJVertex>> RetrieveMeshes();
     };
 }

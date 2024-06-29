@@ -6,6 +6,7 @@
 #include "GraphicsDevice.h"
 
 #include <algorithm>
+#include <ranges>
 
 #include "IO.h"
 #include "Mouse.h"
@@ -15,13 +16,11 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include "Texture.h"
+#include "Textures/Texture.h"
 
-namespace Graphics {
-    GraphicsDevice::GraphicsDevice(GLFWwindow* window, Maths::ivec2 winSize) : 
-        windowSize(winSize), mainWindow{ window }, ioDevice(*this),
-        randDevice(std::make_unique<Maths::random_gen>()) {
-
+namespace Quasi::Graphics {
+    GraphicsDevice::GraphicsDevice(GLFWwindow* window, Math::iVector2 winSize) :
+        windowSize(winSize), mainWindow{ window }, ioDevice(*this) {
         Instance = *this;
         Texture::Init();
     }
@@ -52,7 +51,7 @@ namespace Graphics {
     void GraphicsDevice::Transfer(GraphicsDevice& dest, GraphicsDevice&& from) {
         dest.renders = std::move(from.renders);
         for (const RenderHandle& h : dest.renders)
-            h->device = &dest;
+            h->device = dest;
 
         dest.windowSize = from.windowSize;
 
@@ -63,7 +62,7 @@ namespace Graphics {
 
         dest.fontDevice = std::move(from.fontDevice);
         dest.ioDevice = std::move(from.ioDevice);
-        dest.randDevice = std::move(from.randDevice);
+        dest.randDevice = from.randDevice;
 
         Instance = dest;
     }
@@ -96,7 +95,7 @@ namespace Graphics {
     }
     
     void GraphicsDevice::BindRender(RenderData& render) {
-        render.device = this;
+        render.device = *this;
         render.deviceIndex = (uint)(renders.size() - 1);
     }
 
@@ -112,7 +111,7 @@ namespace Graphics {
         renders.clear();
     }
 
-    RenderData& GraphicsDevice::GetRender(uint index) {
+    RenderData& GraphicsDevice::GetRender(u32 index) {
         return *renders[index];
     }
 
@@ -138,7 +137,7 @@ namespace Graphics {
         ++renderOptions.drawCalls;
     }
 
-    void GraphicsDevice::ClearColor(const Maths::colorf& color) {
+    void GraphicsDevice::ClearColor(const Math::fColor& color) {
         Render::SetClearColor(color);
     }
 
@@ -167,11 +166,11 @@ namespace Graphics {
 
     void GraphicsDevice::ShowDebugWindow() {
         ImGui::Begin("Debug Menu", &ShowDebugMenu);
+        ImGui::Text("Application Averages %.2fms/frame (%.1f FPS)", 1000.0 * ioDevice.Time.DeltaTime(), ioDevice.Time.Framerate());
 
         ImGui::BeginTabBar("Debug Items");
 
         if (ImGui::BeginTabItem("Basics")) {
-            ImGui::Text("Application Averages %.2fms/frame (%d FPS)", 1000.0 * ioDevice.Time.deltaTime, (int)std::ceil(ioDevice.Time.Framerate()));
             ImGui::Text("Draw as: "); ImGui::SameLine();
             ImGui::RadioButton("Fill",   (int*)&renderOptions.renderMode, (int)RenderMode::FILL);  ImGui::SameLine();
             ImGui::RadioButton("Lines",  (int*)&renderOptions.renderMode, (int)RenderMode::LINES); ImGui::SameLine();
@@ -184,7 +183,7 @@ namespace Graphics {
             }
 
             {
-                const Maths::colorf prevClearColor = renderOptions.clearColor;
+                const Math::fColor prevClearColor = renderOptions.clearColor;
                 ImGui::ColorEdit4("Clear Color", renderOptions.clearColor.begin());
                 if (renderOptions.clearColor != prevClearColor)
                     Render::SetClearColor(renderOptions.clearColor);
@@ -225,7 +224,7 @@ namespace Graphics {
                 ImGui::Text("Pressed: ");
                 for (int i = 0; i < IO::MouseType::LAST_MOUSE; ++i) {
                     if (!ioDevice.Mouse.ButtonPressed(i)) continue;
-                    ImGui::Text("   %s", IO::MouseType::MouseButtonToStr(i));
+                    ImGui::Text("   %s", IO::MouseType::MouseButtonToStr(i).data());
                 }
             }
             ImGui::Unindent();
@@ -234,9 +233,9 @@ namespace Graphics {
             ImGui::Indent();
             {
                 ImGui::Text("Keys Pressed Are:");
-                for (const auto key : ioDevice.Keyboard.KeysPressed()) {
-                    ImGui::Text("   %s", IO::KeyboardType::KeyToStr(key));
-                }
+                ioDevice.Keyboard.VisitKeysPressed([] (IO::Key k) {
+                    ImGui::Text("   %s", IO::KeyboardType::KeyToStr(k).data());
+                });
             }
             ImGui::Unindent();
 
@@ -260,14 +259,14 @@ namespace Graphics {
                     uint j = 0;
                     for (const auto pName : std::views::split(vType->propNames, "\0"sv)) {
                         const VertexBufferComponent& comp = vType->bufferLayout.GetComponents()[j];
-                        const char* nameofCompType = GLTypeName(comp.type);
+                        Str nameofCompType = GLTypeName(comp.type);
                         ImGui::Text("%s:%s%c%s%c%s",
                             pName.data(),
                             comp.count == 1 ? ""  : " Vector",
                             comp.count == 1 ? ' ' : '0' + comp.count,
                             comp.count == 1 ? ""  : " of ",
                             std::toupper(nameofCompType[0]),
-                            nameofCompType + 1);
+                            nameofCompType.data() + 1);
                         ++j;
                     }
                     ImGui::Unindent();
@@ -294,11 +293,11 @@ namespace Graphics {
         ImGui::End();
     }
 
-    GraphicsDevice GraphicsDevice::Initialize(Maths::ivec2 winSize) {
+    GraphicsDevice GraphicsDevice::Initialize(Math::iVector2 winSize) {
         InitGLLog();
         /* Initialize the library */
         if (!glfwInit()) {
-            GLError("GLFW failed to initialize");
+            GLLogger().Error("GLFW failed to initialize");
         }
 
         /* Create a windowed mode window and its OpenGL context */
@@ -308,7 +307,7 @@ namespace Graphics {
 
         if (!window) {
             glfwTerminate();
-            GLError("Failed to create window");
+            GLLogger().Error("Failed to create window");
         }
 
         /* Make the window's context current */
@@ -318,10 +317,10 @@ namespace Graphics {
 
         /* SETTING UP GLEW W/ GLEWINIT*/
         if (glewInit() != GLEW_OK) {
-            GLError("GLEW failed to initialize");
+            GLLogger().Error("GLEW failed to initialize");
         }
 
-        GLInfo((const char*)glGetString(GL_VERSION));
+        GLLogger().Info("{}", (const char*)glGetString(GL_VERSION));
 
         Render::EnableBlend();
         Render::UseBlendFunc(BlendFactor::SRC_ALPHA, BlendFactor::INVERT_SRC_ALPHA);

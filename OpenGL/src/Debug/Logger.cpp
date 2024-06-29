@@ -1,9 +1,9 @@
 #include "Logger.h"
 
 #include "internal_debug_break.h"
-#include "stdu/io.h"
+#include "Utils/Text.h"
 
-namespace Debug {
+namespace Quasi::Debug {
     Logger Logger::InternalLog = [] {
         Logger log { std::cout };
         log.SetName("Internal");
@@ -23,46 +23,49 @@ namespace Debug {
     void DebugBreak() {
         if constexpr (Logger::DEBUG)
             debug_break();
-        else
-            throw std::runtime_error("assertion failed.");
     }
 
     DateTime Logger::Now() {
         return std::chrono::system_clock::now();
     }
 
-    std::string Logger::FmtLog(const LogEntry& log) {
-        ConsoleColor scol = SeverityColor(log.severity);
+    String Logger::FmtLog(const LogEntry& log) {
+        return FmtLog(log.log, log.severity, log.time, log.fileLoc);
+    }
+
+    String Logger::FmtLog(Str log, Severity severity, DateTime time, const SourceLoc& fileLoc) {
+        ConsoleColor scol = SeverityColor(severity);
         return std::format(
             "{}[{:%Y-%m-%d %T}]{} {}> {}{:<8} {:<{}} {}{}\n",
-            scol, std::chrono::current_zone()->to_local(log.time), ConsoleColor::RESET, name,
-            scol, std::format("[{}]:", SeverityName(log.severity)),
-            FmtSourceLoc(log.fileLoc), lPad,
-            log.log,
+            scol, std::chrono::current_zone()->to_local(time), ConsoleColor::RESET, name,
+            scol, std::format("[{}]:", SeverityName(severity)),
+            FmtSourceLoc(fileLoc), lPad,
+            log,
             ConsoleColor::RESET
         );
     }
 
-    std::string_view Logger::FmtFile(std::string_view fullname) const {
-        return shortenFileNames ? std::get<1>(stdu::getfolder(fullname)) : fullname;
+    Str Logger::FmtFile(Str fullname) const {
+        return shortenFileNames ? std::get<1>(Text::SplitDirectory(fullname)) : fullname;
     }
 
-    std::string Logger::FmtSourceLoc(const SourceLoc& loc) const {
+    String Logger::FmtSourceLoc(const SourceLoc& loc) const {
         return includeFunction ?
             std::format("{}:{}:{} in {}:", FmtFile(loc.file_name()), loc.line(), loc.column(), loc.function_name()) :
             std::format("{}:{}:{}:", FmtFile(loc.file_name()), loc.line(), loc.column());
     }
 
-    void Logger::LogNoOut(const Severity sv, const std::string& s, const SourceLoc& loc) {
-        logs.emplace_back(s, sv, Now(), loc);
+    void Logger::LogNoOut(const Severity sv, const Str s, const SourceLoc& loc) {
+        if (recordLogs)
+            logs.emplace_back(std::string { s }, sv, Now(), loc);
     }
 
-    void Logger::ConsoleLog(const Severity sv, const std::string& s, const SourceLoc& loc) {
-        *logOut << FmtLog({ s, sv, Now(), loc });
+    void Logger::ConsoleLog(const Severity sv, const Str s, const SourceLoc& loc) {
+        *logOut << FmtLog(s, sv, Now(), loc );
         if (alwaysFlush) Flush();
     }
 
-    void Logger::Log(const Severity sv, const std::string& s, const SourceLoc& loc) {
+    void Logger::Log(const Severity sv, const Str s, const SourceLoc& loc) {
         LogNoOut(sv, s, loc);
         ConsoleLog(sv, s, loc);
         if (Overrides(breakLevel, sv)) {
@@ -71,7 +74,7 @@ namespace Debug {
         }
     }
 
-    void Logger::Assert(const bool assert, const std::string& msg, const SourceLoc& loc) {
+    void Logger::Assert(const bool assert, Str msg, const SourceLoc& loc) {
         if (!assert) {
             Log(Severity::ERROR, std::format("Assertion failed: {}", msg), loc);
             Flush();
@@ -79,8 +82,8 @@ namespace Debug {
         }
     }
 
-    void Logger::Write(std::ostream& out, Severity filter) {
-        filter = filter == Severity::SEVERITY_NUM ? filterLevel : filter;
+    void Logger::Write(OutStream& out, Severity filter) {
+        filter = filter == Severity::NEVER ? filterLevel : filter;
         for (const LogEntry& entry : logs) {
             if (Overrides(filter, entry.severity))
                 out << FmtLog(entry);

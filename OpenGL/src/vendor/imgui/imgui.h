@@ -2796,8 +2796,8 @@ struct ImFontAtlas
     // - After calling Build(), you can query the rectangle position and render your pixels.
     // - If you render colored output, set 'atlas->TexPixelsUseColors = true' as this may help some backends decide of prefered texture format.
     // - You can also request your rectangles to be mapped as font glyph (given a font + Unicode point),
-    //   so you can render e.g. custom colorful icons and use them as regular glyphs.
-    // - Read docs/FONTS.md for more details about using colorful icons.
+    //   so you can render e.g. custom fColorul icons and use them as regular glyphs.
+    // - Read docs/FONTS.md for more details about using fColorul icons.
     // - Note: this API may be redesigned later in order to support multi-monitor varying DPI settings.
     IMGUI_API int               AddCustomRectRegular(int width, int height);
     IMGUI_API int               AddCustomRectFontGlyph(ImFont* font, ImWchar id, int width, int height, float advance_x, const ImVec2& offset = ImVec2(0, 0));

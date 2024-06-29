@@ -4,14 +4,14 @@
 #include "TimeType.h"
 // ! THIS INCLUDES GLEW.H !
 
-namespace Graphics {
+namespace Quasi::Graphics {
     class GraphicsDevice;
 }
 
-namespace IO {
+namespace Quasi::IO {
     class IO {
     public:
-        stdu::ref<Graphics::GraphicsDevice> gdevice;
+        Ref<Graphics::GraphicsDevice> gdevice;
         KeyboardType Keyboard { nullptr };
         MouseType Mouse { nullptr };
         TimeType Time;

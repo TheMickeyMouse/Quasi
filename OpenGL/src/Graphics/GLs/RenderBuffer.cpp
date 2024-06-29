@@ -2,18 +2,18 @@
 #include "GL/glew.h"
 #include "GLDebug.h"
 
-namespace Graphics {
-    glID RenderBufferHandler::Create() const {
-        glID id;
+namespace Quasi::Graphics {
+    GraphicsID RenderBufferHandler::Create() const {
+        GraphicsID id;
         GL_CALL(glGenRenderbuffers(1, &id));
         return id;
     }
 
-    void RenderBufferHandler::Destroy(glID id) const {
+    void RenderBufferHandler::Destroy(GraphicsID id) const {
         GL_CALL(glDeleteRenderbuffers(1, &id));
     }
 
-    void RenderBufferHandler::Bind(glID id) const {
+    void RenderBufferHandler::Bind(GraphicsID id) const {
         GL_CALL(glBindRenderbuffer(GL_RENDERBUFFER, id));
     }
 
@@ -21,7 +21,8 @@ namespace Graphics {
         GL_CALL(glBindRenderbuffer(GL_RENDERBUFFER, 0));
     }
 
-    RenderBuffer::RenderBuffer(TextureIFormat format, Maths::ivec2 size) : GLObject({}) {
+    RenderBuffer::RenderBuffer(TextureIFormat format, Math::iVector2 size) {
+        Create();
         Bind();
         GL_CALL(glRenderbufferStorage(GL_RENDERBUFFER, (int)format, size.x, size.y));
         Unbind();

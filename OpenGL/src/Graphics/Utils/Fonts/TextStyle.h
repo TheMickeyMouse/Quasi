@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Graphics {
+namespace Quasi::Graphics {
     enum class FontStyle {
         NONE = 0,
         BOLD = 1 << 0,

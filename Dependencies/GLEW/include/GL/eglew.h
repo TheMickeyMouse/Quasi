@@ -1103,19 +1103,19 @@ typedef EGLSurface  ( * PFNEGLCREATEPIXMAPSURFACEHIPROC) (EGLDisplay  dpy, EGLCo
 
 #endif /* EGL_HI_clientpixmap */
 
-/* -------------------------- EGL_HI_colorformats -------------------------- */
+/* -------------------------- EGL_HI_fColorormats -------------------------- */
 
-#ifndef EGL_HI_colorformats
-#define EGL_HI_colorformats 1
+#ifndef EGL_HI_fColorormats
+#define EGL_HI_fColorormats 1
 
 #define EGL_COLOR_FORMAT_HI 0x8F70
 #define EGL_COLOR_RGB_HI 0x8F71
 #define EGL_COLOR_RGBA_HI 0x8F72
 #define EGL_COLOR_ARGB_HI 0x8F73
 
-#define EGLEW_HI_colorformats EGLEW_GET_VAR(__EGLEW_HI_colorformats)
+#define EGLEW_HI_fColorormats EGLEW_GET_VAR(__EGLEW_HI_fColorormats)
 
-#endif /* EGL_HI_colorformats */
+#endif /* EGL_HI_fColorormats */
 
 /* ------------------------ EGL_IMG_context_priority ----------------------- */
 
@@ -2521,7 +2521,7 @@ EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_surface_SMPTE2086_metadata;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_swap_buffers_with_damage;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_EXT_yuv_surface;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_HI_clientpixmap;
-EGLEW_VAR_EXPORT GLboolean __EGLEW_HI_colorformats;
+EGLEW_VAR_EXPORT GLboolean __EGLEW_HI_fColorormats;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_IMG_context_priority;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_IMG_image_plane_attribs;
 EGLEW_VAR_EXPORT GLboolean __EGLEW_KHR_cl_event;

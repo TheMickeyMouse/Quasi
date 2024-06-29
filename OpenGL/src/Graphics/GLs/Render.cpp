@@ -2,15 +2,8 @@
 #include <GL/glew.h>
 #include "GLDebug.h"
 
-namespace Graphics::Render {
+namespace Quasi::Graphics::Render {
     void Draw(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader) {
-        vertexArr.Bind();
-        indexBuff.Bind();
-        shader.Bind();
-        GL_CALL(glDrawElements(GL_TRIANGLES, (int)indexBuff.GetLength(), (int)GLTypeID::UINT, nullptr));
-    }
-
-    void Draw(const VertexArray& vertexArr, const DynamicIndexBuffer& indexBuff, const Shader& shader) {
         vertexArr.Bind();
         indexBuff.Bind();
         shader.Bind();
@@ -18,13 +11,6 @@ namespace Graphics::Render {
     }
 
     void DrawInstanced(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader, int instances) {
-        vertexArr.Bind();
-        indexBuff.Bind();
-        shader.Bind();
-        GL_CALL(glDrawElementsInstanced(GL_TRIANGLES, (int)indexBuff.GetLength(), (int)GLTypeID::UINT, nullptr, instances));
-    }
-
-    void DrawInstanced(const VertexArray& vertexArr, const DynamicIndexBuffer& indexBuff, const Shader& shader, int instances) {
         vertexArr.Bind();
         indexBuff.Bind();
         shader.Bind();
@@ -43,7 +29,7 @@ namespace Graphics::Render {
         GL_CALL(glPointSize(size));
     }
 
-    void SetClearColor(const Maths::colorf& color) {
+    void SetClearColor(const Math::fColor& color) {
         GL_CALL(glClearColor(color.r, color.g, color.b, color.a));
     }
 
@@ -75,7 +61,7 @@ namespace Graphics::Render {
         GL_CALL(glAlphaFunc((int)op, ref));
     }
 
-    void UseBlendConstColor(const Maths::colorf& ref) {
+    void UseBlendConstColor(const Math::fColor& ref) {
         GL_CALL(glBlendColor(ref.r, ref.g, ref.b, ref.a));
     }
 

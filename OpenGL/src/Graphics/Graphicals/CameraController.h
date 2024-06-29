@@ -1,21 +1,23 @@
 #pragma once
+#include <cmath>
+
 #include "Matrix.h"
 #include "Rect.h"
 
-namespace Graphics {
+namespace Quasi::Graphics {
     class GraphicsDevice;
 
     class CameraController {
     public:
-        Maths::fvec3 worldUp = Maths::fvec3::UP(), worldFront = Maths::fvec3::BACK();
+        Math::fVector3 worldUp = Math::fVector3::UP(), worldFront = Math::fVector3::BACK();
 
-        Maths::fvec3 position = { 0, 0, -2 };
+        Math::fVector3 position = { 0, 0, -2 };
         float yaw = 0.0f, pitch = 0.0f; // yaw is looking A <-> B rotation, pitch is ^^^ rotation
-        Maths::dvec2 lastMouse;
+        Math::dVector2 lastMouse;
         bool initialMouse = true;
 
         float speed = 1.5f, sensitivity = 0.12f, fov = 45.0f, viewFov = 45.0f;
-        Maths::rangef fovRange = { 1.0f, 45.0f };
+        Math::fRange fovRange = { 1.0f, 45.0f };
         float zoomRatio = 0.5f;
 
         bool enabled = false;
@@ -23,17 +25,17 @@ namespace Graphics {
 
         inline static bool showControls = false;
 
-        [[nodiscard]] Maths::fvec3 Right() const;
+        [[nodiscard]] Math::fVector3 Right() const;
 
         void Update(GraphicsDevice& gd, float dt);
         void Toggle(GraphicsDevice& gd);
 
-        [[nodiscard]] Maths::mat3D GetViewMat() const;
-        [[nodiscard]] Maths::mat3D GetProjMat() const;
+        [[nodiscard]] Math::Matrix3D GetViewMat() const;
+        [[nodiscard]] Math::Matrix3D GetProjMat() const;
 
         [[nodiscard]] bool UsesSmoothZoom() const { return !std::signbit(smoothZoom); }
 
-        void ImGuiEdit(const char* title = "Camera Controller");
+        void ImGuiEdit(Str title = "Camera Controller");
         void CopyState() const;
 
         static void HintControls();

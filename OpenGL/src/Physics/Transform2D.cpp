@@ -1,11 +1,11 @@
 #include "Transform2D.h"
 
-namespace Physics2D {
+namespace Quasi::Physics2D {
     void Transform::SetAngle(float angle) {
-        rotation = Maths::fvec2::from_polar(1.0f, angle);
+        rotation = Math::fVector2::from_polar(1.0f, angle);
     }
 
-    Maths::fvec2 Transform::RotationMul(const Maths::fvec2& a, const Maths::fvec2& b) {
+    Math::fVector2 Transform::RotationMul(const Math::fVector2& a, const Math::fVector2& b) {
         return { a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x };
     }
 
@@ -17,11 +17,11 @@ namespace Physics2D {
         return { position + rotation * t.position, RotationMul(rotation, t.rotation) };
     }
 
-    Maths::fvec2 Transform::operator*(const Maths::fvec2& p) const {
+    Math::fVector2 Transform::operator*(const Math::fVector2& p) const {
         return p.x * rotation - p.y * rotation.perpend() + position;
     }
 
-    Maths::rect2f Transform::operator*(const Maths::rect2f& r) const {
-        return Maths::rect2f { (*this) * r.min, (*this) * r.max }.corrected();
+    Math::fRect2D Transform::operator*(const Math::fRect2D& r) const {
+        return Math::fRect2D { (*this) * r.min, (*this) * r.max }.corrected();
     }
 } // Physics2D

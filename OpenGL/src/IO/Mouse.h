@@ -1,18 +1,15 @@
 #pragma once
 #include <queue>
 
-
-
-#include "Vector.h"
-#include "stdu/ref.h"
+#include "Math/Vector.h"
 
 struct GLFWwindow;
 
-namespace Graphics {
+namespace Quasi::Graphics {
     class GraphicsDevice;
 }
 
-namespace IO {
+namespace Quasi::IO {
     class IO;
     
     // TODO: USE INTERFERE INSTEAD OF POLLING WITH GLFWMOSUECALLBACK
@@ -26,10 +23,10 @@ namespace IO {
         int prevMouseStates = 0;
         std::queue<char> queuedMouseEvents;
 
-        Maths::dvec2 scroll, scrollDelta;
-        std::queue<Maths::dvec2> queuedScrolls;
+        Math::dVector2 scroll, scrollDelta;
+        std::queue<Math::dVector2> queuedScrolls;
 
-        stdu::ref<IO> io;
+        Ref<IO> io;
 
         explicit MouseType(IO& io);
         explicit MouseType(std::nullptr_t) {}
@@ -43,12 +40,12 @@ namespace IO {
         void Hide();
         void Show(); // will also unlock the cursor
 
-        [[nodiscard]] Maths::dvec2 GetMousePosPx() const;
-        [[nodiscard]] Maths::dvec2 GetMousePos() const;
+        [[nodiscard]] Math::dVector2 GetMousePosPx() const;
+        [[nodiscard]] Math::dVector2 GetMousePos() const;
         [[nodiscard]] bool IsInWindow() const;
 
-        [[nodiscard]] Maths::dvec2 GetMouseScroll() const;
-        [[nodiscard]] Maths::dvec2 GetMouseScrollDelta() const;
+        [[nodiscard]] Math::dVector2 GetMouseScroll() const;
+        [[nodiscard]] Math::dVector2 GetMouseScrollDelta() const;
 
         [[nodiscard]] int  PressedState()         const;
         [[nodiscard]] bool LeftPressed()          const;
@@ -76,7 +73,7 @@ namespace IO {
 
         static bool IsStandardMouseButton(int btn);
         static bool IsValidMouseButton(int btn);
-        static const char* MouseButtonToStr(int btn);
+        static Str  MouseButtonToStr(int btn);
         
         private:
             GLFWwindow* inputWindow();

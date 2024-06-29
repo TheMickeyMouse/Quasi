@@ -1,31 +1,28 @@
 #pragma once
 #include "VertexElement.h"
 
-namespace Graphics::VertexBuilder {
-    namespace tmp {
-        template <class ...Ts>
-        auto typelist2tuple(stdu::typelist<Ts...>) -> std::tuple<Ts...> { return {}; }
-
+namespace Quasi::Graphics::VertexBuilder {
+    namespace details {
         template <class T>
         using tuple_from = decltype(typelist2tuple(T {}));
     }
 
     struct MeshConstructData3D {
-        Maths::fvec3 Position, Normal;
-        uint VertexIndex;
+        Math::fVector3 Position, Normal;
+        u32 VertexIndex;
     };
 
-    constexpr Maths::fvec3 MeshConstructData3D::* PositionArg = &MeshConstructData3D::Position;
-    constexpr Maths::fvec3 MeshConstructData3D::* NormalArg   = &MeshConstructData3D::Normal;
-    constexpr uint         MeshConstructData3D::* VIndexArg   = &MeshConstructData3D::VertexIndex;
+    constexpr Math::fVector3 MeshConstructData3D::* PositionArg = &MeshConstructData3D::Position;
+    constexpr Math::fVector3 MeshConstructData3D::* NormalArg   = &MeshConstructData3D::Normal;
+    constexpr u32            MeshConstructData3D::* VIndexArg   = &MeshConstructData3D::VertexIndex;
 
     struct MeshConstructData2D {
-        Maths::fvec2 Position;
-        uint VertexIndex;
+        Math::fVector2 Position;
+        u32 VertexIndex;
     };
 
-    constexpr Maths::fvec2 MeshConstructData2D::* PositionArg2D = &MeshConstructData2D::Position;
-    constexpr uint         MeshConstructData2D::* VIndexArg2D   = &MeshConstructData2D::VertexIndex;
+    constexpr Math::fVector2 MeshConstructData2D::* PositionArg2D = &MeshConstructData2D::Position;
+    constexpr u32            MeshConstructData2D::* VIndexArg2D   = &MeshConstructData2D::VertexIndex;
 
     template <InstanceofVertex T>
     using Blueprint = typename T::__internal_blueprint__;
@@ -42,9 +39,7 @@ namespace Graphics::VertexBuilder {
     template <InstanceofVertex T, class... Ms>
     T BlueprintBuilder(const auto& args, Ms... members) {
         T base;
-        ([&] {
-            base.*((members).prop()) = members(args);
-        }(), ...);
+        Empty _ { (base.*(members.prop()) = members(args))... };
         return base;
     }
 
@@ -55,7 +50,7 @@ namespace Graphics::VertexBuilder {
     };
 
     template <auto P> struct Get {
-        stdu::member_t<P> operator()(const stdu::structure_t<P>& args) const {
+        MemberT<P> operator()(const StructureT<P>& args) const {
             return args.*P;
         }
     };
@@ -71,7 +66,7 @@ namespace Graphics::VertexBuilder {
     using GetVIndex2D = Get<VIndexArg2D>;
 
     template <class T, auto P> struct Cast {
-        T operator()(const stdu::structure_t<P>& args) const {
+        T operator()(const StructureT<P>& args) const {
             return (T)args.*P;
         }
     };
@@ -84,7 +79,7 @@ namespace Graphics::VertexBuilder {
     PROPERTY_CAST(TextureCoordinate);
 #undef PROPERTY_CAST
     template <class T> using CastVIndex   = Cast<T, VIndexArg>;
-    template <class T> using CastVIndex2D   = Cast<T, VIndexArg2D>;
+    template <class T> using CastVIndex2D = Cast<T, VIndexArg2D>;
 
     template <class T> struct Constant {
         T value;
@@ -94,10 +89,10 @@ namespace Graphics::VertexBuilder {
     };
 
     template <class F, auto P, auto ...Ps>
-    requires (std::is_same_v<stdu::structure_t<P>, stdu::structure_t<Ps>> && ...)
+    requires (std::is_same_v<StructureT<P>, StructureT<Ps>> && ...)
     struct From {
         F func;
-        auto operator()(const stdu::structure_t<P>& args) const {
+        auto operator()(const StructureT<P>& args) const {
             return func(args.*P, args.*Ps...);
         }
     };

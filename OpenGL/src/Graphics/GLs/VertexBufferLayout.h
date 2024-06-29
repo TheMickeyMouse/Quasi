@@ -2,57 +2,52 @@
 #include <vector>
 
 #include "GLTypeID.h"
+#include "Math/Vector.h"
+#include "Math/Color.h"
 
-
-#include "NumTypes.h"
-#include "Vector.h"
-#include "Color.h"
-
-namespace Graphics {
+namespace Quasi::Graphics {
     struct VertexBufferComponent {
         GLTypeID type;
-        uint count;
-        uchar flags;
-        static constexpr uchar NORMALIZED_FLAG = 1 << 0;
-        static constexpr uchar INTEGER_FLAG = 1 << 1;
+        u32 count : 24;
+        u32 flags : 8;
+        static constexpr byte NORMALIZED_FLAG = 1 << 0;
+        static constexpr byte INTEGER_FLAG = 1 << 1;
 
         VertexBufferComponent() = default;
         VertexBufferComponent(GLTypeID type, uint count, bool norm = false, bool integral = false)
             : type(type), count(count), flags((integral * INTEGER_FLAG) | (norm * NORMALIZED_FLAG)) {}
         
-        static VertexBufferComponent Float()  { return { GLTypeIDOf<float>,  1 }; }
-        static VertexBufferComponent Double() { return { GLTypeIDOf<double>, 1 }; }
-        static VertexBufferComponent Int()    { return { GLTypeIDOf<int>,    1 }; }
-        static VertexBufferComponent Uint()   { return { GLTypeIDOf<uint>,   1 }; }
-        static VertexBufferComponent SByte()  { return { GLTypeIDOf<char>,   1 }; }
-        static VertexBufferComponent Byte()   { return { GLTypeIDOf<uchar>,  1 }; }
-        static VertexBufferComponent Vec2()   { return { GLTypeIDOf<float>,  2 }; }
-        static VertexBufferComponent Vec3()   { return { GLTypeIDOf<float>,  3 }; }
-        static VertexBufferComponent Vec4()   { return { GLTypeIDOf<float>,  4 }; }
-        static VertexBufferComponent IVec2()  { return { GLTypeIDOf<int>,    2 }; }
-        static VertexBufferComponent IVec3()  { return { GLTypeIDOf<int>,    3 }; }
-        static VertexBufferComponent IVec4()  { return { GLTypeIDOf<int>,    4 }; }
+        static VertexBufferComponent Float()  { return { GLGetTypeID<float>,  1 }; }
+        static VertexBufferComponent Double() { return { GLGetTypeID<double>, 1 }; }
+        static VertexBufferComponent Int()    { return { GLGetTypeID<int>,    1 }; }
+        static VertexBufferComponent Uint()   { return { GLGetTypeID<uint>,   1 }; }
+        static VertexBufferComponent SByte()  { return { GLGetTypeID<char>,   1 }; }
+        static VertexBufferComponent Byte()   { return { GLGetTypeID<uchar>,  1 }; }
+        static VertexBufferComponent Vec2()   { return { GLGetTypeID<float>,  2 }; }
+        static VertexBufferComponent Vec3()   { return { GLGetTypeID<float>,  3 }; }
+        static VertexBufferComponent Vec4()   { return { GLGetTypeID<float>,  4 }; }
+        static VertexBufferComponent IVec2()  { return { GLGetTypeID<int>,    2 }; }
+        static VertexBufferComponent IVec3()  { return { GLGetTypeID<int>,    3 }; }
+        static VertexBufferComponent IVec4()  { return { GLGetTypeID<int>,    4 }; }
 
         template <class T> static VertexBufferComponent Type() {
-            if constexpr (std::is_floating_point_v<T>) return { GLTypeIDOf<T>, 1 };
-            if constexpr (std::is_integral_v<T>) return { GLTypeIDOf<T>, 1, false, true };
-            if constexpr (Maths::vec_t<T>)
-                return { GLTypeIDOf<typename T::scalar>, T::dimension };
-            if constexpr (Maths::color_t<T>)
-                return { GLTypeIDOf<typename Maths::color_traits<T>::scalar>, 3 + Maths::color_traits<T>::has_alpha };
+            if constexpr (std::is_floating_point_v<T>) return { GLGetTypeID<T>, 1 };
+            if constexpr (std::is_integral_v<T>) return { GLGetTypeID<T>, 1, false, true };
+            if constexpr (Math::VectorLike<T> || Math::ColorLike<T>)
+                return { GLGetTypeID<typename T::scalar>, T::dimension };
             return { GLTypeID::UNDEFINED, 0 };
         }
     };
     
     class VertexBufferLayout {
     private:
-        std::vector<VertexBufferComponent> components;
-        uint stride = 0;
+        Vec<VertexBufferComponent> components;
+        u32 stride = 0;
     public:
         VertexBufferLayout() = default;
-        VertexBufferLayout(std::initializer_list<VertexBufferComponent> comps);
+        VertexBufferLayout(IList<VertexBufferComponent> comps);
 
-        template <class T> void Push(uint count, bool normalized = false, bool integral = false);
+        template <class T> void Push(u32 count, bool normalized = false, bool integral = false);
         void Push(VertexBufferComponent comp);
         void PushLayout(const VertexBufferLayout& layout);
 
@@ -73,13 +68,13 @@ namespace Graphics {
 
 #undef VBE
 
-        [[nodiscard]] const std::vector<VertexBufferComponent>& GetComponents() const { return components; }
-        [[nodiscard]] uint GetStride() const { return stride; }
+        [[nodiscard]] const Vec<VertexBufferComponent>& GetComponents() const { return components; }
+        [[nodiscard]] u32 GetStride() const { return stride; }
     };
 
     template <class T>
-    void VertexBufferLayout::Push(uint count, bool normalized, bool integral) {
-        constexpr GLTypeID type = GLTypeIDOf<T>;
+    void VertexBufferLayout::Push(u32 count, bool normalized, bool integral) {
+        constexpr GLTypeID type = GLGetTypeID<T>;
         components.emplace_back(type, count, normalized, integral);
         stride += count * SizeOf(type);
     }

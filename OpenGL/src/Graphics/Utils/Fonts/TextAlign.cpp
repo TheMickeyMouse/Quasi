@@ -2,8 +2,8 @@
 
 #include "Font.h"
 
-namespace Graphics {
-    TextAlign& TextAlign::Move(Maths::fvec2 offset) {
+namespace Quasi::Graphics {
+    TextAlign& TextAlign::Move(Math::fVector2 offset) {
         rect += offset;
         return *this;
     }
@@ -14,19 +14,19 @@ namespace Graphics {
         return *this;
     }
 
-    TextAlign& TextAlign::Align(std::initializer_list<AlignOptions> options) {
+    TextAlign& TextAlign::Align(IList<AlignOptions> options) {
         for (const AlignOptions opt : options)
             alignOptions |= opt;
         return *this;
     }
 
-    TextAlign& TextAlign::Align(std::initializer_list<AlignOptI> options) {
+    TextAlign& TextAlign::Align(IList<AlignOptI> options) {
         for (const AlignOptI opt : options)
             alignOptions |= opt;
         return *this;
     }
 
-    TextAlign& TextAlign::Align(uchar alignX, uchar alignY, uchar wrapping, bool cropX, bool cropY) {
+    TextAlign& TextAlign::Align(byte alignX, byte alignY, byte wrapping, bool cropX, bool cropY) {
         alignOptions = alignX | (alignY << 2) | (wrapping << 4) | (cropX << 6) | (cropY << 7);
         return *this;
     }

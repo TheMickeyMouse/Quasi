@@ -1,36 +1,34 @@
 #include "World2D.h"
 
-#include <list>
+#include <algorithm>
 
-#include "sorted_vector.h"
-
-namespace Physics2D {
+namespace Quasi::Physics2D {
     void World::Clear() {
-        for (const BodyHandle& body : bodies)
+        for (auto body : bodies)
             body->world = nullptr;
         ClearWithoutUpdate();
     }
 
-    Body* World::CreateBodyWithHeap(const BodyCreateOptions& options, std::unique_ptr<Shape>&& heapAllocShape) {
+    Ref<Body> World::CreateBodyWithHeap(const BodyCreateOptions& options, Ref<Shape> heapAllocShape) {
         const float area = heapAllocShape->ComputeArea();
-        std::unique_ptr body = std::make_unique<Body>(
+        RefImpl body = *allocator.Create<Body>(
             options.position,
             area * options.density,
             options.type,
-            this,
-            std::move(heapAllocShape)
+            *this,
+            heapAllocShape
         );
-        return bodies.emplace_back(std::move(body)).get();
+        return bodies.emplace_back(body);
     }
 
-    Body* World::CreateBody(const BodyCreateOptions& options, const Shape& shape) {
-        return CreateBodyWithHeap(options, std::unique_ptr<Shape>(shape.CloneHeap()));
+    Ref<Body> World::CreateBody(const BodyCreateOptions& options, const Shape& shape) {
+        return CreateBodyWithHeap(options, shape.CloneOn(allocator));
     }
 
     void World::Update(float dt, int maxCollisionSteps) {
         dt /= (float)maxCollisionSteps;
         for (int t = 0; t < maxCollisionSteps; ++t) {
-            for (const BodyHandle& b : bodies) {
+            for (auto b : bodies) {
                 b->velocity *= std::pow(drag, dt);
                 if (b->type == BodyType::DYNAMIC)
                     b->velocity += gravity * dt;
@@ -42,27 +40,27 @@ namespace Physics2D {
             for (int i = 1; i < bodies.size(); ++i) {
                 for (int j = i - 1; j >= 0; --j) {
                     // this is different than lt ('<') because nan always returns false
-                    if (!(cmpr(*bodies[j]) >= cmpr(*bodies[j + 1]))) break;
+                    if (!(cmpr(bodies[j]) >= cmpr(bodies[j + 1]))) break;
                     std::swap(bodies[j], bodies[j + 1]);
                 }
             }
 
-            // std::ranges::sort(bodies, [&](const BodyHandle& a, const BodyHandle& b) { return cmpr(*a) < cmpr(*b); });
+            // std::ranges::sort(bodies, [&](const auto a, const auto b) { return cmpr(*a) < cmpr(*b); });
 
             // sweep impl
             // std::vector<std::tuple<Body*, Body*, Collision::Event>> collisionPairs;
-            std::vector<usize> active;
+            Vec<usize> active;
             for (usize i = 0; i < bodies.size(); ++i) {
-                Body* b = bodies[i].get();
+                Ref<Body> b = bodies[i];
                 const float min = b->ComputeBoundingBox().min.x;
                 for (auto actIt = active.begin(); actIt != active.end();) {
-                    Body* c = bodies[*actIt].get();
+                    Ref<Body> c = bodies[*actIt];
                     if (c->ComputeBoundingBox().max.x > min) {
-                        const Collision::Event event = b->CollidesWith(*c);
+                        const Collision::Event event = b->CollidesWith(c);
                         if (event && !event.Seperator().iszero()) {
                             // collisionPairs.emplace_back(b, c, event);
-                            StaticResolve (*b, *c, event);
-                            DynamicResolve(*b, *c, event);
+                            StaticResolve (b, c, event);
+                            DynamicResolve(b, c, event);
                         }
                         ++actIt;
                     } else {
@@ -79,7 +77,7 @@ namespace Physics2D {
 
             // for (uint i = 0; i < BodyCount(); ++i) {
             //     Body& base = bodies[i];
-            //     Maths::fvec2 prevPosition = base.position, prevVelocity = base.velocity;
+            //     Math::fVector2 prevPosition = base.position, prevVelocity = base.velocity;
             //     for (uint j = i + 1; j < BodyCount(); ++j) {
             //         Body& target = bodies[j];
             //         if (const Collision::Event event = base.CollidesWith(target)) {

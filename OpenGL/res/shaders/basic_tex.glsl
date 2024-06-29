@@ -11,7 +11,7 @@ out vec2 v_texID;
 
 uniform mat4 u_projection;
 uniform mat4 u_view;
-uniform ivec2 texSize;
+uniform iVector2 texSize;
 
 void main()
 {

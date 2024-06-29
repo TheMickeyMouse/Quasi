@@ -1,8 +1,8 @@
 #pragma once
 #include "FontDevice.h"
-#include "Rect.h"
+#include "Math/Rect.h"
 
-namespace Graphics {
+namespace Quasi::Graphics {
     struct Glyph;
 
     struct TextAlign {
@@ -28,18 +28,18 @@ namespace Graphics {
         using AlignOptI = int;
 
         AlignOptI alignOptions = DEFAULT;
-        Maths::rect2f rect;
+        Math::fRect2D rect;
         PointPer64 letterSpacing = 0_p64; // this is extra offset
         float lineSpacing = 1; // this is a multiplier
 
-        TextAlign(const Maths::rect2f& rect) : rect(rect) {}
+        TextAlign(const Math::fRect2D& rect) : rect(rect) {}
 
-        TextAlign& Move(Maths::fvec2 offset);
+        TextAlign& Move(Math::fVector2 offset);
 
         TextAlign& SpaceOut(float line = 1, PointPer64 letter = 0_p64);
-        TextAlign& Align(std::initializer_list<AlignOptions> options);
-        TextAlign& Align(std::initializer_list<AlignOptI> options);
-        TextAlign& Align(uchar alignX, uchar alignY, uchar wrapping, bool cropX, bool cropY);
+        TextAlign& Align(IList<AlignOptions> options);
+        TextAlign& Align(IList<AlignOptI> options);
+        TextAlign& Align(byte alignX, byte alignY, byte wrapping, bool cropX, bool cropY);
         TextAlign& ResetAlign();
 
         [[nodiscard]] bool IsAlignCenter()       const { return !(alignOptions & ALIGN_JUSTIFY); }

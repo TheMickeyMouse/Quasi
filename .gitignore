@@ -1,5 +1,4 @@
-﻿bin/
-OpenGL/src/Game/
+﻿OpenGL/src/Game/
 OpenGL/src/vendor/include/
 OpenGL/src/vendor/imgui/misc
 OpenGL/src/vendor/imgui/examples
@@ -8,6 +7,5 @@ OpenGL/src/vendor/imgui/backends
 OpenGL/src/vendor/imgui/docs
 .idea/
 .vs/
-out/
-cmake-build-debug-visual-studio/
-cmake-build-release-visual-studio/
+cmake-build-debug-mingw/
+cmake-build-release-mingw/

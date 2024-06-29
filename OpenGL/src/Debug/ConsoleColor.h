@@ -1,10 +1,9 @@
 #pragma once
-#include <iostream>
 #include <format>
 
-#include "stdu/enum_utils.h"
+#include "Utils/Enum.h"
 
-namespace Debug {
+namespace Quasi::Debug {
     enum class ConsoleColor {
         RESET = 0,
 
@@ -41,7 +40,7 @@ namespace Debug {
         BOLD_FLAG = 128,
         REGULAR_MASK = 127
     };
-    STDU_IMPL_ENUM_OPERATORS(ConsoleColor);
+    Q_IMPL_ENUM_OPERATORS(ConsoleColor);
 
     constexpr char ANSI_ESCAPE_CHAR = '\x1B';
 
@@ -57,33 +56,26 @@ namespace Debug {
 
     struct ColoredText {
         ConsoleColor color;
-        std::string string;
+        Str string;
     };
 
-    inline ColoredText Dye(const std::string& s, ConsoleColor color) { return { color, s }; }
-
-    inline std::ostream& operator<<(std::ostream& out, ConsoleColor color);
-    inline std::ostream& operator<<(std::ostream& out, const ColoredText& text);
+    inline ColoredText Dye(Str s, ConsoleColor color) { return { color, s }; }
 }
 
 namespace std {
     template <>
-    struct formatter<Debug::ConsoleColor> : formatter<std::string> {
-        auto format(Debug::ConsoleColor c, std::format_context& ctx) const {
+    struct formatter<Quasi::Debug::ConsoleColor> : formatter<std::string> {
+        auto format(Quasi::Debug::ConsoleColor c, std::format_context& ctx) const {
             return formatter<std::string>::format(
-                std::format("{}[{}{}m", Debug::ANSI_ESCAPE_CHAR,
+                std::format("{}[{}{}m", Quasi::Debug::ANSI_ESCAPE_CHAR,
                     IsBold(c) ? "1;" : "", (int)Regular(c)), ctx);
         }
     };
 
     template <>
-    struct formatter<Debug::ColoredText> : formatter<std::string> {
-        auto format(const Debug::ColoredText& t, std::format_context& ctx) const {
-            return formatter<std::string>::format(std::format("{}{}{}", t.color, t.string, Debug::ConsoleColor::RESET), ctx);
+    struct formatter<Quasi::Debug::ColoredText> : formatter<std::string> {
+        auto format(const Quasi::Debug::ColoredText& t, std::format_context& ctx) const {
+            return formatter<std::string>::format(std::format("{}{}{}", t.color, t.string, Quasi::Debug::ConsoleColor::RESET), ctx);
         }
     };
-}
-
-namespace Debug {
-    inline std::ostream& operator<<(std::ostream& out, ConsoleColor color);
 }

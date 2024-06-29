@@ -2,11 +2,16 @@
 
 #include <GLFW/glfw3.h>
 
-namespace IO {
+namespace Quasi::IO {
     void TimeType::Update() {
         ++currentFrame;
         const double newTime = glfwGetTime();
-        deltaTime = newTime - currentTime;
+
+        dtIndex = (dtIndex + 1) % DELTATIME_HISTORY_NUM;
+        timeFor2s -= deltaTime[dtIndex];
+        deltaTime[dtIndex] = newTime - currentTime;
+        timeFor2s += deltaTime[dtIndex];
+
         currentTime = newTime;
     }
 
@@ -15,5 +20,5 @@ namespace IO {
         glfwSetTime(time);
     }
 
-    double TimeType::Framerate() const { return 1.0 / deltaTime; }
+    double TimeType::Framerate() const { return (double)DELTATIME_HISTORY_NUM / timeFor2s; }
 }

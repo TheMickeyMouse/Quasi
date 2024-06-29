@@ -2,8 +2,7 @@
 
 #include "GLObject.h"
 
-
-namespace Graphics {
+namespace Quasi::Graphics {
     class RenderBuffer;
     class Texture;
 
@@ -29,17 +28,16 @@ namespace Graphics {
         DEPTH_STENCIL = 0x821A,
     };
 
-    struct FrameBufferHandler : GLObjectHandler<FrameBufferHandler> {
-        [[nodiscard]] glID Create() const;
-        void Destroy(glID id) const;
-        void Bind(glID id) const;
+    struct FrameBufferHandler {
+        [[nodiscard]] GraphicsID Create() const;
+        void Destroy(GraphicsID id) const;
+        void Bind(GraphicsID id) const;
         void Unbind() const;
     };
 
     class FrameBuffer : public GLObject<FrameBufferHandler> {
     public:
         FrameBuffer() = default;
-        FrameBuffer(stdu::empty) : GLObject({}) {}
 
         void Attach(const Texture& tex, AttachmentType type = AttachmentType::COLOR_0) const;
         void Attach(const RenderBuffer& rbo, AttachmentType type) const;

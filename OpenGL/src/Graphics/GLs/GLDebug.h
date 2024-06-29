@@ -2,7 +2,7 @@
 
 #include "Logger.h"
 
-namespace Graphics {
+namespace Quasi::Graphics {
     // a very thin wrapper for an extern variable
     // (couldnt get them to work so here's an alternative)
     struct GLLoggerContainer {
@@ -12,10 +12,6 @@ namespace Graphics {
     Debug::Logger& GLLogger();
 
     void InitGLLog();
-
-    void GLInfo(const char* msg, const Debug::SourceLoc& loc = Debug::SourceLoc::current());
-    void GLWarn(const char* msg, const Debug::SourceLoc& loc = Debug::SourceLoc::current());
-    void GLError(const char* msg, const Debug::SourceLoc& loc = Debug::SourceLoc::current());
 
     // taken from https://www.khronos.org/opengl/wiki/OpenGL_Error#Catching_errors_(the_hard_way)
     enum class GLErrorCode {
@@ -41,7 +37,7 @@ namespace Graphics {
         // Part of the ARB_imaging extension.
     };
 
-    inline STDU_ENUM_TOSTR(GLErrorCode, GLErrName,
+    inline Q_ENUM_TOSTR(GLErrorCode, GLErrName,
         (NO_ERROR,                      "GL_NO_ERROR")
         (INVALID_ENUM,                  "GL_INVALID_ENUM")
         (INVALID_VALUE,                 "GL_INVALID_VALUE")
@@ -52,14 +48,14 @@ namespace Graphics {
         (INVALID_FRAMEBUFFER_OPERATION, "GL_INVALID_FRAMEBUFFER_OPERATION")
         (CONTEXT_LOST,                  "GL_CONTEXT_LOST")
         (TABLE_TOO_LARGE,               "GL_TABLE_TO_LARGE"),
-        "GL_UNDEFINED_ERROR")
+    "GL_UNDEFINED_ERROR")
 
     GLErrorCode GLGetErr();
     void GLClearErr();
     void GLReport(const Debug::SourceLoc& loc = Debug::SourceLoc::current());
-    void GLReportFn(std::string_view signature, const Debug::SourceLoc& loc = Debug::SourceLoc::current());
+    void GLReportFn(Str signature, const Debug::SourceLoc& loc = Debug::SourceLoc::current());
 
-    template <class F> auto GLCall(F&& f, std::string_view fsig, const Debug::SourceLoc& loc = Debug::SourceLoc::current()) -> decltype(f()) {
+    template <class F> auto GLCall(F&& f, Str fsig, const Debug::SourceLoc& loc = Debug::SourceLoc::current()) -> decltype(f()) {
         GLClearErr();
         if constexpr (std::is_void_v<decltype(f())>) {
             f();
@@ -72,16 +68,18 @@ namespace Graphics {
         }
     }
 #ifdef NDEBUG
-#define GL_CALL(X) X
+#define GL_CALL(X) (X)
 #else
 #define GL_CALL(X) GLCall([&]{ return X; }, #X)
 #endif
 
+    struct VertexBufferLayout;
+
     struct VertexDebugTypeInfo {
         usize size;
-        const class VertexBufferLayout& bufferLayout;
-        std::string_view name;
-        std::string_view propNames;
+        const VertexBufferLayout& bufferLayout;
+        Str name;
+        Str propNames;
 
         template <class T> static const VertexDebugTypeInfo* of() { return &T::__typeinfo__; }
     };
@@ -90,8 +88,8 @@ namespace Graphics {
 }
 
 template <>
-struct std::formatter<Graphics::GLErrorCode> : std::formatter<std::string> {
-    auto format(Graphics::GLErrorCode err, std::format_context& ctx) const {
-        return std::formatter<std::string>::format(std::format("0x{:04X} ({})", (int)err, GLErrName(err)), ctx);
+struct std::formatter<Quasi::Graphics::GLErrorCode> : std::formatter<Quasi::String> {
+    auto format(Quasi::Graphics::GLErrorCode err, std::format_context& ctx) const {
+        return std::formatter<Quasi::String>::format(std::format("0x{:04X} ({})", (int)err, GLErrName(err)), ctx);
     }
 };

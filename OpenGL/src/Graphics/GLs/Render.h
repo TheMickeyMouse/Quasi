@@ -3,7 +3,7 @@
 #include "Shader.h"
 #include "RenderObject.h"
 
-namespace Graphics {
+namespace Quasi::Graphics {
     enum class BufferBit {
         COLOR = 0x00004000, DEPTH = 0x00000100, STENCIL = 0x00000400, ACCUM = 0x00000200,
         ALL = COLOR | DEPTH | STENCIL,
@@ -100,22 +100,20 @@ namespace Graphics {
     };
 }
 
-namespace Graphics::Render {
+namespace Quasi::Graphics::Render {
     void Draw(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader);
-    void Draw(const VertexArray& vertexArr, const DynamicIndexBuffer& indexBuff, const Shader& shader);
     void DrawInstanced(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader, int instances);
-    void DrawInstanced(const VertexArray& vertexArr, const DynamicIndexBuffer& indexBuff, const Shader& shader, int instances);
     inline void Draw(const RenderData& dat, const Shader& s) {
-        Draw(dat.VertArr(), dat.IndObj(), s);
+        Draw(dat.varray, dat.ibo, s);
     }
     inline void Draw(const RenderData& dat) {
-        Draw(dat, dat.Shader());
+        Draw(dat, dat.shader);
     }
     inline void DrawInstanced(const RenderData& dat, const Shader& s, int instances) {
-        DrawInstanced(dat.VertArr(), dat.IndObj(), s, instances);
+        DrawInstanced(dat.varray, dat.ibo, s, instances);
     }
     inline void DrawInstanced(const RenderData& dat, int instances) {
-        DrawInstanced(dat, dat.Shader(), instances);
+        DrawInstanced(dat, dat.shader, instances);
     }
 
 #pragma region GL Functions
@@ -128,7 +126,7 @@ namespace Graphics::Render {
     GL_CLEAR_SWITCH(StencilBit, STENCIL)
 #undef GL_CLEAR_SWITCH
 
-    void SetClearColor(const Maths::colorf& color);
+    void SetClearColor(const Math::fColor& color);
     void SetRenderMode(RenderMode mode);
     void SetPointSize(float size);
     inline void SetRenderFill()   { SetRenderMode(RenderMode::FILL); }
@@ -155,7 +153,7 @@ namespace Graphics::Render {
 
     void UseAlphaFunc(CmpOperation op, float ref);
 
-    void UseBlendConstColor(const Maths::colorf& ref);
+    void UseBlendConstColor(const Math::fColor& ref);
     void UseBlendFunc(BlendFactor src, BlendFactor dest);
 
     void SetCullFace(FacingMode facing);
@@ -163,7 +161,7 @@ namespace Graphics::Render {
 
     void SetColorWrite(BufferMode mode);
 
-    void SetViewport(const Maths::rect2i& viewport);
+    void SetViewport(const Math::iRect2D& viewport);
 #undef GL_SWITCH
 #pragma endregion
 }

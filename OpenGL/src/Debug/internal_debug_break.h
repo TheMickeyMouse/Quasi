@@ -29,7 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-namespace Debug {
+namespace Quasi::Debug {
 #ifdef _MSC_VER
 
 #define debug_break __debugbreak

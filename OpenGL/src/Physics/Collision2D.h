@@ -2,26 +2,26 @@
 #include "Shape2D.h"
 #include "Transform2D.h"
 
-namespace Physics2D {
+namespace Quasi::Physics2D {
     class Body;
 }
 
-namespace Physics2D::Collision {
+namespace Quasi::Physics2D::Collision {
     using TransformRef = const Transform&;
 
     struct Event {
         bool collides;
-        Maths::fvec2 contactPointBase, contactPointTarget;
+        Math::fVector2 contactPointBase, contactPointTarget;
 
     private:
         Event() : collides(false) {}
     public:
-        Event(const Maths::fvec2& cpBase, const Maths::fvec2& cpTarget)
+        Event(const Math::fVector2& cpBase, const Math::fVector2& cpTarget)
             : collides(true), contactPointBase(cpBase), contactPointTarget(cpTarget) {}
 
         [[nodiscard]] operator bool() const { return collides; }
         [[nodiscard]] Event Swap() const { return collides ? Event { contactPointTarget, contactPointBase } : None; }
-        [[nodiscard]] Maths::fvec2 Seperator() const { return contactPointTarget - contactPointBase; }
+        [[nodiscard]] Math::fVector2 Seperator() const { return contactPointTarget - contactPointBase; }
 
         static const Event None;
     };

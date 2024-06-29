@@ -5,11 +5,11 @@
 
 #include "imgui.h"
 
-namespace Graphics {
-    Maths::fvec3 CameraController::Right() const { return worldFront.cross(worldUp); }
+namespace Quasi::Graphics {
+    Math::fVector3 CameraController::Right() const { return worldFront.cross(worldUp); }
 
     void CameraController::Update(GraphicsDevice& gd, const float dt) {
-        using namespace Maths;
+        using namespace Math;
         using namespace IO;
         const auto& Keyboard = gd.GetIO().Keyboard;
         auto& Mouse = gd.GetIO().Mouse;
@@ -22,14 +22,14 @@ namespace Graphics {
         }
 
         if (!enabled) { return; }
-        const fvec3 localFront = Right() * std::cos(yaw) + worldFront * std::sin(yaw);
-        const fvec3 localRight = localFront.cross(worldUp);
+        const fVector3 localFront = Right() * std::cos(yaw) + worldFront * std::sin(yaw);
+        const fVector3 localRight = localFront.cross(worldUp);
         if (Keyboard.KeyPressed(Key::W))      position += localFront * speed * dt;
         if (Keyboard.KeyPressed(Key::S))      position -= localFront * speed * dt;
         if (Keyboard.KeyPressed(Key::D))      position += localRight * speed * dt;
         if (Keyboard.KeyPressed(Key::A))      position -= localRight * speed * dt;
-        if (Keyboard.KeyPressed(Key::SPACE))  position += fvec3::UP()   * speed * dt;
-        if (Keyboard.KeyPressed(Key::LSHIFT)) position += fvec3::DOWN() * speed * dt;
+        if (Keyboard.KeyPressed(Key::SPACE))  position += fVector3::UP()   * speed * dt;
+        if (Keyboard.KeyPressed(Key::LSHIFT)) position += fVector3::DOWN() * speed * dt;
 
         if (Keyboard.KeyOnPress(Key::CAPS_LOCK)) fov = fovRange.max * zoomRatio;
         if (Keyboard.KeyOnRelease(Key::CAPS_LOCK)) fov = fovRange.max;
@@ -42,7 +42,7 @@ namespace Graphics {
             fov = fovRange.clamp(fov);
         }
 
-        const dvec2 mouse = Mouse.GetMousePosPx();
+        const dVector2 mouse = Mouse.GetMousePosPx();
 
         if (initialMouse) {
             lastMouse = mouse;
@@ -65,28 +65,28 @@ namespace Graphics {
         }
     }
 
-    Maths::mat3D CameraController::GetViewMat() const {
-        const Maths::fvec3 front =
+    Math::Matrix3D CameraController::GetViewMat() const {
+        const Math::fVector3 front =
             Right() * (std::cos(yaw) * std::cos(pitch)) + // like x
             worldFront * (std::sin(yaw) * std::cos(pitch)) +
             worldUp * std::sin(pitch);
 
-        return Maths::mat3D::look_at(position, position + front, worldUp);
+        return Math::Matrix3D::look_at(position, position + front, worldUp);
     }
 
-    Maths::mat3D CameraController::GetProjMat() const {
+    Math::Matrix3D CameraController::GetProjMat() const {
         const float aspect = 1.0f / GraphicsDevice::GetDeviceInstance().GetWindowSize().slope();
-        return Maths::mat3D::perspective_fov(viewFov, aspect, 0.01f, 100.0f);
+        return Math::Matrix3D::perspective_fov(viewFov, aspect, 0.01f, 100.0f);
     }
 
-    void CameraController::ImGuiEdit(const char* const title) {
+    void CameraController::ImGuiEdit(Str title) {
         ImGui::Separator();
         ImGui::TextDisabled(enabled ? " (press Esc to disable!)" : " (press Esc to enable!)");
 
-        if (!ImGui::TreeNode(title)) return;
+        if (!ImGui::TreeNode(title.data())) return;
 
-        ImGui::SliderFloat("Camera Yaw",   &yaw,   -Maths::PI,             Maths::PI);
-        ImGui::SliderFloat("Camera Pitch", &pitch, -Maths::HALF_PI * 0.9f, Maths::HALF_PI * 0.9f);
+        ImGui::SliderFloat("Camera Yaw",   &yaw,   -Math::PI,             Math::PI);
+        ImGui::SliderFloat("Camera Pitch", &pitch, -Math::HALF_PI * 0.9f, Math::HALF_PI * 0.9f);
         ImGui::DragFloat3("Position", position.begin(), 0.5f);
         ImGui::DragFloat("Speed", &speed, 0.5f);
         ImGui::SliderFloat("Sensitivity", &sensitivity, 0, 1);

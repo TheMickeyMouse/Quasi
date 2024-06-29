@@ -1,17 +1,17 @@
 #pragma once
 #include <algorithm>
 
-#include "NumTypes.h"
-
+#include "Utils/Ref.h"
+#include "Utils/Type.h"
 
 struct FT_LibraryRec_;
 
-namespace Graphics {
+namespace Quasi::Graphics {
     class Font;
 
     class FontDevice {
         FT_LibraryRec_* libHandle = nullptr;
-        uint dpi = 96; // default value
+        u32 dpi = 96; // default value
     public:
         FontDevice();
         ~FontDevice();
@@ -24,9 +24,9 @@ namespace Graphics {
 
         void SetDPI(uint newDpi) { dpi = newDpi; }
         
-        static FontDevice* Instance;
+        static Ref<FontDevice> Instance;
         static FT_LibraryRec_* Library();
-        static uint DPI();
+        static u32 DPI();
 
         friend Font;
     };
@@ -49,15 +49,15 @@ namespace Graphics {
         float operator/(PointPer64 other) const { return (float)pp64 / (float)other.pp64; }
     };
     
-    inline PointPer64 operator ""_p64(uint64 p64) {
+    inline PointPer64 operator ""_p64(usize p64) {
         return PointPer64::inP64((int)p64);
     }
 
-    inline PointPer64 operator ""_points(uint64 points) {
+    inline PointPer64 operator ""_points(usize points) {
         return { (int)points };
     }
 
-    inline PointPer64 operator ""_points(quadf points) {
+    inline PointPer64 operator ""_points(f80 points) {
         return { (float)points };
     }
 }

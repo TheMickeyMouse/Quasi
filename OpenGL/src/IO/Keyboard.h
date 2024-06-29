@@ -1,19 +1,17 @@
 #pragma once
-#include <array>
+#include <bitset>
 #include <queue>
 
-#include "NumTypes.h"
-#include "stdu/enum_utils.h"
-#include "stdu/ref.h"
-
+#include "Utils/Enum.h"
+#include "Utils/ref.h"
 
 struct GLFWwindow;
 
-namespace Graphics {
+namespace Quasi::Graphics {
     class GraphicsDevice;
 }
 
-namespace IO {
+namespace Quasi::IO {
     // DO NOT CHANGE ORDER!
     enum class Key : int {
         UNKNOWN = -1,
@@ -68,7 +66,7 @@ namespace IO {
 
         LAST = MENU
     };
-    STDU_IMPL_ENUM_OPERATORS(Key);
+    Q_IMPL_ENUM_OPERATORS(Key);
 
     enum class ModifierKey {
         SHIFT     = 1 << 0,
@@ -78,7 +76,7 @@ namespace IO {
         CAPS_LOCK = 1 << 4,
         NUM_LOCK  = 1 << 5,
     };
-    STDU_IMPL_ENUM_OPERATORS(ModifierKey);
+    Q_IMPL_ENUM_OPERATORS(ModifierKey);
 
     // TODO: this v
     // enum class KeyType : int {
@@ -92,7 +90,7 @@ namespace IO {
     //     OTHER     = 64, // other
     // };
 
-    using KeyIndex = uchar;
+    using KeyIndex = byte;
 
     class IO;
 
@@ -110,7 +108,7 @@ namespace IO {
 
         static constexpr KeyIndex MAX_KEY_INDEX = 119; // ToKeyIndex(Key::NON_US_2); // should be 119
         static constexpr KeyIndex KEY_COUNT = MAX_KEY_INDEX + 1; // MAX_KEY_INDEX + 1; // should be 120
-        static constexpr KeyIndex KEYSET_SIZE = (KEY_COUNT - 1) / 64 + 1; // TODO: MAKE MODIF KEYS WORK
+        // TODO: MAKE MODIF KEYS WORK
 
         void Update();
 
@@ -119,13 +117,13 @@ namespace IO {
         [[nodiscard]] bool KeyOnRelease(Key key) const;
         [[nodiscard]] bool AnyPressed() const;
         [[nodiscard]] bool NonePressed() const;
-        [[nodiscard]] std::vector<Key> KeysPressed() const;
+        void VisitKeysPressed(Func<void(Key k)> callback) const;
 
-        static const char* KeyToStr(Key key);
+        static Str KeyToStr(Key key);
 
-        stdu::ref<IO> io;
+        Ref<IO> io;
     private:
-        using Keyset = std::array<uint64, KEYSET_SIZE>;
+        using Keyset = std::bitset<KEY_COUNT>;
         Keyset currKeySet = {};
         Keyset prevKeySet = {};
         std::queue<KeyIndex> queuedKeys = {};
@@ -133,13 +131,10 @@ namespace IO {
         GLFWwindow* inputWindow();
         [[nodiscard]] const GLFWwindow* inputWindow() const;
 
-        [[nodiscard]] bool getCurrKeyStatus(KeyIndex i) const { return getKeyStatusOf(currKeySet, i); }
-        [[nodiscard]] bool getPrevKeyStatus(KeyIndex i) const { return getKeyStatusOf(prevKeySet, i); }
-        [[nodiscard]] bool getCurrKeyStatus(Key k) const { return getKeyStatusOf(currKeySet, ToKeyIndex(k)); }
-        [[nodiscard]] bool getPrevKeyStatus(Key k) const { return getKeyStatusOf(prevKeySet, ToKeyIndex(k)); }
-
-        static bool getKeyStatusOf(const Keyset& ks, KeyIndex ki);
-        static void setKeyStatusOf(Keyset& ks, KeyIndex ki, bool val);
+        [[nodiscard]] bool getCurrKeyStatus(KeyIndex i) const { return currKeySet[i]; }
+        [[nodiscard]] bool getPrevKeyStatus(KeyIndex i) const { return prevKeySet[i]; }
+        [[nodiscard]] bool getCurrKeyStatus(Key k) const { return currKeySet[ToKeyIndex(k)]; }
+        [[nodiscard]] bool getPrevKeyStatus(Key k) const { return prevKeySet[ToKeyIndex(k)]; }
 
         void OnGlfwKeyCallback(GLFWwindow* window, int key, int positionCode, int action, int modifierBits);
     };

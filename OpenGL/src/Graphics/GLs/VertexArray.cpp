@@ -3,18 +3,18 @@
 #include <GL/glew.h>
 #include "GLDebug.h"
 
-namespace Graphics {
-    glID VertexArrayHandler::Create() const {
-        glID id;
+namespace Quasi::Graphics {
+    GraphicsID VertexArrayHandler::Create() const {
+        GraphicsID id;
         GL_CALL(glGenVertexArrays(1, &id));
         return id;
     }
 
-    void VertexArrayHandler::Destroy(const glID id) const {
+    void VertexArrayHandler::Destroy(const GraphicsID id) const {
         GL_CALL(glDeleteVertexArrays(1, &id));
     }
 
-    void VertexArrayHandler::Bind(const glID id) const {
+    void VertexArrayHandler::Bind(const GraphicsID id) const {
         GL_CALL(glBindVertexArray(id));
     }
 
@@ -37,12 +37,6 @@ namespace Graphics {
     }
 
     void VertexArray::AddBuffer(const VertexBuffer& vb, const VertexBufferLayout& layout) {
-        Bind();
-        vb.Bind();
-        AddBuffer(layout);
-    }
-
-    void VertexArray::AddBuffer(const DynamicVertexBuffer& vb, const VertexBufferLayout& layout) {
         Bind();
         vb.Bind();
         AddBuffer(layout);

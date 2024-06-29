@@ -5,8 +5,8 @@
 #include "VertexConverter.h"
 #include "VertexElement.h"
 
-namespace Graphics::MeshUtils {
-    using Vertex2D = Maths::fvec2;
+namespace Quasi::Graphics::MeshUtils {
+    using Vertex2D = Math::fVector2;
     using Vertex3D = VertexNormal3D;
 
     struct DefaultBuilder {
@@ -32,12 +32,12 @@ namespace Graphics::MeshUtils {
         }
 
         template <class F>
-        static auto Create(const Options& options, F&& f, const Maths::mat4x4& transform) {
+        static auto Create(const Options& options, F&& f, const Math::Matrix3D& transform) {
             return Create(options, std::forward<F>(f)).ApplyTransform(transform);
         }
 
         template <class F>
-        static auto Create(F&& f, const Maths::mat4x4& transform) {
+        static auto Create(F&& f, const Math::Matrix3D& transform) {
             return Create({}, std::forward<F>(f)).ApplyTransform(transform);
         }
 
@@ -45,11 +45,11 @@ namespace Graphics::MeshUtils {
             return Create(options, DefaultBuilder {});
         }
 
-        static auto Create(const Options& options, const Maths::mat4x4& transform) {
+        static auto Create(const Options& options, const Math::Matrix3D& transform) {
             return Create(options, DefaultBuilder {}, transform);
         }
 
-        static auto Create(const Maths::mat4x4& transform) {
+        static auto Create(const Math::Matrix3D& transform) {
             return Create({}, DefaultBuilder {}, transform);
         }
 
@@ -64,12 +64,12 @@ namespace Graphics::MeshUtils {
         }
 
         template <class F>
-        [[nodiscard]] auto operator()(const Options& options, F&& f, const Maths::mat4x4& transform) const {
+        [[nodiscard]] auto operator()(const Options& options, F&& f, const Math::Matrix3D& transform) const {
             return Create(options, f, transform);
         }
 
         template <class F>
-        [[nodiscard]] auto operator()(F&& f, const Maths::mat4x4& transform) const {
+        [[nodiscard]] auto operator()(F&& f, const Math::Matrix3D& transform) const {
             return Create(f, transform);
         }
 
@@ -77,11 +77,11 @@ namespace Graphics::MeshUtils {
             return Create(options);
         }
 
-        [[nodiscard]] auto operator()(const Options& options, const Maths::mat4x4& transform) const {
+        [[nodiscard]] auto operator()(const Options& options, const Math::Matrix3D& transform) const {
             return Create(options, transform);
         }
 
-        [[nodiscard]] auto operator()(const Maths::mat4x4& transform) const {
+        [[nodiscard]] auto operator()(const Math::Matrix3D& transform) const {
             return Create(transform);
         }
     };

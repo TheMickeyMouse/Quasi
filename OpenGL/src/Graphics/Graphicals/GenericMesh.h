@@ -1,18 +1,21 @@
 #pragma once
-#include "NumTypes.h"
 #include <utility>
 
 #include <span>
 
-namespace Graphics {
+#include "Ref.h"
+#include "Utils/Type.h"
+
+namespace Quasi::Graphics {
+	class RenderData;
 	template <class T> class Mesh;
 
 	class GenericMesh {
 		// used so that 'singlebyte' is a custom defined type, unlike char
 		struct singlebyte { char _; };
-		Mesh<singlebyte>* ptr; // using the fact that mesh<T> is always 104 bytes
+		Ref<Mesh<singlebyte>> gmesh; // using the fact that mesh<T> is always 104 bytes
 	public:
-		GenericMesh(void* m) : ptr((Mesh<singlebyte>*)m) {}
+		GenericMesh(void* m) : gmesh(DerefPtr((Mesh<singlebyte>*)m)) {}
 		~GenericMesh();
 
 		GenericMesh(const GenericMesh&) = delete;
@@ -27,11 +30,11 @@ namespace Graphics {
 		}
 
 		template <class T> Mesh<T>& As() {
-			return *reinterpret_cast<Mesh<T>*>(ptr);
+			return gmesh.TransmuteAs<Mesh<T>>();
 		}
 
 		template <class T> const Mesh<T>& As() const {
-			return *reinterpret_cast<const Mesh<T>*>(ptr);
+			return gmesh.TransmuteAs<Mesh<T>>();
 		}
 
 		void Set(void* mesh);
@@ -39,11 +42,13 @@ namespace Graphics {
 			Set((void*)mesh);
 		}
 
-		uint& deviceIndex();
-		[[nodiscard]] uint deviceIndex() const;
+		u32& DeviceIndex();
+		[[nodiscard]] u32 DeviceIndex() const;
+		Ref<RenderData>& RenderParnet();
+		[[nodiscard]] Ref<RenderData> RenderParnet() const;
 
 		[[nodiscard]] usize vSizeBytes() const;
-		[[nodiscard]] std::span<const byte> vDataBytes() const;
+		[[nodiscard]] Span<const byte> vDataBytes() const;
 		[[nodiscard]] usize iSize() const;
 	};
 }

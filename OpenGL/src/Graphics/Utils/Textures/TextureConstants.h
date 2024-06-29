@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Graphics {
+namespace Quasi::Graphics {
     // * from glew.h or https://javagl.github.io/GLConstantsTranslator/GLConstantsTranslator.html
     enum class TextureFormat {
         RED = 0x1903,

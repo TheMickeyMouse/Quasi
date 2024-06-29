@@ -2,19 +2,19 @@
 #include "GLObject.h"
 #include "GLDebug.h"
 
-namespace Graphics {
-    template <BufferType T> glID BufferHandler<T>::Create() const {
-        glID id;
+namespace Quasi::Graphics {
+    template <BufferType T> GraphicsID BufferHandler<T>::Create() const {
+        GraphicsID id;
         GL_CALL(glGenBuffers(1, &id));
         Bind(id);
         return id;
     }
 
-    template <BufferType T> void BufferHandler<T>::Destroy(const glID id) const {
+    template <BufferType T> void BufferHandler<T>::Destroy(const GraphicsID id) const {
         GL_CALL(glDeleteBuffers(1, &id));
     }
 
-    template <BufferType T> void BufferHandler<T>::Bind(glID id) const {
+    template <BufferType T> void BufferHandler<T>::Bind(GraphicsID id) const {
         GL_CALL(glBindBuffer((int)T, id));
     }
 

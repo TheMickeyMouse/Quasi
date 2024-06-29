@@ -3,17 +3,12 @@
 #include <source_location>
 #include <format>
 #include <iostream>
-#include <vector>
-#include <array>
 
 #include "ConsoleColor.h"
+#include "Utils/Enum.h"
+#include "Utils/Option.h"
 
-#include "stdu/macros.h"
-#include "stdu/ref.h"
-#include "stdu/types.h"
-#include <cassert>
-
-namespace Debug {
+namespace Quasi::Debug {
     void DebugBreak();
 
     enum class Severity {
@@ -25,25 +20,25 @@ namespace Debug {
         ERROR,
         CRITICAL,
 
-        SEVERITY_NUM,
-        NEVER = SEVERITY_NUM
+        NUM,
+        NEVER = NUM
     };
 
-    inline STDU_ENUM_TOSTR(Severity, SeverityName,
+    inline Q_ENUM_TOSTR(Severity, SeverityName,
         (OFF, "OFF")(TRACE, "TRACE")(DEBUG, "DEBUG")(INFO, "INFO")(WARN, "WARN")(ERROR, "ERROR")(CRITICAL, "CRIT"),
         "NULL");
-    inline constexpr std::array<ConsoleColor, (int)Severity::SEVERITY_NUM> SEVERITY_COLOR = []{
-        std::array<ConsoleColor, (int)Severity::SEVERITY_NUM> arr;
-        arr[(int)Severity::OFF]      = ConsoleColor::RESET;
-        arr[(int)Severity::TRACE]    = FgColor(ConsoleColor::GREEN);
-        arr[(int)Severity::DEBUG]    = FgColor(ConsoleColor::CYAN);
-        arr[(int)Severity::INFO]     = ConsoleColor::RESET;
-        arr[(int)Severity::WARN]     = FgColor(ConsoleColor::YELLOW);
-        arr[(int)Severity::ERROR]    = FgColor(ConsoleColor::RED);
-        arr[(int)Severity::CRITICAL] = Bold(ConsoleColor::FG_RED);
+    inline static const EnumMap SEVERITY_COLOR = [] {
+        EnumMap<Severity, ConsoleColor> arr;
+        arr[Severity::OFF]      = ConsoleColor::RESET;
+        arr[Severity::TRACE]    = FgColor(ConsoleColor::GREEN);
+        arr[Severity::DEBUG]    = FgColor(ConsoleColor::CYAN);
+        arr[Severity::INFO]     = ConsoleColor::RESET;
+        arr[Severity::WARN]     = FgColor(ConsoleColor::YELLOW);
+        arr[Severity::ERROR]    = FgColor(ConsoleColor::RED);
+        arr[Severity::CRITICAL] = Bold(ConsoleColor::FG_RED);
         return arr;
     }();
-    inline ConsoleColor SeverityColor(Severity s) { return SEVERITY_COLOR[(int)s]; }
+    inline ConsoleColor SeverityColor(Severity s) { return SEVERITY_COLOR[s]; }
     inline ColoredText SeverityColoredName(Severity s) { return { SeverityColor(s), SeverityName(s) }; }
 
 
@@ -55,30 +50,36 @@ namespace Debug {
     struct FmtStr {
         std::format_string<Ts...> fmt;
         SourceLoc loc;
-        FmtStr(std::format_string<Ts...> f, const SourceLoc& l) : fmt(f), loc(l) {}
-        consteval FmtStr(const char* f, const SourceLoc& l = SourceLoc::current()) : fmt(f), loc(l) {}
+        template <class S> requires std::convertible_to<const S&, std::format_string<Ts...>>
+        consteval FmtStr(const S& f, const SourceLoc& l = SourceLoc::current())
+        : fmt(f), loc(l) {}
+
+        FmtStr(std::format_string<Ts...> f, const SourceLoc& l = SourceLoc::current())
+        : fmt(f), loc(l) {}
+        // consteval FmtStr(const char* f, const SourceLoc& l = SourceLoc::current()) : fmt(f), loc(l) {}
     };
 
     template <class... Ts>
     using ImplicitFmtStr = std::type_identity_t<FmtStr<Ts...>>;
 
     struct LogEntry {
-        std::string log;
+        String log;
         Severity severity;
         DateTime time;
-        std::source_location fileLoc;
+        SourceLoc fileLoc;
     };
 
 
     class Logger {
-        stdu::ref<std::ostream> logOut;
+        Ref<OutStream> logOut;
         ColoredText name = { ConsoleColor::RESET, "LOG" };
         Severity filterLevel = Severity::OFF, breakLevel = Severity::NEVER;
-        std::vector<LogEntry> logs;
+        Vec<LogEntry> logs;
 
         bool shortenFileNames : 1 = true;
         bool includeFunction : 1 = true;
         bool alwaysFlush : 1 = false;
+        bool recordLogs : 1 = false;
         int lPad = 50;
 
         static Logger InternalLog;
@@ -88,32 +89,34 @@ namespace Debug {
 #else
         static constexpr bool DEBUG = true;
 #endif
-        explicit Logger(std::ostream& out = std::clog) : logOut(out) {}
+        explicit Logger(OutStream& out = std::cout) : logOut(out) {}
 
         static bool Overrides(Severity filter, Severity log) { return (int)log >= (int)filter; }
         [[nodiscard]] bool Overrides(Severity s) const { return Overrides(filterLevel, s); }
         void SetFilter(Severity s) { filterLevel = s; }
         void SetBreakLevel(Severity s) { breakLevel = s; }
 
-        void SetName(const std::string& newName) { name.string = newName; }
+        void SetName(Str newName) { name.string = newName; }
         void SetNameColor(const ConsoleColor col) { name.color = col; }
         void SetShortenFile(const bool flag) { shortenFileNames = flag; }
         void SetIncludeFunc(const bool flag) { includeFunction = flag; }
         void SetAlwaysFlush(const bool flag) { alwaysFlush = flag; }
+        void SetRecordLogs(const bool flag) { recordLogs = flag; }
         void SetLocPad(const int pad) { lPad = pad; }
 
         static DateTime Now();
 
-        std::string FmtLog(const LogEntry& log);
-        [[nodiscard]] std::string_view FmtFile(std::string_view fullname) const;
-        [[nodiscard]] std::string FmtSourceLoc(const SourceLoc& loc) const;
-        void LogNoOut  (Severity sv, const std::string& s, const SourceLoc& loc = SourceLoc::current());
-        void ConsoleLog(Severity sv, const std::string& s, const SourceLoc& loc = SourceLoc::current());
-        void Log       (Severity sv, const std::string& s, const SourceLoc& loc = SourceLoc::current());
+        String FmtLog(const LogEntry& log);
+        String FmtLog(Str log, Severity severity, DateTime time, const SourceLoc& fileLoc);
+        [[nodiscard]] Str FmtFile(Str fullname) const;
+        [[nodiscard]] String FmtSourceLoc(const SourceLoc& loc) const;
+        void LogNoOut  (Severity sv, Str s, const SourceLoc& loc = SourceLoc::current());
+        void ConsoleLog(Severity sv, Str s, const SourceLoc& loc = SourceLoc::current());
+        void Log       (Severity sv, Str s, const SourceLoc& loc = SourceLoc::current());
 
-        void Assert(bool assert, const std::string& msg, const SourceLoc& loc = SourceLoc::current());
+        void Assert(bool assert, Str msg, const SourceLoc& loc = SourceLoc::current());
 
-        void Write(std::ostream& out, Severity filter = Severity::SEVERITY_NUM);
+        void Write(OutStream& out, Severity filter = Severity::NEVER);
 
         template <class ...Ts> void LogFmt(Severity s, ImplicitFmtStr<Ts...> fmt, Ts&&... args) {
             this->Log(s, std::format(fmt.fmt, std::forward<Ts>(args)...), fmt.loc);
@@ -127,7 +130,7 @@ namespace Debug {
         void AssertEq(const T& val, const T& cmp, const SourceLoc& loc = SourceLoc::current()) {
             this->AssertFmt(val == cmp,
                 { "Left operand {0}({1}) is not equal to Right Operand {0}({2})", loc },
-                stdu::nameof<T>(), val, cmp
+                TypeName<T>(), val, cmp
             );
         }
 
@@ -135,7 +138,7 @@ namespace Debug {
         void AssertNeq(const T& val, const T& cmp, const SourceLoc& loc = SourceLoc::current()) {
             this->AssertFmt(val != cmp,
                 { "Left operand {0}({1}) is equal to Right Operand {0}({2})", loc },
-                stdu::nameof<T>(), val, cmp
+                TypeName<T>(), val, cmp
             );
         }
 
@@ -154,24 +157,24 @@ namespace Debug {
     inline void SetFilter(Severity s) { Logger::GetInternalLog().SetFilter(s); }
     inline void SetBreakLevel(Severity s) { Logger::GetInternalLog().SetBreakLevel(s); }
 
-    inline void SetName(const std::string& newName) { Logger::GetInternalLog().SetName(newName); }
+    inline void SetName(std::string newName) { Logger::GetInternalLog().SetName(std::move(newName)); }
     inline void SetNameColor(const ConsoleColor col) { Logger::GetInternalLog().SetNameColor(col); }
     inline void SetShortenFile(const bool flag) { Logger::GetInternalLog().SetShortenFile(flag); }
     inline void SetIncludeFunc(const bool flag) { Logger::GetInternalLog().SetIncludeFunc(flag); }
     inline void SetLocPad(const int pad) { Logger::GetInternalLog().SetLocPad(pad); }
 
-    inline void Log(Severity sv, const std::string& s, const SourceLoc& loc = SourceLoc::current()) { Logger::GetInternalLog().Log(sv, s, loc); }
+    inline void Log(Severity sv, Str s, const SourceLoc& loc = SourceLoc::current()) { Logger::GetInternalLog().Log(sv, s, loc); }
 
-    inline void Assert(bool assert, const std::string& msg, const SourceLoc& loc = SourceLoc::current()) { Logger::GetInternalLog().Assert(assert, msg, loc); }
+    inline void Assert(bool assert, Str msg, const SourceLoc& loc = SourceLoc::current()) { Logger::GetInternalLog().Assert(assert, msg, loc); }
 
-    inline void Write(std::ostream& out, Severity filter = Severity::SEVERITY_NUM) { Logger::GetInternalLog().Write(out, filter); }
+    inline void Write(OutStream& out, Severity filter = Severity::NEVER) { Logger::GetInternalLog().Write(out, filter); }
 
     template <class ...Ts> void LogFmt(Severity s, ImplicitFmtStr<Ts...> fmt, Ts&&... args) {
         Logger::GetInternalLog().LogFmt(s, fmt, std::forward<Ts>(args)...);
     }
 
     template <class ...Ts> void AssertFmt(bool assert, ImplicitFmtStr<Ts...> fmt, Ts&&... args) {
-        Logger::GetInternalLog().Assert(assert, fmt, std::forward<Ts>(args)...);
+        Logger::GetInternalLog().Assert(assert, std::format(fmt.fmt, std::forward<Ts>(args)...));
     }
 
     template <class T>
@@ -190,9 +193,35 @@ namespace Debug {
     void Flush();
 }
 
+namespace Quasi {
+    template <class T> T& Option<T>::Assert() { return Q_GETTER_MUT(Assert); }
+    template <class T> const T& Option<T>::Assert() const {
+        Debug::AssertFmt(HasValue(), "Option<{}> doesn't have a value", Text::TypeName<T>());
+        return value;
+    }
+
+    template <class T> template <class Asrt> T& Option<T>::Assert(Asrt&& assertfn) { return Q_GETTER_MUT(Assert, assertfn); }
+    template <class T> template <class Asrt> const T& Option<T>::Assert(Asrt&& assertfn) const {
+        if (IsNull()) assertfn();
+        return value;
+    }
+
+    template <class T> T& RefImpl<T>::Assert() { return Q_GETTER_MUT(Assert); }
+    template <class T> const T& RefImpl<T>::Assert() const {
+        Debug::AssertFmt(HasValue(), "Ref<{}> doesn't have a value", Text::TypeName<T>());
+        return *obj;
+    }
+
+    template <class T> template <class Asrt> T& RefImpl<T>::Assert(Asrt&& assertfn) { return Q_GETTER_MUT(Assert, assertfn); }
+    template <class T> template <class Asrt> const T& RefImpl<T>::Assert(Asrt&& assertfn) const {
+        if (IsNull()) assertfn();
+        return *obj;
+    }
+}
+
 template <>
-struct std::formatter<Debug::Severity> : formatter<std::string> {
-    auto format(Debug::Severity s, std::format_context& ctx) const {
+struct std::formatter<Quasi::Debug::Severity> : formatter<std::string> {
+    auto format(Quasi::Debug::Severity s, std::format_context& ctx) const {
         return formatter<std::string>::format(std::format("{}", SeverityColoredName(s)), ctx);
     }
 };

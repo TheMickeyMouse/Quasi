@@ -1,7 +1,7 @@
 #include "RenderData.h"
 #include "GraphicsDevice.h"
 
-namespace Graphics {
+namespace Quasi::Graphics {
 	void RenderData::Transfer(RenderData& dest, RenderData&& from) {
 		dest.varray = std::move(from.varray);
 		dest.vbo = std::move(from.vbo);
@@ -16,11 +16,8 @@ namespace Graphics {
 	}
 
 	RenderData::~RenderData() {
-		if (device) {
-		    class GraphicsDevice* gd = device;
-		    device = nullptr;
-		    gd->DeleteRender(deviceIndex);
-		}
+		Destroy();
+
 	}
 
 	void RenderData::Bind() const {
@@ -35,48 +32,39 @@ namespace Graphics {
 		ibo.Unbind();
 	}
 
-	void RenderData::ClearData(bool shallowClear) {
-		vbo.ClearData(shallowClear);
-		ibo.ClearData(shallowClear);
+	void RenderData::ClearData() {
+		vbo.ClearData();
+		ibo.ClearData();
 	}
 
-	void RenderData::Render(class Shader& replaceShader, const ShaderArgs& args, bool setDefaultShaderArgs) {
+	void RenderData::Render(Shader& replaceShader, const ShaderArgs& args, bool setDefaultShaderArgs) {
 		device->Render(*this, replaceShader, args, setDefaultShaderArgs);
 	}
 
-	void RenderData::RenderInstanced(class Shader& replaceShader, int instances, const ShaderArgs& args, bool setDefaultShaderArgs) {
+	void RenderData::RenderInstanced(Shader& replaceShader, int instances, const ShaderArgs& args, bool setDefaultShaderArgs) {
 		device->RenderInstanced(*this, instances, replaceShader, args, setDefaultShaderArgs);
 	}
 
-	void RenderData::UnbindMesh(int index) {
+	void RenderData::UnbindMesh(u32 index) {
 		meshes.erase(meshes.begin() + index);
 		UpdateMeshIndices();
 	}
 
-	void RenderData::UnbindMeshes(int indexStart, int indexEnd) {
+	void RenderData::UnbindMeshes(u32 indexStart, u32 indexEnd) {
 		meshes.erase(meshes.begin() + indexStart, meshes.begin() + indexEnd);
 		UpdateMeshIndices();
 	}
 
 	void RenderData::UpdateMeshIndices() {
-		for (uint i = 0; i < meshes.size(); ++i)
-			meshes[i].deviceIndex() = i;
+		for (u32 i = 0; i < meshes.size(); ++i)
+			meshes[i].DeviceIndex() = i;
 	}
 
 	void RenderData::Destroy() {
-		class GraphicsDevice* prev = device; // prevent infinte loop: deleterender -> erase renderdata -> destructor
-		device = nullptr;
-		prev->DeleteRender(deviceIndex);
-		deviceIndex = 0;
-	}
-
-    void RenderData::EnableShader() {
-	    shader.Bind();
-	    shader.SetUniformMat4x4("u_projection", projection);
-	    shader.SetUniformMat4x4("u_view", camera);
-	}
-
-    void RenderData::DisableShader() {
-	    shader.Unbind();
+		if (device) {
+			Ref<GraphicsDevice> prev = device; // prevent infinte loop: deleterender -> erase renderdata -> destructor
+			device = nullptr;
+			prev->DeleteRender(deviceIndex);
+		}
 	}
 }

@@ -1,25 +1,27 @@
 #include "GenericMesh.h"
 #include "Mesh.h"
 
-namespace Graphics {
+namespace Quasi::Graphics {
 	GenericMesh::~GenericMesh() {
-		if (ptr)
-			ptr->render = nullptr;
+		if (gmesh)
+			gmesh->render = nullptr;
 	}
     
 	void GenericMesh::Transfer(GenericMesh& dest, GenericMesh&& from) {
-		dest.ptr = from.ptr;
-		from.ptr = nullptr;
+		dest.gmesh = from.gmesh;
+		from.gmesh = nullptr;
 	}
 
 	void GenericMesh::Set(void* mesh) {
-		ptr = (Mesh<singlebyte>*)mesh;
+		gmesh = DerefPtr((Mesh<singlebyte>*)mesh);
 	}
 
-	uint& GenericMesh::deviceIndex() { return ptr->deviceIndex; }
-	uint GenericMesh::deviceIndex() const { return ptr->deviceIndex; }
+	u32& GenericMesh::DeviceIndex() { return gmesh->deviceIndex; }
+	u32 GenericMesh::DeviceIndex() const { return gmesh->deviceIndex; }
+	Ref<RenderData>& GenericMesh::RenderParnet() { return gmesh->render; }
+	Ref<RenderData>  GenericMesh::RenderParnet() const { return gmesh->render; }
 
-	usize GenericMesh::vSizeBytes() const { return ptr->vertices.size(); }
-	std::span<const byte> GenericMesh::vDataBytes() const { return stdu::span_cast<const byte>(std::span { ptr->vertices }); }
-	usize GenericMesh::iSize() const { return ptr->indices.size(); }
+	usize GenericMesh::vSizeBytes() const { return gmesh->vertices.size(); }
+	Span<const byte> GenericMesh::vDataBytes() const { return CastSpan<const byte>(TakeSpan(gmesh->vertices)); }
+	usize GenericMesh::iSize() const { return gmesh->indices.size(); }
 }
