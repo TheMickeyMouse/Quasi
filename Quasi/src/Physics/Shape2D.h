@@ -30,11 +30,12 @@ namespace Quasi::Physics2D {
     class EdgeShape : public CloneableShape<EdgeShape> {
     public:
         Math::fVector2 start, end;
+        float radius = 0.0f;
 
-        EdgeShape(const Math::fVector2& s, const Math::fVector2& e) : start(s), end(e) {}
+        EdgeShape(const Math::fVector2& s, const Math::fVector2& e, float r) : start(s), end(e), radius(r) {}
         ~EdgeShape() override = default;
-        [[nodiscard]] float ComputeArea() const override { return 0; }
-        [[nodiscard]] Math::fRect2D ComputeBoundingBox() const override { return Math::fRect2D(start, end).corrected(); }
+        [[nodiscard]] float ComputeArea() const override { return Math::PI * radius * radius + start.dist(end) * radius * 2; }
+        [[nodiscard]] Math::fRect2D ComputeBoundingBox() const override { return Math::fRect2D(start, end).corrected().extrude(radius); }
     };
 
     template <class S>

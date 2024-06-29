@@ -28,11 +28,11 @@ namespace Quasi::Physics2D::Collision {
     }
 
     Event Circle2Edge(const CircleShape& c1, TransformRef t1, const EdgeShape& e2, TransformRef t2) {
-        const Math::fVector2 start = t2 * e2.start, end = t2 * e2.end,
-                           toCircle = t1.position - start;
+        const Math::fVector2 start    = t2 * e2.start, end = t2 * e2.end,
+                             toCircle = t1.position - start;
         const float t = toCircle.dot(end - start) / (end - start).lensq();
         const Math::fVector2 closestPoint = start.lerp(end, std::clamp(t, 0.0f, 1.0f));
-        return Circle2Circle(c1, t1, CircleShape { 0.0f }, closestPoint);
+        return Circle2Circle(c1, t1, CircleShape { e2.radius }, closestPoint);
     }
 
     void StaticResolve(Body& body, Body& target, const Event& cEvent) {
