@@ -1,8 +1,5 @@
-set(PROJECT_NAME OpenGL)
+set(PROJECT_NAME Quasi)
 
-################################################################################
-# Source groups
-################################################################################
 set(HEADER_FILES
 
     src/Debug/ConsoleColor.h
@@ -166,29 +163,10 @@ set(ALL_FILES
     ${SOURCE_FILES}
 )
 
-################################################################################
-# Target
-################################################################################
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})
 
-#use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
-set(ROOT_NAMESPACE OpenGL)
+set(ROOT_NAMESPACE Quasi)
 
-#set_target_properties(${PROJECT_NAME} PROPERTIES
-#    VS_GLOBAL_KEYWORD "Win32Proj"
-#)
-################################################################################
-# Output directory
-################################################################################
-#set_target_properties(${PROJECT_NAME} PROPERTIES
-#    OUTPUT_DIRECTORY_DEBUG   "${CMAKE_SOURCE_DIR}/bin/${CMAKE_VS_PLATFORM_NAME}/$<CONFIG>/"
-#    OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/bin/${CMAKE_VS_PLATFORM_NAME}/$<CONFIG>/"
-#    INTERPROCEDURAL_OPTIMIZATION_RELEASE "TRUE"
-#)
-
-#######################################################################
-# Include directories
-################################################################################
 target_include_directories(${PROJECT_NAME}
         PRIVATE
     ${PROJECT_SOURCE_DIR}/Dependencies/GLFW/include/
@@ -207,9 +185,6 @@ target_include_directories(${PROJECT_NAME}
     src/vendor/freetype/
 )
 
-################################################################################
-# Compile definitions
-################################################################################
 target_compile_definitions(${PROJECT_NAME} PUBLIC
     GLEW_STATIC
 )
