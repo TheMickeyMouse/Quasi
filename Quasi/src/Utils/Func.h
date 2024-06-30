@@ -74,4 +74,8 @@ namespace Quasi {
     concept FnArgs = requires (F f, I&&... args) {
         { f(std::forward<I>(args)...) } -> AlwaysTrue;
     };
+
+    template <class Fn> struct ArgTypes {};
+    template <class Res, class... Args> struct ArgTypes<Res(*)(Args...)> { using type = Tuple<Args...>; };
+    template <class Fn> using ArgumentsOf = typename ArgTypes<Fn>::type;
 } // Q

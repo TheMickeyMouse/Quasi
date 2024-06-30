@@ -1,7 +1,7 @@
 #include "Tri.h"
 
 namespace Quasi::Graphics::Primitives {
-    Tri Tri::FromGeometry(Math::Geometry::fTriangle3D geom) {
+    Tri Tri::FromGeometry(Math::fTriangle3D geom) {
         return { geom.p1, geom.p2, geom.p3 };
     }
 

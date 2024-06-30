@@ -319,6 +319,8 @@ namespace Quasi::Math {
         vect& len_clamp() { return as_vec() = len_clamped(); }
         NODISC static vect max(const vect& a, const vect& b) { return details::operate(details::max {}, a, b); }
         NODISC static vect min(const vect& a, const vect& b) { return details::operate(details::min {}, a, b); }
+        template <ArrayOf<vect> R> NODISC static vect max(const R& nums) { vect m = { std::numeric_limits<T>::lowest() }; for (const auto& v : nums) { m = max(m, v); } return m; }
+        template <ArrayOf<vect> R> NODISC static vect min(const R& nums) { vect m = { std::numeric_limits<T>::max()    }; for (const auto& v : nums) { m = min(m, v); } return m; }
         NODISC static vect clamp(const RectN<N, T>& r, const vect& x);
 
         NODISC vect map(const RectN<N, T>& input, const RectN<N, T>& output) const;
@@ -367,6 +369,13 @@ namespace Quasi::Math {
     template <u32 N, class T> auto operator*(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!VectorLike<decltype(val)>) { return vec * val; }
     template <u32 N, class T> auto operator/(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!VectorLike<decltype(val)>) { return VectorN<N, T> { val } / vec; }
     template <u32 N, class T> auto operator%(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!VectorLike<decltype(val)>) { return VectorN<N, T> { val } % vec; }
+
+    template <u32 N, class T> auto operator==(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!VectorLike<decltype(val)>) { return vec == val; }
+    template <u32 N, class T> auto operator!=(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!VectorLike<decltype(val)>) { return vec != val; }
+    template <u32 N, class T> auto operator< (std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!VectorLike<decltype(val)>) { return vec >  val; }
+    template <u32 N, class T> auto operator<=(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!VectorLike<decltype(val)>) { return vec >= val; }
+    template <u32 N, class T> auto operator>=(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!VectorLike<decltype(val)>) { return vec <= val; }
+    template <u32 N, class T> auto operator> (std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!VectorLike<decltype(val)>) { return vec <  val; }
 #pragma endregion
 
 #pragma region Vector Impl

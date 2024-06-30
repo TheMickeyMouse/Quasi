@@ -1,23 +1,23 @@
 #include "Collision2D.h"
 
-#include <algorithm>
-
 #include "Body2D.h"
 
-#include <typeindex>
-
 namespace Quasi::Physics2D::Collision {
-    Event Between(const Shape& s1, TransformRef t1, const Shape& s2, TransformRef t2) {
-        const std::type_index s1t = typeid(s1), s2t = typeid(s2);
-        #define CASE(T1, T2, FN) \
-        if (s1t == typeid(T1) && s2t == typeid(T2)) \
-            return FN(dynamic_cast<const T1&>(s1), t1, dynamic_cast<const T2&>(s2), t2); \
-        if (s1t == typeid(T2) && s2t == typeid(T1)) \
-            return FN(dynamic_cast<const T1&>(s2), t2, dynamic_cast<const T2&>(s1), t1).Swap();
+    const Array<Event::CollisionCheckFunc, IndexPair(MAX, 0)> Event::CollisionTable = []{
+        Array<CollisionCheckFunc, IndexPair(MAX, 0)> array;
+        array[IndexPair(CIRCLE,   CIRCLE)]   = Erase<Circle2Circle>();
+        array[IndexPair(CIRCLE,   EDGE)]     = Erase<Circle2Edge>();
+        array[IndexPair(EDGE,     EDGE)]     = Erase<Edge2Edge>();
+        array[IndexPair(CIRCLE,   TRIANGLE)] = Erase<Circle2Triangle>();
+        array[IndexPair(EDGE,     TRIANGLE)] = nullptr;
+        array[IndexPair(TRIANGLE, TRIANGLE)] = nullptr;
+        return array;
+    }();
 
-        CASE(CircleShape, CircleShape, Circle2Circle);
-        CASE(CircleShape, EdgeShape,   Circle2Edge  );
-        return Event::None;
+    Event Between(const Shape& s1, TransformRef t1, const Shape& s2, TransformRef t2) {
+        const u32 y1 = s1.TypeIndex(), y2 = s2.TypeIndex();
+        return y2 >= y1 ? Event::CollisionTable[IndexPair(y2, y1)](s2, t2, s1, t1) :
+                          Event::CollisionTable[IndexPair(y1, y2)](s1, t1, s2, t2).Swap();
     }
 
     Event Circle2Circle(const CircleShape& c1, TransformRef t1, const CircleShape& c2, TransformRef t2) {
@@ -28,11 +28,35 @@ namespace Quasi::Physics2D::Collision {
     }
 
     Event Circle2Edge(const CircleShape& c1, TransformRef t1, const EdgeShape& e2, TransformRef t2) {
-        const Math::fVector2 start    = t2 * e2.start, end = t2 * e2.end,
-                             toCircle = t1.position - start;
-        const float t = toCircle.dot(end - start) / (end - start).lensq();
-        const Math::fVector2 closestPoint = start.lerp(end, std::clamp(t, 0.0f, 1.0f));
+        const Math::fVector2 closestPoint = Math::fLine2D { t2 * e2.start, t2 * e2.end }.NearestTo(t1.position);
         return Circle2Circle(c1, t1, CircleShape { e2.radius }, closestPoint);
+    }
+
+    Event Edge2Edge(const EdgeShape& e1, TransformRef t1, const EdgeShape& e2, TransformRef t2) {
+        // https://wickedengine.net/2020/04/capsule-collision-detection/
+        const float dSS = e1.start.distsq(e2.start), dSE = e1.start.distsq(e2.end),
+                    dES = e1.end  .distsq(e2.start), dEE = e1.end  .distsq(e2.end);
+        Math::fVector2       best1 = t1 * ((dSE < dEE || dSE < dES || dSS < dEE || dSS < dES) ? e1.start : e1.end);
+        const Math::fVector2 best2 = Math::fLine2D { t2 * e2.start, t2 * e2.end }.NearestTo(best1);
+        best1 = Math::fLine2D { t1 * e1.start, t1 * e1.end }.NearestTo(best2);
+        return Circle2Circle(CircleShape { e1.radius }, best1, CircleShape { e2.radius }, best2);
+    }
+
+    Event Circle2Triangle(const CircleShape& c1, TransformRef t1, const TriangleShape& r2, TransformRef t2) {
+        Math::fTriangle2D tri { r2.a, r2.b, r2.c };
+        for (const auto p : tri) {
+            Math::fVector2 tp = t2 * p;
+            if (t1.position.distsq(tp) < c1.radius) {
+                return Event { t1.position + (tp - t1.position).norm(c1.radius), tp };
+            }
+        }
+        if (tri.contains(t1.position)) return Event { t1.position, t2 * (tri.p1 + tri.p2 + tri.p3) / 3.0f };
+
+        for (u32 i = 0; i < 3; ++i) {
+            if (const Event e = Circle2Edge(c1, t1, EdgeShape { tri.point(i), tri.point(i == 2 ? 0 : i + 1), 0.0f }, t2))
+                return e;
+        }
+        return Event::None;
     }
 
     void StaticResolve(Body& body, Body& target, const Event& cEvent) {

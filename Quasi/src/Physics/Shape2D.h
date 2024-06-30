@@ -4,42 +4,57 @@
 #include "Utils/ArenaAllocator.h"
 
 namespace Quasi::Physics2D {
+    enum ShapeType { CIRCLE, EDGE, TRIANGLE, MAX };
+
     class Shape {
     public:
         virtual ~Shape() = default;
         [[nodiscard]] virtual Ref<Shape> CloneOn(ArenaAllocator&) const = 0;
         [[nodiscard]] virtual float ComputeArea() const = 0;
         [[nodiscard]] virtual Math::fRect2D ComputeBoundingBox() const = 0;
+        [[nodiscard]] virtual ShapeType TypeIndex() const = 0;
     };
 
-    template <class S> class CloneableShape : public Shape {
+    template <class S, ShapeType T> class SmartShape : public Shape {
         [[nodiscard]] Ref<Shape> CloneOn(ArenaAllocator&) const override;
+        [[nodiscard]] ShapeType TypeIndex() const override { return T; }
         using Shape::Shape;
     };
 
-    class CircleShape : public CloneableShape<CircleShape> {
+    class CircleShape : public SmartShape<CircleShape, CIRCLE> {
     public:
         float radius = 1.0f;
 
         CircleShape(float r) : radius(r) {}
         ~CircleShape() override = default;
-        [[nodiscard]] float ComputeArea() const override { return Math::PI * radius * radius; }
-        [[nodiscard]] Math::fRect2D ComputeBoundingBox() const override { return { -radius, radius }; }
+        [[nodiscard]] float ComputeArea() const override;
+        [[nodiscard]] Math::fRect2D ComputeBoundingBox() const override;
     };
 
-    class EdgeShape : public CloneableShape<EdgeShape> {
+    class EdgeShape : public SmartShape<EdgeShape, EDGE> {
     public:
         Math::fVector2 start, end;
         float radius = 0.0f;
 
         EdgeShape(const Math::fVector2& s, const Math::fVector2& e, float r) : start(s), end(e), radius(r) {}
         ~EdgeShape() override = default;
-        [[nodiscard]] float ComputeArea() const override { return Math::PI * radius * radius + start.dist(end) * radius * 2; }
-        [[nodiscard]] Math::fRect2D ComputeBoundingBox() const override { return Math::fRect2D(start, end).corrected().extrude(radius); }
+        [[nodiscard]] float ComputeArea() const override;
+        [[nodiscard]] Math::fRect2D ComputeBoundingBox() const override;
     };
 
-    template <class S>
-    Ref<Shape> CloneableShape<S>::CloneOn(ArenaAllocator& allocator) const {
+    class TriangleShape : public SmartShape<TriangleShape, TRIANGLE> {
+    public:
+        Math::fVector2 a, b, c;
+
+        TriangleShape(const Math::fVector2& a, const Math::fVector2& b, const Math::fVector2& c) : a(a), b(b), c(c) {}
+        ~TriangleShape() override = default;
+
+        [[nodiscard]] float ComputeArea() const override;
+        [[nodiscard]] Math::fRect2D ComputeBoundingBox() const override;
+    };
+
+    template <class S, ShapeType T>
+    Ref<Shape> SmartShape<S, T>::CloneOn(ArenaAllocator& allocator) const {
         return DerefPtr(allocator.Create<S>(*static_cast<const S*>(this)));
     }
 }

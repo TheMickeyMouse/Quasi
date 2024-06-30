@@ -1,8 +1,10 @@
 #pragma once
+#include <algorithm>
+
 #include "Constants.h"
 #include "Vector.h"
 
-namespace Quasi::Math::Geometry {
+namespace Quasi::Math {
     // TODO: ADD MATH METHODS
     template <u32 N, class T>
     struct Line {
@@ -17,6 +19,11 @@ namespace Quasi::Math::Geometry {
         Line& operator+=(const vec_t& off) { start += off; end += off; return *this; }
         Line  operator- (const vec_t& off) const { return { start - off, end - off }; }
         Line& operator-=(const vec_t& off) { start -= off; end -= off; return *this; }
+
+        vec_t NearestTo(const vec_t& p) {
+            const float t = (p - start).dot(end - start) / (end - start).lensq();
+            return start.lerp(end, std::clamp(t, 0.0f, 1.0f));
+        }
     };
 
     template <class T = float> using Line2D = Line<2, T>;
@@ -60,30 +67,33 @@ namespace Quasi::Math::Geometry {
 
         Triangle(vec_t a, vec_t b, vec_t c) : p1(a), p2(b), p3(c) {}
 
-        Line<N, T> line(uint i) const { return { points[i], points[(i + 1) % 3] }; }
+        Line<N, T> line(u32 i) const { return { points[i], points[(i + 1) % 3] }; }
 
         T signed_areaX2() const { return x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2); }
         T areaX2() const { return std::abs(signed_areaX2()); }
         T signed_area() const { return signed_areaX2() / 2; }
         T area() const { return areaX2() / 2; }
 
-        Vector3<T> barycentric(vec_t p) requires (N == 2 && std::is_floating_point_v<T>) {
+        Vector3<T> barycentric(vec_t p) const requires (N == 2 && std::is_floating_point_v<T>) {
             const auto [x, y] = p;
-            T det = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
-            T lamb1 = (y2 - y3) * (x - x3) + (x3 - x2) * (y - y3) / det;
-            T lamb2 = (y3 - y1) * (x - x3) + (x1 - x3) * (y - y3) / det;
+            T det   = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
+            T lamb1 = (y2 - y3) * (x  - x3) + (x3 - x2) * (y  - y3) / det;
+            T lamb2 = (y3 - y1) * (x  - x3) + (x1 - x3) * (y  - y3) / det;
             return { lamb1, lamb2, 1 - lamb1 - lamb2 };
         }
 
-        bool contains(vec_t p) {
+        bool contains(vec_t p) const {
             const Vector3<T> bary = barycentric(p);
-            return 0 < bary && bary < 1;
+            return 0.0f < bary && bary < 1.0f;
         }
 
         vec_t* begin() { return points; }
         vec_t* end() { return points + 3; }
         [[nodiscard]] const vec_t* begin() const { return points; }
         [[nodiscard]] const vec_t* end() const { return points + 3; }
+
+        vec_t& point(u32 i) { return points[i]; }
+        [[nodiscard]] const vec_t& point(u32 i) const { return points[i]; }
 
         auto asf() const { if constexpr (std::is_floating_point_v<T>) return *this; else return (Triangle<N, float>)*this; }
         template <class U> operator Triangle<N, U>() const { return { (vec_of_t<U>)p1, (vec_of_t<U>)p2, (vec_of_t<U>)p3 }; }

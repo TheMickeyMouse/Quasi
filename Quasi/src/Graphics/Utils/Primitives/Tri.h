@@ -13,7 +13,7 @@ namespace Quasi::Graphics::Primitives {
         Tri() = default;
         Tri(fVector3 a, fVector3 b, fVector3 c) : a(a), b(b), c(c) {}
 
-        static Tri FromGeometry(Math::Geometry::fTriangle3D geom);
+        static Tri FromGeometry(Math::fTriangle3D geom);
 
         void Transform(const Math::Matrix3D& transform);
         friend Tri operator*(const Math::Matrix3D& transform, const Tri& mesh);
