@@ -33,13 +33,28 @@ namespace Quasi::Physics2D::Collision {
     }
 
     Event Edge2Edge(const EdgeShape& e1, TransformRef t1, const EdgeShape& e2, TransformRef t2) {
-        // https://wickedengine.net/2020/04/capsule-collision-detection/
-        const float dSS = e1.start.distsq(e2.start), dSE = e1.start.distsq(e2.end),
-                    dES = e1.end  .distsq(e2.start), dEE = e1.end  .distsq(e2.end);
-        Math::fVector2       best1 = t1 * ((dSE < dEE || dSE < dES || dSS < dEE || dSS < dES) ? e1.start : e1.end);
-        const Math::fVector2 best2 = Math::fLine2D { t2 * e2.start, t2 * e2.end }.NearestTo(best1);
-        best1 = Math::fLine2D { t1 * e1.start, t1 * e1.end }.NearestTo(best2);
-        return Circle2Circle(CircleShape { e1.radius }, best1, CircleShape { e2.radius }, best2);
+        const Math::fVector2 e1s = t1 * e1.start, e1e = t1 * e1.end, e2s = t2 * e2.start, e2e = t2 * e2.end;
+        const Math::fVector2 projection = { e1e.y - e1s.y, e1s.x - e1e.x };
+        const float rStart = (e2s - e1s).dot(projection), rEnd = (e2e - e1s).dot(projection);
+
+        Math::fVector2 point2;
+        if (std::min(rStart, rEnd) < 0 && 0 < std::max(rStart, rEnd)) { // line intersects
+            point2 = e2s.lerp(e2e, rStart / (rStart - rEnd));
+
+            const float t = (point2 - e1s).dot(e1e - e1s);
+            if (t < 0 || e1e.distsq(e1s) < t) {
+                const Math::fVector2& point1 = t < 0 ? e1s : e1e;
+                return Circle2Circle(
+                    CircleShape { e1.radius }, point1,
+                    CircleShape { e2.radius }, Math::fLine2D { e2s, e2e }.NearestTo(point1)
+                );
+            }
+        } else point2 = std::abs(rStart) < std::abs(rEnd) ? e2s : e2e; // clamped
+
+        const Math::fVector2 point1 = Math::fLine2D { e1s, e1e }.NearestTo(point2);
+
+        return Circle2Circle(CircleShape { e1.radius }, point1,
+                             CircleShape { e2.radius }, point2);
     }
 
     Event Circle2Triangle(const CircleShape& c1, TransformRef t1, const TriangleShape& r2, TransformRef t2) {

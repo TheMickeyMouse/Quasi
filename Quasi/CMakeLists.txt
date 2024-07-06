@@ -77,8 +77,7 @@ set(HEADER_FILES
     src/Utils/Macros.h
     src/Utils/RichString.h
     src/Utils/Type.h
-    src/Utils/Lambdas.h
-    src/Utils/ArenaAllocator.h
+        src/Utils/ArenaAllocator.h
 
     src/vendor/imgui/imconfig.h
     src/vendor/imgui/imgui.h
@@ -162,11 +161,11 @@ set(ALL_FILES
     ${HEADER_FILES}
     ${SOURCE_FILES}
         src/Physics/Shape2D.cpp
+        src/Graphics/Utils/Meshes/Capsule.h
+        src/Graphics/Utils/Meshes/Stadium.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})
-
-set(ROOT_NAMESPACE Quasi)
 
 target_include_directories(${PROJECT_NAME}
         PRIVATE

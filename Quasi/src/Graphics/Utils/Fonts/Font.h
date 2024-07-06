@@ -45,9 +45,9 @@ namespace Quasi::Graphics {
             int RenderType;
             static constexpr int RENDER_TEXT = 1, RENDER_FILL = 0;
 
-            GL_VERTEX_T(Vertex);
-            GL_VERTEX_FIELD((Position)(TextureCoord)(Color)(RenderType));
-            GL_VERTEX_TRANSFORM_FIELDS((Position));
+            Q_GL_VERTEX_T(Vertex);
+            Q_GL_VERTEX_FIELD((Position)(TextureCoord)(Color)(RenderType));
+            Q_GL_VERTEX_TRANSFORM_FIELDS((Position));
         };
     private:
         static constexpr u32 NUM_GLYPHS = 127 - 32;

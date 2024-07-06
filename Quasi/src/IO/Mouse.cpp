@@ -128,7 +128,7 @@ namespace Quasi::IO {
             case 5: return "No. 5 Mouse Button";
             case 6: return "No. 6 Mouse Button";
             case 7: return "No. 7 Mouse Button";
-            default: return nullptr;
+            default: return "";
         }
     }
 }

@@ -20,8 +20,9 @@ namespace Quasi::Physics2D {
     public:
         Math::fVector2 position, velocity, acceleration;
         float mass = 1.0f;
-    private:
         BodyType type = BodyType::NONE;
+        bool enabled = true;
+    private:
         Ref<World> world = nullptr;
     public:
         Ref<Shape> shape; // heap managed
@@ -40,6 +41,9 @@ namespace Quasi::Physics2D {
 
         [[nodiscard]] bool IsStatic()  const { return type == BodyType::STATIC; }
         [[nodiscard]] bool IsDynamic() const { return type == BodyType::DYNAMIC; }
+
+        void Enable()  { enabled = true; }
+        void Disable() { enabled = false; }
 
         [[nodiscard]] Math::fRect2D ComputeBoundingBox() const;
 

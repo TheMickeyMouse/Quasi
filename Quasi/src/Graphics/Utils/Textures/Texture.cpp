@@ -10,20 +10,20 @@
 namespace Quasi::Graphics {
     GraphicsID TextureHandler::Create() const {
         GraphicsID id;
-        GL_CALL(glGenTextures(1, &id));
+        Q_GL_CALL(glGenTextures(1, &id));
         return id;
     }
 
     void TextureHandler::Destroy(const GraphicsID id) const {
-        GL_CALL(glDeleteTextures(1, &id));
+        Q_GL_CALL(glDeleteTextures(1, &id));
     }
 
     void TextureHandler::Bind(GraphicsID id) const {
-        GL_CALL(glBindTexture((int)target, id));
+        Q_GL_CALL(glBindTexture((int)target, id));
     }
 
     void TextureHandler::Unbind() const {
-        GL_CALL(glBindTexture((int)target, 0));
+        Q_GL_CALL(glBindTexture((int)target, 0));
     }
 
     void TextureSlotHandler::operator()(void* slot) const {
@@ -51,19 +51,19 @@ namespace Quasi::Graphics {
     }
 
     void Texture::SetParam(TextureParamName param, float val) const {
-        GL_CALL(glTexParameterf(TargetI(), (int)param, val));
+        Q_GL_CALL(glTexParameterf(TargetI(), (int)param, val));
     }
 
     void Texture::SetParam(TextureParamName param, int val) const {
-        GL_CALL(glTexParameteri(TargetI(), (int)param, val));
+        Q_GL_CALL(glTexParameteri(TargetI(), (int)param, val));
     }
 
     void Texture::SetParam(TextureParamName param, const float* vals) const {
-        GL_CALL(glTexParameterfv(TargetI(), (int)param, vals));
+        Q_GL_CALL(glTexParameterfv(TargetI(), (int)param, vals));
     }
 
     void Texture::SetParam(TextureParamName param, const int* vals) const {
-        GL_CALL(glTexParameterIiv(TargetI(), (int)param, vals));
+        Q_GL_CALL(glTexParameterIiv(TargetI(), (int)param, vals));
     }
 
     void Texture::DefaultParams() const {
@@ -75,17 +75,17 @@ namespace Quasi::Graphics {
         const int newTarget = overrideTarget == TextureTarget::NONE ? TargetI() : (int)overrideTarget;
         switch (Dimension()) {
             case 1:
-                return GL_CALL(glTexImage1D(newTarget, params.level, (int)params.internalformat, dim.x, 0, (int)params.format, (int)params.type, data));
+                return Q_GL_CALL(glTexImage1D(newTarget, params.level, (int)params.internalformat, dim.x, 0, (int)params.format, (int)params.type, data));
             case 2:
-                return GL_CALL(glTexImage2D(newTarget, params.level, (int)params.internalformat, dim.x, dim.y, 0, (int)params.format, (int)params.type, data));
+                return Q_GL_CALL(glTexImage2D(newTarget, params.level, (int)params.internalformat, dim.x, dim.y, 0, (int)params.format, (int)params.type, data));
             case 3:
-                return GL_CALL(glTexImage3D(newTarget, params.level, (int)params.internalformat, dim.x, dim.y, dim.z, 0, (int)params.format, (int)params.type, data));
+                return Q_GL_CALL(glTexImage3D(newTarget, params.level, (int)params.internalformat, dim.x, dim.y, dim.z, 0, (int)params.format, (int)params.type, data));
             default:;
         }
     }
 
     void Texture::SetPixelStore(PixelStoreParam param, int val) {
-        GL_CALL(glPixelStorei((int)param, val));
+        Q_GL_CALL(glPixelStorei((int)param, val));
     }
 
     void Texture::LoadTexture(const byte* img, const TextureInitParams& init) {
@@ -146,14 +146,14 @@ namespace Quasi::Graphics {
             slot = FindEmptySlot();
         if (slot == -1) return; // if slot is still -1, then the slots are full
 
-        GL_CALL(glActiveTexture(GL_TEXTURE0 + slot));
+        Q_GL_CALL(glActiveTexture(GL_TEXTURE0 + slot));
         Bind();
         Slots[slot] = *this;
         textureSlot.reset((void*)(usize)(slot + 1));
     }
 
     void Texture::Deactivate() {
-        GL_CALL(glActiveTexture(GL_TEXTURE0 + Slot()));
+        Q_GL_CALL(glActiveTexture(GL_TEXTURE0 + Slot()));
         Unbind();
         textureSlot.reset(nullptr);
     }
@@ -209,11 +209,11 @@ namespace Quasi::Graphics {
     void Texture::SetSubTexture(const void* data, const Math::uRect3D& rect, const TextureLoadParams& params) {
         switch (Dimension()) {
             case 1:
-                return GL_CALL(glTexSubImage1D(TargetI(), params.level, rect.min.x, rect.width(), (int)params.format, (int)params.type, data));
+                return Q_GL_CALL(glTexSubImage1D(TargetI(), params.level, rect.min.x, rect.width(), (int)params.format, (int)params.type, data));
             case 2:
-                return GL_CALL(glTexSubImage2D(TargetI(), params.level, rect.min.x, rect.min.y, rect.width(), rect.height(), (int)params.format, (int)params.type, data));
+                return Q_GL_CALL(glTexSubImage2D(TargetI(), params.level, rect.min.x, rect.min.y, rect.width(), rect.height(), (int)params.format, (int)params.type, data));
             case 3:
-                return GL_CALL(glTexSubImage3D(TargetI(), params.level, rect.min.x, rect.min.y, rect.min.z, rect.width(), rect.height(), rect.depth(), (int)params.format, (int)params.type, data));
+                return Q_GL_CALL(glTexSubImage3D(TargetI(), params.level, rect.min.x, rect.min.y, rect.min.z, rect.width(), rect.height(), rect.depth(), (int)params.format, (int)params.type, data));
             default:;
         }
     }

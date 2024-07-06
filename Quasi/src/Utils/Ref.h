@@ -52,7 +52,7 @@ namespace Quasi {
 
         operator ConstRef() const { return AsConst(); }
         explicit operator RefImpl<std::remove_const_t<T>>() { return AsMut(); }
-        template <class Base> requires (!std::is_same_v<Base, T>) && std::is_base_of_v<Base, T> &&   std::is_const_v<Base>  operator RefImpl<Base>() const { return obj; }
+        template <class Base> requires (!std::is_same_v<Base, T>) && std::is_base_of_v<Base, T> operator RefImpl<const Base>() const { return obj; }
         template <class Base> requires (!std::is_same_v<Base, T>) && std::is_base_of_v<Base, T> && (!std::is_const_v<Base>) operator RefImpl<Base>() { return obj; }
 
         template <class Derived> requires std::is_base_of_v<T, Derived>

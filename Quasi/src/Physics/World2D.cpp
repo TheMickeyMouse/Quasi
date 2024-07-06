@@ -29,6 +29,8 @@ namespace Quasi::Physics2D {
         dt /= (float)maxCollisionSteps;
         for (int t = 0; t < maxCollisionSteps; ++t) {
             for (auto b : bodies) {
+                if (!b->enabled) continue;
+
                 b->velocity *= std::pow(drag, dt);
                 if (b->type == BodyType::DYNAMIC)
                     b->velocity += gravity * dt;
@@ -40,7 +42,8 @@ namespace Quasi::Physics2D {
             for (int i = 1; i < bodies.size(); ++i) {
                 for (int j = i - 1; j >= 0; --j) {
                     // this is different than lt ('<') because nan always returns false
-                    if (!(cmpr(bodies[j]) >= cmpr(bodies[j + 1]))) break;
+                    const float curr = cmpr(bodies[j]), next = cmpr(bodies[j + 1]);
+                    if (std::isnan(next) || (!std::isnan(curr) && curr < next)) break;
                     std::swap(bodies[j], bodies[j + 1]);
                 }
             }
@@ -52,12 +55,13 @@ namespace Quasi::Physics2D {
             Vec<usize> active;
             for (usize i = 0; i < bodies.size(); ++i) {
                 Ref<Body> b = bodies[i];
+                if (!b->enabled) continue;
                 const float min = b->ComputeBoundingBox().min.x;
                 for (auto actIt = active.begin(); actIt != active.end();) {
                     Ref<Body> c = bodies[*actIt];
                     if (c->ComputeBoundingBox().max.x > min) {
                         const Collision::Event event = b->CollidesWith(c);
-                        if (event && !event.Seperator().iszero()) {
+                        if (event && event.Valid()) {
                             // collisionPairs.emplace_back(b, c, event);
                             StaticResolve (b, c, event);
                             DynamicResolve(b, c, event);

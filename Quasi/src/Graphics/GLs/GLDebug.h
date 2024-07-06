@@ -68,9 +68,9 @@ namespace Quasi::Graphics {
         }
     }
 #ifdef NDEBUG
-#define GL_CALL(X) (X)
+#define Q_GL_CALL(X) (X)
 #else
-#define GL_CALL(X) GLCall([&]{ return X; }, #X)
+#define Q_GL_CALL(X) GLCall([&]{ return X; }, #X)
 #endif
 
     struct VertexBufferLayout;

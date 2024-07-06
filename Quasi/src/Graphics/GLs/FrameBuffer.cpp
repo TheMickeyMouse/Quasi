@@ -9,28 +9,28 @@
 namespace Quasi::Graphics {
     GraphicsID FrameBufferHandler::Create() const {
         GraphicsID id;
-        GL_CALL(glGenFramebuffers(1, &id));
+        Q_GL_CALL(glGenFramebuffers(1, &id));
         return id;
     }
 
     void FrameBufferHandler::Destroy(GraphicsID id) const {
-        GL_CALL(glDeleteFramebuffers(1, &id));
+        Q_GL_CALL(glDeleteFramebuffers(1, &id));
     }
 
     void FrameBufferHandler::Bind(GraphicsID id) const {
-        GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, id));
+        Q_GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, id));
     }
 
     void FrameBufferHandler::Unbind() const {
-        GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+        Q_GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
     }
 
     void FrameBuffer::Attach(const Texture& tex, AttachmentType type) const {
-        GL_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, (int)type, tex.TargetI(), tex.rendererID, 0));
+        Q_GL_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, (int)type, tex.TargetI(), tex.rendererID, 0));
     }
 
     void FrameBuffer::Attach(const RenderBuffer& rbo, AttachmentType type) const {
-        GL_CALL(glFramebufferRenderbuffer(GL_FRAMEBUFFER, (int)type, GL_RENDERBUFFER, rbo.rendererID));
+        Q_GL_CALL(glFramebufferRenderbuffer(GL_FRAMEBUFFER, (int)type, GL_RENDERBUFFER, rbo.rendererID));
     }
 
     void FrameBuffer::Complete() const {

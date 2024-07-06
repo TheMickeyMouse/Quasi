@@ -20,25 +20,67 @@ namespace Quasi::Graphics::MeshUtils {
     template <class T>
     struct MeshConstructor {
         using Options = OptionsFor<T>;
+        using MData = typename Options::MData;
+        template <class F> using ResultingV = decltype(std::declval<F>()(MData {}));
+
+        template <class F>
+        static void Merge(const Options& options, F&& f, Mesh<ResultingV<F>>& out) {
+            return (T { options }).MergeImpl(std::forward<F>(f), out);
+        }
+
+        template <class F>
+        static void Merge(F&& f, Mesh<ResultingV<F>>& out) {
+            return (T { Options {} }).MergeImpl(std::forward<F>(f), out);
+        }
+
+        template <class F>
+        static void Merge(const Options& options, F&& f, const Math::Matrix3D& transform, Mesh<ResultingV<F>>& out) {
+            return Merge(options, [&] (const MData& data) { return VertexMul(std::forward<F>(f)(data), transform, transform.inv()); }, out);
+        }
+
+        template <class F>
+        static void Merge(F&& f, const Math::Matrix3D& transform, Mesh<ResultingV<F>>& out) {
+            return Merge({}, [&] (const MData& data) { return VertexMul(std::forward<F>(f)(data), transform, transform.inv()); }, out);
+        }
+
+        static void Merge(const Options& options, Mesh<MData>& out) {
+            return Merge(options, DefaultBuilder {}, out);
+        }
+
+        static void Merge(Mesh<MData>& out) {
+            return Merge({}, DefaultBuilder {}, out);
+        }
+
+        static void Merge(const Options& options, const Math::Matrix3D& transform, Mesh<MData>& out) {
+            return Merge(options, DefaultBuilder {}, transform, out);
+        }
+
+        static void Merge(const Math::Matrix3D& transform, Mesh<MData>& out) {
+            return Merge({}, DefaultBuilder {}, transform, out);
+        }
 
         template <class F>
         static auto Create(const Options& options, F&& f) {
-            return T { options }.CreateImpl(std::forward<F>(f));
+            Mesh<ResultingV<F>> out;
+            Merge(options, std::forward<F>(f), out);
+            return out;
         }
 
         template <class F>
         static auto Create(F&& f) {
-            return T { Options {} }.CreateImpl(std::forward<F>(f));
+            return Create(Options {}, std::forward<F>(f));
         }
 
         template <class F>
         static auto Create(const Options& options, F&& f, const Math::Matrix3D& transform) {
-            return Create(options, std::forward<F>(f)).ApplyTransform(transform);
+            Mesh<ResultingV<F>> out;
+            Merge(options, std::forward<F>(f), transform, out);
+            return out;
         }
 
         template <class F>
         static auto Create(F&& f, const Math::Matrix3D& transform) {
-            return Create({}, std::forward<F>(f)).ApplyTransform(transform);
+            return Create({}, std::forward<F>(f), transform);
         }
 
         static auto Create(const Options& options = {}) {

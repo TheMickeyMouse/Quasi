@@ -20,7 +20,7 @@ namespace Quasi::Math {
         Line  operator- (const vec_t& off) const { return { start - off, end - off }; }
         Line& operator-=(const vec_t& off) { start -= off; end -= off; return *this; }
 
-        vec_t NearestTo(const vec_t& p) {
+        vec_t NearestTo(const vec_t& p) const {
             const float t = (p - start).dot(end - start) / (end - start).lensq();
             return start.lerp(end, std::clamp(t, 0.0f, 1.0f));
         }

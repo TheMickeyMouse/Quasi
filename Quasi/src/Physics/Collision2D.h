@@ -25,6 +25,8 @@ namespace Quasi::Physics2D::Collision {
         [[nodiscard]] Event Swap() const { return collides ? Event { contactPointTarget, contactPointBase } : None; }
         [[nodiscard]] Math::fVector2 Seperator() const { return contactPointTarget - contactPointBase; }
 
+        [[nodiscard]] bool Valid() const { return collides && contactPointTarget.distsq(contactPointBase) > Math::EPSILON * Math::EPSILON; }
+
         static const Event None;
 
         using CollisionCheckFunc = FnPtr<Event, const Shape&, TransformRef, const Shape&, TransformRef>;

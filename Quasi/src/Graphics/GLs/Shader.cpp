@@ -12,15 +12,15 @@ namespace Quasi::Graphics {
     }
 
     void ShaderHandler::Destroy(GraphicsID id) const {
-        GL_CALL(glDeleteProgram(id));
+        Q_GL_CALL(glDeleteProgram(id));
     }
 
     void ShaderHandler::Bind(GraphicsID id) const {
-        GL_CALL(glUseProgram(id));
+        Q_GL_CALL(glUseProgram(id));
     }
 
     void ShaderHandler::Unbind() const {
-        GL_CALL(glUseProgram(0));
+        Q_GL_CALL(glUseProgram(0));
     }
 
     Shader::Shader(Str program) {
@@ -41,7 +41,7 @@ namespace Quasi::Graphics {
         if (it != uniformCache.end())
             return it->second;
 
-        const int location = GL_CALL(glGetUniformLocation(rendererID, name.data()));
+        const int location = Q_GL_CALL(glGetUniformLocation(rendererID, name.data()));
         GLLogger().AssertFmt(location != -1, "invalid uniform location for '{}'", name);
         uniformCache[String { name }] = location;
         return location;
@@ -162,16 +162,16 @@ namespace Quasi::Graphics {
         const GraphicsID fs = CompileShaderFrag(frg);
         const GraphicsID gm = geo.empty() ? 0 : CompileShaderGeom(geo);
 
-                GL_CALL(glAttachShader(program, vs));
-                GL_CALL(glAttachShader(program, fs));
-        if (gm) GL_CALL(glAttachShader(program, gm));
+                Q_GL_CALL(glAttachShader(program, vs));
+                Q_GL_CALL(glAttachShader(program, fs));
+        if (gm) Q_GL_CALL(glAttachShader(program, gm));
 
-        GL_CALL(glLinkProgram(program));
-        GL_CALL(glValidateProgram(program));
+        Q_GL_CALL(glLinkProgram(program));
+        Q_GL_CALL(glValidateProgram(program));
         
-                GL_CALL(glDeleteShader(vs));
-                GL_CALL(glDeleteShader(fs));
-        if (gm) GL_CALL(glDeleteShader(fs));
+                Q_GL_CALL(glDeleteShader(vs));
+                Q_GL_CALL(glDeleteShader(fs));
+        if (gm) Q_GL_CALL(glDeleteShader(fs));
 
         return program;
     }
@@ -193,7 +193,7 @@ namespace Quasi::Graphics {
 #define DEFINE_UNIF_FN(IN, GL, ...) \
     template <>\
     void Shader::SetUniformAtLoc<ShaderUniformType::UNIF_##IN>(int uniformLoc, ShaderUniformArgOf<ShaderUniformType::UNIF_##IN> val) { \
-        GL_CALL(glUniform##GL(uniformLoc, __VA_ARGS__)); \
+        Q_GL_CALL(glUniform##GL(uniformLoc, __VA_ARGS__)); \
     }
 
     DEFINE_UNIF_FN(1I,  1i,  val) DEFINE_UNIF_FN(2I,  2i,  val.x, val.y) DEFINE_UNIF_FN(3I,  3i,  val.x, val.y, val.z) DEFINE_UNIF_FN(4I,  4i,  val.x, val.y, val.z, val.w)

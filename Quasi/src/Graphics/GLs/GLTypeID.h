@@ -53,20 +53,20 @@ namespace Quasi::Graphics {
     template <GLTypeID T> using GLTypeOfID = std::tuple_element_t<IsValidGLID(T), Tuple<void, float, double, int, uint, sbyte, byte, short, ushort>>;
 
 #define GL_SIZEOF_DECL(SEQ) constexpr usize SizeOf(const GLTypeID type) { switch(type) { GL_SIZEOF_SEQ(SEQ) default: return 0; } }
-#define GL_SIZEOF_SEQ(SEQ) Q_CAT(__GL_SIZE_T1__ SEQ, END__)
+#define GL_SIZEOF_SEQ(SEQ) Q_CAT(__Q_GL_SIZE_T1__ SEQ, END__)
 #define GL_SIZEOF_TYPE(M) case GLTypeID::M: return sizeof(GLTypeOfID<GLTypeID::M>);
-#define __GL_SIZE_T1__(X) GL_SIZEOF_TYPE(X) __GL_SIZE_T2__
-#define __GL_SIZE_T2__(X) GL_SIZEOF_TYPE(X) __GL_SIZE_T1__
-#define __GL_SIZE_T1__END__
-#define __GL_SIZE_T2__END__
+#define __Q_GL_SIZE_T1__(X) GL_SIZEOF_TYPE(X) __Q_GL_SIZE_T2__
+#define __Q_GL_SIZE_T2__(X) GL_SIZEOF_TYPE(X) __Q_GL_SIZE_T1__
+#define __Q_GL_SIZE_T1__END__
+#define __Q_GL_SIZE_T2__END__
 
     GL_SIZEOF_DECL((FLOAT)(DOUBLE)(INT)(UINT)(SBYTE)(BYTE)(SHORT)(USHORT))
 
 #undef GL_SIZEOF_DECL
 #undef GL_SIZEOF_SEQ
 #undef GL_SIZEOF_TYPE
-#undef __GL_SIZE_T1__
-#undef __GL_SIZE_T2__
-#undef __GL_SIZE_T1__END__
-#undef __GL_SIZE_T2__END__
+#undef __Q_GL_SIZE_T1__
+#undef __Q_GL_SIZE_T2__
+#undef __Q_GL_SIZE_T1__END__
+#undef __Q_GL_SIZE_T2__END__
 }
