@@ -4,6 +4,22 @@
 #include "Utils/Ref.h"
 
 namespace Quasi::Graphics {
+	struct DrawOptions {
+		Ref<Shader> shader = nullptr;
+		ShaderArgs arguments = {};
+		bool useDefaultArguments = true;
+	};
+
+	inline DrawOptions UseShader(Shader& shader, bool useDefaultArgs = true) {
+		return { .shader = shader, .useDefaultArguments = useDefaultArgs };
+	}
+	inline DrawOptions UseShaderWithArgs(Shader& shader, ShaderArgs arguments, bool useDefaultArgs = true) {
+		return { .shader = shader, .arguments = std::move(arguments), .useDefaultArguments = useDefaultArgs };
+	}
+	inline DrawOptions UseArgs(ShaderArgs arguments, bool useDefaultArgs = true) {
+		return { .shader = nullptr, .arguments = std::move(arguments), .useDefaultArguments = useDefaultArgs };
+	}
+
     template <class T>
     class RenderObject {
         Ref<RenderData> rd;
@@ -28,28 +44,26 @@ namespace Quasi::Graphics {
         [[nodiscard]] const RenderData* operator->() const { return &GetRenderData(); }
     	RenderData* operator->() { return &GetRenderData(); }
 
-		void ClearData() { rd->ClearData(); }
+		void Draw(IList<const Mesh<T>*> meshes, const DrawOptions& options = {});
+		void Draw(const Mesh<T>& mesh, const DrawOptions& options = {}) { Draw({ &mesh }, options); }
+		template <CollectionOf<Mesh<T>> R> void Draw(R&& meshes, const DrawOptions& options = {});
+		void DrawInstanced(IList<const Mesh<T>*> meshes, int instances, const DrawOptions& options = {});
+    	void DrawInstanced(const Mesh<T>& mesh, int instances, const DrawOptions& options = {}) { DrawInstanced({ &mesh }, instances, options); }
+    	template <CollectionOf<Mesh<T>> R> void DrawInstanced(R&& meshes, int instances, const DrawOptions& options = {});
 
-		void BindMesh(Mesh<T>& mesh) { rd->BindMeshes<T>(Span { &mesh, 1 }); }
-		void BindMeshes(Span<Mesh<T>> meshes) { rd->BindMeshes<T>(meshes); }
-        void BindMeshes(IList<Mesh<T>*> meshes) { for (auto* m : meshes) BindMesh(*m); }
-        
-		void Render(Shader& rShader, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { rd->Render(rShader, args, setDefaultShaderArgs); }
-		void Render(const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { rd->Render(args, setDefaultShaderArgs); }
+    	void BeginContext() { rd->BufferUnload(); rd->Clear(); }
+    	void AddMesh(const Mesh<T>& mesh) { rd->Add(mesh); }
+    	template <CollectionOf<Mesh<T>> R> void AddMeshes(R&& meshes) { rd->Add(meshes); }
+    	void AddMeshes(IList<const Mesh<T>*> meshes) { for (auto* m : meshes) rd->Add(*m); }
+    	void EndContext() { rd->BufferLoad(); }
 
-    	void RenderInstanced(Shader& rShader, int instances, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { rd->RenderInstanced(rShader, instances, args, setDefaultShaderArgs); }
-    	void RenderInstanced(int instances, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { rd->RenderInstanced(instances, args, setDefaultShaderArgs); }
-        
-		void AddNewMesh(const Mesh<T>& mesh) { rd->AddNewMeshes<T>(Span { &mesh, 1 }); }
-		void AddNewMeshes(Span<const Mesh<T>> meshes) { rd->AddNewMeshes<T>(meshes); }
-		void AddBoundMeshes() { rd->AddBoundMeshes<T>(); }
-        
-		void ResetData() { rd->ResetData<T>(); }
-        
-		void UnbindMesh(u32 index) { rd->UnbindMesh(index); }
-		void UnbindMeshes(u32 indexStart, u32 indexEnd) { rd->UnbindMeshes(indexStart, indexEnd); }
-		void UpdateMeshIndices() { rd->UpdateMeshIndices(); }
-        
+     	void DrawContext(const DrawOptions& options = {}) {
+    		rd->Render(const_cast<Shader&>(options.shader.ValueOr(rd->shader)), options.arguments, options.useDefaultArguments);
+    	}
+    	void DrawContextInstanced(int instances, const DrawOptions& options = {}) {
+    		rd->RenderInstanced(const_cast<Shader&>(options.shader.ValueOr(rd->shader)), instances, options.arguments, options.useDefaultArguments);
+    	}
+
 		void Destroy() { rd->Destroy(); rd = nullptr; }
 
 	    void SetCamera(const Math::Matrix3D& cam) { rd->SetCamera(cam); }
@@ -60,4 +74,36 @@ namespace Quasi::Graphics {
 	    void UseShaderFromFile(Str vert, Str frag, Str geom = {})
     	{ rd->UseShaderFromFile(vert, frag, geom); }
     };
+
+    template <class T>
+	void RenderObject<T>::Draw(IList<const Mesh<T>*> meshes, const DrawOptions& options) {
+	    BeginContext();
+    	for (auto* m : meshes) rd->Add(*m);
+    	EndContext();
+    	DrawContext(options);
+    }
+
+    template <class T> template <CollectionOf<Mesh<T>> R>
+	void RenderObject<T>::Draw(R&& meshes, const DrawOptions& options) {
+	    BeginContext();
+    	AddMeshes(meshes);
+    	EndContext();
+    	DrawContext(options);
+    }
+
+    template <class T>
+	void RenderObject<T>::DrawInstanced(IList<const Mesh<T>*> meshes, int instances, const DrawOptions& options) {
+    	BeginContext();
+    	for (auto* m : meshes) rd->Add(*m);
+    	EndContext();
+    	DrawContextInstanced(instances, options);
+    }
+
+	template <class T> template <CollectionOf<Mesh<T>> R>
+	void RenderObject<T>::DrawInstanced(R&& meshes, int instances, const DrawOptions& options) {
+    	BeginContext();
+    	AddMeshes(meshes);
+    	EndContext();
+    	DrawContextInstanced(instances, options);
+    }
 }

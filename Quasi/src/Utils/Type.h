@@ -62,7 +62,8 @@ namespace Quasi {
     template <class R> using ArrayElement = std::ranges::range_value_t<R>;
 	template <class R, class T> concept ArrayOf = ArrayLike<R> && std::is_same_v<T, ArrayElement<R>>;
 
-    template <class R, class E> concept ContainerOf = std::ranges::range<R> && std::is_same_v<ArrayElement<R>, E>;
+    template <class R> concept CollectionLike = std::ranges::range<R>;
+    template <class R, class E> concept CollectionOf = CollectionLike<R> && std::is_same_v<ArrayElement<R>, E>;
 
     template <ArrayLike R> // from https://stackoverflow.com/questions/77097857/conversion-of-stdvector-to-stdspant
     Span<ArrayElement<R>> TakeSpan(R& r) { return Span<ArrayElement<R>>(r); }

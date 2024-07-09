@@ -16,14 +16,6 @@ namespace Quasi::Graphics {
 		Ref<Mesh<singlebyte>> gmesh; // using the fact that mesh<T> is always 104 bytes
 	public:
 		GenericMesh(void* m) : gmesh(DerefPtr((Mesh<singlebyte>*)m)) {}
-		~GenericMesh();
-
-		GenericMesh(const GenericMesh&) = delete;
-		GenericMesh& operator=(const GenericMesh&) = delete;
-
-		static void Transfer(GenericMesh& dest, GenericMesh&& from);
-		GenericMesh(GenericMesh&& mesh) noexcept { Transfer(*this, std::move(mesh)); }
-		GenericMesh& operator=(GenericMesh&& mesh) noexcept { Transfer(*this, std::move(mesh)); return *this; }
 
 		template <class T> static GenericMesh From(Mesh<T>* m) {
 			return GenericMesh { (Mesh<singlebyte>*)m };
@@ -41,11 +33,6 @@ namespace Quasi::Graphics {
 		template <class T> void Set(Mesh<T>* mesh) {
 			Set((void*)mesh);
 		}
-
-		u32& DeviceIndex();
-		[[nodiscard]] u32 DeviceIndex() const;
-		Ref<RenderData>& RenderParnet();
-		[[nodiscard]] Ref<RenderData> RenderParnet() const;
 
 		[[nodiscard]] usize vSizeBytes() const;
 		[[nodiscard]] Span<const byte> vDataBytes() const;

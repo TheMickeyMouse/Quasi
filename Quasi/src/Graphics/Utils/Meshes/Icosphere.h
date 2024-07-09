@@ -97,6 +97,7 @@ namespace Quasi::Graphics::MeshUtils {
             Vec<ResultingV<F>>& vert = mesh.vertices;
             Vec<TriIndices>& inds = mesh.indices;
             const u32 iOffset = vert.size();
+            vert.resize(vert.size() + CORNER_COUNT + EDGE_V_COUNT() * EDGE_COUNT + CENTER_V_COUNT() * CENTER_COUNT);
 
             for (u32 i = 0; i < CORNER_COUNT; ++i)
                 vert[i] = f(MData { .Position = IcoVert[i], .Normal = IcoVert[i] });

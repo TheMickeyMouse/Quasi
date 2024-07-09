@@ -25,9 +25,10 @@ namespace Quasi::Graphics {
 	    Math::Matrix3D projection = Math::Matrix3D::ortho_projection({ -4, 4, -3, 3, 0.1f, 100 });
 	    Math::Matrix3D camera {};
 	    Shader shader = {}; // shader can be null if renderId is 0
-
-		Vec<GenericMesh> meshes {};
 	private:
+		Vec<byte> vertexData;
+		Vec<TriIndices> indexData;
+
 		Ref<GraphicsDevice> device = nullptr;
 		u32 deviceIndex = 0;
 
@@ -58,19 +59,12 @@ namespace Quasi::Graphics {
 
 		[[nodiscard]] VertexDebugTypeIndex GetType() const { return typeindex; }
 
-		void ClearData();
-		template <class T>     void BindMeshes(Span<Mesh<T>> newMeshes);
-		template <ArrayLike T> void BindMeshes(T& ms) { BindMeshes(TakeSpan(ms)); }
+		void BufferUnload();
+		void BufferLoad();
 
-		template <class T>     void AddNewMeshes(Span<const Mesh<T>> newMeshes);
-		template <ArrayLike T> void AddNewMeshes(const T& arr) { AddNewMeshes(TakeSpan(arr)); }
-		template <class T> void AddBoundMeshes() { for (GenericMesh& m : meshes) m.As<T>().AddTo(vbo, ibo); }
-		template <class T> void ResetData() { ClearData(); AddBoundMeshes<T>(); }
-
-		void UnbindMesh(u32 index);
-		void UnbindMeshes(u32 indexStart, u32 indexEnd);
-
-		void UpdateMeshIndices();
+		void Clear();
+		template <class T> void Add(const Mesh<T>& mesh) { mesh.AddTo(*this); }
+		template <CollectionLike T> void Add(const T& arr) { for (const auto& m : arr) Add(m); }
 
 		void Destroy();
 
@@ -88,24 +82,12 @@ namespace Quasi::Graphics {
 	    void UseShaderFromFile(Str vert, Str frag, Str geom = {}) { shader = Shader::FromFile(vert, frag, geom); }
 
 		friend class GraphicsDevice;
+		template <class T> friend class Mesh;
 	};
 
 	template <class T>
 	void RenderData::Create(u32 vsize, u32 isize, RenderData& out) {
 		// times 3 to account for triangles
 		out = RenderData(vsize, isize * 3, sizeof(T), VertexDebugTypeInfo::of<T>(), VertexLayoutOf<T>());
-	}
-
-	template <class T>
-	void RenderData::BindMeshes(Span<Mesh<T>> newMeshes) {
-		for (Mesh<T>& m : newMeshes) {
-			m.Bind(*this);
-		}
-	}
-
-	template<class T>
-	void RenderData::AddNewMeshes(Span<const Mesh<T>> newMeshes) {
-		for (const Mesh<T>& m : newMeshes)
-			m.AddTo(vbo, ibo);
 	}
 }

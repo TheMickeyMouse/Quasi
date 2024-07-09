@@ -27,7 +27,6 @@ namespace Quasi::Graphics {
 
     void GraphicsDevice::Quit() {
         DeleteAllRenders(); // delete gl objects
-        // UnbindAllTextures(); // delete textures
         glfwSetWindowShouldClose(mainWindow, true);
     }
 
@@ -270,15 +269,6 @@ namespace Quasi::Graphics {
                         ++j;
                     }
                     ImGui::Unindent();
-
-                    for (uint k = 0; k < data->meshes.size(); ++k) {
-                        GenericMesh& mesh = data->meshes[k];
-                        if (ImGui::TreeNode((const void*)(intptr_t)k, "Mesh #%d", k)) {
-                            ImGui::Text("%d Vertices, %d Triangles", mesh.vSizeBytes() / vType->size, mesh.iSize());
-
-                            ImGui::TreePop();
-                        }
-                    }
 
                     ImGui::TreePop();
                 }

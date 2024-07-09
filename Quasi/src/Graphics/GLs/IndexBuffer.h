@@ -10,7 +10,6 @@ namespace Quasi::Graphics {
     private:
         u32 bufferSize = 0;
         u32 dataOffset = 0;
-        u32 indexOffset = 0;
     public:
         IndexBuffer() = default;
         explicit IndexBuffer(u32 size);
@@ -20,8 +19,8 @@ namespace Quasi::Graphics {
 
         void ClearData(); // this doesnt actually clear the dataz, just makes it not
 
-        void AddData(Span<const u32> data, u32 maxIndex = ~0);
-        void AddData(Span<const TriIndices> data, u32 maxIndex = ~0) { AddData(CastSpan<const u32>(data), maxIndex); }
+        void AddData(Span<const u32> data);
+        void AddData(Span<const TriIndices> data) { AddData(CastSpan<const u32>(data)); }
 
         [[nodiscard]] u32 GetLength() const { return bufferSize; }
         [[nodiscard]] u32 GetUsedLength() const { return dataOffset; }

@@ -8,8 +8,8 @@
 
 namespace Quasi::Graphics {
     class GraphicsDevice {
-        static constexpr u32 MAX_VERTEX_COUNT = 1000;
-        static constexpr u32 MAX_INDEX_COUNT = 1000;
+        static constexpr u32 MAX_VERTEX_COUNT = 1024;
+        static constexpr u32 MAX_INDEX_COUNT = 1024;
 
         using RenderHandle = UniqueRef<RenderData>;
     private:

@@ -7,8 +7,6 @@ namespace Quasi::Graphics {
 		dest.vbo = std::move(from.vbo);
 		dest.ibo = std::move(from.ibo);
 
-		dest.meshes = std::move(from.meshes);
-
 		dest.device = from.device;
 		from.device = nullptr;
 		dest.deviceIndex = from.deviceIndex;
@@ -17,7 +15,6 @@ namespace Quasi::Graphics {
 
 	RenderData::~RenderData() {
 		Destroy();
-
 	}
 
 	void RenderData::Bind() const {
@@ -32,9 +29,19 @@ namespace Quasi::Graphics {
 		ibo.Unbind();
 	}
 
-	void RenderData::ClearData() {
+	void RenderData::BufferUnload() {
 		vbo.ClearData();
 		ibo.ClearData();
+	}
+
+	void RenderData::BufferLoad() {
+		vbo.AddDataBytes(vertexData);
+		ibo.AddData(indexData);
+	}
+
+	void RenderData::Clear() {
+		vertexData.clear();
+		indexData.clear();
 	}
 
 	void RenderData::Render(Shader& replaceShader, const ShaderArgs& args, bool setDefaultShaderArgs) {
@@ -43,21 +50,6 @@ namespace Quasi::Graphics {
 
 	void RenderData::RenderInstanced(Shader& replaceShader, int instances, const ShaderArgs& args, bool setDefaultShaderArgs) {
 		device->RenderInstanced(*this, instances, replaceShader, args, setDefaultShaderArgs);
-	}
-
-	void RenderData::UnbindMesh(u32 index) {
-		meshes.erase(meshes.begin() + index);
-		UpdateMeshIndices();
-	}
-
-	void RenderData::UnbindMeshes(u32 indexStart, u32 indexEnd) {
-		meshes.erase(meshes.begin() + indexStart, meshes.begin() + indexEnd);
-		UpdateMeshIndices();
-	}
-
-	void RenderData::UpdateMeshIndices() {
-		for (u32 i = 0; i < meshes.size(); ++i)
-			meshes[i].DeviceIndex() = i;
 	}
 
 	void RenderData::Destroy() {

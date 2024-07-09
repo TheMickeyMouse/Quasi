@@ -20,23 +20,10 @@ namespace Quasi::Graphics {
         Vec<Vertex> vertices;
         Vec<TriIndices> indices;
         Math::Matrix3D modelTransform;
-    private:
-        Ref<RenderData> render = nullptr;
-        u32 deviceIndex = 0;
     public:
         Mesh() = default;
         Mesh(Vec<Vertex> v, Vec<TriIndices> i)
             : vertices(std::move(v)), indices(std::move(i)) {}
-
-        ~Mesh() { Unbind(); }
-
-        Mesh(const Mesh& mesh) = default;
-        Mesh& operator=(const Mesh& mesh) = default;
-
-        static void Transfer(Mesh& dest, Mesh&& from);
-        Mesh(Mesh&& mesh) noexcept { Transfer(*this, std::move(mesh)); }
-        Mesh& operator=(Mesh&& mesh) noexcept { Transfer(*this, std::move(mesh)); return *this; }
-        Mesh& Replace(Mesh&& mesh);
 
         void SetTransform(const Math::Matrix3D& model) { modelTransform = model; }
         void Transform(const Math::Matrix3D& model) { modelTransform *= model; }
@@ -46,7 +33,7 @@ namespace Quasi::Graphics {
         Mesh& Scale(const Math::fVector3& scale) { return ApplyTransform(Math::Matrix3D::scale_mat(scale)); }
         Mesh& Rotate(const Math::fVector3& rot)  { return ApplyTransform(Math::Matrix3D::rotate_mat(rot)); }
 
-        void AddTo(VertexBuffer& vbuffer, IndexBuffer& ibuffer) const;
+        void AddTo(RenderData& rd) const;
 
         template <Fn<T, Math::fVector3> F> void AddQuad(const Primitives::Quad& quad, F&& f);
         template <Fn<T, Math::fVector3> F> void AddTri(const Primitives::Tri& tri, F&& f);
@@ -60,12 +47,6 @@ namespace Quasi::Graphics {
 
         template <class U, Fn<U, T> F> Mesh<U> Convert(F&& f) const;
 
-        [[nodiscard]] bool IsBound() const { return render; }
-
-        void Bind(RenderData& rend);
-        void Bind(RenderObject<T>& rend);
-        void Unbind();
-
         void Clear();
 
         friend class GraphicsDevice;
@@ -77,13 +58,21 @@ namespace Quasi::Graphics {
     };
 
     template <class T>
-    void Mesh<T>::AddTo(VertexBuffer& vbuffer, IndexBuffer& ibuffer) const {
+    void Mesh<T>::AddTo(RenderData& rd) const {
+        const u32 iOff = rd.vertexData.size() / sizeof(T);
+
+        rd.vertexData.insert(
+            rd.vertexData.end(),
+            reinterpret_cast<const byte*>(vertices.data()),
+            reinterpret_cast<const byte*>(vertices.data() + vertices.size())
+        );
         const Math::Matrix3D normMat = modelTransform.inv().transpose();
-        Vec<T> transformed;
-        transformed.resize(vertices.size());
-        std::transform(vertices.begin(), vertices.end(), transformed.begin(), [&](auto v) { return VertexMul(v, modelTransform, normMat); });
-        vbuffer.AddData(transformed);
-        ibuffer.AddData(indices, (u32)(vertices.size() - 1));
+        for (T& t : CastSpan<T>(Span { rd.vertexData.end() - vertices.size() * sizeof(T), rd.vertexData.end() })) {
+            t = VertexMul(t, modelTransform, normMat);
+        }
+
+        rd.indexData.insert(rd.indexData.end(), indices.begin(), indices.end());
+        std::for_each(rd.indexData.end() - indices.size(), rd.indexData.end(), [=] (TriIndices& i) { i += iOff; });
     }
 
     template <class T>
@@ -97,53 +86,10 @@ namespace Quasi::Graphics {
     }
 
     template <class T>
-    void Mesh<T>::Transfer(Mesh& dest, Mesh&& from) {
-        dest.vertices = std::move(from.vertices);
-        dest.indices = std::move(from.indices);
-
-        dest.modelTransform = from.modelTransform;
-
-        if (dest.render) dest.render->UnbindMesh(dest.deviceIndex);
-        dest.render = from.render;
-        from.render = nullptr;
-
-        dest.deviceIndex = from.deviceIndex;
-        from.deviceIndex = 0;
-
-        if (dest.render)
-            dest.render->meshes[dest.deviceIndex].Set(&dest);
-    }
-
-    template <class T> Mesh<T>& Mesh<T>::Replace(Mesh&& mesh) {
-        vertices = std::move(mesh.vertices);
-        indices = std::move(mesh.indices);
-        modelTransform = mesh.modelTransform;
-        return *this;
-    }
-
-    template <class T>
     Mesh<T>& Mesh<T>::ApplyTransform(const Math::Matrix3D& model) {
         const Math::Matrix3D normMat = model.inv().transpose();
         for (auto& v : vertices) v = VertexMul(v, model, normMat);
         return *this;
-    }
-
-    template <class T>
-    void Mesh<T>::Bind(RenderData& rend) {
-        deviceIndex = (u32)rend.meshes.size();
-        rend.meshes.push_back(this);
-        render = rend;
-    }
-
-    template <class T>
-    void Mesh<T>::Bind(RenderObject<T>& rend) {
-        Bind(rend.GetRenderData());
-    }
-
-    template <class T>
-    void Mesh<T>::Unbind() {
-        if (render) render->UnbindMesh(deviceIndex);
-        render = nullptr;
     }
 
     template <class T> Mesh<T> Mesh<T>::Combine(IList<Mesh> meshes) {

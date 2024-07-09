@@ -54,7 +54,7 @@ namespace Quasi::Physics2D::Collision {
         const Math::fVector2 point1 = Math::fLine2D { e1s, e1e }.NearestTo(point2);
 
         return Circle2Circle(CircleShape { e1.radius }, point1,
-                             CircleShape { e2.radius }, point2);
+                             CircleShape { e2.radius }, Math::fLine2D { e2s, e2e }.NearestTo(point1));
     }
 
     Event Circle2Triangle(const CircleShape& c1, TransformRef t1, const TriangleShape& r2, TransformRef t2) {

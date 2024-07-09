@@ -31,9 +31,6 @@ namespace Quasi::Graphics {
         Vec<OBJObject> objects;
         Vec<MTLMaterial> materials;
 
-        void BindMeshes(RenderObject<OBJVertex>& scene);
-        void AddMeshes(RenderObject<OBJVertex>& scene);
-
         Vec<Mesh<OBJVertex>> RetrieveMeshes();
     };
 }

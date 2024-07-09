@@ -19,16 +19,11 @@ namespace Quasi::Graphics {
 
     void IndexBuffer::ClearData() {
         dataOffset = 0;
-        indexOffset = 0;
     }
 
-    void IndexBuffer::AddData(Span<const u32> data, u32 maxIndex) {
+    void IndexBuffer::AddData(Span<const u32> data) {
         Bind();
-        Vec<u32> dataOff(data.size());
-        std::ranges::transform(data, dataOff.begin(), [iOff = indexOffset](u32 i){ return i + iOff; } );
-        maxIndex = maxIndex == ~0 ? *std::ranges::max_element(dataOff) : (maxIndex + indexOffset);
-        Q_GL_CALL(glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, dataOffset * sizeof(uint), data.size() * sizeof(uint), dataOff.data()));
+        Q_GL_CALL(glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, dataOffset * sizeof(uint), data.size() * sizeof(uint), data.data()));
         dataOffset += (u32)data.size();
-        indexOffset = maxIndex + 1;
     }
 }
