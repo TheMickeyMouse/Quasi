@@ -8,15 +8,9 @@ namespace Quasi::Graphics {
     private:
         u32 dataOffset = 0;
         u32 bufferSize = 0;
-
-        u32 vertSize = 1;
     public:
         VertexBuffer() = default;
-        explicit VertexBuffer(u32 size, u32 typeSize);
-
-        template <class T> static VertexBuffer of(u32 size) {
-            return VertexBuffer(size, sizeof(T));
-        }
+        explicit VertexBuffer(u32 size);
 
         [[nodiscard]] u32 GetLength() const { return bufferSize; }
 

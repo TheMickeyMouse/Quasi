@@ -1,7 +1,6 @@
 #include "TextRenderer.h"
 
 #include "Constants.h"
-#include "Math/Constants.h"
 
 namespace Quasi::Graphics {
     void TextRenderer::CharQuad::MoveY(float y) {
@@ -45,10 +44,10 @@ namespace Quasi::Graphics {
     const TextRenderer::CharQuad* TextRenderer::End() const {
         return (const CharQuad*)(textVertices.data() + textVertices.size());
     }
-    TextRenderer::CharQuad& TextRenderer::CharAt(uint index) {
+    TextRenderer::CharQuad& TextRenderer::CharAt(u32 index) {
         return Begin()[index];
     }
-    const TextRenderer::CharQuad& TextRenderer::CharAt(uint index) const {
+    const TextRenderer::CharQuad& TextRenderer::CharAt(u32 index) const {
         return Begin()[index];
     }
 
@@ -75,7 +74,7 @@ namespace Quasi::Graphics {
         if (lineWords.size() < 2) return; // no need to align
         if (lastSpaceIndex == meshIndex) lineWords.pop_back(); // check if this 'word' is necessary (is not empty or whitespace)
         const float space = restWidth / (float)(lineWords.size() - 1); // amt of space between each word (accounts for existing spaces)
-        for (uint i = 1; i < lineWords.size(); ++i) {
+        for (u32 i = 1; i < lineWords.size(); ++i) {
             const auto end = i == lineWords.size() - 1 ? End() : Begin() + lineWords[i+1].index; // span of word
             const float xOff = space * (float)i;
             for (CharQuad* v = Begin() + lineWords[i].index; v != end; ++v) // get beginning of word
@@ -92,7 +91,7 @@ namespace Quasi::Graphics {
             bool isVisible          = false;
             const bool isAllVisible = lineWidth <= align.rect.width();
             int visibleStart = ~(int)lastLineIndex, visibleEnd = ~(int)(meshIndex - 1); // store 'sign' as an indicator for 'undefined'
-            for (uint i = lastLineIndex; i < meshIndex; ++i) {
+            for (u32 i = lastLineIndex; i < meshIndex; ++i) {
                 CharAt(i).MoveX(restWidth); // offset all for centering
                 if (isAllVisible || !shallCrop) continue; // if everything is visible or you dont need to crop just dont care
                 if (!isVisible && visibleStart < 0 && CharAt(i).v1.Position.x >= align.rect.min.x) {
@@ -119,7 +118,7 @@ namespace Quasi::Graphics {
                 textVertices.resize(4 * (visibleEnd + 1));
                 textVertices.erase(textVertices.begin() + (int)lastLineIndex * 4, textVertices.begin() + visibleStart * 4);
                 // m - (vs - l) - (m - ve) -> m - vs + l - m + ve -> ve - vs + l
-                const uint removed = visibleStart - lastLineIndex + meshIndex - visibleEnd - 1;
+                const u32 removed = visibleStart - lastLineIndex + meshIndex - visibleEnd - 1;
                 meshIndex -= removed;
                 lastLineIndex -= removed;
             }
@@ -156,8 +155,8 @@ namespace Quasi::Graphics {
             if (lineIndices.empty()) return; // no need to align lines NOLINT(cppcoreguidelines-avoid-goto, hicpp-avoid-goto)
             const float yOff = -align.GetYOff(lineSpacing * ((float)lineIndices.size() * align.lineSpacing + 1))
                                 * 2 / (float)lineIndices.size(); // space between each line
-            uint lineNum = 0; // line number to keep track of offset
-            for (uint i = 0; i < meshIndex; ++i) {
+            u32 lineNum = 0; // line number to keep track of offset
+            for (u32 i = 0; i < meshIndex; ++i) {
                 if (i >= (lineNum >= lineIndices.size() ? UINT32_MAX : lineIndices[lineNum])) // last line doesnt exist, so index is at UINT32_MAX
                     ++lineNum; // increments line number if index surpasses next line index
                 CharAt(i).MoveY(yOff * (float)lineNum); // offsets points accordingly
@@ -296,7 +295,7 @@ namespace Quasi::Graphics {
         lastSpaceIndex = meshIndex; // update index
     }
 
-    Vec<Font::Vertex> TextRenderer::RenderText(Str string) {
+    void TextRenderer::RenderText(Str string) {
         using namespace Math;
         lineCount = (u32)(std::ranges::count(string, '\n') + 1); //line count for vertical alignment
         Prepare();
@@ -308,11 +307,9 @@ namespace Quasi::Graphics {
         }
         FixAlignX(); // dont forget to fix the last line
         FixAlignY();
-        
-        return textVertices;
     }
 
-    Vec<Font::Vertex> TextRenderer::RenderRichText(const Text::RichString& string) {
+    void TextRenderer::RenderRichText(const Text::RichString& string) {
         using namespace Math;
         lineCount = string.Lines(); // line count for vertical alignment
         Prepare();
@@ -367,8 +364,6 @@ namespace Quasi::Graphics {
                 fontSize.pointsf() * 0.3f, fColor::from_hex("27303d")
             );
         }
-        
-        return textVertices;
     }
 
     void TextRenderer::AddRoundedRect(const Math::fRect2D& region, float roundRadius, const Math::fColor& color) {
@@ -376,7 +371,7 @@ namespace Quasi::Graphics {
         // rectangle
         const fVector2 y = fVector2::unit_y(roundRadius);
         constexpr int renderType = Vertex::RENDER_FILL;
-        const uint off = (uint)bgVertices.size();
+        const u32 off = (u32)bgVertices.size();
         bgVertices.emplace_back(region.corner(0) + y, 0.0f, color, renderType);
         bgVertices.emplace_back(region.corner(1) + y, 0.0f, color, renderType);
         bgVertices.emplace_back(region.corner(2) - y, 0.0f, color, renderType);
@@ -402,7 +397,7 @@ namespace Quasi::Graphics {
 
         constexpr int cuts = 3, map = 0x00'01'03'02; // just flips 3 with 2
         constexpr float angle = HALF_PI / (float)cuts;
-        uint ind = 12 + off;
+        u32 ind = 12 + off;
         for (int corner = 0; corner < 4; ++corner) {
             fVector2 origin = region.inset(roundRadius).corner(corner);
             bgVertices.emplace_back(origin, 0.0f, color, renderType);
@@ -411,7 +406,7 @@ namespace Quasi::Graphics {
                     fVector2::from_polar(roundRadius,
                         angle * (float)i + HALF_PI * (float)(map >> corner * 8 & 255))
                     + origin, 0.0f, color, renderType);
-                bgIndices.emplace_back(ind, ind + 1 + i, ind + 2 + i );
+                bgIndices.emplace_back(ind, ind + 1 + i, ind + 2 + i);
             }
             bgVertices.emplace_back(
                 fVector2::from_polar(roundRadius,

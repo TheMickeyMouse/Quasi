@@ -14,14 +14,14 @@ namespace Quasi::Graphics::MeshUtils {
 
         template <FnArgs<MData> F>
         void MergeImpl(F&& f, Mesh<ResultingV<F>>& out) {
-            const u32 iOffset = out.vertices.size();
+            auto meshp = out.NewBatch();
 
-            out.vertices.emplace_back(f(MData { .Position = { +1, +1 } }));
-            out.vertices.emplace_back(f(MData { .Position = { +1, -1 } }));
-            out.vertices.emplace_back(f(MData { .Position = { -1, +1 } }));
-            out.vertices.emplace_back(f(MData { .Position = { -1, -1 } }));
-            out.indices.emplace_back(iOffset + 0, iOffset + 2, iOffset + 1);
-            out.indices.emplace_back(iOffset + 1, iOffset + 2, iOffset + 3);
+            meshp.PushV(f(MData { .Position = { +1, +1 } }));
+            meshp.PushV(f(MData { .Position = { +1, -1 } }));
+            meshp.PushV(f(MData { .Position = { -1, +1 } }));
+            meshp.PushV(f(MData { .Position = { -1, -1 } }));
+            meshp.PushI(0, 2, 1);
+            meshp.PushI(1, 2, 3);
         }
     };
 

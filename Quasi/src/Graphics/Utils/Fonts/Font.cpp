@@ -110,8 +110,8 @@ namespace Quasi::Graphics {
         text.SetFontSize(size);
         text.RenderText(string);
 
-        std::vector<TriIndices> ind { text.textVertices.size() / 2 };
-        for (uint i = 0; i < ind.size(); i += 2) {
+        Vec<TriIndices> ind { text.textVertices.size() / 2 };
+        for (u32 i = 0; i < ind.size(); i += 2) {
             ind[i]     = TriIndices { 0, 1, 2 } + i * 2;
             ind[i + 1] = TriIndices { 1, 2, 3 } + i * 2;
         }

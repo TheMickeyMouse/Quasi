@@ -19,12 +19,12 @@ namespace Quasi::Graphics::MeshUtils {
         template <FnArgs<MData> F>
         void MergeImpl(F&& f, Mesh<ResultingV<F>>& mesh) {
             const float angle = Math::TAU / (float)opt.subdivisions;
-            const u32 iOffset = mesh.vertices.size();
 
-            mesh.vertices.emplace_back(f(MData { Math::fVector2::ZERO() }));
+            auto meshp = mesh.NewBatch();
+            meshp.PushV(f(MData { Math::fVector2::ZERO() }));
             for (uint i = 0; i < opt.subdivisions; ++i) {
-                mesh.vertices.push_back(f(MData { Math::fVector2::from_polar(1.0f, angle * (float)i) }));
-                mesh.indices.emplace_back(iOffset, iOffset + i + 1, iOffset + (i + 1) % opt.subdivisions + 1);
+                meshp.PushV(f(MData { Math::fVector2::from_polar(1.0f, angle * (float)i) }));
+                meshp.PushI(0, i + 1, (i + 1) % opt.subdivisions + 1);
             }
         }
     };

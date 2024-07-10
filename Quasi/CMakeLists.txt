@@ -1,7 +1,6 @@
 set(PROJECT_NAME Quasi)
 
 set(HEADER_FILES
-
     src/Debug/ConsoleColor.h
     src/Debug/internal_debug_break.h
     src/Debug/Logger.h
@@ -49,6 +48,8 @@ set(HEADER_FILES
     src/Graphics/Utils/Meshes/Icosphere.h
     src/Graphics/Utils/Meshes/Quad.h
     src/Graphics/Utils/Meshes/Plane.h
+    src/Graphics/Utils/Meshes/Capsule.h
+    src/Graphics/Utils/Meshes/Stadium.h
 
     src/IO/IO.h
     src/IO/Keyboard.h
@@ -77,7 +78,7 @@ set(HEADER_FILES
     src/Utils/Macros.h
     src/Utils/RichString.h
     src/Utils/Type.h
-        src/Utils/ArenaAllocator.h
+    src/Utils/ArenaAllocator.h
 
     src/vendor/imgui/imconfig.h
     src/vendor/imgui/imgui.h
@@ -115,7 +116,6 @@ set(SOURCE_FILES
 
     src/Graphics/Utils/Primitives/Quad.cpp
     src/Graphics/Utils/Primitives/Tri.cpp
-
     src/Graphics/Utils/ModelLoading/MTLMaterialLoader.cpp
     src/Graphics/Utils/ModelLoading/OBJModel.cpp
     src/Graphics/Utils/ModelLoading/OBJModelLoader.cpp
@@ -135,6 +135,7 @@ set(SOURCE_FILES
     src/Math/Color.cpp
 
     src/Physics/World2D.cpp
+    src/Physics/Shape2D.cpp
     src/Physics/Body2D.cpp
     src/Physics/Collision2D.cpp
     src/Physics/Transform2D.cpp
@@ -160,9 +161,6 @@ source_group("Source Files" FILES ${SOURCE_FILES})
 set(ALL_FILES
     ${HEADER_FILES}
     ${SOURCE_FILES}
-        src/Physics/Shape2D.cpp
-        src/Graphics/Utils/Meshes/Capsule.h
-        src/Graphics/Utils/Meshes/Stadium.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

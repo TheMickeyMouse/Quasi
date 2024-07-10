@@ -23,9 +23,9 @@ namespace Quasi::Graphics {
     }
 
     void VertexArray::AddBuffer(const VertexBufferLayout& layout) {
-        const std::vector<VertexBufferComponent>& elements = layout.GetComponents();
-        size_t offset = 0;
-        for (uint i = 0; i < elements.size(); i++) {
+        const Vec<VertexBufferComponent>& elements = layout.GetComponents();
+        usize offset = 0;
+        for (u32 i = 0; i < elements.size(); i++) {
             const auto& elem = elements[i];
             Q_GL_CALL(glEnableVertexAttribArray(i));
             if (elem.flags & VertexBufferComponent::INTEGER_FLAG)

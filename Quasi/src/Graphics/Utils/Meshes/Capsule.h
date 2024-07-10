@@ -25,9 +25,6 @@ namespace Quasi::Graphics::MeshUtils {
             using namespace Math;
             const float LATITUDE_SECT = HALF_PI / (float)opt.sections.y, LONGITUDE_SECT = TAU / (float)opt.sections.x;
 
-            auto& vert = mesh.vertices;
-            auto& ind = mesh.indices;
-            u32 iOffset = vert.size();
 
             const fVector3 Y = (opt.start - opt.end).norm();
             // the { y, -x, 0 } is absolutely arbitrary, just need a nonzero vec thats also not the x axis
@@ -42,40 +39,41 @@ namespace Quasi::Graphics::MeshUtils {
 
             u32 lastLoopIndex = 0;
             for (u32 hemisphere = 0; hemisphere < 2; ++hemisphere) { // 0 is top, 1 is bottom
+                auto meshp = mesh.NewBatch();
+
                 const bool isTop = hemisphere == 0;
                 const float sign = isTop ? 1 : -1;
-                vert.emplace_back(f(MData {
+                meshp.PushV(f(MData {
                     .Position = opt.start + opt.radius * sign * Y,
                     .Normal   = sign * Y
                 }));
                 for (u32 y = 1; y <= opt.sections.y; ++y) {
                     for (u32 x = 0; x < opt.sections.x; ++x) {
                         const fVector3 direction = sign * sphereCoord((float)x * LONGITUDE_SECT, (float)y * LATITUDE_SECT);
-                        vert.emplace_back(f(MData {
+                        meshp.PushV(f(MData {
                             .Position = (isTop ? opt.start : opt.end) + direction * opt.radius,
                             .Normal   = direction
                         }));
                         const u32 px = x ? x : opt.sections.x;
                         if (y == 1) {
-                            ind.emplace_back(iOffset, iOffset + px, iOffset + x + 1);
+                            meshp.PushI(0, px, x + 1);
                         } else {
-                            const u32 currYOff = iOffset + (y - 1) * opt.sections.x;
-                            const u32 nextYOff = iOffset + y * opt.sections.x;
-                            ind.emplace_back(currYOff + px, nextYOff + px, currYOff + x);
-                            ind.emplace_back(currYOff + x,  nextYOff + px, nextYOff + x);
+                            const u32 currYOff = (y - 1) * opt.sections.x;
+                            const u32 nextYOff = y * opt.sections.x;
+                            meshp.PushI(currYOff + px, nextYOff + px, currYOff + x);
+                            meshp.PushI(currYOff + x,  nextYOff + px, nextYOff + x);
                         }
                     }
                 }
-                lastLoopIndex = vert.size();
-                iOffset = vert.size();
+                lastLoopIndex = lastLoopIndex == 0 ? mesh.vertices.size() : lastLoopIndex;
             }
-            iOffset = vert.size();
 
             // loop cut
+            const u32 iOffset = mesh.vertices.size();
             for (u32 x = 1; x <= opt.sections.x; ++x) {
                 const u32 prevX = x == 1 ? opt.sections.x : x - 1;
-                ind.emplace_back(lastLoopIndex - prevX, iOffset - prevX, lastLoopIndex - x);
-                ind.emplace_back(lastLoopIndex - x,     iOffset - prevX, iOffset       - x);
+                mesh.PushIndex(lastLoopIndex - prevX, iOffset - prevX, lastLoopIndex - x);
+                mesh.PushIndex(lastLoopIndex - x,     iOffset - prevX, iOffset       - x);
             }
         }
     };

@@ -250,7 +250,7 @@ namespace Quasi::Graphics {
                 tCount += data->ibo.dataOffset / 3;
                 if (ImGui::TreeNode((const void*)(intptr_t)i, "Render #%d", i)) {
                     ImGui::Text("%d Vertices, %d Triangles", data->vbo.dataOffset, data->ibo.dataOffset / 3);
-                    ImGui::Text("Vertex Type: %.*s (size %d)", vType->name.size(), vType->name.data(), data->vbo.vertSize);
+                    ImGui::Text("Vertex Type: %.*s (size %d)", vType->name.size(), vType->name.data(), vType->size);
 
                     ImGui::Text("Vertex Properties:");
                     ImGui::Indent();

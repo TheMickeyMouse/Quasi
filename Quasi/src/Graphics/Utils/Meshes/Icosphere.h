@@ -76,13 +76,13 @@ namespace Quasi::Graphics::MeshUtils {
         }
 
         [[nodiscard]] u32 IndexOf(u32 p, u32 q) const {
-            if (p == 0 && q == 0) return Face().a;
-            if (p == divisions && q == 0) return Face().b;
-            if (p == divisions && q == divisions) return Face().c;
+            if (p == 0 && q == 0) return Face().i;
+            if (p == divisions && q == 0) return Face().j;
+            if (p == divisions && q == divisions) return Face().k;
             if (q == 0 || q == p || p == divisions) { // edge
                 const bool isSide = p == divisions;
-                const u32 lineStart = isSide ? Face().b : Face().a,
-                          lineEnd = q ? Face().c : Face().b,
+                const u32 lineStart = isSide ? Face().j : Face().i,
+                          lineEnd = q ? Face().k : Face().j,
                           edgeIdx = FindEdge({ lineStart, lineEnd });
                 return EdgeIdx(edgeIdx, (isSide ? q : p) - 1);
             }
@@ -94,13 +94,11 @@ namespace Quasi::Graphics::MeshUtils {
         void MergeImpl(F&& f, Mesh<ResultingV<F>>& mesh) {
             using namespace Math;
 
-            Vec<ResultingV<F>>& vert = mesh.vertices;
-            Vec<TriIndices>& inds = mesh.indices;
-            const u32 iOffset = vert.size();
-            vert.resize(vert.size() + CORNER_COUNT + EDGE_V_COUNT() * EDGE_COUNT + CENTER_V_COUNT() * CENTER_COUNT);
+            auto meshp = mesh.NewBatch();
+            meshp.ReserveV(CORNER_COUNT + EDGE_V_COUNT() * EDGE_COUNT + CENTER_V_COUNT() * CENTER_COUNT);
 
             for (u32 i = 0; i < CORNER_COUNT; ++i)
-                vert[i] = f(MData { .Position = IcoVert[i], .Normal = IcoVert[i] });
+                meshp.VertAt(i) = f(MData { .Position = IcoVert[i], .Normal = IcoVert[i] });
 
             for (; faceIdx < CENTER_COUNT; ++faceIdx) {
                 // loops through a triangle, p = 1 to prevent the (0,0) coordinate
@@ -110,8 +108,8 @@ namespace Quasi::Graphics::MeshUtils {
                         if (q == 0 || q == p || p == divisions) { // edge, interpolate between 2 points
                             const bool isSide = p == divisions;
 
-                            const u32 lineStart = isSide ? Face().b : Face().a,
-                                      lineEnd = q ? Face().c : Face().b,
+                            const u32 lineStart = isSide ? Face().j : Face().i,
+                                      lineEnd = q ? Face().k : Face().j,
                                       edgeIdx = FindEdge({ lineStart, lineEnd }),
                                       dist = isSide ? q : p,
                                       idx = EdgeIdx(edgeIdx, dist - 1);
@@ -119,26 +117,26 @@ namespace Quasi::Graphics::MeshUtils {
                             const float factor = (float)dist / (float)divisions;
                             const fVector3 pos = (IcoVert[lineStart] * (1.0f - factor) + IcoVert[lineEnd] * factor).norm();
 
-                            vert[idx] = f(MData { .Position = pos, .Normal = pos });
+                            meshp.VertAt(idx) = f(MData { .Position = pos, .Normal = pos });
                             continue;
                         }
                         // center, interpolate between 3 points
-                        const fVector3 pos = (IcoVert[Face().a] * ((float)(divisions - p) / (float)divisions)
-                                            + IcoVert[Face().b] * ((float)(p - q)         / (float)divisions)
-                                            + IcoVert[Face().c] * ((float)q               / (float)divisions)).norm();
+                        const fVector3 pos = (IcoVert[Face().i] * ((float)(divisions - p) / (float)divisions)
+                                            + IcoVert[Face().j] * ((float)(p - q)         / (float)divisions)
+                                            + IcoVert[Face().k] * ((float)q               / (float)divisions)).norm();
                         const u32 idx = IndexOf(p, q);
-                        vert[idx] = f(MData { .Position = pos, .Normal = pos });
+                        meshp.VertAt(idx) = f(MData { .Position = pos, .Normal = pos });
                     }
                 }
                 // the indices
                 const bool iSwap = (faceIdx % 4 == 1 || faceIdx % 4 == 2) ^ (8 <= faceIdx && faceIdx < 12);
-                for (uint p = 0; p < divisions; ++p) {
-                    for (uint q = 0; q < p; ++q) {
-                        const uint p1 = IndexOf(p, q);
-                        inds.emplace_back(iOffset + p1, iOffset + IndexOf(p + 1, q + iSwap),  iOffset + IndexOf(p + 1, q + !iSwap));
-                        inds.emplace_back(iOffset + p1, iOffset + IndexOf(p + !iSwap, q + 1), iOffset + IndexOf(p + iSwap, q + 1));
+                for (u32 p = 0; p < divisions; ++p) {
+                    for (u32 q = 0; q < p; ++q) {
+                        const u32 p1 = IndexOf(p, q);
+                        meshp.PushI(p1, IndexOf(p + 1, q + iSwap),  IndexOf(p + 1, q + !iSwap));
+                        meshp.PushI(p1, IndexOf(p + !iSwap, q + 1), IndexOf(p + iSwap, q + 1));
                     }
-                    inds.emplace_back(iOffset + IndexOf(p, p), iOffset + IndexOf(p + 1, p + iSwap), iOffset + IndexOf(p + 1, p + !iSwap));
+                    meshp.PushI(IndexOf(p, p), IndexOf(p + 1, p + iSwap), IndexOf(p + 1, p + !iSwap));
                 }
             }
         }

@@ -35,6 +35,24 @@ namespace Quasi::Graphics {
 
         void AddTo(RenderData& rd) const;
 
+        void PushVertex(const Vertex& v) { vertices.push_back(v); }
+        void PushIndex(TriIndices i) { indices.push_back(i); }
+
+        struct BatchProxy {
+            u32 iOffset;
+            Mesh& mesh;
+
+            void PushV(const Vertex& v) { mesh.PushVertex(v); }
+            void ReserveV(u32 amount) { mesh.vertices.resize(mesh.vertices.size() + amount); }
+            Vertex& VertAt(u32 i) { return mesh.vertices[iOffset + i]; }
+
+            void PushI(TriIndices i) { mesh.PushIndex(i + iOffset); }
+            void PushI(u32 i, u32 j, u32 k) { mesh.PushIndex({ i + iOffset, j + iOffset, k + iOffset }); }
+            void ReserveI(u32 amount) { mesh.indices.resize(mesh.indices.size() + amount); }
+        };
+
+        BatchProxy NewBatch() { return { (u32)vertices.size(), *this }; }
+
         template <Fn<T, Math::fVector3> F> void AddQuad(const Primitives::Quad& quad, F&& f);
         template <Fn<T, Math::fVector3> F> void AddTri(const Primitives::Tri& tri, F&& f);
 
@@ -59,20 +77,12 @@ namespace Quasi::Graphics {
 
     template <class T>
     void Mesh<T>::AddTo(RenderData& rd) const {
-        const u32 iOff = rd.vertexData.size() / sizeof(T);
+        rd.PushIndicesOffseted(indices, sizeof(Vertex));
 
-        rd.vertexData.insert(
-            rd.vertexData.end(),
-            reinterpret_cast<const byte*>(vertices.data()),
-            reinterpret_cast<const byte*>(vertices.data() + vertices.size())
-        );
         const Math::Matrix3D normMat = modelTransform.inv().transpose();
-        for (T& t : CastSpan<T>(Span { rd.vertexData.end() - vertices.size() * sizeof(T), rd.vertexData.end() })) {
-            t = VertexMul(t, modelTransform, normMat);
+        for (const Vertex& v : vertices) {
+            rd.PushVertex(VertexMul(v, modelTransform, normMat));
         }
-
-        rd.indexData.insert(rd.indexData.end(), indices.begin(), indices.end());
-        std::for_each(rd.indexData.end() - indices.size(), rd.indexData.end(), [=] (TriIndices& i) { i += iOff; });
     }
 
     template <class T>

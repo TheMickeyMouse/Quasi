@@ -5,10 +5,9 @@
 #include "GLDebug.h"
 
 namespace Quasi::Graphics {
-    VertexBuffer::VertexBuffer(u32 size, u32 typeSize)
-        : GLObject(), bufferSize(size), vertSize(typeSize) {
+    VertexBuffer::VertexBuffer(u32 size) : GLObject(), bufferSize(size) {
         Create();
-        Q_GL_CALL(glBufferData(GL_ARRAY_BUFFER, typeSize * size, nullptr, GL_DYNAMIC_DRAW));
+        Q_GL_CALL(glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW));
     }
     
     void VertexBuffer::SetDataBytes(Span<const byte> data) {
@@ -22,7 +21,7 @@ namespace Quasi::Graphics {
 
     void VertexBuffer::AddDataBytes(Span<const byte> data) {
         Bind();
-        Q_GL_CALL(glBufferSubData(GL_ARRAY_BUFFER, (int)(dataOffset * vertSize), (int)data.size_bytes(), data.data()));
-        dataOffset += (u32)(data.size_bytes() / vertSize);
+        Q_GL_CALL(glBufferSubData(GL_ARRAY_BUFFER, (int)dataOffset, (int)data.size_bytes(), data.data()));
+        dataOffset += data.size_bytes();
     }
 }

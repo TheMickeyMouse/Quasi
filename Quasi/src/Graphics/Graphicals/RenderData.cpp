@@ -6,6 +6,10 @@ namespace Quasi::Graphics {
 		dest.varray = std::move(from.varray);
 		dest.vbo = std::move(from.vbo);
 		dest.ibo = std::move(from.ibo);
+		dest.vertexData = std::move(from.vertexData);
+		dest.indexData = std::move(from.indexData);
+		dest.vertexOffset = from.vertexOffset;
+		dest.indexOffset = from.indexOffset;
 
 		dest.device = from.device;
 		from.device = nullptr;
@@ -15,6 +19,19 @@ namespace Quasi::Graphics {
 
 	RenderData::~RenderData() {
 		Destroy();
+	}
+
+	void RenderData::PushIndex(TriIndices index) {
+		indexData[indexOffset + 0] = index.i;
+		indexData[indexOffset + 1] = index.j;
+		indexData[indexOffset + 2] = index.k;
+		indexOffset += 3;
+	}
+
+	void RenderData::PushIndicesOffseted(Span<const TriIndices> indices, usize objectSize) {
+		const u32 iOff = vertexOffset / objectSize;
+		for (const auto& i : indices)
+			PushIndex(i + iOff);
 	}
 
 	void RenderData::Bind() const {
@@ -35,13 +52,13 @@ namespace Quasi::Graphics {
 	}
 
 	void RenderData::BufferLoad() {
-		vbo.AddDataBytes(vertexData);
-		ibo.AddData(indexData);
+		vbo.AddDataBytes({ vertexData.get(), vertexOffset });
+		ibo.AddData({ indexData.get(), indexOffset });
 	}
 
 	void RenderData::Clear() {
-		vertexData.clear();
-		indexData.clear();
+		vertexOffset = 0;
+		indexOffset = 0;
 	}
 
 	void RenderData::Render(Shader& replaceShader, const ShaderArgs& args, bool setDefaultShaderArgs) {

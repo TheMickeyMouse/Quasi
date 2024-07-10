@@ -56,8 +56,8 @@ namespace Quasi::Graphics {
         [[nodiscard]] const CharQuad* Begin() const;
                             CharQuad* End();
         [[nodiscard]] const CharQuad* End() const;
-                            CharQuad& CharAt(uint index);
-        [[nodiscard]] const CharQuad& CharAt(uint index) const;
+                            CharQuad& CharAt(u32 index);
+        [[nodiscard]] const CharQuad& CharAt(u32 index) const;
 
 
         void FixAlignX();
@@ -76,8 +76,8 @@ namespace Quasi::Graphics {
         void TriggerNewLine();
         void TriggerSpace();
         
-        Vec<Font::Vertex> RenderText(Str string);
-        Vec<Font::Vertex> RenderRichText(const Text::RichString& string);
+        void RenderText(Str string);
+        void RenderRichText(const Text::RichString& string);
 
         void AddRoundedRect(const Math::fRect2D& region, float roundRadius, const Math::fColor& color);
 

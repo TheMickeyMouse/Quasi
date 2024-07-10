@@ -23,26 +23,24 @@ namespace Quasi::Graphics::MeshUtils {
         template <FnArgs<MData> F>
         void MergeImpl(F&& f, Mesh<ResultingV<F>>& mesh) {
             using namespace Math;
-            auto& vert = mesh.vertices;
-            auto& ind  = mesh.indices;
-            const u32 iOffset = vert.size();
+            auto meshp = mesh.NewBatch();
 
             const fVector2 X = (opt.start - opt.end).norm(opt.radius);
             const fVector2 Y = { X.y, -X.x };
 
-            vert.emplace_back(f(MData { opt.start + Y })); // 0
-            vert.emplace_back(f(MData { opt.end   + Y })); // 1
-            vert.emplace_back(f(MData { opt.start - Y })); // 2
-            vert.emplace_back(f(MData { opt.end   - Y })); // 3
-            ind.emplace_back(iOffset + 0, iOffset + 1, iOffset + 2);
-            ind.emplace_back(iOffset + 1, iOffset + 2, iOffset + 3);
+            meshp.PushV(f(MData { opt.start + Y })); // 0
+            meshp.PushV(f(MData { opt.end   + Y })); // 1
+            meshp.PushV(f(MData { opt.start - Y })); // 2
+            meshp.PushV(f(MData { opt.end   - Y })); // 3
+            meshp.PushI(0, 1, 2);
+            meshp.PushI(1, 2, 3);
 
             if (opt.subdivisions > 0) {
-                vert.emplace_back(f(MData { opt.start + X })); // 4
-                vert.emplace_back(f(MData { opt.end   - X })); // 5
+                meshp.PushV(f(MData { opt.start + X })); // 4
+                meshp.PushV(f(MData { opt.end   - X })); // 5
 
-                ind.emplace_back(iOffset + 0, iOffset + 2, iOffset + 4);
-                ind.emplace_back(iOffset + 1, iOffset + 3, iOffset + 5);
+                meshp.PushI(0, 2, 4);
+                meshp.PushI(1, 3, 5);
             }
 
             const u32 nPoints = 1 << opt.subdivisions;
@@ -61,11 +59,11 @@ namespace Quasi::Graphics::MeshUtils {
                 for (u32 k = dist; k < nPoints; k += dist * 2) {
                     const float angle = PI * (float)k / (float)nPoints;
                     const float cos = std::cos(angle), sin = std::sin(angle);
-                    vert.emplace_back(f(MData { opt.start + Y * cos + X * sin }));
-                    vert.emplace_back(f(MData { opt.end   + Y * cos - X * sin }));
+                    meshp.PushV(f(MData { opt.start + Y * cos + X * sin }));
+                    meshp.PushV(f(MData { opt.end   + Y * cos - X * sin }));
                     const u32 from = k - dist, to = k + dist;
-                    ind.emplace_back(iOffset + mapK2Vi(from) * 2,     vert.size() - 2, iOffset + mapK2Vi(to) * 2);
-                    ind.emplace_back(iOffset + mapK2Vi(from) * 2 + 1, vert.size() - 1, iOffset + mapK2Vi(to) * 2 + 1);
+                    meshp.PushI(mapK2Vi(from) * 2,     mesh.vertices.size() - 2, mapK2Vi(to) * 2);
+                    meshp.PushI(mapK2Vi(from) * 2 + 1, mesh.vertices.size() - 1, mapK2Vi(to) * 2 + 1);
                 }
             }
         }
