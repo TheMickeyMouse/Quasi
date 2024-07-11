@@ -67,6 +67,8 @@ namespace Quasi::Math {
         NODISC Matrix inv() const requires is_square; // inverse
         NODISC float trace() const requires is_square;
 
+        template <u32 P> NODISC Matrix<P, M> then(const Matrix<P, N>& next) const;
+
         NODISC Matrix squared() const requires is_square;
 
         template <u32 Ig> NODISC Matrix<N - Ig, M - Ig> skip(Array<u8, Ig> skipped) const;

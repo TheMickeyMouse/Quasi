@@ -91,6 +91,9 @@ set(HEADER_FILES
     src/vendor/imgui/imgui_stdlib.h
 
     src/vendor/stb_image/stb_image.h
+        src/Math/Complex.h
+        src/Math/Quaternion.cpp
+        src/Math/Quaternion.h
 )
 source_group("Header Files" FILES ${HEADER_FILES})
 
@@ -155,6 +158,9 @@ set(SOURCE_FILES
     src/vendor/imgui/imgui_stdlib.cpp
 
     src/vendor/stb_image/stb_image.cpp
+        src/Math/Complex.cpp
+        src/Math/Quaternion.cpp
+        src/Math/Quaternion.h
 )
 source_group("Source Files" FILES ${SOURCE_FILES})
 

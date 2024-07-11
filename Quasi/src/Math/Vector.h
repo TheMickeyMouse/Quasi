@@ -61,6 +61,9 @@ namespace Quasi::Math {
     using bVector3 = Vector3<byte>;
     using bVector4 = Vector4<byte>;
 
+    template <class> struct Complex;
+    struct Quaternion;
+
     struct Color3;
     struct fColor3;
     struct fColor;
@@ -313,6 +316,12 @@ namespace Quasi::Math {
         NODISC VectorN<N, float_type> towards(const vect& other, float max_d) const { vect u = (other - *this).norm(); return *this + u * max_d; }
         vect& move_towards(const vect& other, float max_d) requires traits_float { return as_vec() = towards(other, max_d); }
 
+        NODISC float_type angle(const vect& other) { return std::acos(dot(other) / (len() * other.len())); }
+        NODISC vect slerp(const vect& other, float t) {
+            const float_type theta = angle(other);
+            return (std::sin((1 - t) * theta) * as_vec() + std::sin(t * theta) * other) / std::sin(theta);
+        }
+
         NODISC vect clamped() const { return clamp(as_vec().ZERO(), as_vec().ONE(), as_vec()); }
         vect& clamp() { return as_vec() = clamped(); }
         NODISC VectorN<N, float_type> len_clamped() const { return as_vec() / std::max(1, len()); }
@@ -433,7 +442,6 @@ namespace Quasi::Math {
         NODISC float_type slope() const;
 
         NODISC float_type angle() const;
-        NODISC float_type angle(const VectorN& other) const;
         NODISC float_type angle_signed(const VectorN& other) const;
         NODISC float_vec polar() const;
         static float_vec from_polar(T r, T theta);
@@ -442,10 +450,12 @@ namespace Quasi::Math {
 
         NODISC float_vec rotated(float angle) const;
         NODISC float_vec rotated(float angle, const VectorN& origin) const;
+        NODISC float_vec rotated_by(const Complex<T>& rotation) const;
         NODISC VectorN projected(const VectorN& axis) const;
         NODISC VectorN reflected(const VectorN& normal) const;
         VectorN& rotate(float angle)                     requires traits_float { return *this = rotated(angle); }
         VectorN& rotate(float angle, const VectorN& origin) requires traits_float { return *this = rotated(angle, origin); }
+        VectorN& rotate_by(const Complex<T>& rotation) requires traits_float;
         VectorN& reflect(const VectorN& normal) { return *this = reflected(normal); }
         VectorN& project(const VectorN& axis)   { return *this = projected(axis); }
 
@@ -459,7 +469,6 @@ namespace Quasi::Math {
 
     template <class T> typename VectorN<2, T>::float_type VectorN<2, T>::slope() const { return (float_type)y / (float_type)x; }
     template <class T> typename VectorN<2, T>::float_type VectorN<2, T>::angle() const { return std::atan2((float_type)y, (float_type)x); }
-    template <class T> typename VectorN<2, T>::float_type VectorN<2, T>::angle(const VectorN& other) const { return std::acos((float_type)this->dot(other) / (this->len() * other.len())); }
     template <class T> typename VectorN<2, T>::float_type VectorN<2, T>::angle_signed(const VectorN& other) const { return std::atan2((float_type)(y * other.x - x * other.y), (float_type)this->dot(other)); }
     template <class T> typename VectorN<2, T>::float_vec VectorN<2, T>::polar() const { return { this->len(), angle() }; }
     template <class T> typename VectorN<2, T>::float_vec VectorN<2, T>::from_polar(T r, T theta) { return { r * std::cos(theta), r * std::sin(theta) }; }
@@ -520,7 +529,6 @@ namespace Quasi::Math {
 
         NODISC VectorN cross(const VectorN& other) const;
 
-        NODISC float_type angle(const VectorN& other) const;
         NODISC float_type angle_signed(const VectorN& other, const VectorN& normal) const;
 
         NODISC float_type yaw() const;
@@ -528,6 +536,8 @@ namespace Quasi::Math {
         NODISC float_vec spheric() const;
         static float_vec from_spheric(T r, T yaw, T pitch);
 
+        NODISC float_vec rotated_by(const Quaternion& rotation) const;
+        VectorN& rotate_by(const Quaternion& rotation) requires traits_float;
         NODISC Vector2<float_type> projected() const;
         NODISC VectorN reflected(const VectorN& normal) const;
         VectorN& reflect(const VectorN& normal) { return *this = reflected(normal); }
@@ -552,7 +562,6 @@ namespace Quasi::Math {
     template <class T> typename VectorN<3, T>::float_vec VectorN<3, T>::spheric() const { return { this->len(), yaw(), pitch() }; }
     template <class T> typename VectorN<3, T>::float_vec VectorN<3, T>::from_spheric(T r, T yaw, T pitch) { return (float_type)r * float_vec { std::sin(yaw) * std::cos(pitch), std::sin(pitch), std::cos(yaw) * std::cos(pitch) }; }
 
-    template <class T> typename VectorN<3, T>::float_type VectorN<3, T>::angle(const VectorN& other) const { return std::acos((float_type)this->dot(other) / (this->len() * other.len())); }
     template <class T> typename VectorN<3, T>::float_type VectorN<3, T>::angle_signed(const VectorN& other, const VectorN& normal) const { return std::atan2((float_type)cross(other).dot(normal), (float_type)this->dot(other)); }
 
     template <class T> Vector2<typename VectorN<3, T>::float_type> VectorN<3, T>::projected() const { return (Vector2<float_type>)xy() / (float_type)z; }
@@ -606,8 +615,6 @@ namespace Quasi::Math {
         static constexpr VectorN ZERO()                        { return {  0,  0,  0,  0 }; }
         static constexpr VectorN ONE()                         { return {  1,  1,  1,  1 }; }
 
-        NODISC float_type angle(const VectorN& other) const;
-
         NODISC Vector3<T> xyz() const { return { x, y, z }; }
         NODISC Vector2<T> xy() const { return { x, y }; }
 
@@ -623,7 +630,6 @@ namespace Quasi::Math {
         static VectorN unit_w(T w) { return { 0, 0, 0, w }; }
     };
 
-    template <class T> typename VectorN<4, T>::float_type VectorN<4, T>::angle(const VectorN& other) const { return std::acos((float_type)this->dot(other) / (this->len() * other.len())); }
     template <class T> Vector3<typename VectorN<4, T>::float_type> VectorN<4, T>::projected() const { return (Vector3<float_type>)xyz() / (float_type)w; }
 
     template <class T> VectorN<4, T>::VectorN(Direction4D dir, T scale) : x(0), y(0), z(0), w(0) {

@@ -87,13 +87,13 @@ namespace Quasi::Math {
 
     template <u32 N, u32 M> Matrix<N, M> Matrix<N, M>::rotate_mat(const details::rotation_scalar<N - 1>& rotation) requires (is_square && (N == 3 || N == 4)) {
         if      constexpr (N == 3) return Matrix::rotate_z(rotation);
-        else if constexpr (N == 4) return Matrix::rotate_y(rotation.y) * Matrix::rotate_x(rotation.x) * Matrix::rotate_z(rotation.z);
+        else if constexpr (N == 4) return Matrix::rotate_z(rotation.z).then(Matrix::rotate_x(rotation.x)).then(Matrix::rotate_y(rotation.y));
         else return nullptr;
     }
 
     template <u32 N, u32 M> Matrix<N, M> Matrix<N, M>::rotate_mat_linear(const details::rotation_scalar<N>& rotation) requires (is_square && (N == 2 || N == 3)) {
         if      constexpr (N == 2) return Matrix::rotate_z_linear(rotation);
-        else if constexpr (N == 3) return Matrix::rotate_y_linear(rotation.y) * Matrix::rotate_x_linear(rotation.x) * Matrix::rotate_z(rotation.z);
+        else if constexpr (N == 3) return Matrix::rotate_z_linear(rotation.z).then(Matrix::rotate_x_linear(rotation.x)).then(Matrix::rotate_y_linear(rotation.y));
         else return nullptr;
     }
 
@@ -282,6 +282,10 @@ namespace Quasi::Math {
         return tr;
     }
 
+    template <u32 N, u32 M> template <u32 P> Matrix<P, M> Matrix<N, M>::then(const Matrix<P, N>& next) const {
+        return next * (*this);
+    }
+
     template <u32 N, u32 M> Matrix<N, M> Matrix<N, M>::squared() const requires is_square {
         const Matrix& self = *this;
         return self * self;
@@ -326,6 +330,13 @@ namespace Quasi::Math {
         } (std::make_integer_sequence<u32, M> {});
     }
 
+    template <u32 N, u32 M> Matrix<N, M>& Matrix<N, M>::operator+=(const Matrix& m) {
+        [&]<u32... I>(std::integer_sequence<u32, I...>) {
+            Empty _ { (mat[I] += m[I])... };
+        } (std::make_integer_sequence<u32, M> {});
+        return *this;
+    }
+
     template <u32 N, u32 M>
     typename Matrix<N, M>::vec Matrix<N, M>::operator*(const rvec& v) const {
         return (*this) * v.extend(1.0f);
@@ -360,31 +371,31 @@ namespace Quasi::Math {
     template struct Matrix<4, 3>;
     template struct Matrix<4, 4>;
 
-    template Matrix<2, 2> Matrix<2, 2>::operator*(const Matrix<2, 2>&) const;
-    template Matrix<2, 3> Matrix<2, 2>::operator*(const Matrix<2, 3>&) const;
-    template Matrix<2, 4> Matrix<2, 2>::operator*(const Matrix<2, 4>&) const;
-    template Matrix<2, 2> Matrix<2, 3>::operator*(const Matrix<3, 2>&) const;
-    template Matrix<2, 3> Matrix<2, 3>::operator*(const Matrix<3, 3>&) const;
-    template Matrix<2, 4> Matrix<2, 3>::operator*(const Matrix<3, 4>&) const;
-    template Matrix<2, 2> Matrix<2, 4>::operator*(const Matrix<4, 2>&) const;
-    template Matrix<2, 3> Matrix<2, 4>::operator*(const Matrix<4, 3>&) const;
-    template Matrix<2, 4> Matrix<2, 4>::operator*(const Matrix<4, 4>&) const;
-    template Matrix<3, 2> Matrix<3, 2>::operator*(const Matrix<2, 2>&) const;
-    template Matrix<3, 3> Matrix<3, 2>::operator*(const Matrix<2, 3>&) const;
-    template Matrix<3, 4> Matrix<3, 2>::operator*(const Matrix<2, 4>&) const;
-    template Matrix<3, 2> Matrix<3, 3>::operator*(const Matrix<3, 2>&) const;
-    template Matrix<3, 3> Matrix<3, 3>::operator*(const Matrix<3, 3>&) const;
-    template Matrix<3, 4> Matrix<3, 3>::operator*(const Matrix<3, 4>&) const;
-    template Matrix<3, 2> Matrix<3, 4>::operator*(const Matrix<4, 2>&) const;
-    template Matrix<3, 3> Matrix<3, 4>::operator*(const Matrix<4, 3>&) const;
-    template Matrix<3, 4> Matrix<3, 4>::operator*(const Matrix<4, 4>&) const;
-    template Matrix<4, 2> Matrix<4, 2>::operator*(const Matrix<2, 2>&) const;
-    template Matrix<4, 3> Matrix<4, 2>::operator*(const Matrix<2, 3>&) const;
-    template Matrix<4, 4> Matrix<4, 2>::operator*(const Matrix<2, 4>&) const;
-    template Matrix<4, 2> Matrix<4, 3>::operator*(const Matrix<3, 2>&) const;
-    template Matrix<4, 3> Matrix<4, 3>::operator*(const Matrix<3, 3>&) const;
-    template Matrix<4, 4> Matrix<4, 3>::operator*(const Matrix<3, 4>&) const;
-    template Matrix<4, 2> Matrix<4, 4>::operator*(const Matrix<4, 2>&) const;
-    template Matrix<4, 3> Matrix<4, 4>::operator*(const Matrix<4, 3>&) const;
-    template Matrix<4, 4> Matrix<4, 4>::operator*(const Matrix<4, 4>&) const;
+    template Matrix<2, 2> Matrix<2, 2>::then(const Matrix<2, 2>&) const;
+    template Matrix<3, 2> Matrix<2, 2>::then(const Matrix<3, 2>&) const;
+    template Matrix<4, 2> Matrix<2, 2>::then(const Matrix<4, 2>&) const;
+    template Matrix<2, 3> Matrix<2, 3>::then(const Matrix<2, 2>&) const;
+    template Matrix<3, 3> Matrix<2, 3>::then(const Matrix<3, 2>&) const;
+    template Matrix<4, 3> Matrix<2, 3>::then(const Matrix<4, 2>&) const;
+    template Matrix<2, 4> Matrix<2, 4>::then(const Matrix<2, 2>&) const;
+    template Matrix<3, 4> Matrix<2, 4>::then(const Matrix<3, 2>&) const;
+    template Matrix<4, 4> Matrix<2, 4>::then(const Matrix<4, 2>&) const;
+    template Matrix<2, 2> Matrix<3, 2>::then(const Matrix<2, 3>&) const;
+    template Matrix<3, 2> Matrix<3, 2>::then(const Matrix<3, 3>&) const;
+    template Matrix<4, 2> Matrix<3, 2>::then(const Matrix<4, 3>&) const;
+    template Matrix<2, 3> Matrix<3, 3>::then(const Matrix<2, 3>&) const;
+    template Matrix<3, 3> Matrix<3, 3>::then(const Matrix<3, 3>&) const;
+    template Matrix<4, 3> Matrix<3, 3>::then(const Matrix<4, 3>&) const;
+    template Matrix<2, 4> Matrix<3, 4>::then(const Matrix<2, 3>&) const;
+    template Matrix<3, 4> Matrix<3, 4>::then(const Matrix<3, 3>&) const;
+    template Matrix<4, 4> Matrix<3, 4>::then(const Matrix<4, 3>&) const;
+    template Matrix<2, 2> Matrix<4, 2>::then(const Matrix<2, 4>&) const;
+    template Matrix<3, 2> Matrix<4, 2>::then(const Matrix<3, 4>&) const;
+    template Matrix<4, 2> Matrix<4, 2>::then(const Matrix<4, 4>&) const;
+    template Matrix<2, 3> Matrix<4, 3>::then(const Matrix<2, 4>&) const;
+    template Matrix<3, 3> Matrix<4, 3>::then(const Matrix<3, 4>&) const;
+    template Matrix<4, 3> Matrix<4, 3>::then(const Matrix<4, 4>&) const;
+    template Matrix<2, 4> Matrix<4, 4>::then(const Matrix<2, 4>&) const;
+    template Matrix<3, 4> Matrix<4, 4>::then(const Matrix<3, 4>&) const;
+    template Matrix<4, 4> Matrix<4, 4>::then(const Matrix<4, 4>&) const;
 }
