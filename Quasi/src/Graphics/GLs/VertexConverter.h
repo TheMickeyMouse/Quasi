@@ -20,24 +20,8 @@ namespace Quasi::Graphics::VertexBuilder {
 
     constexpr Math::fVector2 MeshConstructData2D::* PositionArg2D = &MeshConstructData2D::Position;
 
-    template <InstanceofVertex T>
+    template <IVertex T>
     using Blueprint = typename T::__internal_blueprint__;
-
-    template <auto P, class F>
-    struct BlueprintMember {
-        F inst;
-        auto operator()(const auto& args) const {
-            return inst(args);
-        }
-        auto prop() const { return P; }
-    };
-
-    template <InstanceofVertex T, class... Ms>
-    T BlueprintBuilder(const auto& args, Ms... members) {
-        T base;
-        Empty _ { (base.*(members.prop()) = members(args))... };
-        return base;
-    }
 
     template <class T> struct Default {
         T operator()(const auto&) const {

@@ -2,7 +2,6 @@
 #include "Vector.h"
 #include "Color.h"
 #include "Variant.h"
-#include "Utils/Macros.h"
 
 namespace Quasi::Graphics {
     struct SunLight {

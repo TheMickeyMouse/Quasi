@@ -245,29 +245,10 @@ namespace Quasi::Graphics {
             uint vCount = 0, tCount = 0;
             for (uint i = 0; i < renders.size(); ++i) {
                 const RenderHandle& data = renders[i];
-                const VertexDebugTypeIndex vType = data->GetType();
                 vCount += data->vbo.dataOffset;
                 tCount += data->ibo.dataOffset / 3;
                 if (ImGui::TreeNode((const void*)(intptr_t)i, "Render #%d", i)) {
                     ImGui::Text("%d Vertices, %d Triangles", data->vbo.dataOffset, data->ibo.dataOffset / 3);
-                    ImGui::Text("Vertex Type: %.*s (size %d)", vType->name.size(), vType->name.data(), vType->size);
-
-                    ImGui::Text("Vertex Properties:");
-                    ImGui::Indent();
-                    using namespace std::string_view_literals;
-                    uint j = 0;
-                    for (const auto pName : std::views::split(vType->propNames, "\0"sv)) {
-                        const VertexBufferComponent& comp = vType->bufferLayout.GetComponents()[j];
-                        Str nameofCompType = GLTypeName(comp.type);
-                        ImGui::Text("%s:%s%c%s%c%s",
-                            pName.data(),
-                            comp.count == 1 ? ""  : " Vector",
-                            comp.count == 1 ? ' ' : '0' + comp.count,
-                            comp.count == 1 ? ""  : " of ",
-                            std::toupper(nameofCompType[0]),
-                            nameofCompType.data() + 1);
-                        ++j;
-                    }
                     ImGui::Unindent();
 
                     ImGui::TreePop();

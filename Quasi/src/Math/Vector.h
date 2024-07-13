@@ -35,10 +35,10 @@ namespace Quasi::Math {
     };
     
     template <class> struct IsVectorType : std::false_type {};
-    template <uint N, class T> struct IsVectorType<VectorN<N, T>> : std::true_type {};
+    template <u32 N, class T> struct IsVectorType<VectorN<N, T>> : std::true_type {};
     
     template <class V>
-    concept VectorLike = IsVectorType<V>::value;
+    concept IVector = IsVectorType<V>::value;
 
     template <class T> using Unit    = VectorN<1, T>;
     template <class T> using Single  = VectorN<1, T>;
@@ -64,6 +64,9 @@ namespace Quasi::Math {
     template <class> struct Complex;
     struct Quaternion;
 
+    struct Transform2D;
+    struct Transform3D;
+
     struct Color3;
     struct fColor3;
     struct fColor;
@@ -73,7 +76,7 @@ namespace Quasi::Math {
         template <class V> struct rect_origin_t;
         template <class V> struct rect_size_t;
     }
-    template <uint, class> struct RectN;
+    template <u32, class> struct RectN;
     
 #pragma endregion // concepts and decls
 
@@ -91,6 +94,16 @@ namespace Quasi::Math {
 
 #pragma region Vector Util Fn
     namespace details {
+        template <class T> struct floating_of {};
+        template <class T> requires std::is_arithmetic_v<T> struct floating_of<T> {
+            using type = std::common_type_t<T, float>;
+        };
+
+        template <IVector T> struct floating_of<T> {
+            using type = VectorN<T::dimension, typename floating_of<typename T::scalar>::type>;
+        };
+        template <class T> using floating_of_t = typename floating_of<T>::type;
+
         template <class T, class U> T cast(U val) { return (T)val; }
 
         template <class T, class U, class F, u32... I>
@@ -204,7 +217,7 @@ namespace Quasi::Math {
 #pragma region Vector Base
     struct RandomGenerator;
 
-    template <uint N, class T>
+    template <u32 N, class T>
     struct details::vecn_base {
     public:
         using scalar = T;
@@ -214,17 +227,8 @@ namespace Quasi::Math {
 
         static constexpr bool traits_float  = std::is_floating_point_v<T>,
                               traits_signed = std::is_signed_v<T>;
-
-    private:
-        static auto float_type_helper() {
-            if constexpr (std::is_arithmetic_v<T>)
-                return std::common_type_t<float, T> {};
-            else if constexpr (VectorLike<T>)
-                return VectorN<T::dimension, std::common_type_t<typename T::scalar, float>> {};
-            else return nullptr;
-        }
     public:
-        using float_type = decltype(float_type_helper());
+        using float_type = floating_of_t<T>;
 
         static vect from_span(Span<const T> span) {
             vect out;
@@ -373,18 +377,18 @@ namespace Quasi::Math {
         static Option<vect> parse(Str string, Str sep, Str beg, Str end) { return parse(string, sep, beg, end, Text::Parse<T>); }
     };
 
-    template <u32 N, class T> auto operator+(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!VectorLike<decltype(val)>) { return vec + val; }
-    template <u32 N, class T> auto operator-(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!VectorLike<decltype(val)>) { return VectorN<N, T> { val } - vec; }
-    template <u32 N, class T> auto operator*(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!VectorLike<decltype(val)>) { return vec * val; }
-    template <u32 N, class T> auto operator/(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!VectorLike<decltype(val)>) { return VectorN<N, T> { val } / vec; }
-    template <u32 N, class T> auto operator%(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!VectorLike<decltype(val)>) { return VectorN<N, T> { val } % vec; }
+    template <u32 N, class T> auto operator+(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return vec + val; }
+    template <u32 N, class T> auto operator-(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return VectorN<N, T> { val } - vec; }
+    template <u32 N, class T> auto operator*(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return vec * val; }
+    template <u32 N, class T> auto operator/(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return VectorN<N, T> { val } / vec; }
+    template <u32 N, class T> auto operator%(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return VectorN<N, T> { val } % vec; }
 
-    template <u32 N, class T> auto operator==(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!VectorLike<decltype(val)>) { return vec == val; }
-    template <u32 N, class T> auto operator!=(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!VectorLike<decltype(val)>) { return vec != val; }
-    template <u32 N, class T> auto operator< (std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!VectorLike<decltype(val)>) { return vec >  val; }
-    template <u32 N, class T> auto operator<=(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!VectorLike<decltype(val)>) { return vec >= val; }
-    template <u32 N, class T> auto operator>=(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!VectorLike<decltype(val)>) { return vec <= val; }
-    template <u32 N, class T> auto operator> (std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!VectorLike<decltype(val)>) { return vec <  val; }
+    template <u32 N, class T> auto operator==(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return vec == val; }
+    template <u32 N, class T> auto operator!=(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return vec != val; }
+    template <u32 N, class T> auto operator< (std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return vec >  val; }
+    template <u32 N, class T> auto operator<=(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return vec >= val; }
+    template <u32 N, class T> auto operator>=(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return vec <= val; }
+    template <u32 N, class T> auto operator> (std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return vec <  val; }
 #pragma endregion
 
 #pragma region Vector Impl
@@ -453,11 +457,14 @@ namespace Quasi::Math {
         NODISC float_vec rotated_by(const Complex<T>& rotation) const;
         NODISC VectorN projected(const VectorN& axis) const;
         NODISC VectorN reflected(const VectorN& normal) const;
+        NODISC VectorN transformed_by(const Transform2D& transform) const;
+
         VectorN& rotate(float angle)                     requires traits_float { return *this = rotated(angle); }
         VectorN& rotate(float angle, const VectorN& origin) requires traits_float { return *this = rotated(angle, origin); }
         VectorN& rotate_by(const Complex<T>& rotation) requires traits_float;
         VectorN& reflect(const VectorN& normal) { return *this = reflected(normal); }
         VectorN& project(const VectorN& axis)   { return *this = projected(axis); }
+        VectorN& transform_by(const Transform2D& transform);
 
         NODISC Vector3<T> with_z(T z) const { return { x, y, z }; }
 
@@ -537,10 +544,13 @@ namespace Quasi::Math {
         static float_vec from_spheric(T r, T yaw, T pitch);
 
         NODISC float_vec rotated_by(const Quaternion& rotation) const;
-        VectorN& rotate_by(const Quaternion& rotation) requires traits_float;
         NODISC Vector2<float_type> projected() const;
         NODISC VectorN reflected(const VectorN& normal) const;
+        NODISC VectorN transformed_by(const Transform3D& transform) const;
+
+        VectorN& rotate_by(const Quaternion& rotation) requires traits_float;
         VectorN& reflect(const VectorN& normal) { return *this = reflected(normal); }
+        VectorN& transform_by(const Transform3D& transform);
 
         NODISC auto to_color(T alpha = 1) const -> std::conditional_t<traits_float, fColor, Color>;
         NODISC auto to_color3() const -> std::conditional_t<traits_float, fColor3, Color3>;

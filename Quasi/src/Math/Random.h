@@ -2,7 +2,9 @@
 #include <random>
 #include <chrono>
 
-#include "Vector.h"
+#include "Quaternion.h"
+#include "Complex.h"
+#include "Constants.h"
 
 namespace Quasi::Math {
     // man why doesnt c++ just have a standard random library thats actually easy to use
@@ -118,5 +120,15 @@ namespace Quasi::Math {
     template <u32 N, class T>
     typename details::vecn_base<N, T>::vect details::vecn_base<N, T>::random_in_unit(RandomGenerator& rg) requires traits_float {
         return random_on_unit(rg) * std::pow(rg.Get((T)0, (T)1), (T)1 / (T)N); // uniform distribution
+    }
+
+    template <class T> Complex<T> Complex<T>::random_rot(RandomGenerator& rg) {
+        return expi(rg.Get(0, TAU));
+    }
+
+    inline Quaternion Quaternion::random_rot(RandomGenerator& rg) {
+        const auto [u, v, w] = fVector3::random(rg, { 0, 1 });
+        return { std::sqrt(1 - u) * std::sin(TAU * v), std::sqrt(1 - u) * std::cos(TAU * v),
+                 std::sqrt(u)     * std::sin(TAU * w), std::sqrt(u)     * std::sin(TAU * w) };
     }
 }

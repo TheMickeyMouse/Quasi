@@ -2,10 +2,13 @@
 #include "Matrix.h"
 
 namespace Quasi::Math {
+    template <class> struct Complex;
+    using fComplex = Complex<float>;
+
     struct Quaternion {
         float w, x, y, z;
 
-        Quaternion(float w) : w(w), x(0), y(0), z(0) {}
+        Quaternion(float w = 1) : w(w), x(0), y(0), z(0) {}
     private:
         Quaternion(float w, float x, float y, float z) : w(w), x(x), y(y), z(z) {}
         Quaternion(float w, const fVector3& xyz) : w(w), x(xyz.x), y(xyz.y), z(xyz.z) {}
@@ -19,11 +22,13 @@ namespace Quasi::Math {
 
         static Quaternion from_vec(const fVector4& q) { return { q.w, q.x, q.y, q.z }; }
         static Quaternion from_vec(const fVector3& q) { return { 0,   q.x, q.y, q.z }; }
+        static Quaternion from_wxyz(float w, float x, float y, float z) { return { w, x, y, z }; }
         static const Quaternion i;
         static const Quaternion j;
         static const Quaternion k;
 
         static Quaternion rotate_axis(const fVector3& axis, float rotation);
+        static Quaternion rotate_axis(const fVector3& axis, fComplex rotation);
         static Quaternion rotate_x(float xrot);
         static Quaternion rotate_y(float yrot);
         static Quaternion rotate_z(float zrot);
@@ -68,26 +73,20 @@ namespace Quasi::Math {
         [[nodiscard]] Quaternion operator/(float v) const;
         [[nodiscard]] Quaternion operator*(const Quaternion& q) const;
         [[nodiscard]] Quaternion operator/(const Quaternion& q) const;
-        [[nodiscard]] Quaternion& operator+=(const Quaternion& q);
-        [[nodiscard]] Quaternion& operator-=(const Quaternion& q);
-        [[nodiscard]] Quaternion& operator*=(float v);
-        [[nodiscard]] Quaternion& operator*=(const Quaternion& q);
-        [[nodiscard]] Quaternion& operator/=(float v);
-        [[nodiscard]] Quaternion& operator/=(const Quaternion& q);
+        Quaternion& operator+=(const Quaternion& q);
+        Quaternion& operator-=(const Quaternion& q);
+        Quaternion& operator*=(float v);
+        Quaternion& operator*=(const Quaternion& q);
+        Quaternion& operator/=(float v);
+        Quaternion& operator/=(const Quaternion& q);
 
         [[nodiscard]] Quaternion then(const Quaternion& q) const;
         [[nodiscard]] fVector3 rotate(const fVector3& v) const;
 
         bool operator==(const Quaternion&) const = default;
 
-        friend Quaternion operator""qi(long double);
-        friend Quaternion operator""qj(long double);
-        friend Quaternion operator""qk(long double);
+        static Quaternion random_rot(RandomGenerator& rg);
     };
-
-    const Quaternion Quaternion::i = { 1, 0, 0 };
-    const Quaternion Quaternion::j = { 0, 1, 0 };
-    const Quaternion Quaternion::k = { 0, 0, 1 };
 
     Quaternion operator+(float w, const Quaternion& q);
     Quaternion operator-(float w, const Quaternion& q);
@@ -104,7 +103,7 @@ namespace Quasi::Math {
         return *this = rotation.rotate(*this);
     }
 
-    Quaternion operator""qi(long double i);
-    Quaternion operator""qj(long double j);
-    Quaternion operator""qk(long double k);
+    inline Quaternion operator""_qi(long double i) { return Quaternion::from_wxyz(0, (float)i, 0, 0); }
+    inline Quaternion operator""_qj(long double j) { return Quaternion::from_wxyz(0, 0, (float)j, 0); }
+    inline Quaternion operator""_qk(long double k) { return Quaternion::from_wxyz(0, 0, 0, (float)k); }
 } // Quasi

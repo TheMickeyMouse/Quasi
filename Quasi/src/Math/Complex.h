@@ -11,7 +11,6 @@ namespace Quasi::Math {
         Complex(std::convertible_to<T> auto r) : re((T)r) {}
         Complex(std::convertible_to<T> auto r, std::convertible_to<T> auto i) : re((T)r), im((T)i) {}
 
-
         [[nodiscard]] Vector2<T> as_vec() const { return { re, im }; }
         static Complex from_vec(const Vector2<T>& ri) { return { ri.x, ri.y }; }
         inline static const Complex i = { 0, 1 };
@@ -35,6 +34,7 @@ namespace Quasi::Math {
         [[nodiscard]] Flt angle() const { return std::atan2(fimag(), freal()); }
 
         static Complex<Flt> expi(Flt imag) { return { std::cos(imag), std::sin(imag) }; }
+        static Complex<Flt> rotate(Flt rotation) { return expi(rotation); }
         [[nodiscard]] Complex<Flt> exp() const { return expi(fimag()) * std::exp(freal()); }
         [[nodiscard]] Complex<Flt> log() const { return { std::log(lensq()) * 0.5f, angle() }; }
 
@@ -72,7 +72,7 @@ namespace Quasi::Math {
         [[nodiscard]] Matrix2D as_rotation_matrix() const {
             return { fVector3 { freal(), fimag(), 0 }, fVector3 { -fimag(), freal(), 0 }, fVector3 { 0, 0, 1 } };
         }
-        [[nodiscard]] Vector2<T> rotate(const Vector2<T>& v) { return ((*this) * from_vec(v)).as_vec(); }
+        [[nodiscard]] Vector2<T> rotate(const Vector2<T>& v) const { return ((*this) * from_vec(v)).as_vec(); }
 
         [[nodiscard]] Complex muli()    const { return { -im, re }; }
         [[nodiscard]] Complex mulnegi() const { return { im, -re }; }
@@ -102,6 +102,8 @@ namespace Quasi::Math {
         bool operator==(const Complex&) const = default;
 
         template <class U> [[nodiscard]] operator Complex<U>() const { return { (U)re, (U)im }; }
+
+        static Complex random_rot(RandomGenerator& rg);
     };
 
     template <class T> Complex<T> operator+(T x, const Complex<T>& z) { return  z + x; }
@@ -124,6 +126,6 @@ namespace Quasi::Math {
     using fComplex = Complex<float>;
     using dComplex = Complex<double>;
 
-    inline dComplex operator ""i(long double f) { return dComplex { 0, f }; }
-    inline iComplex operator ""i(usize i) { return iComplex { 0, i }; }
+    inline dComplex operator ""_i(long double f) { return dComplex { 0, f }; }
+    inline iComplex operator ""_i(usize i) { return iComplex { 0, i }; }
 }

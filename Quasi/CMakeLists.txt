@@ -19,17 +19,15 @@ set(HEADER_FILES
     src/Graphics/GLs/GLTypeID.h
     src/Graphics/GLs/RenderBuffer.h
 
-    src/Graphics/Graphicals/GenericMesh.h
-    src/Graphics/Graphicals/GraphicsDevice.h
+        src/Graphics/Graphicals/GraphicsDevice.h
     src/Graphics/Graphicals/Mesh.h
+    src/Graphics/Graphicals/Mesh.tpp
     src/Graphics/Graphicals/RenderData.h
     src/Graphics/Graphicals/RenderObject.h
     src/Graphics/Graphicals/TriIndices.h
     src/Graphics/Graphicals/CameraController.h
     src/Graphics/Graphicals/Light.h
 
-    src/Graphics/Utils/Primitives/Quad.h
-    src/Graphics/Utils/Primitives/Tri.h
     src/Graphics/Utils/ModelLoading/MTLMaterialLoader.h
     src/Graphics/Utils/ModelLoading/OBJModel.h
     src/Graphics/Utils/ModelLoading/OBJModelLoader.h
@@ -65,6 +63,9 @@ set(HEADER_FILES
     src/Math/Geometry.h
     src/Math/Random.h
     src/Math/Color.h
+    src/Math/Complex.h
+    src/Math/Quaternion.h
+    src/Math/Transform2D.h
 
     src/Physics/World2D.h
     src/Physics/Shape2D.h
@@ -91,9 +92,6 @@ set(HEADER_FILES
     src/vendor/imgui/imgui_stdlib.h
 
     src/vendor/stb_image/stb_image.h
-        src/Math/Complex.h
-        src/Math/Quaternion.cpp
-        src/Math/Quaternion.h
 )
 source_group("Header Files" FILES ${HEADER_FILES})
 
@@ -113,12 +111,9 @@ set(SOURCE_FILES
 
     src/Graphics/Graphicals/CameraController.cpp
     src/Graphics/Graphicals/Light.cpp
-    src/Graphics/Graphicals/GenericMesh.cpp
     src/Graphics/Graphicals/GraphicsDevice.cpp
     src/Graphics/Graphicals/RenderData.cpp
 
-    src/Graphics/Utils/Primitives/Quad.cpp
-    src/Graphics/Utils/Primitives/Tri.cpp
     src/Graphics/Utils/ModelLoading/MTLMaterialLoader.cpp
     src/Graphics/Utils/ModelLoading/OBJModel.cpp
     src/Graphics/Utils/ModelLoading/OBJModelLoader.cpp
@@ -136,6 +131,9 @@ set(SOURCE_FILES
     src/Math/Vector.cpp
     src/Math/Matrix.cpp
     src/Math/Color.cpp
+    src/Math/Complex.cpp
+    src/Math/Quaternion.cpp
+    src/Math/Transform2D.cpp
 
     src/Physics/World2D.cpp
     src/Physics/Shape2D.cpp
@@ -158,15 +156,14 @@ set(SOURCE_FILES
     src/vendor/imgui/imgui_stdlib.cpp
 
     src/vendor/stb_image/stb_image.cpp
-        src/Math/Complex.cpp
-        src/Math/Quaternion.cpp
-        src/Math/Quaternion.h
 )
 source_group("Source Files" FILES ${SOURCE_FILES})
 
 set(ALL_FILES
     ${HEADER_FILES}
     ${SOURCE_FILES}
+        src/Math/Transform3D.cpp
+        src/Math/Transform3D.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

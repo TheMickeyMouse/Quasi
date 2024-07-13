@@ -33,7 +33,7 @@ namespace Quasi::Graphics {
         template <class T> static VertexBufferComponent Type() {
             if constexpr (std::is_floating_point_v<T>) return { GLGetTypeID<T>, 1 };
             if constexpr (std::is_integral_v<T>) return { GLGetTypeID<T>, 1, false, true };
-            if constexpr (Math::VectorLike<T> || Math::ColorLike<T>)
+            if constexpr (Math::IVector<T> || Math::ColorLike<T>)
                 return { GLGetTypeID<typename T::scalar>, T::dimension };
             return { GLTypeID::UNDEFINED, 0 };
         }
@@ -46,6 +46,10 @@ namespace Quasi::Graphics {
     public:
         VertexBufferLayout() = default;
         VertexBufferLayout(IList<VertexBufferComponent> comps);
+
+        template <class... Ts> static VertexBufferLayout FromTypes() {
+            return { VertexBufferComponent::Type<Ts>()... };
+        }
 
         template <class T> void Push(u32 count, bool normalized = false, bool integral = false);
         void Push(VertexBufferComponent comp);

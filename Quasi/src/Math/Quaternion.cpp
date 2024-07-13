@@ -1,10 +1,20 @@
 #include "Quaternion.h"
 
+#include "Complex.h"
 #include "Constants.h"
 
 namespace Quasi::Math {
+    const Quaternion Quaternion::i = { 1, 0, 0 };
+    const Quaternion Quaternion::j = { 0, 1, 0 };
+    const Quaternion Quaternion::k = { 0, 0, 1 };
+
     Quaternion Quaternion::rotate_axis(const fVector3& axis, float rotation) {
         return { std::cos(rotation * 0.5f), axis.norm(std::sin(rotation * 0.5f)) };
+    }
+
+    Quaternion Quaternion::rotate_axis(const fVector3& axis, fComplex rotation) {
+        rotation = rotation.sqrt();
+        return { rotation.re, axis.norm(rotation.im) };
     }
 
     Quaternion Quaternion::rotate_x(float xrot) { return { std::cos(xrot), std::sin(xrot), 0, 0 }; }
@@ -125,8 +135,4 @@ namespace Quasi::Math {
     Quaternion operator-(float w, const Quaternion& q) { return -q + w; }
     Quaternion operator*(float w, const Quaternion& q) { return  q * w; }
     Quaternion operator/(float w, const Quaternion& q) { return q.inv() * w; }
-
-    Quaternion operator""qi(long double i) { return { (float)i, 0, 0 }; }
-    Quaternion operator""qj(long double j) { return { 0, (float)j, 0 }; }
-    Quaternion operator""qk(long double k) { return { 0, 0, (float)k }; }
 } // Quasi

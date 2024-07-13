@@ -5,6 +5,8 @@
 
 #define Q_UNARY(...) __VA_ARGS__
 #define Q_REMOVE_SCOPE(X) Q_UNARY X
+#define Q_REMOVE_FIRST(FIRST, ...) __VA_ARGS__
+#define Q_GET_FIRST(FIRST, ...) FIRST
 
 #define Q_IF_0(...)
 #define Q_IF_1(...) __VA_ARGS__

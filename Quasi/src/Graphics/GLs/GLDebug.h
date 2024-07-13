@@ -72,19 +72,6 @@ namespace Quasi::Graphics {
 #else
 #define Q_GL_CALL(X) GLCall([&]{ return X; }, #X)
 #endif
-
-    struct VertexBufferLayout;
-
-    struct VertexDebugTypeInfo {
-        usize size;
-        const VertexBufferLayout& bufferLayout;
-        Str name;
-        Str propNames;
-
-        template <class T> static const VertexDebugTypeInfo* of() { return &T::__typeinfo__; }
-    };
-
-    using VertexDebugTypeIndex = const VertexDebugTypeInfo*;
 }
 
 template <>

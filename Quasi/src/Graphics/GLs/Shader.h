@@ -345,7 +345,7 @@ namespace Quasi::Graphics {
             size = (u32)val.size();
         }
 
-        template <Math::VectorLike V>
+        template <Math::IVector V>
         ShaderValueVariant(const V& vec) {
             using enum ShaderUniformType;
             type = ConvertUniformType<typename V::scalar> | VECTOR_FLAG | (COLS_1 * V::dimension);
@@ -353,7 +353,7 @@ namespace Quasi::Graphics {
             size = (u32)vec.size();
         }
 
-        template <Math::VectorLike V>
+        template <Math::IVector V>
         ShaderValueVariant(Span<const V> val) {
             using enum ShaderUniformType;
             using T = typename V::scalar;
@@ -368,7 +368,7 @@ namespace Quasi::Graphics {
         ShaderValueVariant(Span<const Math::fColor>  dat) : data(dat.data()), type(ShaderUniformType::UNIF_4F_ARR), size(4 * (u32)dat.size()) {}
         ShaderValueVariant(Span<const Math::fColor3> dat) : data(dat.data()), type(ShaderUniformType::UNIF_3F_ARR), size(3 * (u32)dat.size()) {}
 
-        template <ArrayLike R> requires (!Math::VectorLike<R>)
+        template <ArrayLike R> requires (!Math::IVector<R>)
         ShaderValueVariant(const R& range) : ShaderValueVariant(TakeSpan(range)) {}
 
         template <u32 N, u32 M>

@@ -3,7 +3,6 @@
 #include "VertexArray.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
-#include "GenericMesh.h"
 #include "GLDebug.h"
 #include "Shader.h"
 #include "VertexElement.h"
@@ -13,6 +12,8 @@
 namespace Quasi::Graphics {
 	class GraphicsDevice;
 
+	template <IVertex Vtx> class Mesh;
+
     template <class>
 	class RenderObject;
     
@@ -21,8 +22,6 @@ namespace Quasi::Graphics {
 		VertexArray varray;
 		VertexBuffer vbo;
 		IndexBuffer ibo;
-
-		VertexDebugTypeIndex typeindex;
 
 	    Math::Matrix3D projection = Math::Matrix3D::ortho_projection({ -4, 4, -3, 3, 0.1f, 100 });
 	    Math::Matrix3D camera {};
@@ -39,9 +38,8 @@ namespace Quasi::Graphics {
 		friend class GraphicsDevice;
 	public:
 		explicit RenderData() = default;
-		explicit RenderData(u32 vsize, u32 isize, u32 vertSize, VertexDebugTypeIndex vertType, const VertexBufferLayout& layout) :
-			vbo(vsize * vertSize), ibo(isize), typeindex(vertType),
-			vertexData(new byte[vertSize * vsize]), indexData(new u32[isize]) {
+		explicit RenderData(u32 vsize, u32 isize, u32 vertSize, const VertexBufferLayout& layout) :
+			vbo(vsize * vertSize), ibo(isize), vertexData(new byte[vertSize * vsize]), indexData(new u32[isize]) {
 			varray.Create();
 			varray.Bind();
 			varray.AddBuffer(layout);
@@ -64,8 +62,6 @@ namespace Quasi::Graphics {
 
 		void Bind() const;
 		void Unbind() const;
-
-		[[nodiscard]] VertexDebugTypeIndex GetType() const { return typeindex; }
 
 		void BufferUnload();
 		void BufferLoad();
@@ -90,13 +86,13 @@ namespace Quasi::Graphics {
 	    void UseShaderFromFile(Str vert, Str frag, Str geom = {}) { shader = Shader::FromFile(vert, frag, geom); }
 
 		friend class GraphicsDevice;
-		template <class T> friend class Mesh;
+		template <IVertex T> friend class Mesh;
 	};
 
 	template <class T>
 	void RenderData::Create(u32 vsize, u32 isize, RenderData& out) {
 		// times 3 to account for triangles
-		out = RenderData(vsize, isize * 3, sizeof(T), VertexDebugTypeInfo::of<T>(), VertexLayoutOf<T>());
+		out = RenderData(vsize, isize * 3, sizeof(T), VertexLayoutOf<T>());
 	}
 
 	template <class T> void RenderData::PushVertex(const T& vertex) {

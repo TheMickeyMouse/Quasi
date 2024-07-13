@@ -25,7 +25,7 @@ namespace Quasi::Math {
 
 #define RECT_OP(OP) \
     template <class U> auto operator OP(U v) const { \
-        static_assert(std::is_arithmetic_v<U> || VectorLike<U>, "rect::operator" #OP " not supported"); \
+        static_assert(std::is_arithmetic_v<U> || IVector<U>, "rect::operator" #OP " not supported"); \
         return RectN<N, decltype((min OP v).x)> { min OP v, max OP v }; \
     } \
     template <class U> RectN& operator OP##=(U v) { return *this = *this OP v; }

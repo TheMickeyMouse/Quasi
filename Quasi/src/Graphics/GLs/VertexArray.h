@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include "VertexBuffer.h"
-#include "VertexBuffer.h"
 #include "VertexBufferLayout.h"
 
 namespace Quasi::Graphics {
