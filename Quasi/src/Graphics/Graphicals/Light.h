@@ -24,14 +24,5 @@ namespace Quasi::Graphics {
     public:
         [[nodiscard]] Math::fVector3 Position() const;
         [[nodiscard]] Math::fVector3 Direction() const;
-
-        void ImGuiEdit(const char* title);
-        void CopyState() const;
-
-        template <class L> static void ImGuiEditVisitor(L& light);
     };
-
-    template <> void Light::ImGuiEditVisitor<SunLight>  (SunLight&);
-    template <> void Light::ImGuiEditVisitor<PointLight>(PointLight&);
-    template <> void Light::ImGuiEditVisitor<FlashLight>(FlashLight&);
 }

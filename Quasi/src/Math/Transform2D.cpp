@@ -1,5 +1,7 @@
 #include "Transform2D.h"
 
+#include "Transform3D.h"
+
 namespace Quasi::Math {
     void Transform2D::Translate(fVector2 p) { position += p; }
     void Transform2D::Scale(fVector2 s) { scale *= s; }
@@ -24,10 +26,6 @@ namespace Quasi::Math {
     Transform2D Transform2D::Rotation(float r)              { return Rotation(fComplex::rotate(r)); }
     Transform2D Transform2D::Rotation(const fComplex& q)    { return { 0, 1, q }; }
 
-    Transform2D Transform2D::Inverse() const {
-        return { -position, 1.0f / scale, rotation.inv() };
-    }
-
     Transform2D Transform2D::NormalTransform() const {
         return { 0, 1.0f / scale, rotation };
     }
@@ -42,6 +40,16 @@ namespace Quasi::Math {
         point += position;
     }
 
+    fVector2 Transform2D::TransformInverse(fVector2 point) const {
+        return (point - position).rotated_by(rotation.inv()) / scale;
+    }
+
+    void Transform2D::TransformInverseInplace(fVector2& point) const {
+        point -= position;
+        point.rotate_by(rotation.inv());
+        point /= scale;
+    }
+
     fVector2 Transform2D::TransformNormal(fVector2 normal) const {
         return (normal / scale).rotated_by(rotation).norm();
     }
@@ -49,6 +57,16 @@ namespace Quasi::Math {
     void Transform2D::TransformNormalInplace(fVector2& normal) const {
         normal /= scale;
         normal.rotate_by(rotation);
+        normal /= normal.len();
+    }
+
+    fVector2 Transform2D::TransformInverseNormal(fVector2 normal) const {
+        return (normal.rotated_by(rotation.inv()) * scale).norm();
+    }
+
+    void Transform2D::TransformInverseNormalInplace(fVector2& normal) const {
+        normal.rotate_by(rotation.inv());
+        normal *= scale;
         normal /= normal.len();
     }
 
@@ -61,6 +79,10 @@ namespace Quasi::Math {
         scale *= transformer.scale;
         rotation *= transformer.rotation;
         return *this;
+    }
+
+    Transform3D Transform2D::As3D() const {
+        return { position.with_z(0), scale.with_z(1), Quaternion::rotate_axis({ 0, 0, 1 }, rotation) };
     }
 
     void Transform2D::Reset() {

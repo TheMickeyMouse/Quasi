@@ -51,6 +51,8 @@ namespace Quasi {
 
     template <class... Ts> using Tuple = std::tuple<Ts...>;
 
+	template <class T> using Implicit = std::type_identity_t<T>;
+
 	// concepts after here
 
     template <class T, usize Ext = std::dynamic_extent> using Span = std::span<T, Ext>;

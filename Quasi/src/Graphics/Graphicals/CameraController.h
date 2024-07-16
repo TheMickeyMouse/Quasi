@@ -9,7 +9,7 @@ namespace Quasi::Graphics {
 
     class CameraController {
     public:
-        Math::fVector3 worldUp = Math::fVector3::UP(), worldFront = Math::fVector3::BACK();
+        Math::fVector3 worldUp = Math::fVector3::UP(), worldFront = Math::fVector3::FRONT();
 
         Math::fVector3 position = { 0, 0, -2 };
         float yaw = 0.0f, pitch = 0.0f; // yaw is looking A <-> B rotation, pitch is ^^^ rotation
@@ -23,21 +23,15 @@ namespace Quasi::Graphics {
         bool enabled = false;
         float smoothZoom = -1.0f;
 
-        inline static bool showControls = false;
-
         [[nodiscard]] Math::fVector3 Right() const;
 
         void Update(GraphicsDevice& gd, float dt);
         void Toggle(GraphicsDevice& gd);
 
         [[nodiscard]] Math::Matrix3D GetViewMat() const;
+        [[nodiscard]] Math::Transform3D GetViewTransform() const;
         [[nodiscard]] Math::Matrix3D GetProjMat() const;
 
         [[nodiscard]] bool UsesSmoothZoom() const { return !std::signbit(smoothZoom); }
-
-        void ImGuiEdit(Str title = "Camera Controller");
-        void CopyState() const;
-
-        static void HintControls();
     };
 }

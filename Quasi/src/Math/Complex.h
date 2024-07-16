@@ -64,7 +64,7 @@ namespace Quasi::Math {
         [[nodiscard]] Complex<Flt> asf() const { return { freal(), fimag() }; }
 
         [[nodiscard]] Complex conj() const { return { re, -im }; }
-        [[nodiscard]] Complex<Flt> inv() const { Flt div = Flt(1) / lensq(); return { freal() * div, fimag() * div }; }
+        [[nodiscard]] Complex<Flt> inv() const { Flt div = Flt(1) / lensq(); return { freal() * div, -fimag() * div }; }
 
         [[nodiscard]] Matrix2x2 as_matrix() const {
             return { fVector2 { freal(), fimag() }, fVector2 { -fimag(), freal() } };

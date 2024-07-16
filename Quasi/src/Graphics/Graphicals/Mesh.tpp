@@ -23,8 +23,9 @@ namespace Quasi::Graphics {
     template <IVertex Vtx>
     Mesh<Vtx>& Mesh<Vtx>::Add(const Mesh& m) {
         auto batch = NewBatch();
-        Transform mapping = m.modelTransform.Then(modelTransform.Inverse());
-        batch.PushSpan(m.vertices | std::views::transform([&] (const Vtx& v) { return VertexMul(v, mapping); }), m.indices);
+        batch.PushSpan(m.vertices | std::views::transform([&] (const Vtx& v) {
+            return VertexMul(VertexMul(v, m.modelTransform), modelTransform.Inverse());
+        }), m.indices);
         return *this;
     }
 

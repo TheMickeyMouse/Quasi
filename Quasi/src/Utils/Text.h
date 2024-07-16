@@ -7,6 +7,9 @@
 
 namespace Quasi::Text {
     Option<String> ReadFile(Str fname);
+    bool WriteFile(Str fname, Str contents);
+    bool ExistsFile(Str fname);
+
     Tuple<Str, Str> SplitDirectory(Str fname);
 
     String ToLower(Str string), ToUpper(Str string);

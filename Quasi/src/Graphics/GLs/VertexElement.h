@@ -155,7 +155,7 @@ namespace Quasi::Graphics {
     const VertexBufferLayout& VertexLayoutOf() { return T::VERTEX_LAYOUT; }
 
     template <IVertex T> requires (T::DIMENSION == 2)
-    T VertexMul(const T& v, const Math::Transform2D& transform) {
+    T VertexMul(const T& v, const Math::ITransformer2D auto& transform) {
         return v._VMul(transform);
     }
 

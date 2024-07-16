@@ -60,7 +60,7 @@ namespace Quasi::Debug {
     };
 
     template <class... Ts>
-    using ImplicitFmtStr = std::type_identity_t<FmtStr<Ts...>>;
+    using ImplicitFmtStr = Implicit<FmtStr<Ts...>>;
 
     struct LogEntry {
         String log;

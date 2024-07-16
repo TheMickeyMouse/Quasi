@@ -20,6 +20,18 @@ namespace Quasi::Text {
         return nullptr;
     }
 
+    bool WriteFile(Str fname, Str contents) {
+        if (std::ofstream out { fname.data() }) {
+            out << contents;
+            return true;
+        }
+        return false;
+    }
+
+    bool ExistsFile(Str fname) {
+        return std::ifstream { fname.data() }.good();
+    }
+
     Tuple<Str, Str> SplitDirectory(Str fname) {
         const usize pos = fname.find_last_of("\\/");
         return String::npos == pos ?

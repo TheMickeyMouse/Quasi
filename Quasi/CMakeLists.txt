@@ -48,8 +48,9 @@ set(HEADER_FILES
     src/Graphics/Utils/Meshes/Plane.h
     src/Graphics/Utils/Meshes/Capsule.h
     src/Graphics/Utils/Meshes/Stadium.h
+    src/Graphics/Utils/Extension/ImGuiExt.h
 
-    src/IO/IO.h
+        src/IO/IO.h
     src/IO/Keyboard.h
     src/IO/Mouse.h
     src/IO/TimeType.h
@@ -72,6 +73,7 @@ set(HEADER_FILES
     src/Physics/Body2D.h
     src/Physics/Collision2D.h
     src/Physics/Transform2D.h
+    src/Math/Transform3D.h
 
     src/Utils/Enum.h
     src/Utils/Text.h
@@ -122,6 +124,7 @@ set(SOURCE_FILES
     src/Graphics/Utils/Fonts/TextAlign.cpp
     src/Graphics/Utils/Fonts/TextRenderer.cpp
     src/Graphics/Utils/Textures/Texture.cpp
+    src/Graphics/Utils/Extension/ImGuiExt.cpp
 
     src/IO/IO.cpp
     src/IO/Keyboard.cpp
@@ -134,6 +137,7 @@ set(SOURCE_FILES
     src/Math/Complex.cpp
     src/Math/Quaternion.cpp
     src/Math/Transform2D.cpp
+    src/Math/Transform3D.cpp
 
     src/Physics/World2D.cpp
     src/Physics/Shape2D.cpp
@@ -162,8 +166,6 @@ source_group("Source Files" FILES ${SOURCE_FILES})
 set(ALL_FILES
     ${HEADER_FILES}
     ${SOURCE_FILES}
-        src/Math/Transform3D.cpp
-        src/Math/Transform3D.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

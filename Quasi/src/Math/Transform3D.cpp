@@ -4,7 +4,7 @@ namespace Quasi::Math {
     void Transform3D::Translate(const fVector3& p) { position += p; }
     void Transform3D::Scale(const fVector3& s) { scale *= s; }
     void Transform3D::Rotate(const fVector3& r) { Rotate(Quaternion::from_euler(r)); }
-    void Transform3D::Rotate(const Quaternion& q) { rotation = rotation.then(q); }
+    void Transform3D::Rotate(const Quaternion& q) { rotation.rotate_by(q); }
     void Transform3D::RotateX(float r) { Rotate(Quaternion::rotate_x(r)); }
     void Transform3D::RotateY(float r) { Rotate(Quaternion::rotate_y(r)); }
     void Transform3D::RotateZ(float r) { Rotate(Quaternion::rotate_z(r)); }
@@ -30,10 +30,6 @@ namespace Quasi::Math {
     Transform3D Transform3D::Rotation(const fVector3& r)    { return Rotation(Quaternion::from_euler(r)); }
     Transform3D Transform3D::Rotation(const Quaternion& q)  { return { 0, 1, q }; }
 
-    Transform3D Transform3D::Inverse() const {
-        return { -position, 1.0f / scale, rotation.inv() };
-    }
-
     Transform3D Transform3D::NormalTransform() const {
         return { 0, 1.0f / scale, rotation };
     }
@@ -48,13 +44,33 @@ namespace Quasi::Math {
         point += position;
     }
 
+    fVector3 Transform3D::TransformInverse(const fVector3& point) const {
+        return rotation.inv().rotate(point - position) / scale;
+    }
+
+    void Transform3D::TransformInverseInplace(fVector3& point) const {
+        point -= position;
+        point.rotate_by(rotation.inv());
+        point /= scale;
+    }
+
     fVector3 Transform3D::TransformNormal(const fVector3& normal) const {
         return (normal / scale).rotated_by(rotation).norm();
     }
 
     void Transform3D::TransformNormalInplace(fVector3& normal) const {
-        normal *= scale;
+        normal /= scale;
         normal.rotate_by(rotation);
+        normal /= normal.len();
+    }
+
+    fVector3 Transform3D::TransformInverseNormal(const fVector3& normal) const {
+        return (normal.rotated_by(rotation.inv()) * scale).norm();
+    }
+
+    void Transform3D::TransformInverseNormalInplace(fVector3& normal) const {
+        normal.rotate_by(rotation.inv());
+        normal *= scale;
         normal /= normal.len();
     }
 

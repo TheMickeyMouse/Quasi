@@ -59,6 +59,8 @@ namespace Quasi::Math {
         NODISC const scalar* cbegin() const { return (const scalar*)this; }
         NODISC const scalar* end()    const { return begin() + dimension; }
         NODISC const scalar* cend()   const { return cbegin() + dimension; }
+        scalar& operator[](u32 i) { return begin()[i]; }
+        NODISC const scalar& operator[](u32 i) const { return begin()[i]; }
 
         NODISC scalar alpha(scalar def = CHANNEL_MAX_VALUE) const;
 

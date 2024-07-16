@@ -4,6 +4,7 @@
 #include <array>
 #include <cmath>
 
+#include "Constants.h"
 #include "Corner.h"
 #include "Direction.h"
 
@@ -311,6 +312,7 @@ namespace Quasi::Math {
         NODISC bool       in_range(const vect& other, T d) const { return dist(other) <= d; }
         NODISC vect       norm() const { return as_vec() / len(); }
         NODISC vect       norm(float d) const { return norm() * d; }
+        NODISC vect       safe_norm() const { return lensq() <= EPSILON * EPSILON ? 0 : norm(); }
 
         NODISC T sum() const { return details::accum(add {}, as_vec(), (T)0); }
         NODISC T dot(const vect& other) const { return (as_vec() * other).sum(); }

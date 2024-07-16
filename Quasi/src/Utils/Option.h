@@ -32,6 +32,11 @@ namespace Quasi {
         template <class Asrt> T& Assert(Asrt&& assertfn);
         template <class Asrt> [[nodiscard]] const T& Assert(Asrt&& assertfn) const;
     };
+
+    template <class T>
+    Option<std::remove_cvref_t<T>> Some(T&& value) {
+        return Option<std::remove_cvref_t<T>> { std::forward<T>(value) };
+    }
 }
 
 template <class T>

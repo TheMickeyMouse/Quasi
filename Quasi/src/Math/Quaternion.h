@@ -33,10 +33,13 @@ namespace Quasi::Math {
         static Quaternion rotate_y(float yrot);
         static Quaternion rotate_z(float zrot);
         static Quaternion rotate_xyz(const fVector3& rotation);
+        static Quaternion rotate_to(const fVector3& from, const fVector3& to); // both vectors assumed to be normed
         [[nodiscard]] fVector3 xyzrot() const;
 
         static Quaternion from_euler(const fVector3& rotation) { return rotate_xyz(rotation); }
         [[nodiscard]] fVector3 to_euler() const { return xyzrot(); }
+
+        static Quaternion look_at(const fVector3& fwd, const fVector3& worldFront); // both vectors assumed to be normed
 
         [[nodiscard]] Matrix3x3 as_matrix() const;
         [[nodiscard]] Matrix3D  as_rotation_matrix() const;
@@ -53,6 +56,7 @@ namespace Quasi::Math {
 
         [[nodiscard]] Quaternion exp() const;
         [[nodiscard]] Quaternion log() const;
+        [[nodiscard]] Quaternion pow(float p) const;
 
         [[nodiscard]] Quaternion operator+() const { return *this; }
         [[nodiscard]] Quaternion operator-() const { return { -w, -x, -y, -z }; }
@@ -81,6 +85,7 @@ namespace Quasi::Math {
         Quaternion& operator/=(const Quaternion& q);
 
         [[nodiscard]] Quaternion then(const Quaternion& q) const;
+        Quaternion& rotate_by(const Quaternion& q);
         [[nodiscard]] fVector3 rotate(const fVector3& v) const;
 
         bool operator==(const Quaternion&) const = default;

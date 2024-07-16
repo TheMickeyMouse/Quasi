@@ -3,6 +3,32 @@
 #include "Constants.h"
 
 namespace Quasi::Math {
+    struct MatrixTransform2D {
+        Matrix2D transform, normalMatrix;
+
+        [[nodiscard]] fVector2 Transform(fVector2 p) const { return transform * p; }
+        [[nodiscard]] fVector2 TransformNormal(fVector2 n) const { return (normalMatrix * n).norm(); }
+    };
+
+    template <class T> concept ITransformer2D = requires (const T& t, fVector2 vec) {
+        { t.Transform(vec) } -> std::convertible_to<fVector2>;
+        { t.TransformNormal(vec) } -> std::convertible_to<fVector2>;
+    };
+
+    template <class T>
+    struct InverseTransform2D {
+        static_assert(ITransformer2D<T>, "T should be a transformer2d"); // delayed constraint
+        const T& tformer;
+        [[nodiscard]] fVector2 Transform       (fVector2  point) const { return tformer.TransformInverse(point); }
+                      void     TransformInplace(fVector2& point) const { tformer.TransformInverseInplace(point); }
+        [[nodiscard]] fVector2 TransformInverse       (fVector2  point) const { return tformer.Transform(point); }
+                      void     TransformInverseInplace(fVector2& point) const { tformer.TransformInplace(point); }
+        [[nodiscard]] fVector2 TransformNormal       (fVector2  normal) const { return tformer.TransformInverseNormal(normal); }
+                      void     TransformNormalInplace(fVector2& normal) const { tformer.TransformInverseNormalInplace(normal); }
+        [[nodiscard]] fVector2 TransformInverseNormal       (fVector2  normal) const { return tformer.TransformNormal(normal); }
+                      void     TransformInverseNormalInplace(fVector2& normal) const { tformer.TransformNormalInplace(normal); }
+    };
+
     struct Transform2D {
         fVector2 position = 0, scale = 1;
         fComplex rotation = 1;
@@ -45,19 +71,28 @@ namespace Quasi::Math {
         static Transform2D Rotation(float r);
         static Transform2D Rotation(const fComplex& q);
 
-        [[nodiscard]] Transform2D Inverse() const;
         [[nodiscard]] Transform2D NormalTransform() const;
 
-        [[nodiscard]] fVector2 Transform(fVector2 point) const;
-        void TransformInplace(fVector2& point) const;
-        [[nodiscard]] fVector2 TransformNormal(fVector2 normal) const;
-        void TransformNormalInplace(fVector2& normal) const;
+
+        [[nodiscard]] fVector2 Transform       (fVector2  point) const;
+                      void     TransformInplace(fVector2& point) const;
+        [[nodiscard]] fVector2 TransformInverse       (fVector2  point) const;
+                      void     TransformInverseInplace(fVector2& point) const;
+        [[nodiscard]] fVector2 TransformNormal       (fVector2  normal) const;
+                      void     TransformNormalInplace(fVector2& normal) const;
+        [[nodiscard]] fVector2 TransformInverseNormal       (fVector2  normal) const;
+                      void     TransformInverseNormalInplace(fVector2& normal) const;
+
+        [[nodiscard]] InverseTransform2D<Transform2D> Inverse() const { return { *this }; }
+
         [[nodiscard]] Transform2D Applied(const Transform2D& transformer) const; // apply transform onto self
         [[nodiscard]] Transform2D AppliedTo(const Transform2D& transformed) const { return transformed.Applied(*this); }
         Transform2D& Apply(const Transform2D& transformer); // apply transform onto self
         void ApplyTo(Transform2D& transformed) const { transformed.Apply(*this); }
 
         [[nodiscard]] Transform2D Then(const Transform2D& t) const { return AppliedTo(t); }
+
+        [[nodiscard]] Transform3D As3D() const;
 
         void Reset();
 
@@ -76,16 +111,4 @@ namespace Quasi::Math {
         transform.TransformInplace(*this);
         return *this;
     }
-
-    struct MatrixTransform2D {
-        Matrix2D transform, normalMatrix;
-
-        [[nodiscard]] fVector2 Transform(fVector2 p) const { return transform * p; }
-        [[nodiscard]] fVector2 TransformNormal(fVector2 n) const { return (normalMatrix * n).norm(); }
-    };
-
-    template <class T> concept ITransformer2D = requires (const T& t, fVector2 vec) {
-        { t.Transform(vec) } -> std::convertible_to<fVector2>;
-        { t.TransformNormal(vec) } -> std::convertible_to<fVector2>;
-    };
 } // Quasi
