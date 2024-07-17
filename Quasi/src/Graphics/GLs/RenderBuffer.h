@@ -3,19 +3,15 @@
 #include "Textures/TextureConstants.h"
 #include "Math/Vector.h"
 
-
 namespace Quasi::Graphics {
-    struct RenderBufferHandler {
-        [[nodiscard]] GraphicsID Create() const;
-        void Destroy(GraphicsID id) const;
-        void Bind(GraphicsID id) const;
-        void Unbind() const;
-    };
-
-    class RenderBuffer : public GLObject<RenderBufferHandler> {
+    class RenderBuffer : public GLObject<RenderBuffer> {
+        explicit RenderBuffer(GraphicsID id);
     public:
         RenderBuffer() = default;
-        RenderBuffer(TextureIFormat format, Math::iVector2 size);
+        static RenderBuffer New(TextureIFormat format, Math::iVector2 size);
+        static void DestroyObject(GraphicsID id);
+        static void BindObject(GraphicsID id);
+        static void UnbindObject();
 
         friend class FrameBuffer;
         friend class GraphicsDevice;

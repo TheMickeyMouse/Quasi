@@ -102,8 +102,7 @@ set(SOURCE_FILES
 
     src/Graphics/GLs/FrameBuffer.cpp
     src/Graphics/GLs/GLDebug.cpp
-    src/Graphics/GLs/GLObject.cpp
-    src/Graphics/GLs/RenderBuffer.cpp
+        src/Graphics/GLs/RenderBuffer.cpp
     src/Graphics/GLs/IndexBuffer.cpp
     src/Graphics/GLs/VertexBuffer.cpp
     src/Graphics/GLs/VertexArray.cpp

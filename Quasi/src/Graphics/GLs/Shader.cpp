@@ -7,33 +7,33 @@
 #include "Textures/Texture.h"
 
 namespace Quasi::Graphics {
-    GraphicsID ShaderHandler::Create() const {
-        return GraphicsNoID;
-    }
+    Shader::Shader(GraphicsID id) : GLObject(id) {}
 
-    void ShaderHandler::Destroy(GraphicsID id) const {
-        Q_GL_CALL(glDeleteProgram(id));
-    }
-
-    void ShaderHandler::Bind(GraphicsID id) const {
-        Q_GL_CALL(glUseProgram(id));
-    }
-
-    void ShaderHandler::Unbind() const {
-        Q_GL_CALL(glUseProgram(0));
-    }
-
-    Shader::Shader(Str program) {
+    Shader Shader::New(Str program) {
         const ShaderProgramSource shadersrc = ParseShader(program);
-        rendererID = CreateShader(
+        const GraphicsID rendererID = CreateShader(
             shadersrc.GetShader(ShaderType::VERTEX),
             shadersrc.GetShader(ShaderType::FRAGMENT),
             shadersrc.GetShader(ShaderType::GEOMETRY)
         );
+        return Shader { rendererID };
     }
 
-    Shader::Shader(Str vert, Str frag, Str geom) {
-        rendererID = CreateShader(vert, frag, geom);
+    Shader Shader::New(Str vert, Str frag, Str geom) {
+        const GraphicsID rendererID = CreateShader(vert, frag, geom);
+        return Shader { rendererID };
+    }
+
+    void Shader::DestroyObject(GraphicsID id) {
+        Q_GL_CALL(glDeleteProgram(id));
+    }
+
+    void Shader::BindObject(GraphicsID id) {
+        Q_GL_CALL(glUseProgram(id));
+    }
+
+    void Shader::UnbindObject() {
+        Q_GL_CALL(glUseProgram(0));
     }
 
     int Shader::GetUniformLocation(Str name) {

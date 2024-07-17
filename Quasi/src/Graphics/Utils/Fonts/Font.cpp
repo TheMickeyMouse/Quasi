@@ -62,7 +62,7 @@ namespace Quasi::Graphics {
         }
 
         Texture::SetPixelStore(PixelStoreParam::UNPACK_ALIGNMENT, 1);
-        atlas = Texture(
+        atlas = Texture::New(
             nullptr, { textureSize.x, textureSize.y },
             {
                 .load = { .format = TextureFormat::RED, .internalformat = TextureIFormat::RGBA_8 },

@@ -3,28 +3,26 @@
 #include "GLDebug.h"
 
 namespace Quasi::Graphics {
-    GraphicsID RenderBufferHandler::Create() const {
+    RenderBuffer::RenderBuffer(GraphicsID id) : GLObject(id) {}
+
+    RenderBuffer RenderBuffer::New(TextureIFormat format, Math::iVector2 size) {
         GraphicsID id;
         Q_GL_CALL(glGenRenderbuffers(1, &id));
-        return id;
+        BindObject(id);
+        Q_GL_CALL(glRenderbufferStorage(GL_RENDERBUFFER, (int)format, size.x, size.y));
+        UnbindObject();
+        return RenderBuffer { id };
     }
 
-    void RenderBufferHandler::Destroy(GraphicsID id) const {
+    void RenderBuffer::DestroyObject(GraphicsID id) {
         Q_GL_CALL(glDeleteRenderbuffers(1, &id));
     }
 
-    void RenderBufferHandler::Bind(GraphicsID id) const {
+    void RenderBuffer::BindObject(GraphicsID id) {
         Q_GL_CALL(glBindRenderbuffer(GL_RENDERBUFFER, id));
     }
 
-    void RenderBufferHandler::Unbind() const {
+    void RenderBuffer::UnbindObject() {
         Q_GL_CALL(glBindRenderbuffer(GL_RENDERBUFFER, 0));
-    }
-
-    RenderBuffer::RenderBuffer(TextureIFormat format, Math::iVector2 size) {
-        Create();
-        Bind();
-        Q_GL_CALL(glRenderbufferStorage(GL_RENDERBUFFER, (int)format, size.x, size.y));
-        Unbind();
     }
 }

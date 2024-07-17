@@ -8,23 +8,6 @@
 #include "stb_image/stb_image.h"
 
 namespace Quasi::Graphics {
-    GraphicsID TextureHandler::Create() const {
-        GraphicsID id;
-        Q_GL_CALL(glGenTextures(1, &id));
-        return id;
-    }
-
-    void TextureHandler::Destroy(const GraphicsID id) const {
-        Q_GL_CALL(glDeleteTextures(1, &id));
-    }
-
-    void TextureHandler::Bind(GraphicsID id) const {
-        Q_GL_CALL(glBindTexture((int)target, id));
-    }
-
-    void TextureHandler::Unbind() const {
-        Q_GL_CALL(glBindTexture((int)target, 0));
-    }
 
     void TextureSlotHandler::operator()(void* slot) const {
         if (!slot) return;
@@ -42,12 +25,27 @@ namespace Quasi::Graphics {
         Slots.resize(SlotCount, nullptr);
     }
 
-    Texture::Texture(const byte* raw, const Math::uVector3& size, const TextureInitParams& init)
-        : size(size) {
-        Create();
-        // flips texture
-        SetTarget(init.target);
-        LoadTexture(raw, init);
+    Texture::Texture(GraphicsID id, const Math::uVector3& size) : GLObject(id), size(size) {}
+
+    Texture Texture::New(const byte* raw, const Math::uVector3& size, const TextureInitParams& init) {
+        GraphicsID rendererID;
+        Q_GL_CALL(glGenTextures(1, &rendererID));
+        Texture t { rendererID, size };
+        t.SetTarget(init.target);
+        t.LoadTexture(raw, init);
+        return t;
+    }
+
+    void Texture::DestroyObject(const GraphicsID id) {
+        Q_GL_CALL(glDeleteTextures(1, &id));
+    }
+
+    void Texture::BindObject(TextureTarget target, GraphicsID id) {
+        Q_GL_CALL(glBindTexture((int)target, id));
+    }
+
+    void Texture::UnbindObject(TextureTarget target) {
+        Q_GL_CALL(glBindTexture((int)target, 0));
     }
 
     void Texture::SetParam(TextureParamName param, float val) const {
@@ -96,12 +94,13 @@ namespace Quasi::Graphics {
         Unbind();
     }
 
+
     Texture Texture::LoadPNGBytes(Span<const byte> datapng, const TextureInitParams& init) {
         Math::iVector2 size;
         int BPPixel;
         stbi_set_flip_vertically_on_load(1);
         const STBIImage localTexture { stbi_load_from_memory(datapng.data(), (int)datapng.size(), &size.x, &size.y, &BPPixel, 4) };
-        Texture tex { (const byte*)localTexture.get(), { size.x, size.y }, init };
+        Texture tex = New((const byte*)localTexture.get(), { size.x, size.y }, init);
         
         return tex;
     }
@@ -112,7 +111,7 @@ namespace Quasi::Graphics {
         stbi_set_flip_vertically_on_load(1);
         Debug::Assert(!*fname.end(), "filename doesn't have null terminator");
         const STBIImage localTexture { stbi_load(fname.data(), &size.x, &size.y, &BPPixel, 4) };
-        Texture tex { (const byte*)localTexture.get(), { size.x, size.y }, init };
+        Texture tex = New((const byte*)localTexture.get(), { size.x, size.y }, init);
 
         return tex;
     }

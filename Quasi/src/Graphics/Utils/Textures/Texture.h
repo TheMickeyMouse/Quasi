@@ -9,15 +9,6 @@
 #include "Utils/Variant.h"
 
 namespace Quasi::Graphics {
-    struct TextureHandler {
-        TextureTarget target;
-
-        [[nodiscard]] GraphicsID Create() const;
-        void Destroy(GraphicsID id) const;
-        void Bind(GraphicsID id) const;
-        void Unbind() const;
-    };
-
     struct TextureSlotHandler {
         void operator()(void* slot) const;
     };
@@ -58,26 +49,33 @@ namespace Quasi::Graphics {
     };
     using STBIImage = UniqueRef<void, STBIImageHandler>;
 
-    class Texture : public GLObject<TextureHandler> {
+    class Texture : public GLObject<Texture> {
     public:
         inline static int SlotCount = -1;
         inline static Vec<Ref<Texture>> Slots {};
         static void Init();
     private:
-        using slot_t = UniqueRef<void, TextureSlotHandler>;
+        using TextureSlot = UniqueRef<void, TextureSlotHandler>;
 
         Math::uVector3 size;
-        int BPPixel = 0; //stands for bits per pixel'
-        slot_t textureSlot;
+        TextureSlot textureSlot;
+        TextureTarget target;
 
         void DefaultParams() const;
 
         void LoadTexture(const byte* img, const TextureInitParams& init = {});
+
+        explicit Texture(GraphicsID id, const Math::uVector3& size);
     public:
         Texture() = default;
-        explicit Texture(const byte* raw, const Math::uVector3& size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_3D });
-        explicit Texture(const byte* raw, const Math::uVector2& size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_2D }) : Texture(raw, size.with_z(0), init) {}
-        explicit Texture(const byte* raw, uint size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_1D }) : Texture(raw, { size, 0, 0 }, init) {}
+        static Texture New(const byte* raw, const Math::uVector3& size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_3D });
+        static Texture New(const byte* raw, const Math::uVector2& size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_2D }) { return New(raw, size.with_z(0), init); }
+        static Texture New(const byte* raw, uint size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_1D }) { return New(raw, { size, 0, 0 }, init); }
+        static void DestroyObject(GraphicsID id);
+        static void BindObject(TextureTarget target, GraphicsID id);
+        static void UnbindObject(TextureTarget target);
+        void Bind() const { BindObject(target, rendererID); }
+        void Unbind() const { UnbindObject(target); }
 
         static Texture LoadPNGBytes(Span<const byte> datapng, const TextureInitParams& init = {});
         static Texture LoadPNG(Str fname, const TextureInitParams& init = {});
@@ -121,9 +119,9 @@ namespace Quasi::Graphics {
 
         [[nodiscard]] int Slot() const { return (int)((usize)textureSlot.get() - 1); }
 
-        [[nodiscard]] TextureTarget Target() const { return Handler().target; }
+        [[nodiscard]] TextureTarget Target() const { return target; }
         [[nodiscard]] int TargetI() const { return (int)Target(); }
-        void SetTarget(const TextureTarget target) { Handler().target = target; }
+        void SetTarget(const TextureTarget t) { target = t; }
 
         [[nodiscard]] const Math::uVector3& Size() const { return size; }
         [[nodiscard]] Math::uVector2 Size2D() const { return size.xy(); }

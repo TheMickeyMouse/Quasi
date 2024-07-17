@@ -28,16 +28,15 @@ namespace Quasi::Graphics {
         DEPTH_STENCIL = 0x821A,
     };
 
-    struct FrameBufferHandler {
-        [[nodiscard]] GraphicsID Create() const;
-        void Destroy(GraphicsID id) const;
-        void Bind(GraphicsID id) const;
-        void Unbind() const;
-    };
-
-    class FrameBuffer : public GLObject<FrameBufferHandler> {
+    class FrameBuffer : public GLObject<FrameBuffer> {
+    private:
+        explicit FrameBuffer(GraphicsID id);
     public:
         FrameBuffer() = default;
+        static FrameBuffer New();
+        static void DestroyObject(GraphicsID id);
+        static void BindObject(GraphicsID id);
+        static void UnbindObject();
 
         void Attach(const Texture& tex, AttachmentType type = AttachmentType::COLOR_0) const;
         void Attach(const RenderBuffer& rbo, AttachmentType type) const;

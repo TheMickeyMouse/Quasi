@@ -4,21 +4,23 @@
 #include "GLDebug.h"
 
 namespace Quasi::Graphics {
-    GraphicsID VertexArrayHandler::Create() const {
+    VertexArray::VertexArray(GraphicsID id) : GLObject(id) {}
+
+    VertexArray VertexArray::New() {
         GraphicsID id;
         Q_GL_CALL(glGenVertexArrays(1, &id));
-        return id;
+        return VertexArray { id };
     }
 
-    void VertexArrayHandler::Destroy(const GraphicsID id) const {
+    void VertexArray::DestroyObject(const GraphicsID id) {
         Q_GL_CALL(glDeleteVertexArrays(1, &id));
     }
 
-    void VertexArrayHandler::Bind(const GraphicsID id) const {
+    void VertexArray::BindObject(const GraphicsID id) {
         Q_GL_CALL(glBindVertexArray(id));
     }
 
-    void VertexArrayHandler::Unbind() const {
+    void VertexArray::UnbindObject() {
         Q_GL_CALL(glBindVertexArray(0));
     }
 

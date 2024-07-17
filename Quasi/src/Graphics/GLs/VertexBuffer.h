@@ -3,14 +3,17 @@
 #include "GLObject.h"
 
 namespace Quasi::Graphics {
-    struct VertexDebugTypeInfo;
-    class VertexBuffer : public GLObject<BufferHandler<BufferType::VERTEX>> {
-    private:
+    class VertexBuffer : public GLObject<VertexBuffer> {
         u32 dataOffset = 0;
         u32 bufferSize = 0;
+
+        explicit VertexBuffer(GraphicsID id, u32 size);
     public:
         VertexBuffer() = default;
-        explicit VertexBuffer(u32 size);
+        static VertexBuffer New(u32 size);
+        static void DestroyObject(GraphicsID id);
+        static void BindObject(GraphicsID id);
+        static void UnbindObject();
 
         [[nodiscard]] u32 GetLength() const { return bufferSize; }
 

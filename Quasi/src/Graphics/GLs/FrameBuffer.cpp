@@ -7,21 +7,23 @@
 #include "Textures/Texture.h"
 
 namespace Quasi::Graphics {
-    GraphicsID FrameBufferHandler::Create() const {
+    FrameBuffer::FrameBuffer(GraphicsID id) : GLObject(id) {}
+
+    FrameBuffer FrameBuffer::New() {
         GraphicsID id;
         Q_GL_CALL(glGenFramebuffers(1, &id));
-        return id;
+        return FrameBuffer { id };
     }
 
-    void FrameBufferHandler::Destroy(GraphicsID id) const {
+    void FrameBuffer::DestroyObject(GraphicsID id) {
         Q_GL_CALL(glDeleteFramebuffers(1, &id));
     }
 
-    void FrameBufferHandler::Bind(GraphicsID id) const {
+    void FrameBuffer::BindObject(GraphicsID id) {
         Q_GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, id));
     }
 
-    void FrameBufferHandler::Unbind() const {
+    void FrameBuffer::UnbindObject() {
         Q_GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
     }
 

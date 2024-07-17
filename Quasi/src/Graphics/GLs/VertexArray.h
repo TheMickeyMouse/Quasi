@@ -3,16 +3,14 @@
 #include "VertexBufferLayout.h"
 
 namespace Quasi::Graphics {
-    struct VertexArrayHandler {
-        [[nodiscard]] GraphicsID Create() const;
-        void Destroy(GraphicsID id) const;
-        void Bind(GraphicsID id) const;
-        void Unbind() const;
-    };
-
-    class VertexArray : public GLObject<VertexArrayHandler> {
+    class VertexArray : public GLObject<VertexArray> {
+        explicit VertexArray(GraphicsID id);
     public:
         VertexArray() = default;
+        static VertexArray New();
+        static void DestroyObject(GraphicsID id);
+        static void BindObject(GraphicsID id);
+        static void UnbindObject();
 
         void AddBuffer(const VertexBufferLayout& layout);
         void AddBuffer(const VertexBuffer& vb, const VertexBufferLayout& layout);

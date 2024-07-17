@@ -101,7 +101,7 @@ namespace Quasi::Graphics {
     template <class T>
     RenderObject<T> GraphicsDevice::CreateNewRender(u32 vsize, u32 isize) {
         renders.push_back(NewUnique<RenderData>());
-        RenderData::Create<T>(vsize, isize, *renders.back());
+        RenderData::New<T>(vsize, isize, *renders.back());
         BindRender(*renders.back());
         return *renders.back();
     }

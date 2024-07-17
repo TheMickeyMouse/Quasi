@@ -139,24 +139,21 @@ namespace Quasi::Graphics {
         }
     };
 
-    struct ShaderHandler {
-        [[nodiscard]] GraphicsID Create() const;
-        void Destroy(GraphicsID id) const;
-        void Bind(GraphicsID id) const;
-        void Unbind() const;
-    };
-
     struct ShaderArgs;
     struct ShaderValueVariant;
     struct ShaderParameter;
 
-    class Shader : public GLObject<ShaderHandler> {
+    class Shader : public GLObject<Shader> {
         Map<String, int, std::less<>> uniformCache;
 
+        explicit Shader(GraphicsID id);
     public:
         Shader() = default;
-        explicit Shader(Str program);
-        explicit Shader(Str vert, Str frag, Str geom = {});
+        static Shader New(Str program);
+        static Shader New(Str vert, Str frag, Str geom = {});
+        static void DestroyObject(GraphicsID id);
+        static void BindObject(GraphicsID id);
+        static void UnbindObject();
 
         static Q_ENUM_TOSTR(ShaderType, ShaderTypeName,
             (VERTEX,          "Vertex")

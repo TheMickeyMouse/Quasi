@@ -39,13 +39,13 @@ namespace Quasi::Graphics {
 	public:
 		explicit RenderData() = default;
 		explicit RenderData(u32 vsize, u32 isize, u32 vertSize, const VertexBufferLayout& layout) :
-			vbo(vsize * vertSize), ibo(isize), vertexData(new byte[vertSize * vsize]), indexData(new u32[isize]) {
-			varray.Create();
+			varray(VertexArray::New()), vbo(VertexBuffer::New(vsize * vertSize)), ibo(IndexBuffer::New(isize)),
+			vertexData(new byte[vertSize * vsize]), indexData(new u32[isize]) {
 			varray.Bind();
 			varray.AddBuffer(layout);
 		}
 
-		template <class T> static void Create(u32 vsize, u32 isize, RenderData& out);
+		template <class T> static void New(u32 vsize, u32 isize, RenderData& out);
 
 		RenderData(const RenderData&) = delete;
 		RenderData& operator=(const RenderData&) = delete;
@@ -81,7 +81,7 @@ namespace Quasi::Graphics {
 	    void SetCamera(const Math::Matrix3D& cam) { camera = cam; }
 	    void SetProjection(const Math::Matrix3D& proj) { projection = proj; }
 	    
-	    void UseShader(Str code) { shader = Shader { code }; }
+	    void UseShader(Str code) { shader = Shader::New(code); }
 	    void UseShaderFromFile(Str file) { shader = Shader::FromFile(file); }
 	    void UseShaderFromFile(Str vert, Str frag, Str geom = {}) { shader = Shader::FromFile(vert, frag, geom); }
 
@@ -90,7 +90,7 @@ namespace Quasi::Graphics {
 	};
 
 	template <class T>
-	void RenderData::Create(u32 vsize, u32 isize, RenderData& out) {
+	void RenderData::New(u32 vsize, u32 isize, RenderData& out) {
 		// times 3 to account for triangles
 		out = RenderData(vsize, isize * 3, sizeof(T), VertexLayoutOf<T>());
 	}

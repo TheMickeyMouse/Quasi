@@ -6,13 +6,18 @@
 namespace Quasi::Graphics {
     struct TriIndices;
 
-    class IndexBuffer : public GLObject<BufferHandler<BufferType::INDEX>> {
+    class IndexBuffer : public GLObject<IndexBuffer> {
     private:
         u32 bufferSize = 0;
         u32 dataOffset = 0;
+
+        explicit IndexBuffer(GraphicsID id, u32 size);
     public:
         IndexBuffer() = default;
-        explicit IndexBuffer(u32 size);
+        static IndexBuffer New(u32 size);
+        static void DestroyObject(GraphicsID id);
+        static void BindObject(GraphicsID id);
+        static void UnbindObject();
 
         void SetData(Span<const u32> data, u32 dOffset = 0);
         void SetData(Span<const TriIndices> data, u32 dOffset = 0) { SetData(CastSpan<const u32>(data), dOffset); }
