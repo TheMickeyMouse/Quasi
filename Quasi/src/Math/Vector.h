@@ -5,8 +5,8 @@
 #include <cmath>
 
 #include "Constants.h"
-#include "Corner.h"
-#include "Direction.h"
+#include "Option.h"
+#include "Text.h"
 
 #include "Utils/Type.h"
 #include "Utils/Ref.h"
@@ -237,6 +237,18 @@ namespace Quasi::Math {
             return out;
         }
 
+        static vect from_direction(u32 directionID, T scale) {
+            vect val;
+            val[directionID >> 1] = directionID & 1 ? cneg {}(scale) : scale;
+            return val;
+        }
+
+        static vect from_corner(u32 cornerID, T scale) {
+            vect val;
+            for (u32 i = 0; i < N; ++i) val[i] = cornerID & (1 << i) ? scale : cneg {}(scale);
+            return val;
+        }
+
         T* begin() { return (T*)this; }
         T* end()   { return (T*)this + N; }
         NODISC const T* begin()  const { return (const T*)this; }
@@ -430,8 +442,6 @@ namespace Quasi::Math {
 
         VectorN(T s = 0) : x(s), y(s) {}
         VectorN(T x, T y) : x(x), y(y) {}
-        explicit VectorN(Direction2D dir, T scale = 1);
-        explicit VectorN(Corner2D cor, T scale = 1);
         VectorN(std::convertible_to<T> auto x, std::convertible_to<T> auto y) : x((T)x), y((T)y) {}
 
         static constexpr Str params = "xy";
@@ -490,22 +500,6 @@ namespace Quasi::Math {
     template <class T> typename VectorN<2, T>::float_vec VectorN<2, T>::rotated(float angle, const VectorN& origin) const { return (*this - origin).rotated(angle) + (float_vec)origin; }
     template <class T> VectorN<2, T> VectorN<2, T>::reflected(const VectorN& normal) const { return *this - 2 * this->dot(normal) * normal; }
     template <class T> VectorN<2, T> VectorN<2, T>::projected(const VectorN& axis) const { return axis * this->dot(axis) / axis.lensq(); }
-
-    template <class T> VectorN<2, T>::VectorN(Direction2D dir, T scale) : x(0), y(0) {
-        using enum Direction2D;
-        if (dir == UNIT) {
-            x = y = scale; return;
-        }
-        if (dir < 0 || dir > DOWN) return;
-        (&x)[(int)(dir >> 1)] = (int)(dir & 1) ? details::cneg {} (scale) : scale;
-    }
-
-    template <class T> VectorN<2, T>::VectorN(Corner2D cor, T scale) : x(0), y(0) {
-        using enum Corner2D;
-        if (cor < 0 || cor > BOTTOM_LEFT) return;
-        x = (int)(cor & SIDE_LEFT  ) ? details::cneg {} (scale) : scale;
-        y = (int)(cor & SIDE_BOTTOM) ? details::cneg {} (scale) : scale;
-    }
 #pragma endregion
 #pragma region Vec3
     template <class T>
@@ -518,8 +512,6 @@ namespace Quasi::Math {
 
         VectorN(T s = 0) : x(s), y(s), z(s) {}
         VectorN(T x, T y, T z) : x(x), y(y), z(z) {}
-        explicit VectorN(Direction3D dir, T scale = 1);
-        explicit VectorN(Corner3D cor,    T scale = 1);
         VectorN(std::convertible_to<T> auto x, std::convertible_to<T> auto y,
              std::convertible_to<T> auto z) : x((T)x), y((T)y), z((T)z) {}
 
@@ -578,23 +570,6 @@ namespace Quasi::Math {
 
     template <class T> Vector2<typename VectorN<3, T>::float_type> VectorN<3, T>::projected() const { return (Vector2<float_type>)xy() / (float_type)z; }
     template <class T> Vector3<T> VectorN<3, T>::reflected(const VectorN& normal) const { return *this - 2 * this->dot(normal) * normal; }
-
-    template <class T> VectorN<3, T>::VectorN(Direction3D dir, T scale) : x(0), y(0), z(0) {
-        using enum Direction3D;
-        if (dir == UNIT) {
-            x = y = z = scale; return;
-        }
-        if (dir < 0 || dir > BACK) return;
-        (&x)[(int)(dir >> 1)] = (int)(dir & 1) ? details::cneg {} (scale) : scale;
-    }
-
-    template <class T> VectorN<3, T>::VectorN(Corner3D cor, T scale) : x(0), y(0), z(0) {
-        using enum Corner3D;
-        if (cor < 0 || cor > BACK_BOTTOM_LEFT) return;
-        x = (int)(cor & SIDE_LEFT  ) ? details::cneg {} (scale) : scale;
-        y = (int)(cor & SIDE_BOTTOM) ? details::cneg {} (scale) : scale;
-        z = (int)(cor & SIDE_BACK  ) ? details::cneg {} (scale) : scale;
-    }
 #pragma endregion
 #pragma region Vec4
     template <class T>
@@ -607,8 +582,6 @@ namespace Quasi::Math {
 
         VectorN(T s = 0, T w = 0) : x(s), y(s), z(s), w(w) {}
         VectorN(T x, T y, T z, T w = 1) : x(x), y(y), z(z), w(w) {}
-        explicit VectorN(Direction4D dir, T scale = 1);
-        explicit VectorN(Corner4D    cor, T scale = 1);
         VectorN(std::convertible_to<T> auto x, std::convertible_to<T> auto y,
                 std::convertible_to<T> auto z, std::convertible_to<T> auto w = 1) : x((T)x), y((T)y), z((T)z), w((T)w) {}
 
@@ -643,24 +616,6 @@ namespace Quasi::Math {
     };
 
     template <class T> Vector3<typename VectorN<4, T>::float_type> VectorN<4, T>::projected() const { return (Vector3<float_type>)xyz() / (float_type)w; }
-
-    template <class T> VectorN<4, T>::VectorN(Direction4D dir, T scale) : x(0), y(0), z(0), w(0) {
-        using enum Direction4D;
-        if (dir == UNIT) {
-            x = y = z = w = scale; return;
-        }
-        if (dir < 0 || dir > OUT) return;
-        (&x)[(int)(dir >> 1)] = (int)(dir & 1) ? details::cneg {} (scale) : scale;
-    }
-
-    template <class T> VectorN<4, T>::VectorN(Corner4D cor, T scale) : x(0), y(0), z(0), w(0) {
-        using enum Corner4D;
-        if (cor < 0 || cor > OUTER_BACK_BOTTOM_LEFT) return;
-        x = (int)(cor & SIDE_LEFT  ) ? details::cneg {} (scale) : scale;
-        y = (int)(cor & SIDE_BOTTOM) ? details::cneg {} (scale) : scale;
-        z = (int)(cor & SIDE_BACK  ) ? details::cneg {} (scale) : scale;
-        w = (int)(cor & SIDE_OUTER ) ? details::cneg {} (scale) : scale;
-    }
 #pragma endregion
 #pragma endregion
 

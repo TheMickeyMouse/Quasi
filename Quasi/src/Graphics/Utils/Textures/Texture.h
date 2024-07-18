@@ -59,7 +59,7 @@ namespace Quasi::Graphics {
 
         Math::uVector3 size;
         TextureSlot textureSlot;
-        TextureTarget target;
+        TextureTarget target = TextureTarget::NONE;
 
         void DefaultParams() const;
 

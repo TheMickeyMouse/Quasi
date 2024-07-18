@@ -1,10 +1,9 @@
 #pragma once
 #include <format>
-
-#include "Utils/Enum.h"
+#include "Type.h"
 
 namespace Quasi::Debug {
-    enum class ConsoleColor {
+    enum ConsoleColor {
         RESET = 0,
 
         BLACK   = 0, H_BLACK   = 60,
@@ -40,19 +39,18 @@ namespace Quasi::Debug {
         BOLD_FLAG = 128,
         REGULAR_MASK = 127
     };
-    Q_IMPL_ENUM_OPERATORS(ConsoleColor);
 
     constexpr char ANSI_ESCAPE_CHAR = '\x1B';
 
-    constexpr ConsoleColor Highlight(ConsoleColor color) { return color + ConsoleColor::HIGHLIGHT; }
-    constexpr ConsoleColor BgColor(ConsoleColor color) { return color + ConsoleColor::BACKGROUND; }
-    constexpr ConsoleColor FgColor(ConsoleColor color) { return color + ConsoleColor::FOREGROUND; }
-    constexpr ConsoleColor HBgColor(ConsoleColor color) { return BgColor(Highlight(color)); }
-    constexpr ConsoleColor HFgColor(ConsoleColor color) { return FgColor(Highlight(color)); }
+    constexpr ConsoleColor Highlight(ConsoleColor color) { return (ConsoleColor)(color + HIGHLIGHT); }
+    constexpr ConsoleColor BgColor(ConsoleColor color)   { return (ConsoleColor)(color + BACKGROUND); }
+    constexpr ConsoleColor FgColor(ConsoleColor color)   { return (ConsoleColor)(color + FOREGROUND); }
+    constexpr ConsoleColor HBgColor(ConsoleColor color)  { return BgColor(Highlight(color)); }
+    constexpr ConsoleColor HFgColor(ConsoleColor color)  { return FgColor(Highlight(color)); }
 
-    constexpr bool IsBold(ConsoleColor color) { return (color & ConsoleColor::BOLD_FLAG) != 0; }
-    constexpr ConsoleColor Bold(ConsoleColor color) { return color | ConsoleColor::BOLD_FLAG; }
-    constexpr ConsoleColor Regular(ConsoleColor color) { return color & ConsoleColor::REGULAR_MASK; }
+    constexpr bool IsBold(ConsoleColor color) { return (color & BOLD_FLAG) != 0; }
+    constexpr ConsoleColor Bold(ConsoleColor color) { return (ConsoleColor)(color | BOLD_FLAG); }
+    constexpr ConsoleColor Regular(ConsoleColor color) { return (ConsoleColor)(color & REGULAR_MASK); }
 
     struct ColoredText {
         ConsoleColor color;

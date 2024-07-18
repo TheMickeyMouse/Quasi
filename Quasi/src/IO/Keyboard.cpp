@@ -92,7 +92,7 @@ namespace Quasi::IO {
     Key KeyboardType::FromKeyIndex(KeyIndex ki) {
         using enum Key;
 
-#define RANGE_MATCH(S, E) if (ToKeyIndex((S)) <= ki && ki <= ToKeyIndex((E))) return ki - ToKeyIndex((S)) + (S)
+#define RANGE_MATCH(S, E) if (ToKeyIndex((S)) <= ki && ki <= ToKeyIndex((E))) return (Key)(ki - ToKeyIndex((S)) + (S))
 
         // chars
         RANGE_MATCH(A, Z);
@@ -126,17 +126,15 @@ namespace Quasi::IO {
 #undef RANGE_MATCH
 
     Key KeyboardType::FromModBits(ModifierKey mod) {
-#define MOD_KEY_CASE(M) case ModifierKey::M: return Key::L##M
         switch (mod) {
-            MOD_KEY_CASE(SHIFT);
-            MOD_KEY_CASE(CONTROL);
-            MOD_KEY_CASE(ALT);
-            MOD_KEY_CASE(SUPER);
-            case ModifierKey::CAPS_LOCK: return Key::CAPS_LOCK;
-            case ModifierKey::NUM_LOCK:  return Key::NUM_LOCK;
+            case M_SHIFT:     return LSHIFT;
+            case M_CONTROL:   return LCONTROL;
+            case M_ALT:       return LALT;
+            case M_SUPER:     return LSUPER;
+            case M_CAPS_LOCK: return CAPS_LOCK;
+            case M_NUM_LOCK:  return NUM_LOCK;
         }
-        return Key::UNKNOWN;
-#undef MOD_KEY_CASE
+        return UNKNOWN;
     }
 
     KeyIndex KeyboardType::IndexFromModBits(ModifierKey mod) {
@@ -144,9 +142,9 @@ namespace Quasi::IO {
     }
     
     Str KeyboardType::KeyToStr(Key key) {
-#define BASIC_KEY_CASE(K) case Key::K: return #K
-#define PS_KEY_CASE(PK, PN, K) case Key::PK##K: return #PN#K
-#define SPECIAL_KEY_CASE(K, N) case Key::K: return N
+#define BASIC_KEY_CASE(K) case K: return #K
+#define PS_KEY_CASE(PK, PN, K) case PK##K: return #PN#K
+#define SPECIAL_KEY_CASE(K, N) case K: return N
 
         switch (key) {
             BASIC_KEY_CASE(A);
@@ -276,7 +274,7 @@ namespace Quasi::IO {
             SPECIAL_KEY_CASE(NON_US_1, "Non US 1");
             SPECIAL_KEY_CASE(NON_US_2, "Non US 2");
 
-            case Key::UNKNOWN:
+            case UNKNOWN:
             return "ERROR";
         }
         return "ERROR";

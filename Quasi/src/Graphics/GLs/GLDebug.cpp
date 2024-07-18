@@ -20,7 +20,7 @@ namespace Quasi::Graphics {
     }
 
     GLErrorCode GLGetErr() {
-        return (GLErrorCode)glGetError();
+        return GLErrorCode::Find(&GLErrorCodeData::glID, glGetError());
     }
 
     void GLClearErr() {
@@ -29,14 +29,14 @@ namespace Quasi::Graphics {
 
     void GLReport(const Debug::SourceLoc& loc) {
         GLErrorCode err;
-        while ((err = GLGetErr()) != GLErrorCode::NO_ERROR) {
+        while ((err = GLGetErr())) {
             GLLogger().Error({ std::format_string<GLErrorCode&> { "GL Error code {} was uncaught." }, loc}, err);
         }
     }
 
     void GLReportFn(Str signature, const Debug::SourceLoc& loc) {
         GLErrorCode err;
-        while ((err = GLGetErr()) != GLErrorCode::NO_ERROR) {
+        while ((err = GLGetErr())) {
             GLLogger().Error(
                 { std::format_string<GLErrorCode&, Str&, Str> {"GL Error code {} was uncaught when calling {} (see https://docs.gl/gl3/{})."}, loc},
                 err, signature, signature.substr(0, signature.find('(')));

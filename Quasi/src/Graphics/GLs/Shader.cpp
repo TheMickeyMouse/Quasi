@@ -132,7 +132,7 @@ namespace Quasi::Graphics {
     }
 
     GraphicsID Shader::CompileShader(Str source, ShaderType type) {
-        const GraphicsID id = glCreateShader((int)type);
+        const GraphicsID id = glCreateShader(type->glID);
         const char* src = source.data();
         const int length = (int)source.size();
         glShaderSource(id, 1, &src, &length);

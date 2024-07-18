@@ -5,42 +5,30 @@
 #include <iostream>
 
 #include "ConsoleColor.h"
+#include "Text.h"
+#include "Type.h"
 #include "Utils/Enum.h"
 #include "Utils/Option.h"
 
 namespace Quasi::Debug {
     void DebugBreak();
 
-    enum class Severity {
-        OFF,
-        TRACE,
-        DEBUG,
-        INFO,
-        WARN,
-        ERROR,
-        CRITICAL,
+    struct SeverityData {
+        Str name;
+        ConsoleColor color;
 
-        NUM,
-        NEVER = NUM
+        [[nodiscard]] ColoredText ColoredName() const { return { color, name }; }
+
+        Q_DEFINE_ENUM(Severity,
+            (OFF,      ("OFF",      ConsoleColor::RESET))
+            (TRACE,    ("TRACE",    FgColor(ConsoleColor::GREEN)))
+            (DEBUG,    ("DEBUG",    FgColor(ConsoleColor::CYAN)))
+            (INFO,     ("INFO",     ConsoleColor::RESET))
+            (WARN,     ("WARN",     FgColor(ConsoleColor::YELLOW)))
+            (ERROR,    ("ERROR",    FgColor(ConsoleColor::RED)))
+            (CRITICAL, ("CRITICAL", Bold(ConsoleColor::FG_RED))),
+        COMPARABLE, ("NEVER", ConsoleColor::GRAY))
     };
-
-    inline Q_ENUM_TOSTR(Severity, SeverityName,
-        (OFF, "OFF")(TRACE, "TRACE")(DEBUG, "DEBUG")(INFO, "INFO")(WARN, "WARN")(ERROR, "ERROR")(CRITICAL, "CRIT"),
-        "NULL");
-    inline static const EnumMap SEVERITY_COLOR = [] {
-        EnumMap<Severity, ConsoleColor> arr;
-        arr[Severity::OFF]      = ConsoleColor::RESET;
-        arr[Severity::TRACE]    = FgColor(ConsoleColor::GREEN);
-        arr[Severity::DEBUG]    = FgColor(ConsoleColor::CYAN);
-        arr[Severity::INFO]     = ConsoleColor::RESET;
-        arr[Severity::WARN]     = FgColor(ConsoleColor::YELLOW);
-        arr[Severity::ERROR]    = FgColor(ConsoleColor::RED);
-        arr[Severity::CRITICAL] = Bold(ConsoleColor::FG_RED);
-        return arr;
-    }();
-    inline ConsoleColor SeverityColor(Severity s) { return SEVERITY_COLOR[s]; }
-    inline ColoredText SeverityColoredName(Severity s) { return { SeverityColor(s), SeverityName(s) }; }
-
 
     using DateTime = std::chrono::time_point<std::chrono::system_clock>;
     using SourceLoc = std::source_location;
@@ -72,8 +60,8 @@ namespace Quasi::Debug {
 
     class Logger {
         Ref<OutStream> logOut;
-        ColoredText name = { ConsoleColor::RESET, "LOG" };
-        Severity filterLevel = Severity::OFF, breakLevel = Severity::NEVER;
+        ColoredText name = { RESET, "LOG" };
+        Severity filterLevel = Severity::OFF, breakLevel = Severity::ERROR;
         Vec<LogEntry> logs;
 
         bool shortenFileNames : 1 = true;
@@ -91,7 +79,7 @@ namespace Quasi::Debug {
 #endif
         explicit Logger(OutStream& out = std::cout) : logOut(out) {}
 
-        static bool Overrides(Severity filter, Severity log) { return (int)log >= (int)filter; }
+        static bool Overrides(Severity filter, Severity log) { return log >= filter; }
         [[nodiscard]] bool Overrides(Severity s) const { return Overrides(filterLevel, s); }
         void SetFilter(Severity s) { filterLevel = s; }
         void SetBreakLevel(Severity s) { breakLevel = s; }
@@ -116,7 +104,7 @@ namespace Quasi::Debug {
 
         void Assert(bool assert, Str msg, const SourceLoc& loc = SourceLoc::current());
 
-        void Write(OutStream& out, Severity filter = Severity::NEVER);
+        void Write(OutStream& out, Severity filter = Severity::NONE);
 
         template <class ...Ts> void LogFmt(Severity s, ImplicitFmtStr<Ts...> fmt, Ts&&... args) {
             this->Log(s, std::format(fmt.fmt, std::forward<Ts>(args)...), fmt.loc);
@@ -167,7 +155,7 @@ namespace Quasi::Debug {
 
     inline void Assert(bool assert, Str msg, const SourceLoc& loc = SourceLoc::current()) { Logger::GetInternalLog().Assert(assert, msg, loc); }
 
-    inline void Write(OutStream& out, Severity filter = Severity::NEVER) { Logger::GetInternalLog().Write(out, filter); }
+    inline void Write(OutStream& out, Severity filter = Severity::NONE) { Logger::GetInternalLog().Write(out, filter); }
 
     template <class ...Ts> void LogFmt(Severity s, ImplicitFmtStr<Ts...> fmt, Ts&&... args) {
         Logger::GetInternalLog().LogFmt(s, fmt, std::forward<Ts>(args)...);
@@ -222,6 +210,6 @@ namespace Quasi {
 template <>
 struct std::formatter<Quasi::Debug::Severity> : formatter<std::string> {
     auto format(Quasi::Debug::Severity s, std::format_context& ctx) const {
-        return formatter<std::string>::format(std::format("{}", SeverityColoredName(s)), ctx);
+        return formatter<std::string>::format(std::format("{}", s->ColoredName()), ctx);
     }
 };

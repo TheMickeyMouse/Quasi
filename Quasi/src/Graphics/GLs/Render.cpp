@@ -7,14 +7,14 @@ namespace Quasi::Graphics::Render {
         vertexArr.Bind();
         indexBuff.Bind();
         shader.Bind();
-        Q_GL_CALL(glDrawElements(GL_TRIANGLES, (int)indexBuff.GetUsedLength(), (int)GLTypeID::UINT, nullptr));
+        Q_GL_CALL(glDrawElements(GL_TRIANGLES, (int)indexBuff.GetUsedLength(), GLTypeID::UINT.glID, nullptr));
     }
 
     void DrawInstanced(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader, int instances) {
         vertexArr.Bind();
         indexBuff.Bind();
         shader.Bind();
-        Q_GL_CALL(glDrawElementsInstanced(GL_TRIANGLES, (int)indexBuff.GetUsedLength(), (int)GLTypeID::UINT, nullptr, instances));
+        Q_GL_CALL(glDrawElementsInstanced(GL_TRIANGLES, (int)indexBuff.GetUsedLength(), GLTypeID::UINT.glID, nullptr, instances));
     }
 
     void Clear(const BufferBit bit) {

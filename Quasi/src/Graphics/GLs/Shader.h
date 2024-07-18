@@ -2,20 +2,26 @@
 
 #include <Utils/Macros.h>
 
+#include "Enum.h"
 #include "GLObject.h"
 #include "Math/Matrix.h"
 #include "Math/Color.h"
 #include "Utils/StringList.h"
 
 namespace Quasi::Graphics {
-    enum class ShaderType {
-        VERTEX = 0x8B31,
-        FRAGMENT = 0x8B30,
-        GEOMETRY = 0x8DD9,
-        // all below requires OpenGL 4.3 above
-        COMPUTE = 0x91B9,
-        TESS_CONTROL = 0x8E88,
-        TESS_EVALUATION = 0x8E87,
+    struct ShaderTypeData {
+        u32 glID;
+        Str shaderName;
+
+        Q_DEFINE_ENUM(ShaderType,
+            (VERTEX,   (0x8B31, "Vertex"))
+            (FRAGMENT, (0x8B30, "Fragment"))
+            (GEOMETRY, (0x8DD9, "Geometry"))
+            // all below requires OpenGL 4.3 above
+            (COMPUTE,         (0x91B9, "Compute"))
+            (TESS_CONTROL,    (0x8E88, "Tesselation Control"))
+            (TESS_EVALUATION, (0x8E87, "Tesselation Eval")),
+        NONE)
     };
 
 #define NAME_INT I
@@ -32,7 +38,7 @@ namespace Quasi::Graphics {
 #define DEFINE_WHOLE_UNIF(T) \
     DEFINE_UNIF(T, 1, 1, 0), DEFINE_UNIF(T, 1, 2, 0), DEFINE_UNIF(T, 1, 3, 0), DEFINE_UNIF(T, 1, 4, 0), \
     DEFINE_UNIF(T, 1, 1, 1), DEFINE_UNIF(T, 1, 2, 1), DEFINE_UNIF(T, 1, 3, 1), DEFINE_UNIF(T, 1, 4, 1)
-    enum class ShaderUniformType : int {
+    enum ShaderUniformType {
         // layout of this type: TT_R_MMM_NNN
         // T: type of data, R: bool value, true if is array
         // MxN: matrix part of MatrixMxN, otherwise N is vector dimension
@@ -76,21 +82,20 @@ namespace Quasi::Graphics {
 #undef MAKE_UNIFORM_BITMASK
 #undef DEFINE_UNIF
 #undef DEFINE_WHOLE_UNIF
-    Q_IMPL_ENUM_OPERATORS(ShaderUniformType);
 
     namespace details {
         template <class T> struct use_const_ref { using type = T; };
 
         template <ShaderUniformType U>
         auto impl() {
-            constexpr auto TYPE = U & ShaderUniformType::TYPE_MASK;
-            constexpr bool ARRAY = (bool)(U & ShaderUniformType::ARRAY_FLAG);
-            constexpr u32 ROWS = (u32)((U & ShaderUniformType::ROWS_MASK) / ShaderUniformType::VECTOR_FLAG);
-            constexpr u32 COLS = (u32)((U & ShaderUniformType::COLS_MASK) / ShaderUniformType::SINGLE_FLAG);
+            constexpr auto TYPE = U & TYPE_MASK;
+            constexpr bool ARRAY = (bool)(U & ARRAY_FLAG);
+            constexpr u32 ROWS = (u32)((U & ROWS_MASK) / VECTOR_FLAG);
+            constexpr u32 COLS = (u32)((U & COLS_MASK) / SINGLE_FLAG);
 
-            using T = std::conditional_t<TYPE == ShaderUniformType::INT_FLAG,   int,
-                      std::conditional_t<TYPE == ShaderUniformType::UINT_FLAG,  uint,
-                      std::conditional_t<TYPE == ShaderUniformType::FLOAT_FLAG, float, void>>>;
+            using T = std::conditional_t<TYPE == INT_FLAG,   int,
+                      std::conditional_t<TYPE == UINT_FLAG,  uint,
+                      std::conditional_t<TYPE == FLOAT_FLAG, float, void>>>;
 
             if constexpr (ROWS > 1) {
                 return Span<const Math::Matrix<ROWS, COLS>> {};
@@ -112,30 +117,23 @@ namespace Quasi::Graphics {
 
     template <class T>
     constexpr ShaderUniformType ConvertUniformType =
-        std::is_same_v<T, int>   ? ShaderUniformType::INT_FLAG   :
-        std::is_same_v<T, uint>  ? ShaderUniformType::UINT_FLAG  :
-        std::is_same_v<T, float> ? ShaderUniformType::FLOAT_FLAG :
+        std::is_same_v<T, int>   ? INT_FLAG   :
+        std::is_same_v<T, uint>  ? UINT_FLAG  :
+        std::is_same_v<T, float> ? FLOAT_FLAG :
         (ShaderUniformType)0;
 
     struct ShaderProgramSource {
         String fullSource;
         usize sepPoints[2]; // vertex | fragment | geometery, all seperated with index.
 
-    private:
-        [[nodiscard]] int to_id(ShaderType type) const { switch (type) {
-            case ShaderType::VERTEX: return 0;
-            case ShaderType::FRAGMENT: return 1;
-            case ShaderType::GEOMETRY: return 2;
-            default: return 3;
-        } }
     public:
         [[nodiscard]] usize GetSepPoint(int idx) const {
             return idx < 0 ? 0 : idx >= 2 ? fullSource.size() : sepPoints[idx];
         }
 
         [[nodiscard]] Str GetShader(ShaderType type) const {
-            const usize beg = GetSepPoint(to_id(type) - 1);
-            return Str { fullSource }.substr(beg, GetSepPoint(to_id(type)) - beg);
+            const usize beg = GetSepPoint(type.Ord() - 1);
+            return Str { fullSource }.substr(beg, GetSepPoint(type.Ord()) - beg);
         }
     };
 
@@ -154,15 +152,6 @@ namespace Quasi::Graphics {
         static void DestroyObject(GraphicsID id);
         static void BindObject(GraphicsID id);
         static void UnbindObject();
-
-        static Q_ENUM_TOSTR(ShaderType, ShaderTypeName,
-            (VERTEX,          "Vertex")
-            (FRAGMENT,        "Fragment")
-            (GEOMETRY,        "Geometry")
-            (COMPUTE,         "Compute")
-            (TESS_CONTROL,    "Tesselation Control")
-            (TESS_EVALUATION, "Tesselation Eval"),
-            "Undefined")
 
         template <ShaderUniformType U>
         void SetUniformAtLoc(int uniformLoc, ShaderUniformArgOf<U> val) = delete;
@@ -183,8 +172,8 @@ namespace Quasi::Graphics {
         DEFINE_UNIF_FN(Mat4x2, MAT4x2) DEFINE_UNIF_FN(Mat4x3, MAT4x3) DEFINE_UNIF_FN(Mat4x4, MAT4x4) \
 
 #define DEFINE_UNIF_FN(N, IN) \
-    void SetUniform##N(Str name, ShaderUniformArgOf<ShaderUniformType::UNIF_##IN> val) { \
-        SetUniformOf<ShaderUniformType::UNIF_##IN>(name, val); \
+    void SetUniform##N(Str name, ShaderUniformArgOf<UNIF_##IN> val) { \
+        SetUniformOf<UNIF_##IN>(name, val); \
     }
 
         UNIF_INSTANTIATE
@@ -306,7 +295,7 @@ namespace Quasi::Graphics {
     };
 
 #undef DEFINE_UNIF_FN
-#define DEFINE_UNIF_FN(N, IN) template <> void Shader::SetUniformAtLoc<ShaderUniformType::UNIF_##IN>(int uniformLoc, ShaderUniformArgOf<ShaderUniformType::UNIF_##IN> val);
+#define DEFINE_UNIF_FN(N, IN) template <> void Shader::SetUniformAtLoc<UNIF_##IN>(int uniformLoc, ShaderUniformArgOf<UNIF_##IN> val);
     UNIF_INSTANTIATE
 #undef DEFINE_UNIF_FN
 #undef UNIF_INSTANTIATE
@@ -324,12 +313,12 @@ namespace Quasi::Graphics {
         u32 size;
 
 #pragma region Init
-        ShaderValueVariant(bool val) : data((const void*)val), type(ShaderUniformType::UNIF_1I), size(1) {}
+        ShaderValueVariant(bool val) : data((const void*)val), type(UNIF_1I), size(1) {}
 
         template <class N> requires std::is_arithmetic_v<N>
         ShaderValueVariant(N num) {
             using enum ShaderUniformType;
-            type = ConvertUniformType<N> | VECTOR_FLAG | SINGLE_FLAG;
+            type = (ShaderUniformType)(ConvertUniformType<N> | VECTOR_FLAG | SINGLE_FLAG);
             data = std::bit_cast<const void*>((usize)std::bit_cast<u32>(num));
             size = 1;
         }
@@ -337,7 +326,7 @@ namespace Quasi::Graphics {
         template <class T>
         ShaderValueVariant(Span<const T> val) {
             using enum ShaderUniformType;
-            type = ConvertUniformType<T> | VECTOR_FLAG | SINGLE_FLAG | ARRAY_FLAG;
+            type = (ShaderUniformType)(ConvertUniformType<T> | VECTOR_FLAG | SINGLE_FLAG | ARRAY_FLAG);
             data = val.data();
             size = (u32)val.size();
         }
@@ -345,7 +334,7 @@ namespace Quasi::Graphics {
         template <Math::IVector V>
         ShaderValueVariant(const V& vec) {
             using enum ShaderUniformType;
-            type = ConvertUniformType<typename V::scalar> | VECTOR_FLAG | (COLS_1 * V::dimension);
+            type = (ShaderUniformType)(ConvertUniformType<typename V::scalar> | VECTOR_FLAG | (COLS_1 * V::dimension));
             data = vec.begin();
             size = (u32)vec.size();
         }
@@ -355,15 +344,15 @@ namespace Quasi::Graphics {
             using enum ShaderUniformType;
             using T = typename V::scalar;
             constexpr int N = V::dimension;
-            type = ConvertUniformType<T> | VECTOR_FLAG | (COLS_1 * N) | ARRAY_FLAG;
+            type = (ShaderUniformType)(ConvertUniformType<T> | VECTOR_FLAG | (COLS_1 * N) | ARRAY_FLAG);
             data = val.data();
             size = val.size() * N;
         }
 
-        ShaderValueVariant(const Math::fColor&  val) : data(val.begin()), type(ShaderUniformType::UNIF_4F), size(4) {}
-        ShaderValueVariant(const Math::fColor3& val) : data(val.begin()), type(ShaderUniformType::UNIF_3F), size(3) {}
-        ShaderValueVariant(Span<const Math::fColor>  dat) : data(dat.data()), type(ShaderUniformType::UNIF_4F_ARR), size(4 * (u32)dat.size()) {}
-        ShaderValueVariant(Span<const Math::fColor3> dat) : data(dat.data()), type(ShaderUniformType::UNIF_3F_ARR), size(3 * (u32)dat.size()) {}
+        ShaderValueVariant(const Math::fColor&  val) : data(val.begin()), type(UNIF_4F), size(4) {}
+        ShaderValueVariant(const Math::fColor3& val) : data(val.begin()), type(UNIF_3F), size(3) {}
+        ShaderValueVariant(Span<const Math::fColor>  dat) : data(dat.data()), type(UNIF_4F_ARR), size(4 * (u32)dat.size()) {}
+        ShaderValueVariant(Span<const Math::fColor3> dat) : data(dat.data()), type(UNIF_3F_ARR), size(3 * (u32)dat.size()) {}
 
         template <ArrayLike R> requires (!Math::IVector<R>)
         ShaderValueVariant(const R& range) : ShaderValueVariant(TakeSpan(range)) {}
@@ -371,7 +360,7 @@ namespace Quasi::Graphics {
         template <u32 N, u32 M>
         ShaderValueVariant(const Math::Matrix<N, M>& mat) {
             using enum ShaderUniformType;
-            type = FLOAT_FLAG | (ROWS_1 * N) | (COLS_1 * M) | ARRAY_FLAG;
+            type = (ShaderUniformType)(FLOAT_FLAG | (ROWS_1 * N) | (COLS_1 * M) | ARRAY_FLAG);
             data = mat.data().data();
             size = N * M;
         }
@@ -379,7 +368,7 @@ namespace Quasi::Graphics {
         template <u32 N, u32 M>
         ShaderValueVariant(Span<const Math::Matrix<N, M>> mats) {
             using enum ShaderUniformType;
-            type = FLOAT_FLAG | (ROWS_1 * N) | (COLS_1 * M) | ARRAY_FLAG;
+            type = (ShaderUniformType)(FLOAT_FLAG | (ROWS_1 * N) | (COLS_1 * M) | ARRAY_FLAG);
             data = mats.data();
             size = N * M * (u32)mats.size();
         }
@@ -469,6 +458,6 @@ namespace Quasi::Graphics {
 template <>
 struct std::formatter<Quasi::Graphics::ShaderType> : std::formatter<Quasi::Str> {
     auto format(Quasi::Graphics::ShaderType s, std::format_context& ctx) const {
-        return std::formatter<Quasi::Str>::format(Quasi::Graphics::Shader::ShaderTypeName(s), ctx);
+        return std::formatter<Quasi::Str>::format(s->shaderName, ctx);
     }
 };

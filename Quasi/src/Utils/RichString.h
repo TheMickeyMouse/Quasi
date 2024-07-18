@@ -7,60 +7,37 @@
 #include "Enum.h"
 #include "Ref.h"
 
-
 namespace Quasi::Text {
+#define STYLE_SWITCH(N, S) (N, (0, "<" S ">", true, true))(N##_OFF, (0, "</" S ">", true, false))
+    struct StyleData { // each 16 values represents 1 byte of memeory taken
+        u32 byteEncodingSize;
+        Str debugStr;
+        bool isSwitch : 1 = false, isOn : 1 = false;
+
+        Q_DEFINE_ENUM(Style,
+            STYLE_SWITCH(BOLD,          "b")
+            STYLE_SWITCH(ITALIC,        "i")
+            STYLE_SWITCH(UNDERLINE,     "u")
+            STYLE_SWITCH(STRIKETHROUGH, "s")
+            STYLE_SWITCH(SUBSCRIPT,     "sub")
+            STYLE_SWITCH(SUPERSCRIPT,   "sup")
+            STYLE_SWITCH(BLOCKQUOTE,    "bq")
+            STYLE_SWITCH(ALT_TEXT,      "*alt")
+            (FONT_TYPE,       (1, "<*font=\"{}\">"))
+            (CODE_BLOCK,      (1, "<code *lang=\"{}\">"))
+            (ALIGNMENT,       (1, "<*align={}>"))
+            (FONT_SIZE,       (2, "<*size={}>"))
+            (TEXT_COLOR,      (4, "<*color={}>"))
+            (HIGHLIGHT_COLOR, (4, "<*hcolor={}>")),
+        ARITH)
+    };
+#undef STYLE_SWITCH
+
     struct RichString {
-        enum class Style : byte;
         static constexpr char DELIMITER = (char)128;
         
         String rawString;
         Vec<byte> stylings;
-
-#define STYLE_SWITCH(N, V) N = (V), N##_ON = (N), N##_OFF = N##_ON ^ SWITCH
-        enum class Style : byte { // each 16 values represents 1 byte of memeory taken
-            NONE = 0,
-            SWITCH = 1 << 7,
-
-            STYLE_SWITCH(BOLD, 1),
-            STYLE_SWITCH(ITALIC, 2),
-            STYLE_SWITCH(UNDERLINE, 3),
-            STYLE_SWITCH(STRIKETHROUGH, 4),
-            STYLE_SWITCH(SUBSCRIPT, 5),
-            STYLE_SWITCH(SUPERSCRIPT, 6),
-            STYLE_SWITCH(BLOCKQUOTE, 7),
-            STYLE_SWITCH(ALT_TEXT, 8),
-
-            FONT_TYPE = 16,
-            CODE_BLOCK = 17,
-            ALIGNMENT = 18,
-            
-            FONT_SIZE = 32,
-
-            TEXT_COLOR = 64,
-            HIGHLIGHT_COLOR = 65,
-        };
-#undef STYLE_SWITCH
-        
-        static Q_ENUM_TOSTR(Style, StyleToStr,
-            (BOLD_ON,          "<b>")   (BOLD_OFF,   "</b>")
-            (ITALIC_ON,        "<i>")   (ITALIC_OFF, "</i>")
-            (UNDERLINE_ON,     "<u>")   (UNDERLINE_OFF,     "</u>")
-            (STRIKETHROUGH_ON, "<s>")   (STRIKETHROUGH_OFF, "</s>")
-            (SUBSCRIPT_ON,     "<sub>") (SUBSCRIPT_OFF,     "</sub>")
-            (SUPERSCRIPT_ON,   "<sup>") (SUPERSCRIPT_OFF,   "</sup>")
-            (BLOCKQUOTE_ON,    "<bq>")  (BLOCKQUOTE_OFF,    "</bq>")
-            (ALT_TEXT_ON,      "<_alt>")(ALT_TEXT_OFF,      "</_alt>")
-            (FONT_TYPE,        "<p style=\"font-family:{}\">")
-            (CODE_BLOCK,       "<code _lang={}>")
-            (ALIGNMENT,        "<p style=\"_text-align:{}\">")
-            (FONT_SIZE,        "<p style=\"font-size:{}/64\">")
-            (TEXT_COLOR,       "<p style=\"color:rgba({}, {}, {}, {})\">")
-            (HIGHLIGHT_COLOR,  "<p style=\"background-color:rgba({}, {}, {}, {})\">"), "\\")
-
-        static uint SizeOfStyle(Style s);
-        static bool IsSwitch(Style s);
-        static bool IsState(Style s, bool state);
-        static Style SetState(Style s, bool state);
 
         static bool Matches(IterOf<Str> iter, IterOf<Str> end, Str matchExpr);
         static IterOf<Str> Find(IterOf<Str> iter, IterOf<Str> end, Str matchExpr);
@@ -146,8 +123,6 @@ namespace Quasi::Text {
         RichChar operator*() const;
         Iter& operator++();
     };
-    
-    Q_IMPL_ENUM_OPERATORS(RichString::Style);
 
     inline RichString operator ""_md(const char* markdown, usize size) {
         return RichString::ParseMarkdown(Str { markdown, size });

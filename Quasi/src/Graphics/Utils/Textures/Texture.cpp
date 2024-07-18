@@ -73,11 +73,11 @@ namespace Quasi::Graphics {
         const int newTarget = overrideTarget == TextureTarget::NONE ? TargetI() : (int)overrideTarget;
         switch (Dimension()) {
             case 1:
-                return Q_GL_CALL(glTexImage1D(newTarget, params.level, (int)params.internalformat, dim.x, 0, (int)params.format, (int)params.type, data));
+                return Q_GL_CALL(glTexImage1D(newTarget, params.level, (int)params.internalformat, dim.x, 0, (int)params.format, params.type->glID, data));
             case 2:
-                return Q_GL_CALL(glTexImage2D(newTarget, params.level, (int)params.internalformat, dim.x, dim.y, 0, (int)params.format, (int)params.type, data));
+                return Q_GL_CALL(glTexImage2D(newTarget, params.level, (int)params.internalformat, dim.x, dim.y, 0, (int)params.format, params.type->glID, data));
             case 3:
-                return Q_GL_CALL(glTexImage3D(newTarget, params.level, (int)params.internalformat, dim.x, dim.y, dim.z, 0, (int)params.format, (int)params.type, data));
+                return Q_GL_CALL(glTexImage3D(newTarget, params.level, (int)params.internalformat, dim.x, dim.y, dim.z, 0, (int)params.format, params.type->glID, data));
             default:;
         }
     }
@@ -208,11 +208,11 @@ namespace Quasi::Graphics {
     void Texture::SetSubTexture(const void* data, const Math::uRect3D& rect, const TextureLoadParams& params) {
         switch (Dimension()) {
             case 1:
-                return Q_GL_CALL(glTexSubImage1D(TargetI(), params.level, rect.min.x, rect.width(), (int)params.format, (int)params.type, data));
+                return Q_GL_CALL(glTexSubImage1D(TargetI(), params.level, rect.min.x, rect.width(), (int)params.format, params.type->glID, data));
             case 2:
-                return Q_GL_CALL(glTexSubImage2D(TargetI(), params.level, rect.min.x, rect.min.y, rect.width(), rect.height(), (int)params.format, (int)params.type, data));
+                return Q_GL_CALL(glTexSubImage2D(TargetI(), params.level, rect.min.x, rect.min.y, rect.width(), rect.height(), (int)params.format, params.type->glID, data));
             case 3:
-                return Q_GL_CALL(glTexSubImage3D(TargetI(), params.level, rect.min.x, rect.min.y, rect.min.z, rect.width(), rect.height(), rect.depth(), (int)params.format, (int)params.type, data));
+                return Q_GL_CALL(glTexSubImage3D(TargetI(), params.level, rect.min.x, rect.min.y, rect.min.z, rect.width(), rect.height(), rect.depth(), (int)params.format, params.type->glID, data));
             default:;
         }
     }

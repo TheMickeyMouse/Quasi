@@ -8,7 +8,7 @@ namespace Quasi::Graphics {
 
     void VertexBufferLayout::Push(VertexBufferComponent comp) {
         components.push_back(comp);
-        stride += comp.count * SizeOf(comp.type);
+        stride += comp.count * comp.type->typeSize;
     }
 
     void VertexBufferLayout::PushLayout(const VertexBufferLayout& layout) {

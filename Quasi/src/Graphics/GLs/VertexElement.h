@@ -5,53 +5,47 @@
 
 #define Q_GL_VERTEX_T(T, DIM, MEMBS, ... /* may use 'custom transform' */) \
     using _VSelf = T; static constexpr u32 DIMENSION = 0x##DIM >> 4; /* hacking ND into N */ \
-    private: struct types { __Q_GL_VERTEX_TYPES__(MEMBS) }; public: \
-    inline static const auto VERTEX_LAYOUT = Quasi::Graphics::VertexBufferLayout::FromTypes<Q_UNARY(Q_DEFER(Q_REMOVE_FIRST)(__Q_GL_VERTEX_LAYOUT_FIELDS__(MEMBS)))>(); \
-    template <Q_UNARY(Q_DEFER(Q_REMOVE_FIRST)(__Q_GL_VERTEX_TEMPLATE_LIST__(MEMBS)))> \
+    private: struct types { Q_CAT(__Q_GL_VY1__ MEMBS, END__) }; public: \
+    inline static const auto VERTEX_LAYOUT = Quasi::Graphics::VertexBufferLayout::FromTypes<Q_UNARY(Q_DEFER(Q_REMOVE_FIRST)(Q_CAT(__Q_GL_VL1__ MEMBS, END__)))>(); \
+    template <Q_UNARY(Q_DEFER(Q_REMOVE_FIRST)(Q_CAT(__Q_GL_VTL1__ MEMBS, END__)))> \
     struct Blueprint { \
-        __Q_GL_VERTEX_MEMBER_LIST__(MEMBS) \
+         Q_CAT(__Q_GL_VML1__ MEMBS, END__) \
         _VSelf operator()(const auto& args) { \
-            return _VSelf { Q_UNARY(__Q_GL_VERTEX_BUILD_LIST__(MEMBS)) }; \
+            return _VSelf { Q_UNARY(Q_DEFER(Q_REMOVE_FIRST)(Q_CAT(__Q_GL_VBL1__ MEMBS, END__))) }; \
         } \
     }; \
     \
     _VSelf _VMul(const Math::ITransformer##DIM auto& _tr) const { \
         Q_IF_ELSE(Q_HAS_ARGS(__VA_ARGS__), (return __VA_ARGS__(_tr);), ( \
-            return _VSelf { __Q_GL_VERTEX_TRANSFORM_SEQUENCE__(MEMBS) }; \
+            return _VSelf { Q_DEFER(Q_REMOVE_FIRST)(Q_CAT(__Q_GL_VT1__ MEMBS, END__)) }; \
         ))\
     } \
 
-#define __Q_GL_VERTEX_TRANSFORM_SEQUENCE__(SEQ) Q_DEFER(Q_REMOVE_FIRST)(Q_CAT(__Q_GL_VT1__ SEQ, END__))
 #define __Q_GL_VT1__(M, ...) Q_DEFER(Q_COMMA)() .M = Q_IF_ELSE(Q_IS_EMPTY(__VA_ARGS__), (M), (__VA_ARGS__::transform(M, _tr))) __Q_GL_VT2__
 #define __Q_GL_VT2__(M, ...) Q_DEFER(Q_COMMA)() .M = Q_IF_ELSE(Q_IS_EMPTY(__VA_ARGS__), (M), (__VA_ARGS__::transform(M, _tr))) __Q_GL_VT1__
 #define __Q_GL_VT1__END__
 #define __Q_GL_VT2__END__
 
-#define __Q_GL_VERTEX_TYPES__(SEQ) Q_CAT(__Q_GL_VY1__ SEQ, END__)
 #define __Q_GL_VY1__(X, ...) using _##X = MemberT<&_VSelf::X>; __Q_GL_VY2__
 #define __Q_GL_VY2__(X, ...) using _##X = MemberT<&_VSelf::X>; __Q_GL_VY1__
 #define __Q_GL_VY1__END__
 #define __Q_GL_VY2__END__
 
-#define __Q_GL_VERTEX_LAYOUT_FIELDS__(SEQ) Q_CAT(__Q_GL_VL1__ SEQ, END__)
 #define __Q_GL_VL1__(X, ...) Q_DEFER(Q_COMMA)() types::_##X __Q_GL_VL2__
 #define __Q_GL_VL2__(X, ...) Q_DEFER(Q_COMMA)() types::_##X __Q_GL_VL1__
 #define __Q_GL_VL1__END__
 #define __Q_GL_VL2__END__
 
-#define __Q_GL_VERTEX_TEMPLATE_LIST__(SEQ) Q_CAT(__Q_GL_VTL1__ SEQ, END__)
 #define __Q_GL_VTL1__(X, ...) Q_DEFER(Q_COMMA)() class X##_t_ = Quasi::Graphics::VertexBuilder::Default<types::_##X> __Q_GL_VTL2__
 #define __Q_GL_VTL2__(X, ...) Q_DEFER(Q_COMMA)() class X##_t_ = Quasi::Graphics::VertexBuilder::Default<types::_##X> __Q_GL_VTL1__
 #define __Q_GL_VTL1__END__
 #define __Q_GL_VTL2__END__
 
-#define __Q_GL_VERTEX_MEMBER_LIST__(SEQ) Q_CAT(__Q_GL_VML1__ SEQ, END__)
 #define __Q_GL_VML1__(X, ...) X##_t_ X {}; __Q_GL_VML2__
 #define __Q_GL_VML2__(X, ...) X##_t_ X {}; __Q_GL_VML1__
 #define __Q_GL_VML1__END__
 #define __Q_GL_VML2__END__
 
-#define __Q_GL_VERTEX_BUILD_LIST__(SEQ) Q_DEFER(Q_REMOVE_FIRST)(Q_CAT(__Q_GL_VBL1__ SEQ, END__))
 #define __Q_GL_VBL1__(X, ...) Q_DEFER(Q_COMMA)() .X = X(args) __Q_GL_VBL2__
 #define __Q_GL_VBL2__(X, ...) Q_DEFER(Q_COMMA)() .X = X(args) __Q_GL_VBL1__
 #define __Q_GL_VBL1__END__

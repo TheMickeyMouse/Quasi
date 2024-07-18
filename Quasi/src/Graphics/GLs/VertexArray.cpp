@@ -31,10 +31,10 @@ namespace Quasi::Graphics {
             const auto& elem = elements[i];
             Q_GL_CALL(glEnableVertexAttribArray(i));
             if (elem.flags & VertexBufferComponent::INTEGER_FLAG)
-                Q_GL_CALL(glVertexAttribIPointer(i, elem.count, (int)elem.type, layout.GetStride(), (const void*)offset));  // NOLINT(performance-no-int-to-ptr)
+                Q_GL_CALL(glVertexAttribIPointer(i, elem.count, elem.type->glID, layout.GetStride(), (const void*)offset));  // NOLINT(performance-no-int-to-ptr)
             else
-                Q_GL_CALL(glVertexAttribPointer(i, elem.count, (int)elem.type, elem.flags & elem.NORMALIZED_FLAG, layout.GetStride(), (const void*)offset));  // NOLINT(performance-no-int-to-ptr)
-            offset += elem.count * SizeOf(elem.type);
+                Q_GL_CALL(glVertexAttribPointer(i, elem.count, elem.type->glID, elem.flags & elem.NORMALIZED_FLAG, layout.GetStride(), (const void*)offset));  // NOLINT(performance-no-int-to-ptr)
+            offset += elem.count * elem.type->typeSize;
         }
     }
 

@@ -136,7 +136,7 @@ namespace Quasi::Math {
         // [   0    ,   0    ,    0    ,     1    ]
         return [&]<u32... I>(std::integer_sequence<u32, I...>) {
             return Matrix {
-                col { (DirectionND<N>)(2 * I), (I == 2 ? -2.0f : 2.0f) / box.n_distance(I) }..., // cols 1~next to last created in a direction
+                col::from_direction((2 * I), (I == 2 ? -2.0f : 2.0f) / box.n_distance(I))..., // cols 1~next to last created in a direction
                 col { (-2 * box.center()[I] / box.n_distance(I))..., 1.0f } // last col with translation, and constant 1 w
             };
         }(std::make_integer_sequence<u32, N - 1> {});
@@ -151,11 +151,10 @@ namespace Quasi::Math {
         // {     0      ,     0      , -sz / dz , -2 * n * f / dz }
         // {     0      ,     0      ,    -1    ,       0         }
         const float near = box.min.last(), far = box.max.last();
-        using Dir = DirectionND<N>;
         return [&]<u32... I>(std::integer_sequence<u32, I...>) {
             return Matrix {
                 // first few cols
-                (col { (Dir)(2 * I), 2 * near / box.n_distance(I) })...,
+                col::from_direction((2 * I), 2 * near / box.n_distance(I))...,
                 // z component, first few are 0
                 col { (2 * box.center()[I] / box.n_distance(I))..., -2 * box.center()[N - 2] / box.n_distance(N - 2), -1 },
                 // w component

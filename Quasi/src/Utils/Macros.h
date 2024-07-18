@@ -22,12 +22,17 @@
 
 #define Q_IS_EMPTY(...) Q_CAT(__VA_OPT__(Q_NOT_), 1)
 #define Q_HAS_ARGS(...) Q_NOT(Q_IS_EMPTY(__VA_ARGS__))
+#define Q_SEQUENCE_TO_ARGS(SEQ) Q_CAT(Q_S2R_1_ SEQ, END_)
+#define Q_S2R_1_(X) Q_DEFER(Q_COMMA)() X Q_S2R_2_
+#define Q_S2R_2_(X) Q_DEFER(Q_COMMA)() X Q_S2R_1_
+#define Q_S2R_1_END_
+#define Q_S2R_2_END_
 
-#define Q_EXPAND(...) __EXPAND1__(__EXPAND1__(__EXPAND1__(__EXPAND1__(__VA_ARGS__))))
-#define __EXPAND1__(...) __EXPAND2__(__EXPAND2__(__EXPAND2__(__EXPAND2__(__VA_ARGS__)))) // NOLINT(clang-diagnostic-reserved-macro-identifier, bugprone-reserved-identifier)
-#define __EXPAND2__(...) __EXPAND3__(__EXPAND3__(__EXPAND3__(__EXPAND3__(__VA_ARGS__)))) // NOLINT(clang-diagnostic-reserved-macro-identifier, bugprone-reserved-identifier)
-#define __EXPAND3__(...) __EXPAND4__(__EXPAND4__(__EXPAND4__(__EXPAND4__(__VA_ARGS__)))) // NOLINT(clang-diagnostic-reserved-macro-identifier, bugprone-reserved-identifier)
-#define __EXPAND4__(...) __VA_ARGS__ // NOLINT(clang-diagnostic-reserved-macro-identifier, bugprone-reserved-identifier)
+#define Q_EXPAND(...)   Q_EXPAND1_(Q_EXPAND1_(Q_EXPAND1_(Q_EXPAND1_(__VA_ARGS__))))
+#define Q_EXPAND1_(...) Q_EXPAND2_(Q_EXPAND2_(Q_EXPAND2_(Q_EXPAND2_(__VA_ARGS__)))) // NOLINT(clang-diagnostic-reserved-macro-identifier, bugprone-reserved-identifier)
+#define Q_EXPAND2_(...) Q_EXPAND3_(Q_EXPAND3_(Q_EXPAND3_(Q_EXPAND3_(__VA_ARGS__)))) // NOLINT(clang-diagnostic-reserved-macro-identifier, bugprone-reserved-identifier)
+#define Q_EXPAND3_(...) Q_EXPAND4_(Q_EXPAND4_(Q_EXPAND4_(Q_EXPAND4_(__VA_ARGS__)))) // NOLINT(clang-diagnostic-reserved-macro-identifier, bugprone-reserved-identifier)
+#define Q_EXPAND4_(...) __VA_ARGS__ // NOLINT(clang-diagnostic-reserved-macro-identifier, bugprone-reserved-identifier)
 
 #define Q_INTERNAL_TOSTR(...) #__VA_ARGS__
 #define Q_TOSTR(...) Q_INTERNAL_TOSTR(__VA_ARGS__)
@@ -40,3 +45,9 @@
 
 #define Q_STRLIT_LEN(STR) sizeof(STR) - 1
 #define Q_GETTER_MUT(FN, ...) (decltype(this->FN(__VA_ARGS__)))((const std::remove_pointer_t<decltype(this)>*)this)->FN(__VA_ARGS__)
+
+#ifdef __COUNTER__
+#define Q_COUNTER() __COUNTER__
+#else
+#error "__COUNTER__" Macro Not Supported!
+#endif

@@ -2,8 +2,7 @@
 #include <bitset>
 #include <queue>
 
-#include "Utils/Enum.h"
-#include "Utils/ref.h"
+#include "Utils/Ref.h"
 
 struct GLFWwindow;
 
@@ -13,7 +12,7 @@ namespace Quasi::Graphics {
 
 namespace Quasi::IO {
     // DO NOT CHANGE ORDER!
-    enum class Key : int {
+    enum Key {
         UNKNOWN = -1,
 
         // CHARACTER
@@ -66,17 +65,15 @@ namespace Quasi::IO {
 
         LAST = MENU
     };
-    Q_IMPL_ENUM_OPERATORS(Key);
 
-    enum class ModifierKey {
-        SHIFT     = 1 << 0,
-        CONTROL   = 1 << 1,
-        ALT       = 1 << 2,
-        SUPER     = 1 << 3,
-        CAPS_LOCK = 1 << 4,
-        NUM_LOCK  = 1 << 5,
+    enum ModifierKey {
+        M_SHIFT     = 1 << 0,
+        M_CONTROL   = 1 << 1,
+        M_ALT       = 1 << 2,
+        M_SUPER     = 1 << 3,
+        M_CAPS_LOCK = 1 << 4,
+        M_NUM_LOCK  = 1 << 5,
     };
-    Q_IMPL_ENUM_OPERATORS(ModifierKey);
 
     // TODO: this v
     // enum class KeyType : int {

@@ -4,6 +4,7 @@
 #include <format>
 #include <algorithm>
 
+#include "Match.h"
 
 namespace Quasi::Text {
     bool RichString::Matches(IterOf<Str> iter, IterOf<Str> end, Str matchExpr) {
@@ -19,11 +20,6 @@ namespace Quasi::Text {
         while (iter != end && !Matches(iter, end, matchExpr)) ++iter;
         return iter;
     }
-
-    uint RichString::SizeOfStyle(Style s) { return (uint)((s & 127) >> 4); }
-    bool RichString::IsSwitch(Style s) { return s < 9; }
-    bool RichString::IsState(Style s, bool state) { return (bool)(s & Style::SWITCH) != state; }
-    RichString::Style RichString::SetState(Style s, bool state) { return s & 127 | (!state << 7); }
     
     RichString RichString::ParseMarkdown(Str markdown) {
         // *           (N)-> IS SPECIAL CHAR ----IS WHITESPACE ------> [ {V} IS '*' (N)               (Y)TOGGLE BOLD
@@ -178,13 +174,13 @@ namespace Quasi::Text {
 
     void RichString::AddTag(Style s, IList<byte> data, int off) {
         rawString.insert(rawString.end() + off, DELIMITER);
-        stylings.push_back((byte)s);
+        stylings.push_back((byte)s.Ord());
         for (byte byte : data) stylings.push_back(byte);
     }
 
     void RichString::AddTag(Style s, bool state, int off) {
         rawString.insert(rawString.end() + off, DELIMITER);
-        stylings.push_back((byte)((state ? 0 : (byte)Style::SWITCH) | s));
+        stylings.push_back((byte)(s + !state).Ord()); // off is encoded as the next enum val
     }
 
     uint RichString::Lines() const {
@@ -199,15 +195,15 @@ namespace Quasi::Text {
         for (auto it = rawString.begin(); it != rawString.end(); ++it) {
             if (*it == DELIMITER) {
                 debug += Str { lastSpan, it };
-                const Style s = (Style)*stylePtr;
-                switch (SizeOfStyle(s)) {
-                    case 0: debug += StyleToStr(s); break;
-                    case 1: debug += std::vformat(StyleToStr(s), std::make_format_args(stylePtr[1])); break;
-                    case 2: debug += std::vformat(StyleToStr(s), std::make_format_args(stylePtr[1], stylePtr[2])); break;
-                    case 4: debug += std::vformat(StyleToStr(s), std::make_format_args(stylePtr[1], stylePtr[2], stylePtr[3], stylePtr[4])); break;
+                const Style s = Style::FromOrd(*stylePtr);
+                switch (s->byteEncodingSize) {
+                    case 0: debug += s->debugStr; break;
+                    case 1: debug += std::vformat(s->debugStr, std::make_format_args(stylePtr[1])); break;
+                    case 2: debug += std::vformat(s->debugStr, std::make_format_args(stylePtr[1], stylePtr[2])); break;
+                    case 4: debug += std::vformat(s->debugStr, std::make_format_args(stylePtr[1], stylePtr[2], stylePtr[3], stylePtr[4])); break;
                     default: break;
                 }
-                stylePtr += SizeOfStyle(s) + 1;
+                stylePtr += s->byteEncodingSize + 1;
                 lastSpan = it + 1;
             }
         }
@@ -223,23 +219,25 @@ namespace Quasi::Text {
     }
 
     void RichString::StyleState::AddState(Style s, const byte* data) {
-        switch (SizeOfStyle(s)) {
-            case 0:
-                styleFlags = (byte)(styleFlags & ~(1 << (s - 1)) | (IsState(s, true) << s - 1));
+        switch (s->byteEncodingSize) {
+            case 0: {
+                const u32 i = s.Ord() / 2;
+                styleFlags = (byte)(styleFlags & ~(1 << i) | (s->isOn << i));
+            }
             return;
-            case 1: switch (s) {  // NOLINT(clang-diagnostic-switch-enum)
-                case Style::FONT_TYPE: font = *data; break;
-                case Style::CODE_BLOCK: codeLang = *data; break;
-                case Style::ALIGNMENT: alignment = *data; break;
-                default:;
+            case 1: match (s) {
+                when(== Style::FONT_TYPE)  { font = *data; }
+                when(== Style::CODE_BLOCK) { codeLang = *data; }
+                when(== Style::ALIGNMENT)  { alignment = *data; }
+                otherwise {}
             }
             return;
             case 2:
                 if (s == Style::FONT_SIZE) fontSizeP64 = (short)((data[0] << 8) + data[1]); break;
-            case 4: switch (s) {  // NOLINT(clang-diagnostic-switch-enum)
-                case Style::TEXT_COLOR:      std::copy_n(data, 4, color);     break;
-                case Style::HIGHLIGHT_COLOR: std::copy_n(data, 4, highlight); break;
-                default:;
+            case 4: match (s) {
+                when(== Style::TEXT_COLOR)      { std::copy_n(data, 4, color);     }
+                when(== Style::HIGHLIGHT_COLOR) { std::copy_n(data, 4, highlight); }
+                otherwise;
             }
             default:;
         }
@@ -253,8 +251,9 @@ namespace Quasi::Text {
         ++iter;
         for (; *iter == DELIMITER; ++iter) {
             const byte* begin = str->stylings.data() + styleOffset;
-            currentState.AddState((Style)*begin, begin + 1);
-            styleOffset += SizeOfStyle((Style)*begin) + 1;
+            const Style s = Style::FromOrd(*begin);
+            currentState.AddState(s, begin + 1);
+            styleOffset += s->byteEncodingSize + 1;
         }
         return *this;
     }

@@ -19,7 +19,7 @@ set(HEADER_FILES
     src/Graphics/GLs/GLTypeID.h
     src/Graphics/GLs/RenderBuffer.h
 
-        src/Graphics/Graphicals/GraphicsDevice.h
+    src/Graphics/Graphicals/GraphicsDevice.h
     src/Graphics/Graphicals/Mesh.h
     src/Graphics/Graphicals/Mesh.tpp
     src/Graphics/Graphicals/RenderData.h
@@ -50,14 +50,12 @@ set(HEADER_FILES
     src/Graphics/Utils/Meshes/Stadium.h
     src/Graphics/Utils/Extension/ImGuiExt.h
 
-        src/IO/IO.h
+    src/IO/IO.h
     src/IO/Keyboard.h
     src/IO/Mouse.h
     src/IO/TimeType.h
 
     src/Math/Constants.h
-    src/Math/Corner.h
-    src/Math/Direction.h
     src/Math/Matrix.h
     src/Math/Rect.h
     src/Math/Vector.h
@@ -82,6 +80,7 @@ set(HEADER_FILES
     src/Utils/RichString.h
     src/Utils/Type.h
     src/Utils/ArenaAllocator.h
+    src/Utils/Match.h
 
     src/vendor/imgui/imconfig.h
     src/vendor/imgui/imgui.h
@@ -102,7 +101,7 @@ set(SOURCE_FILES
 
     src/Graphics/GLs/FrameBuffer.cpp
     src/Graphics/GLs/GLDebug.cpp
-        src/Graphics/GLs/RenderBuffer.cpp
+    src/Graphics/GLs/RenderBuffer.cpp
     src/Graphics/GLs/IndexBuffer.cpp
     src/Graphics/GLs/VertexBuffer.cpp
     src/Graphics/GLs/VertexArray.cpp
@@ -189,6 +188,7 @@ target_include_directories(${PROJECT_NAME}
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC
     GLEW_STATIC
+    Q_EXT_MATCH_SYNTAX # for cool syntax features for pattern matching
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC

@@ -34,14 +34,14 @@ namespace Quasi::Debug {
     }
 
     String Logger::FmtLog(Str log, Severity severity, DateTime time, const SourceLoc& fileLoc) {
-        ConsoleColor scol = SeverityColor(severity);
+        ConsoleColor scol = severity->color;
         return std::format(
             "{}[{:%Y-%m-%d %T}]{} {}> {}{:<8} {:<{}} {}{}\n",
-            scol, std::chrono::current_zone()->to_local(time), ConsoleColor::RESET, name,
-            scol, std::format("[{}]:", SeverityName(severity)),
+            scol, std::chrono::current_zone()->to_local(time), RESET, name,
+            scol, std::format("[{}]:", severity->name),
             FmtSourceLoc(fileLoc), lPad,
             log,
-            ConsoleColor::RESET
+            RESET
         );
     }
 
@@ -83,7 +83,7 @@ namespace Quasi::Debug {
     }
 
     void Logger::Write(OutStream& out, Severity filter) {
-        filter = filter == Severity::NEVER ? filterLevel : filter;
+        filter = filter == Severity::NONE ? filterLevel : filter;
         for (const LogEntry& entry : logs) {
             if (Overrides(filter, entry.severity))
                 out << FmtLog(entry);
