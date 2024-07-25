@@ -25,7 +25,6 @@ namespace Quasi::Graphics::MeshUtils {
             using namespace Math;
             const float LATITUDE_SECT = HALF_PI / (float)opt.sections.y, LONGITUDE_SECT = TAU / (float)opt.sections.x;
 
-
             const fVector3 Y = (opt.start - opt.end).norm();
             // the { y, -x, 0 } is absolutely arbitrary, just need a nonzero vec thats also not the x axis
             const fVector3 X = fVector3 { Y.y, -Y.x, 0 }.norm();
@@ -37,7 +36,6 @@ namespace Quasi::Graphics::MeshUtils {
                        std::cos(yaw) * std::cos(pitch) * Z;
             };
 
-            u32 lastLoopIndex = 0;
             for (u32 hemisphere = 0; hemisphere < 2; ++hemisphere) { // 0 is top, 1 is bottom
                 auto meshp = mesh.NewBatch();
 
@@ -65,15 +63,14 @@ namespace Quasi::Graphics::MeshUtils {
                         }
                     }
                 }
-                lastLoopIndex = lastLoopIndex == 0 ? mesh.vertices.size() : lastLoopIndex;
             }
+            const u32 lastLoopIndex = 1 + opt.sections.y * opt.sections.x;
 
             // loop cut
-            const u32 iOffset = mesh.vertices.size();
             for (u32 x = 1; x <= opt.sections.x; ++x) {
                 const u32 prevX = x == 1 ? opt.sections.x : x - 1;
-                mesh.PushIndex(lastLoopIndex - prevX, iOffset - prevX, lastLoopIndex - x);
-                mesh.PushIndex(lastLoopIndex - x,     iOffset - prevX, iOffset       - x);
+                mesh.PushIndex(lastLoopIndex - prevX, 2 * lastLoopIndex - prevX,     lastLoopIndex - x);
+                mesh.PushIndex(lastLoopIndex - x,     2 * lastLoopIndex - prevX, 2 * lastLoopIndex - x);
             }
         }
     };

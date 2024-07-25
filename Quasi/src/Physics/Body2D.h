@@ -2,7 +2,7 @@
 #include "Collision2D.h"
 
 #include "Shape2D.h"
-#include "Transform2D.h"
+#include "PhysicsTransform2D.h"
 #include "Vector.h"
 
 namespace Quasi::Physics2D {
@@ -34,8 +34,8 @@ namespace Quasi::Physics2D {
         void Stop() { velocity = 0; }
 
         [[nodiscard]] Collision::Event CollidesWith(const Body& target) const;
-        [[nodiscard]] Collision::Event CollidesWith(const Shape& target, const Transform& t) const;
-        [[nodiscard]] Transform GetTransform() const;
+        [[nodiscard]] Collision::Event CollidesWith(const Shape& target, const PhysicsTransform& t) const;
+        [[nodiscard]] PhysicsTransform GetTransform() const;
 
         void Update(float dt);
 

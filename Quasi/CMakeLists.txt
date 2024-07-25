@@ -65,13 +65,13 @@ set(HEADER_FILES
     src/Math/Complex.h
     src/Math/Quaternion.h
     src/Math/Transform2D.h
+    src/Math/Transform3D.h
 
     src/Physics/World2D.h
     src/Physics/Shape2D.h
     src/Physics/Body2D.h
     src/Physics/Collision2D.h
-    src/Physics/Transform2D.h
-    src/Math/Transform3D.h
+    src/Physics/PhysicsTransform2D.h
 
     src/Utils/Enum.h
     src/Utils/Text.h
@@ -141,7 +141,7 @@ set(SOURCE_FILES
     src/Physics/Shape2D.cpp
     src/Physics/Body2D.cpp
     src/Physics/Collision2D.cpp
-    src/Physics/Transform2D.cpp
+    src/Physics/PhysicsTransform2D.cpp
 
     src/Utils/RichString.cpp
     src/Utils/StringList.cpp

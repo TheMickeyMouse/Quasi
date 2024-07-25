@@ -54,6 +54,7 @@ namespace Quasi::Graphics::MeshUtils {
                 return maxI - (maxK - k) / (2 * rightMostbit);
             };
 
+            u32 vi = (opt.subdivisions > 0) ? 6 : 4;
             for (u32 i = 2; i <= opt.subdivisions; ++i) {
                 const u32 dist = nPoints >> i;
                 for (u32 k = dist; k < nPoints; k += dist * 2) {
@@ -62,8 +63,9 @@ namespace Quasi::Graphics::MeshUtils {
                     meshp.PushV(f(MData { opt.start + Y * cos + X * sin }));
                     meshp.PushV(f(MData { opt.end   + Y * cos - X * sin }));
                     const u32 from = k - dist, to = k + dist;
-                    meshp.PushI(mapK2Vi(from) * 2,     mesh.vertices.size() - 2, mapK2Vi(to) * 2);
-                    meshp.PushI(mapK2Vi(from) * 2 + 1, mesh.vertices.size() - 1, mapK2Vi(to) * 2 + 1);
+                    meshp.PushI(mapK2Vi(from) * 2,     vi + 0, mapK2Vi(to) * 2);
+                    meshp.PushI(mapK2Vi(from) * 2 + 1, vi + 1, mapK2Vi(to) * 2 + 1);
+                    vi += 2;
                 }
             }
         }

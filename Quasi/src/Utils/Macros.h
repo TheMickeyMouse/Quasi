@@ -40,6 +40,8 @@
 #define Q_DO(...) do { __VA_ARGS__ } while (false)
 
 #define Q_COMMA() ,
+#define Q_LPAREN() (
+#define Q_RPAREN() )
 #define Q_EMPTY()
 #define Q_DEFER(id) id Q_EMPTY()
 

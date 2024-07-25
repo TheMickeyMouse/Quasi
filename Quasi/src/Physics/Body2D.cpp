@@ -7,11 +7,11 @@ namespace Quasi::Physics2D {
         return CollidesWith(*target.shape, target.GetTransform());
     }
 
-    Collision::Event Body::CollidesWith(const Shape& target, const Transform& t) const {
-        return Collision::Between(*shape, GetTransform(), target, t);
+    Collision::Event Body::CollidesWith(const Shape& target, const PhysicsTransform& t) const {
+        return Collision::CollideShapeDyn(*shape, GetTransform(), target, t);
     }
 
-    Transform Body::GetTransform() const {
+    PhysicsTransform Body::GetTransform() const {
         return { position };
     }
 

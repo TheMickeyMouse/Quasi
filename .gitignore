@@ -7,5 +7,5 @@ OpenGL/src/vendor/imgui/backends
 OpenGL/src/vendor/imgui/docs
 .idea/
 .vs/
-cmake-build-debug-mingw/
-cmake-build-release-mingw/
+cmake-build-debug/
+cmake-build-release/

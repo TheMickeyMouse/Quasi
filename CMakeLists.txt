@@ -5,6 +5,9 @@ project(Quasi CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_COMPILER_ID "clang")
 
+option(ADDITIONAL_FLAGS "additional cmd flags for the compiler" "")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MY_FLAGS}")
+
 if(NOT CMAKE_PLATFORM_NAME)
     set(CMAKE_PLATFORM_NAME "x64")
 endif()
