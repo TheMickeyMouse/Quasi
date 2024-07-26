@@ -31,6 +31,9 @@ namespace Quasi::Physics2D {
             : position(p), mass(m), type(type), world(world), shape(shape) {}
 
         void AddVelocity(const Math::fVector2& vel) { velocity += vel; }
+        void AddAcceleration(const Math::fVector2& acc) { acceleration += acc; }
+        void AddMomentum(const Math::fVector2& newtonSeconds);
+        void AddForce(const Math::fVector2& newton);
         void Stop() { velocity = 0; }
 
         [[nodiscard]] Collision::Event CollidesWith(const Body& target) const;
@@ -45,6 +48,8 @@ namespace Quasi::Physics2D {
         void Enable()  { enabled = true; }
         void Disable() { enabled = false; }
 
+        [[nodiscard]] Math::fVector2 CenterOfMass() const;
+        void ShiftOriginToMassCenter();
         [[nodiscard]] Math::fRect2D ComputeBoundingBox() const;
 
         friend class World;

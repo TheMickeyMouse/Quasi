@@ -1,9 +1,13 @@
 #pragma once
-#include "Geometry.h"
+#include "PhysicsTransform2D.h"
 #include "Rect.h"
 #include "Utils/ArenaAllocator.h"
 
 namespace Quasi::Physics2D {
+    namespace Collision {
+        struct Event;
+    }
+
     enum ShapeType { CIRCLE, EDGE, TRIANGLE, MAX };
 
     class Shape {
@@ -14,6 +18,8 @@ namespace Quasi::Physics2D {
         [[nodiscard]] virtual Math::fRect2D ComputeBoundingBox() const = 0;
         [[nodiscard]] virtual Math::fVector2 CenterOfMass() const = 0;
         [[nodiscard]] virtual ShapeType TypeIndex() const = 0;
+
+        [[nodiscard]] Collision::Event CollideWith(const PhysicsTransform& xf, const Shape& other, const PhysicsTransform& xfOther) const;
     };
 
     template <class S, ShapeType T> class SmartShape : public Shape {

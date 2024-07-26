@@ -1,6 +1,11 @@
 #include "Shape2D.h"
 
+#include "Collision2D.h"
+
 namespace Quasi::Physics2D {
+    Collision::Event Shape::CollideWith(const PhysicsTransform& xf, const Shape& other, const PhysicsTransform& xfOther) const {
+        return Collision::CollideShapeDyn(*this, xf, other, xfOther);
+    }
     // circ
 
     float CircleShape::ComputeArea() const {

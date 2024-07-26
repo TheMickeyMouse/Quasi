@@ -1,6 +1,7 @@
 #include "Collision2D.h"
 
 #include "Body2D.h"
+#include "Geometry.h"
 #include "Utils/Macros.h"
 
 namespace Quasi::Physics2D::Collision {
@@ -10,16 +11,26 @@ namespace Quasi::Physics2D::Collision {
 #define SHAPE_PAIRS(M, ...) Q_UNARY(SHAPES(PAIR_HELPER, M, __VA_ARGS__))
 
     Event CollideShapeDyn(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
-#define ARRAY_SET_EACH(Y, X) EraseCollisionPtr<X, Y>,
-#define ARRAY_SET(X, _) { Q_DEFER(Q_CAT)(SHAPE, S)(ARRAY_SET_EACH, X) },
+#define ARRAY_SET_EACH(Y, X, Z) Erase##Z##Ptr<X, Y>,
+#define ARRAY_SET(X, Z) { Q_DEFER(Q_CAT)(SHAPE, S)(ARRAY_SET_EACH, X, Z) },
         constexpr Event::CollisionCheckFunc COLLISION_LOOKUP_TABLE[MAX][MAX] = {
-            Q_UNARY(SHAPES(ARRAY_SET))
+            Q_UNARY(SHAPES(ARRAY_SET, Collision))
         };
 
         const u32 y1 = s1.TypeIndex(), y2 = s2.TypeIndex();
         return COLLISION_LOOKUP_TABLE[y1][y2](s1, xf1, s2, xf2);
     }
 
+    bool OverlapShapeDyn(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
+        constexpr Event::OverlapCheckFunc COLLISION_LOOKUP_TABLE[MAX][MAX] = {
+            Q_UNARY(SHAPES(ARRAY_SET, Overlap))
+        };
+
+        const u32 y1 = s1.TypeIndex(), y2 = s2.TypeIndex();
+        return COLLISION_LOOKUP_TABLE[y1][y2](s1, xf1, s2, xf2);
+    }
+
+#pragma region Collision Checks
 #define COLLIDE_SHAPE_DEFINE(S1, S2) \
     template <> \
     Event CollideShape<S1, S2>(const S1& s1, const PhysicsTransform& xf1, const S2& s2, const PhysicsTransform& xf2)
@@ -435,9 +446,79 @@ namespace Quasi::Physics2D::Collision {
             default: return Event::None;
         }
     }
+#pragma endregion
 
-#define FN_INSTANTIATE(X, Y, _Z) template Event CollideShape<X, Y>(const X&, const PhysicsTransform&, const Y&, const PhysicsTransform&);
-    SHAPE_PAIRS(FN_INSTANTIATE)
+#pragma region Overlap Checks
+#define OVERLAP_SHAPE_DEFINE(S1, S2)\
+    template <> \
+    bool OverlapShape<S1, S2>(const S1& s1, const PhysicsTransform& xf1, const S2& s2, const PhysicsTransform& xf2)
+
+    OVERLAP_SHAPE_DEFINE(CircleShape, CircleShape) {
+        return xf1.position.in_range(xf2.position, s1.radius + s2.radius);
+    }
+
+    OVERLAP_SHAPE_DEFINE(CircleShape, EdgeShape) {
+        return Math::fLine2D { xf2 * s2.start, xf2 * s2.end }
+              .nearest_to(xf1.position)
+              .in_range(xf1.position, s1.radius + s2.radius);
+    }
+
+    OVERLAP_SHAPE_DEFINE(EdgeShape, EdgeShape) {
+        const auto [p1, p2] = Math::fLine2D { xf1 * s1.start, xf1 * s1.end }.nearest_between({ xf2 * s2.start, xf2 * s2.end });
+        return p1.in_range(p2, s1.radius + s2.radius);
+    }
+
+    OVERLAP_SHAPE_DEFINE(CircleShape, TriangleShape) {
+        const Math::fVector2& center = xf1.position;
+        const Math::fTriangle2D tri = { xf2 * s2.a, xf2 * s2.b, xf2 * s2.c };
+        if (center.in_range(tri.p1, s1.radius)) return true;
+        if (center.in_range(tri.p2, s1.radius)) return true;
+        if (center.in_range(tri.p3, s1.radius)) return true;
+        if (tri.contains(center)) return true;
+        if (center.in_range(tri.line(0).nearest_to(center), s1.radius)) return true;
+        if (center.in_range(tri.line(1).nearest_to(center), s1.radius)) return true;
+        if (center.in_range(tri.line(2).nearest_to(center), s1.radius)) return true;
+        return false;
+    }
+
+    OVERLAP_SHAPE_DEFINE(EdgeShape, TriangleShape) {
+        const Math::fLine2D line = { xf1 * s1.start, xf1 * s1.end };
+        const Math::fTriangle2D tri = { xf2 * s2.a, xf2 * s2.b, xf2 * s2.c };
+        if (line.nearest_to(tri.p1).in_range(tri.p1, s1.radius)) return true;
+        if (line.nearest_to(tri.p2).in_range(tri.p2, s1.radius)) return true;
+        if (line.nearest_to(tri.p3).in_range(tri.p3, s1.radius)) return true;
+        if (const auto [l, p] = line.nearest_between(tri.line(0)); l.in_range(p, s1.radius)) return true;
+        if (const auto [l, p] = line.nearest_between(tri.line(1)); l.in_range(p, s1.radius)) return true;
+        if (const auto [l, p] = line.nearest_between(tri.line(2)); l.in_range(p, s1.radius)) return true;
+        if (tri.contains(line.start)) return true;
+        return false;
+    }
+
+    OVERLAP_SHAPE_DEFINE(TriangleShape, TriangleShape) {
+        const Math::fTriangle2D tri1 = { xf1 * s1.a, xf1 * s1.b, xf1 * s1.c },
+                                tri2 = { xf2 * s2.a, xf2 * s2.b, xf2 * s2.c };
+        if (tri1.line(0).intersects(tri2.line(0))) return true;
+        if (tri1.line(0).intersects(tri2.line(1))) return true;
+        if (tri1.line(0).intersects(tri2.line(2))) return true;
+        if (tri1.line(1).intersects(tri2.line(0))) return true;
+        if (tri1.line(1).intersects(tri2.line(1))) return true;
+        if (tri1.line(1).intersects(tri2.line(2))) return true;
+        if (tri1.line(2).intersects(tri2.line(0))) return true;
+        if (tri1.line(2).intersects(tri2.line(1))) return true;
+        if (tri1.line(2).intersects(tri2.line(2))) return true;
+        if (tri1.contains(tri2.p1)) return true;
+        if (tri1.contains(tri2.p2)) return true;
+        if (tri1.contains(tri2.p3)) return true;
+        if (tri2.contains(tri1.p1)) return true;
+        if (tri2.contains(tri1.p2)) return true;
+        if (tri2.contains(tri1.p3)) return true;
+        return false;
+    }
+#pragma endregion
+
+#define FN_INSTANTIATE(X, Y, FNAME) template FNAME<X, Y>(const X&, const PhysicsTransform&, const Y&, const PhysicsTransform&);
+    SHAPE_PAIRS(FN_INSTANTIATE, Event CollideShape)
+    SHAPE_PAIRS(FN_INSTANTIATE, bool  OverlapShape)
 #undef FN_INSTANTIATE
 
     void StaticResolve(Body& body, Body& target, const Event& cEvent) {

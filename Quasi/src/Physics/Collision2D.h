@@ -29,21 +29,33 @@ namespace Quasi::Physics2D::Collision {
         static const Event None;
 
         using CollisionCheckFunc = FnPtr<Event, const Shape&, const PhysicsTransform&, const Shape&, const PhysicsTransform&>;
+        using OverlapCheckFunc   = FnPtr<bool,  const Shape&, const PhysicsTransform&, const Shape&, const PhysicsTransform&>;
     };
     inline const Event Event::None = {};
 
     Event CollideShapeDyn(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2);
-
     template <IShape T, IShape U> requires (T::Index <= U::Index)
     Event CollideShape(const T& shape1, const PhysicsTransform& xf1, const U& shape2, const PhysicsTransform& xf2);
     template <IShape T, IShape U> requires (T::Index > U::Index)
     Event CollideShape(const T& shape1, const PhysicsTransform& xf1, const U& shape2, const PhysicsTransform& xf2) {
         return CollideShape(shape2, xf2, shape1, xf1).Swap();
     }
-
     template <IShape T, IShape U>
     Event EraseCollisionPtr(const Shape& s1, const PhysicsTransform& x1, const Shape& s2, const PhysicsTransform& x2) {
         return CollideShape<T, U>(dynamic_cast<const T&>(s1), x1, dynamic_cast<const U&>(s2), x2);
+    }
+
+    bool OverlapShapeDyn(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2);
+    template <IShape T, IShape U> requires (T::Index <= U::Index)
+    bool OverlapShape(const T& shape1, const PhysicsTransform& xf1, const U& shape2, const PhysicsTransform& xf2);
+    template <IShape T, IShape U> requires (T::Index > U::Index)
+    bool OverlapShape(const T& shape1, const PhysicsTransform& xf1, const U& shape2, const PhysicsTransform& xf2) {
+        return OverlapShape(shape2, xf2, shape1, xf1);
+    }
+
+    template <IShape T, IShape U>
+    bool EraseOverlapPtr(const Shape& s1, const PhysicsTransform& x1, const Shape& s2, const PhysicsTransform& x2) {
+        return OverlapShape<T, U>(dynamic_cast<const T&>(s1), x1, dynamic_cast<const U&>(s2), x2);
     }
 
     void StaticResolve (Body& body, Body& target, const Event& cEvent);
