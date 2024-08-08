@@ -8,7 +8,7 @@ namespace Quasi::Math {
     namespace details {
         template <class V> struct rect_origin_t {
             using scalar = typename V::scalar;
-            static constexpr uint dimension = V::dimension;
+            static constexpr u32 dimension = V::dimension;
             using rect_t = RectN<dimension, scalar>;
             V pos;
             [[nodiscard]] rect_t rect(const V& size) const;

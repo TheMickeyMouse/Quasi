@@ -1,6 +1,4 @@
 #pragma once
-#include <format>
-
 #include "Ref.h"
 
 namespace Quasi {
@@ -38,10 +36,3 @@ namespace Quasi {
         return Option<std::remove_cvref_t<T>> { std::forward<T>(value) };
     }
 }
-
-template <class T>
-struct std::formatter<Quasi::Option<T>> : std::formatter<Quasi::String> {
-    auto format(const Quasi::Option<T> option, format_context& ctx) const {
-        return std::formatter<Quasi::String>::format(option ? std::format("Some({})", option.value) : "None", ctx);
-    }
-};

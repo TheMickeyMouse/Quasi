@@ -1,5 +1,5 @@
 #pragma once
-#include <source_location>
+#include <charconv>
 
 #include "Type.h"
 #include "Option.h"
@@ -16,32 +16,56 @@ namespace Quasi::Text {
     String Escape(Str string);
     Option<String> Unescape(Str string);
 
-    namespace details {
-        template <class T>
-        struct parser_t {
-            static Option<T> impl(Str) { return nullptr; }
-        };
-    }
+    template <class T>
+    struct Parser {
+        static Option<T> Parse(Str) { return nullptr; }
+    };
 
     template <class T>
     Option<T> Parse(Str str) {
-        return details::parser_t<T>::impl(str);
+        return Parser<T>::Parse(str);
     }
 
     template <class N> requires std::integral<N> || std::floating_point<N>
-    struct details::parser_t<N> {
-        static Option<N> impl(Str str) {
-            N number;
-            if (auto [end, ec] = std::from_chars(str.begin(), str.end(), number);
-                ec != std::errc {} || end != str.end())
-                return nullptr;
-            return number;
+    struct Parser<N> {
+        static Option<N> Parse(Str str) {
+            if (str.empty()) return nullptr;
+            N number = 0;
+            bool negate = false;
+            if constexpr (!std::unsigned_integral<N>) {
+                if (str[0] == '-') {
+                    negate = true;
+                    str = str.substr(1);
+                } else if (str[0] == '+')
+                    str = str.substr(1);
+            } else if (str[0] == '+') {
+                str = str.substr(1);
+            }
+            if (str.empty()) return nullptr;
+
+            for (u32 i = 0; i < str.size(); ++i) {
+                if (std::isdigit(str[i])) {
+                    number *= (N)10;
+                    number += (N)(str[i] - '0');
+                } else if constexpr (std::floating_point<N>) {
+                    if (str[i] == '.') {
+                        N sub = 0, pwOfTen = (N)0.1;
+                        for (u32 j = i + 1; j < str.size(); ++j) {
+                            if (!std::isdigit(str[j])) return nullptr;
+                            sub += pwOfTen * (N)(str[j] - '0');
+                            pwOfTen *= (N)0.1;
+                        }
+                        return number + sub;
+                    }
+                } else return nullptr;
+            }
+            return negate ? -number : number;
         }
     };
 
     template <>
-    struct details::parser_t<String> {
-        static Option<String> impl(Str str) {
+    struct Parser<String> {
+        static Option<String> Parse(Str str) {
             if (str.starts_with('"') && str.ends_with('"')) {
                 return Unescape(str.substr(1, str.length() - 2));
             }
@@ -56,13 +80,13 @@ namespace Quasi::Text {
     String Quote(Str txt);
 
     namespace details {
-        template <class T> constexpr Str t() { return std::source_location::current().function_name(); }
+        template <class T> constexpr Str t() { return Q_FUNC_NAME(); }
         constexpr usize t_startIdx = t<int>().find("int");
         constexpr usize t_totalSize = t<int>().length() - Q_STRLIT_LEN("int");
         // ReSharper disable once CppStaticAssertFailure
         static_assert(t_startIdx != Str::npos, "nameof type couldn't be found");
 
-        template <auto V> constexpr Str v() { return std::source_location::current().function_name(); }
+        template <auto V> constexpr Str v() { return Q_FUNC_NAME(); }
         constexpr usize v_startIdx = v<0>().find('0');
         constexpr usize v_totalSize = v<0>().length() - 1;
         // ReSharper disable once CppStaticAssertFailure

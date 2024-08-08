@@ -67,13 +67,6 @@ namespace Quasi::Math {
         return { wxyz(), muli().wxyz(), mulj().wxyz(), mulk().wxyz() };
     }
 
-    String Quaternion::str() const {
-        return std::format("{} {} {}i {} {}j {} {}k", w,
-            x < 0 ? '-' : '+', x,
-            y < 0 ? '-' : '+', y,
-            z < 0 ? '-' : '+', z);
-    }
-
     float Quaternion::lensq() const { return w * w + x * x + y * y + z * z; }
     float Quaternion::len() const { return std::sqrt(lensq()); }
     float Quaternion::abs() const { return len(); }

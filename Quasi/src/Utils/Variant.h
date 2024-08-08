@@ -2,11 +2,15 @@
 #include <variant>
 #include "Ref.h"
 #include "Type.h"
+#include "Format.h"
 
 namespace Quasi {
     namespace details {
         template<class... Ts>
         struct overloaded : Ts... { using Ts::operator()...; };
+
+        template <class... Ts>
+        overloaded(Ts&&...) -> overloaded<Ts...>;
     }
 
     template <class... Ts>
@@ -31,5 +35,21 @@ namespace Quasi {
         template <class V>    auto Visit(V&&    visitor)       { return std::visit(std::forward<V>(visitor), v); }
         template <class... V> auto Visit(V&&... visitor) const requires (sizeof...(V) >= 2) { return std::visit(details::overloaded { std::forward<V>(visitor)... }, v); }
         template <class... V> auto Visit(V&&... visitor)       requires (sizeof...(V) >= 2) { return std::visit(details::overloaded { std::forward<V>(visitor)... }, v); }
+    };
+
+    template <class... Ts>
+    struct Text::Formatter<Variant<Ts...>> {
+        bool AddOption() { return true; }
+        void FormatTo(const Variant<Ts...>& var, StringOutput output) const {
+            var.Visit(
+                [&] (const Ts& x) {
+                    FormatOnto(output,
+                        "{} {{ {} }}",
+                        Text::TypeName<Ts>(),
+                        x
+                    );
+                }...
+            );
+        }
     };
 }

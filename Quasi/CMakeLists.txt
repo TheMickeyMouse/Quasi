@@ -93,6 +93,7 @@ set(HEADER_FILES
     src/vendor/imgui/imgui_stdlib.h
 
     src/vendor/stb_image/stb_image.h
+        src/Utils/Format.h
 )
 source_group("Header Files" FILES ${HEADER_FILES})
 
@@ -158,6 +159,7 @@ set(SOURCE_FILES
     src/vendor/imgui/imgui_stdlib.cpp
 
     src/vendor/stb_image/stb_image.cpp
+        src/Utils/Format.cpp
 )
 source_group("Source Files" FILES ${SOURCE_FILES})
 
@@ -168,10 +170,12 @@ set(ALL_FILES
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})
 
+set(APPLE 1)
+find_package(OpenGL REQUIRED)
 target_include_directories(${PROJECT_NAME}
         PRIVATE
     ${PROJECT_SOURCE_DIR}/Dependencies/GLFW/include/
-    ${PROJECT_SOURCE_DIR}/Dependencies/GLEW/include/
+    # /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/System/Library/Frameworks/
         PUBLIC
     src/
     src/Debug/
@@ -184,20 +188,18 @@ target_include_directories(${PROJECT_NAME}
     src/vendor/imgui/
     src/vendor/
     src/vendor/freetype/
+    ${PROJECT_SOURCE_DIR}/OpenGLPort/
 )
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC
-    GLEW_STATIC
     Q_EXT_MATCH_SYNTAX # for cool syntax features for pattern matching
 )
 
+# target_link_options(${PROJECT_NAME} PUBLIC -Wl,-F,/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/System/Library/Frameworks,-framework,OpenGL)
 target_link_libraries(${PROJECT_NAME} PUBLIC
-    C:/Windows/System32/opengl32.dll
-    # glew32.dll
-    ${CMAKE_SOURCE_DIR}/Dependencies/GLEW/lib/libglew32.a
-    # libglew32.dll.a
-    # glfw3.dll
+    ${CMAKE_SOURCE_DIR}/cmake-build-glport/OpenGLPort/libOpenGLPort.a
+    # opengl32.dll
     ${CMAKE_SOURCE_DIR}/Dependencies/GLFW/lib-mingw-w64/libglfw3.a
-    # libglfw3dll.a
     ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/freetype/libfreetype.a
 )
+# execute_process()

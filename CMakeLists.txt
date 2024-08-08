@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.26.0 FATAL_ERROR)
 
+set(CMAKE_C_COMPILER_WORKS 1)
+set(CMAKE_CXX_COMPILER_WORKS 1)
 project(Quasi CXX)
+set(APPLE 0)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_COMPILER_ID "clang")
 
 option(ADDITIONAL_FLAGS "additional cmd flags for the compiler" "")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MY_FLAGS}")
@@ -18,6 +20,6 @@ if(NOT ("${CMAKE_PLATFORM_NAME}" STREQUAL "x64"
     message(FATAL_ERROR "${CMAKE_PLATFORM_NAME} arch is not supported!")
 endif()
 
+add_subdirectory(OpenGLPort)
 add_subdirectory(Quasi)
 add_subdirectory(Testing)
-

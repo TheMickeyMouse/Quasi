@@ -1,5 +1,5 @@
 ﻿// because gl.h cant be included before glew.h, weird ordering
-#include <GL/glew.h>
+#include <glp.h>
 #include <GLFW/glfw3.h>
 
 #include "Render.h"
@@ -287,11 +287,11 @@ namespace Quasi::Graphics {
         glfwSwapInterval(1);
 
         /* SETTING UP GLEW W/ GLEWINIT*/
-        if (glewInit() != GLEW_OK) {
+        if (GL::InitGLEW() != 0) {
             GLLogger().Error("GLEW failed to initialize");
         }
 
-        GLLogger().Info("{}", (const char*)glGetString(GL_VERSION));
+        GLLogger().Info("{}", (const char*)GL::GetString(GL::VERSION));
 
         Render::EnableBlend();
         Render::UseBlendFunc(BlendFactor::SRC_ALPHA, BlendFactor::INVERT_SRC_ALPHA);
@@ -308,7 +308,7 @@ namespace Quasi::Graphics {
         ImGui::StyleColorsDark();
 
         ImGui_ImplGlfw_InitForOpenGL(window, true);
-        ImGui_ImplOpenGL3_Init((const char*)glGetString(GL_NUM_SHADING_LANGUAGE_VERSIONS));
+        ImGui_ImplOpenGL3_Init((const char*)GL::GetString(GL::NUM_SHADING_LANGUAGE_VERSIONS));
         
         return GraphicsDevice(window, winSize);
     }

@@ -23,12 +23,12 @@ namespace Quasi::Text {
             STYLE_SWITCH(SUPERSCRIPT,   "sup")
             STYLE_SWITCH(BLOCKQUOTE,    "bq")
             STYLE_SWITCH(ALT_TEXT,      "*alt")
-            (FONT_TYPE,       (1, "<*font=\"{}\">"))
-            (CODE_BLOCK,      (1, "<code *lang=\"{}\">"))
-            (ALIGNMENT,       (1, "<*align={}>"))
-            (FONT_SIZE,       (2, "<*size={}>"))
-            (TEXT_COLOR,      (4, "<*color={}>"))
-            (HIGHLIGHT_COLOR, (4, "<*hcolor={}>")),
+            (FONT_TYPE,       (1, "<*font=\"{}\">",      false, false))
+            (CODE_BLOCK,      (1, "<code *lang=\"{}\">", false, false))
+            (ALIGNMENT,       (1, "<*align={}>",         false, false))
+            (FONT_SIZE,       (2, "<*size={}>",          false, false))
+            (TEXT_COLOR,      (4, "<*color={}>",         false, false))
+            (HIGHLIGHT_COLOR, (4, "<*hcolor={}>",        false, false)),
         ARITH)
     };
 #undef STYLE_SWITCH

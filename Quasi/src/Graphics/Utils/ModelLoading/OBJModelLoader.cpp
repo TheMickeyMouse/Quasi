@@ -150,10 +150,10 @@ namespace Quasi::Graphics {
 #define MATCH_PROP(T, S, P) else if (const auto val_##T = p.As<T>()) { ss += S; ss += ": "; const auto& $ = val_##T; ss += P; }
         for (const OBJProperty& p : properties) {
             if constexpr (false) {}
-            MATCH_PROP(Vertex,       "v",  $->pos.str())
-            MATCH_PROP(VertexTex,    "vt", $->tex.str())
-            MATCH_PROP(VertexNormal, "vn", $->nrm.str())
-            MATCH_PROP(VertexParam,  "vp", $->prm.str())
+            MATCH_PROP(Vertex,       "v",  Text::Format($->pos))
+            MATCH_PROP(VertexTex,    "vt", Text::Format($->tex))
+            MATCH_PROP(VertexNormal, "vn", Text::Format($->nrm))
+            MATCH_PROP(VertexParam,  "vp", Text::Format($->prm))
             MATCH_PROP(Face,         "f",  Text::ArrStr($->indices, ", ", [] (const int (&vtn)[3]) { return Text::ArrStr(vtn, "/"); }))
             MATCH_PROP(Line,         "l",  Text::ArrStr($->indices))
             MATCH_PROP(Object,       "o",  $->name)
