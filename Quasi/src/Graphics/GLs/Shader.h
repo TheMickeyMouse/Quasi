@@ -454,10 +454,3 @@ namespace Quasi::Graphics {
     inline ShaderArgs::Iter ShaderArgs::begin() const { return { .valIt = params.begin(), .argIt = args.begin() }; }
     inline ShaderArgs::Iter ShaderArgs::end()   const { return { .valIt = params.end(),   .argIt = args.end()   }; }
 }
-
-template <>
-struct std::formatter<Quasi::Graphics::ShaderType> : std::formatter<Quasi::Str> {
-    auto format(Quasi::Graphics::ShaderType s, std::format_context& ctx) const {
-        return std::formatter<Quasi::Str>::format(s->shaderName, ctx);
-    }
-};

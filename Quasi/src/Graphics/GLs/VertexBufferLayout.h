@@ -78,7 +78,7 @@ namespace Quasi::Graphics {
 
     template <class T>
     void VertexBufferLayout::Push(u32 count, bool normalized, bool integral) {
-        constexpr GLTypeID type = GLGetTypeID<T>;
+        GLTypeID type = GLGetTypeID<T>();
         components.emplace_back(type, count, normalized, integral);
         stride += count * type->typeSize;
     }

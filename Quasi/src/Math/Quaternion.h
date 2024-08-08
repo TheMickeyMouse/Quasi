@@ -45,8 +45,6 @@ namespace Quasi::Math {
         [[nodiscard]] Matrix3D  as_rotation_matrix() const;
         [[nodiscard]] Matrix4x4 as_compute_matrix() const;
 
-        [[nodiscard]] String str() const;
-
         [[nodiscard]] float lensq() const;
         [[nodiscard]] float len() const;
         [[nodiscard]] float abs() const;
@@ -112,3 +110,19 @@ namespace Quasi::Math {
     inline Quaternion operator""_qj(long double j) { return Quaternion::from_wxyz(0, 0, (float)j, 0); }
     inline Quaternion operator""_qk(long double k) { return Quaternion::from_wxyz(0, 0, 0, (float)k); }
 } // Quasi
+
+namespace Quasi::Text {
+    template <>
+    struct Formatter<Math::Quaternion> : Formatter<float> {
+        void FormatTo(const Math::Quaternion& q, StringOutput output) {
+            return FormatOnto(
+                output,
+                "{} {} {}i {} {}j {} {}k",
+                q.w,
+                q.x < 0 ? '-' : '+', q.x,
+                q.y < 0 ? '-' : '+', q.y,
+                q.z < 0 ? '-' : '+', q.z
+            );
+        }
+    };
+}

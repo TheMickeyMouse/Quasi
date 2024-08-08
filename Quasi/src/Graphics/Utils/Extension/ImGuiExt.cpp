@@ -117,7 +117,7 @@ namespace ImGui {
 
             PushID(title.data());
             EditScalarWithIcon(
-                "X:\0Y:\0Z:\0W:" + i * 3,
+                &"X:\0Y:\0Z:\0W:"[i * 3],
                 Q Array<Q Math::Color, 4> { COLOR_X_AXIS, COLOR_Y_AXIS, COLOR_Z_AXIS, COLOR_W_AXIS }[i], // amazing hack
                 vector[i],
                 speed,
@@ -223,7 +223,7 @@ namespace ImGui {
 
             const Q Math::Range<typename C::scalar> range = { 0, (typename C::scalar)(C::traits_is_floating ? 1 : 255) };
             PushID(title.data());
-            EditScalarWithIcon("R:\0G:\0B:\0A:" + i * 3, c, color[i],
+            EditScalarWithIcon(&"R:\0G:\0B:\0A:"[i * 3], c, color[i],
                 C::traits_is_floating ? 0.005f : 1.0f, range, {}, unitWidth);
             SameLine();
             PopID();
@@ -300,8 +300,8 @@ namespace ImGui {
         }
 
         if (Button("Copy State to Clipboard")) {
-            SetClipboardText(std::format(
-                "camera.position = {{ {}, {}, {} }};\n"
+            SetClipboardText(Quasi::Text::Format(
+                "camera.position = fVector3 {:($),};\n"
                 "camera.yaw = {}; camera.pitch = {};\n"
                 "camera.speed = {};\n"
                 "camera.sensitivity = {};\n"
@@ -309,7 +309,7 @@ namespace ImGui {
                 "camera.fovRange = {{ {}, {} }};\n"
                 "camera.zoomRatio = {};\n"
                 "camera.smoothZoom = {};\n",
-                camera.position.x, camera.position.y, camera.position.z,
+                camera.position,
                 camera.yaw, camera.pitch,
                 camera.speed,
                 camera.sensitivity,
@@ -409,39 +409,39 @@ namespace ImGui {
         if (Button("Copy State to Clipboard")) {
             SetClipboardText(light.Visit(
                 [&](const SunLight& sun) {
-                    return std::format(
+                    return Quasi::Text::Format(
                         "light = Graphics::SunLight {{\n"
-                        "   .direction = {{ {}, {}, {} }},\n"
+                        "   .direction = fVector3 {:($),},\n"
                         "}};\n"
-                        "light.color = {{ {}, {}, {} }};\n",
-                        sun.direction.x, sun.direction.y, sun.direction.z,
-                        light.color.r, light.color.g, light.color.b);
+                        "light.color = fColor {:($),};\n",
+                        sun.direction,
+                        light.color);
                 },
                 [&](const PointLight& point) {
-                    return std::format(
+                    return Quasi::Text::Format(
                         "light = Graphics::PointLight {{\n"
-                        "   .position = {{ {}, {}, {} }},\n"
+                        "   .position = fVector3 {:($),},\n"
                         "   .constant = {},\n"
                         "   .linear = {},\n"
                         "   .quadratic = {},\n"
                         "}};\n"
-                        "light.color = {{ {}, {}, {} }};\n",
-                        point.position.x, point.position.y, point.position.z,
+                        "light.color = fColor {:($),};\n",
+                        point.position,
                         point.constant, point.linear, point.quadratic,
-                        light.color.r, light.color.g, light.color.b);
+                        light.color);
                 },
                 [&](const FlashLight& flash) {
-                    return std::format(
+                    return Quasi::Text::Format(
                         "light = Graphics::FlashLight {{\n"
-                        "   .position = {{ {}, {}, {} }},\n"
+                        "   .position = fVector3 {:($),},\n"
                         "   .yaw = {}, .pitch = {},\n"
                         "   .innerCut = {}, .outerCut = {}\n"
                         "}};\n"
-                        "light.color = {{ {}, {}, {} }};\n",
-                        flash.position.x, flash.position.y, flash.position.z,
+                        "light.color = fColor {:($),};\n",
+                        flash.position,
                         flash.yaw, flash.pitch,
                         flash.innerCut, flash.outerCut,
-                        light.color.r, light.color.g, light.color.b);
+                        light.color);
                 }
             ).c_str());
         }

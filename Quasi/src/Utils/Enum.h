@@ -133,8 +133,8 @@ namespace Quasi {
         ENAME(Enum e) : Enum(e) {} \
 
 
-#define Q_E_GV_1(N, X) static __THIS_ENUM Make##N() { return __THIS_ENUM(Q_UNARY X Q_DEFER(Q_COMMA)() Q_COUNTER() - __COUNTING_VALUE_BEGIN); } Q_E_GV_2
-#define Q_E_GV_2(N, X) static __THIS_ENUM Make##N() { return __THIS_ENUM(Q_UNARY X Q_DEFER(Q_COMMA)() Q_COUNTER() - __COUNTING_VALUE_BEGIN); } Q_E_GV_1
+#define Q_E_GV_1(N, X) static __THIS_ENUM Make##N() { return (__THIS_ENUM { Q_UNARY X Q_DEFER(Q_COMMA)() Q_COUNTER() - __COUNTING_VALUE_BEGIN }); } Q_E_GV_2
+#define Q_E_GV_2(N, X) static __THIS_ENUM Make##N() { return (__THIS_ENUM { Q_UNARY X Q_DEFER(Q_COMMA)() Q_COUNTER() - __COUNTING_VALUE_BEGIN }); } Q_E_GV_1
 #define Q_E_GV_2_END
 #define Q_E_GV_1_END
 

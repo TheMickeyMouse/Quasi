@@ -73,9 +73,17 @@ namespace Quasi::Graphics {
 #endif
 }
 
-template <>
-struct std::formatter<Quasi::Graphics::GLErrorCode> : std::formatter<Quasi::String> {
-    auto format(Quasi::Graphics::GLErrorCode err, std::format_context& ctx) const {
-        return std::formatter<Quasi::String>::format(std::format("0x{:04X} ({})", err->glID, err->errName), ctx);
-    }
-};
+namespace Quasi::Text {
+    template <>
+    struct Formatter<Graphics::GLErrorCode> {
+        bool AddOption(Str) { return true; }
+        void FormatTo(Graphics::GLErrorCode err, StringOutput output) const {
+            FormatOnto(output,
+                "0x{:X4} ({})",
+                err->glID,
+                err->errName
+            );
+        }
+    };
+}
+

@@ -53,3 +53,13 @@
 #else
 #error "__COUNTER__" Macro Not Supported!
 #endif
+
+#if defined(__GNUC__) || defined(__clang__)
+#define Q_FUNC_NAME() __PRETTY_FUNCTION__
+#else
+#ifdef _MSVC
+#define Q_FUNC_NAME() __FUNCSIG__
+#else
+#error "Function Signature macro not supported"
+#endif
+#endif

@@ -2,7 +2,6 @@
 #include <cmath>
 #include <ranges>
 #include <vector>
-#include <variant>
 
 #include "MTLMaterialLoader.h"
 #include "OBJModel.h"

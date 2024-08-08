@@ -1,5 +1,4 @@
 #pragma once
-#include <algorithm>
 
 #include "Utils/Ref.h"
 #include "Utils/Type.h"
@@ -49,11 +48,11 @@ namespace Quasi::Graphics {
         float operator/(PointPer64 other) const { return (float)pp64 / (float)other.pp64; }
     };
     
-    inline PointPer64 operator ""_p64(usize p64) {
+    inline PointPer64 operator ""_p64(u64 p64) {
         return PointPer64::inP64((int)p64);
     }
 
-    inline PointPer64 operator ""_points(usize points) {
+    inline PointPer64 operator ""_points(u64 points) {
         return { (int)points };
     }
 

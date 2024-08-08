@@ -15,12 +15,6 @@ namespace Quasi::Math {
         static Complex from_vec(const Vector2<T>& ri) { return { ri.x, ri.y }; }
         inline static const Complex i = { 0, 1 };
 
-        [[nodiscard]] String str() const {
-            if (re == 0) return std::format("{}i", im);
-            if (im == 0) return std::format("{}", re);
-            return std::format("{} {} {}i", re, im < 0 ? '-' : '+', im);
-        }
-
         [[nodiscard]] Flt freal() const { return (Flt)re; }
         [[nodiscard]] Flt fimag() const { return (Flt)im; }
 
@@ -126,6 +120,15 @@ namespace Quasi::Math {
     using fComplex = Complex<float>;
     using dComplex = Complex<double>;
 
-    inline dComplex operator ""_i(long double f) { return dComplex { 0, f }; }
-    inline iComplex operator ""_i(usize i) { return iComplex { 0, i }; }
+    inline dComplex operator ""_i(f80 f) { return dComplex { 0, f }; }
+    inline iComplex operator ""_i(u64 i) { return iComplex { 0, i }; }
+}
+
+namespace Quasi::Text {
+    template <class T>
+    struct Formatter<Math::Complex<T>> : Formatter<T> {
+        void FormatTo(const Math::Complex<T>& z, StringOutput output) {
+            return FormatOnto(output, "{} {} {}i", z.re, z.im < 0 ? '-' : '+', z.im);
+        }
+    };
 }

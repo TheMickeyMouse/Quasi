@@ -1,6 +1,6 @@
 #include "GLDebug.h"
 
-#include <GL/glew.h>
+#include <glp.h>
 
 namespace Quasi::Graphics {
     Debug::Logger GLLoggerContainer::logger { std::cout };
@@ -20,17 +20,17 @@ namespace Quasi::Graphics {
     }
 
     GLErrorCode GLGetErr() {
-        return GLErrorCode::Find(&GLErrorCodeData::glID, glGetError());
+        return GLErrorCode::Find(&GLErrorCodeData::glID, GL::GetError());
     }
 
     void GLClearErr() {
-        while (glGetError()) {}
+        while (GL::GetError()) {}
     }
 
     void GLReport(const Debug::SourceLoc& loc) {
         GLErrorCode err;
         while ((err = GLGetErr())) {
-            GLLogger().Error({ std::format_string<GLErrorCode&> { "GL Error code {} was uncaught." }, loc}, err);
+            GLLogger().Error({ "GL Error code {} was uncaught.", loc }, err);
         }
     }
 
@@ -38,7 +38,7 @@ namespace Quasi::Graphics {
         GLErrorCode err;
         while ((err = GLGetErr())) {
             GLLogger().Error(
-                { std::format_string<GLErrorCode&, Str&, Str> {"GL Error code {} was uncaught when calling {} (see https://docs.gl/gl3/{})."}, loc},
+                { "GL Error code {} was uncaught when calling {} (see https://docs.gl/gl3/{}).", loc },
                 err, signature, signature.substr(0, signature.find('(')));
         }
     }

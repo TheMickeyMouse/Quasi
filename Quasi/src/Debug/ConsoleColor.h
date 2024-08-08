@@ -1,6 +1,6 @@
 #pragma once
-#include <format>
 #include "Type.h"
+#include "Format.h"
 
 namespace Quasi::Debug {
     enum ConsoleColor {
@@ -60,20 +60,32 @@ namespace Quasi::Debug {
     inline ColoredText Dye(Str s, ConsoleColor color) { return { color, s }; }
 }
 
-namespace std {
+namespace Quasi::Text {
     template <>
-    struct formatter<Quasi::Debug::ConsoleColor> : formatter<std::string> {
-        auto format(Quasi::Debug::ConsoleColor c, std::format_context& ctx) const {
-            return formatter<std::string>::format(
-                std::format("{}[{}{}m", Quasi::Debug::ANSI_ESCAPE_CHAR,
-                    IsBold(c) ? "1;" : "", (int)Regular(c)), ctx);
+    struct Formatter<Debug::ConsoleColor> {
+        bool AddOption(Str) { return true; }
+        void FormatTo(Debug::ConsoleColor c, StringOutput output) const {
+            FormatOnto(
+                output,
+                "{}[{}{}m",
+                Debug::ANSI_ESCAPE_CHAR,
+                IsBold(c) ? "1;" : "",
+                (u32)Regular(c)
+            );
         }
     };
 
     template <>
-    struct formatter<Quasi::Debug::ColoredText> : formatter<std::string> {
-        auto format(const Quasi::Debug::ColoredText& t, std::format_context& ctx) const {
-            return formatter<std::string>::format(std::format("{}{}{}", t.color, t.string, Quasi::Debug::ConsoleColor::RESET), ctx);
+    struct Formatter<Debug::ColoredText> {
+        bool AddOption(Str) { return true; }
+        void FormatTo(Debug::ColoredText c, StringOutput output) const {
+            FormatOnto(
+                output,
+                "{}{}{}",
+                c.color,
+                c.string,
+                Debug::RESET
+            );
         }
     };
 }

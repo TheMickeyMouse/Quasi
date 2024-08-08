@@ -7,7 +7,7 @@ namespace Quasi {
         [[nodiscard]] Str Value() const;
         void Advance();
 
-        auto operator<=>(const StringListIter&) const = default;
+        bool operator==(const StringListIter&) const = default;
         StringListIter& operator++() { Advance(); return *this; }
         [[nodiscard]] Str operator*() const { return Value(); }
     };
@@ -35,7 +35,6 @@ namespace Quasi {
     // represents a vector of strings as: [len1][string1...][len2][string2...]...
     struct StringList {
         String stringlist;
-
     private:
         StringList(String slist, int /* to seperate constructors */) : stringlist(std::move(slist)) {}
     public:
@@ -62,8 +61,7 @@ namespace Quasi {
 
         [[nodiscard]] Iter begin() const { return { stringlist.data() }; }
         [[nodiscard]] Iter end() const { return { stringlist.data() + stringlist.size() }; }
-
-        auto operator<=>(const StringList&) const = default;
+        bool operator==(const StringList&) const = default;
     };
 
     inline StringList operator&(Str first, Str second) {

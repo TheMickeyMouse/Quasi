@@ -1,5 +1,6 @@
 #include "Logger.h"
 
+#include <chrono>
 #include "internal_debug_break.h"
 #include "Utils/Text.h"
 
@@ -29,16 +30,16 @@ namespace Quasi::Debug {
         return std::chrono::system_clock::now();
     }
 
-    String Logger::FmtLog(const LogEntry& log) {
+    String Logger::FmtLog(const LogEntry& log) const {
         return FmtLog(log.log, log.severity, log.time, log.fileLoc);
     }
 
-    String Logger::FmtLog(Str log, Severity severity, DateTime time, const SourceLoc& fileLoc) {
-        ConsoleColor scol = severity->color;
-        return std::format(
-            "{}[{:%Y-%m-%d %T}]{} {}> {}{:<8} {:<{}} {}{}\n",
-            scol, std::chrono::current_zone()->to_local(time), RESET, name,
-            scol, std::format("[{}]:", severity->name),
+    String Logger::FmtLog(Str log, Severity severity, DateTime time, const SourceLoc& fileLoc) const {
+        const ConsoleColor scol = severity->color;
+        return Text::Format(
+            "{}[{:%y-%M-%d %H:%m:%s.%u}]{} {}> {}{:<8} {:<{}} {}{}\n",
+            scol, time, RESET, name,
+            scol, Text::Format("[{}]:", severity->name),
             FmtSourceLoc(fileLoc), lPad,
             log,
             RESET
@@ -51,13 +52,13 @@ namespace Quasi::Debug {
 
     String Logger::FmtSourceLoc(const SourceLoc& loc) const {
         return includeFunction ?
-            std::format("{}:{}:{} in {}:", FmtFile(loc.file_name()), loc.line(), loc.column(), loc.function_name()) :
-            std::format("{}:{}:{}:", FmtFile(loc.file_name()), loc.line(), loc.column());
+            Text::Format("{}:{}:{} in {}:", FmtFile(loc.file_name()), loc.line(), loc.column(), loc.function_name()) :
+            Text::Format("{}:{}:{}:", FmtFile(loc.file_name()), loc.line(), loc.column());
     }
 
     void Logger::LogNoOut(const Severity sv, const Str s, const SourceLoc& loc) {
         if (recordLogs)
-            logs.emplace_back(std::string { s }, sv, Now(), loc);
+            logs.emplace_back(LogEntry { String { s }, sv, Now(), loc });
     }
 
     void Logger::ConsoleLog(const Severity sv, const Str s, const SourceLoc& loc) {
@@ -76,7 +77,7 @@ namespace Quasi::Debug {
 
     void Logger::Assert(const bool assert, Str msg, const SourceLoc& loc) {
         if (!assert) {
-            Log(Severity::ERROR, std::format("Assertion failed: {}", msg), loc);
+            Log(Severity::ERROR, Text::Format("Assertion failed: {}", msg), loc);
             Flush();
             DebugBreak();
         }

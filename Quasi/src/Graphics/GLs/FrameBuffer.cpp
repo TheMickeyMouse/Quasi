@@ -1,8 +1,8 @@
 #include "FrameBuffer.h"
 
-#include "RenderBuffer.h"
+#include <glp.h>
 
-#include <GL/glew.h>
+#include "RenderBuffer.h"
 #include "GLDebug.h"
 #include "Textures/Texture.h"
 
@@ -11,33 +11,33 @@ namespace Quasi::Graphics {
 
     FrameBuffer FrameBuffer::New() {
         GraphicsID id;
-        Q_GL_CALL(glGenFramebuffers(1, &id));
+        Q_GL_CALL(GL::GenFramebuffers(1, &id));
         return FrameBuffer { id };
     }
 
     void FrameBuffer::DestroyObject(GraphicsID id) {
-        Q_GL_CALL(glDeleteFramebuffers(1, &id));
+        Q_GL_CALL(GL::DeleteFramebuffers(1, &id));
     }
 
     void FrameBuffer::BindObject(GraphicsID id) {
-        Q_GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, id));
+        Q_GL_CALL(GL::BindFramebuffer(GL::FRAMEBUFFER, id));
     }
 
     void FrameBuffer::UnbindObject() {
-        Q_GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+        Q_GL_CALL(GL::BindFramebuffer(GL::FRAMEBUFFER, 0));
     }
 
     void FrameBuffer::Attach(const Texture& tex, AttachmentType type) const {
-        Q_GL_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, (int)type, tex.TargetI(), tex.rendererID, 0));
+        Q_GL_CALL(GL::FramebufferTexture2D(GL::FRAMEBUFFER, (int)type, tex.TargetI(), tex.rendererID, 0));
     }
 
     void FrameBuffer::Attach(const RenderBuffer& rbo, AttachmentType type) const {
-        Q_GL_CALL(glFramebufferRenderbuffer(GL_FRAMEBUFFER, (int)type, GL_RENDERBUFFER, rbo.rendererID));
+        Q_GL_CALL(GL::FramebufferRenderbuffer(GL::FRAMEBUFFER, (int)type, GL::RENDERBUFFER, rbo.rendererID));
     }
 
     void FrameBuffer::Complete() const {
-        const int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        if (status != GL_FRAMEBUFFER_COMPLETE) {
+        const int status = GL::CheckFramebufferStatus(GL::FRAMEBUFFER);
+        if (status != GL::FRAMEBUFFER_COMPLETE) {
             GLLogger().Error("Framebuffer was incomplete with code 0x{:04X}.", status);
         }
     }

@@ -1,8 +1,7 @@
 #pragma once
 #include <chrono>
-#include <source_location>
-#include <format>
 #include <iostream>
+#include <source_location>
 
 #include "ConsoleColor.h"
 #include "Text.h"
@@ -34,21 +33,13 @@ namespace Quasi::Debug {
     using SourceLoc = std::source_location;
 
     // captures source location
-    template <class... Ts>
     struct FmtStr {
-        std::format_string<Ts...> fmt;
+        Str fmt;
         SourceLoc loc;
-        template <class S> requires std::convertible_to<const S&, std::format_string<Ts...>>
-        consteval FmtStr(const S& f, const SourceLoc& l = SourceLoc::current())
-        : fmt(f), loc(l) {}
-
-        FmtStr(std::format_string<Ts...> f, const SourceLoc& l = SourceLoc::current())
-        : fmt(f), loc(l) {}
+        FmtStr(const char* f, const SourceLoc& l = SourceLoc::current()) : fmt(f), loc(l) {}
+        FmtStr(Str f, const SourceLoc& l = SourceLoc::current()) : fmt(f), loc(l) {}
         // consteval FmtStr(const char* f, const SourceLoc& l = SourceLoc::current()) : fmt(f), loc(l) {}
     };
-
-    template <class... Ts>
-    using ImplicitFmtStr = Implicit<FmtStr<Ts...>>;
 
     struct LogEntry {
         String log;
@@ -56,7 +47,6 @@ namespace Quasi::Debug {
         DateTime time;
         SourceLoc fileLoc;
     };
-
 
     class Logger {
         Ref<OutStream> logOut;
@@ -94,8 +84,8 @@ namespace Quasi::Debug {
 
         static DateTime Now();
 
-        String FmtLog(const LogEntry& log);
-        String FmtLog(Str log, Severity severity, DateTime time, const SourceLoc& fileLoc);
+        String FmtLog(const LogEntry& log) const;
+        String FmtLog(Str log, Severity severity, DateTime time, const SourceLoc& fileLoc) const;
         [[nodiscard]] Str FmtFile(Str fullname) const;
         [[nodiscard]] String FmtSourceLoc(const SourceLoc& loc) const;
         void LogNoOut  (Severity sv, Str s, const SourceLoc& loc = SourceLoc::current());
@@ -106,12 +96,12 @@ namespace Quasi::Debug {
 
         void Write(OutStream& out, Severity filter = Severity::NONE);
 
-        template <class ...Ts> void LogFmt(Severity s, ImplicitFmtStr<Ts...> fmt, Ts&&... args) {
-            this->Log(s, std::format(fmt.fmt, std::forward<Ts>(args)...), fmt.loc);
+        template <class ...Ts> void LogFmt(Severity s, const FmtStr& fmt, Ts&&... args) {
+            this->Log(s, Text::Format(fmt.fmt, std::forward<Ts>(args)...), fmt.loc);
         }
 
-        template <class ...Ts> void AssertFmt(bool assert, ImplicitFmtStr<Ts...> fmt, Ts&&... args) {
-            this->Assert(assert, std::format(fmt.fmt, std::forward<Ts>(args)...), fmt.loc);
+        template <class ...Ts> void AssertFmt(bool assert, const FmtStr& fmt, Ts&&... args) {
+            this->Assert(assert, Text::Format(fmt.fmt, std::forward<Ts>(args)...), fmt.loc);
         }
 
         template <class T>
@@ -130,12 +120,12 @@ namespace Quasi::Debug {
             );
         }
 
-        template <class ...Ts> void Trace   (ImplicitFmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::TRACE,    fmt, std::forward<Ts>(args)...); }
-        template <class ...Ts> void Debug   (ImplicitFmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::DEBUG,    fmt, std::forward<Ts>(args)...); }
-        template <class ...Ts> void Info    (ImplicitFmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::INFO,     fmt, std::forward<Ts>(args)...); }
-        template <class ...Ts> void Warn    (ImplicitFmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::WARN,     fmt, std::forward<Ts>(args)...); }
-        template <class ...Ts> void Error   (ImplicitFmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::ERROR,    fmt, std::forward<Ts>(args)...); }
-        template <class ...Ts> void Critical(ImplicitFmtStr<Ts...> fmt, Ts&&... args) { this->LogFmt(Severity::CRITICAL, fmt, std::forward<Ts>(args)...); }
+        template <class ...Ts> void Trace   (const FmtStr& fmt, Ts&&... args) { this->LogFmt(Severity::TRACE,    fmt, std::forward<Ts>(args)...); }
+        template <class ...Ts> void Debug   (const FmtStr& fmt, Ts&&... args) { this->LogFmt(Severity::DEBUG,    fmt, std::forward<Ts>(args)...); }
+        template <class ...Ts> void Info    (const FmtStr& fmt, Ts&&... args) { this->LogFmt(Severity::INFO,     fmt, std::forward<Ts>(args)...); }
+        template <class ...Ts> void Warn    (const FmtStr& fmt, Ts&&... args) { this->LogFmt(Severity::WARN,     fmt, std::forward<Ts>(args)...); }
+        template <class ...Ts> void Error   (const FmtStr& fmt, Ts&&... args) { this->LogFmt(Severity::ERROR,    fmt, std::forward<Ts>(args)...); }
+        template <class ...Ts> void Critical(const FmtStr& fmt, Ts&&... args) { this->LogFmt(Severity::CRITICAL, fmt, std::forward<Ts>(args)...); }
 
         void Flush();
 
@@ -157,12 +147,12 @@ namespace Quasi::Debug {
 
     inline void Write(OutStream& out, Severity filter = Severity::NONE) { Logger::GetInternalLog().Write(out, filter); }
 
-    template <class ...Ts> void LogFmt(Severity s, ImplicitFmtStr<Ts...> fmt, Ts&&... args) {
+    template <class ...Ts> void LogFmt(Severity s, const FmtStr& fmt, Ts&&... args) {
         Logger::GetInternalLog().LogFmt(s, fmt, std::forward<Ts>(args)...);
     }
 
-    template <class ...Ts> void AssertFmt(bool assert, ImplicitFmtStr<Ts...> fmt, Ts&&... args) {
-        Logger::GetInternalLog().Assert(assert, std::format(fmt.fmt, std::forward<Ts>(args)...));
+    template <class ...Ts> void AssertFmt(bool assert, const FmtStr& fmt, Ts&&... args) {
+        Logger::GetInternalLog().Assert(assert, Text::Format(fmt.fmt, std::forward<Ts>(args)...));
     }
 
     template <class T>
@@ -171,12 +161,12 @@ namespace Quasi::Debug {
     template <class T>
     void AssertNeq(const T& val, const T& cmp, const SourceLoc& loc = SourceLoc::current()) { Logger::GetInternalLog().AssertNeq(val, cmp, loc); }
 
-    template <class ...Ts> void Trace   (ImplicitFmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Trace   (fmt, std::forward<Ts>(args)...); }
-    template <class ...Ts> void Debug   (ImplicitFmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Debug   (fmt, std::forward<Ts>(args)...); }
-    template <class ...Ts> void Info    (ImplicitFmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Info    (fmt, std::forward<Ts>(args)...); }
-    template <class ...Ts> void Warn    (ImplicitFmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Warn    (fmt, std::forward<Ts>(args)...); }
-    template <class ...Ts> void Error   (ImplicitFmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Error   (fmt, std::forward<Ts>(args)...); }
-    template <class ...Ts> void Critical(ImplicitFmtStr<Ts...> fmt, Ts&&... args) { Logger::GetInternalLog().Critical(fmt, std::forward<Ts>(args)...); }
+    template <class ...Ts> void Trace   (const FmtStr& fmt, Ts&&... args) { Logger::GetInternalLog().Trace   (fmt, std::forward<Ts>(args)...); }
+    template <class ...Ts> void Debug   (const FmtStr& fmt, Ts&&... args) { Logger::GetInternalLog().Debug   (fmt, std::forward<Ts>(args)...); }
+    template <class ...Ts> void Info    (const FmtStr& fmt, Ts&&... args) { Logger::GetInternalLog().Info    (fmt, std::forward<Ts>(args)...); }
+    template <class ...Ts> void Warn    (const FmtStr& fmt, Ts&&... args) { Logger::GetInternalLog().Warn    (fmt, std::forward<Ts>(args)...); }
+    template <class ...Ts> void Error   (const FmtStr& fmt, Ts&&... args) { Logger::GetInternalLog().Error   (fmt, std::forward<Ts>(args)...); }
+    template <class ...Ts> void Critical(const FmtStr& fmt, Ts&&... args) { Logger::GetInternalLog().Critical(fmt, std::forward<Ts>(args)...); }
 
     void Flush();
 }
@@ -207,9 +197,78 @@ namespace Quasi {
     }
 }
 
-template <>
-struct std::formatter<Quasi::Debug::Severity> : formatter<std::string> {
-    auto format(Quasi::Debug::Severity s, std::format_context& ctx) const {
-        return formatter<std::string>::format(std::format("{}", s->ColoredName()), ctx);
-    }
-};
+namespace Quasi::Text {
+    template <>
+    struct Formatter<Debug::DateTime> {
+        Str fmt;
+        bool AddOption(Str args) {
+            for (u32 i = 0; i < args.size(); ++i) {
+                if (args[i] == '%' && args[i + 1] != '%') {
+                    switch (args[i + 1]) {
+                        case 'y':
+                        case 'M': case 'N': case 'n':
+                        case 'd': case 'a':
+                        case 'h': case 'H': case 'g':
+                        case 'm':
+                        case 's': case 'u': break;
+                        default: return false;
+                    }
+                }
+            }
+            fmt = args;
+            return true;
+        }
+        void FormatTo(const Debug::DateTime& time, StringOutput output) {
+            const auto d = floor<std::chrono::days>(time);
+            const std::chrono::year_month_day ymd = d;
+            const std::chrono::hh_mm_ss       hms { floor<std::chrono::milliseconds>(time - d) };
+            constexpr Str MONTH_NAMES[] = {
+                "January",
+                "Febuary",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+            };
+            constexpr Str WEEKDAY_NAMES[] = {
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thurday",
+                "Friday",
+                "Satarday",
+                "Sunday",
+            };
+            using std::chrono::operator ""h;
+            for (u32 i = 0; i < fmt.size(); ++i) {
+                if (fmt[i] != '%') {
+                    output(fmt[i]);
+                    continue;
+                }
+                switch (fmt[i + 1]) {
+                    case '%': output('%'); ++i; continue;
+                    case 'y': FormatOnto(output, (i32)ymd.year());   continue;
+                    case 'M': FormatOnto(output, (u32)ymd.month());  continue;
+                    case 'N': output(MONTH_NAMES[(u32)ymd.month()]); continue;
+                    case 'n': output(MONTH_NAMES[(u32)ymd.month()].substr(0, 3)); continue;
+                    case 'd': FormatOnto(output, (u32)ymd.day()); continue;
+                    case 'A': output(WEEKDAY_NAMES[(u32)ymd.day()]); continue;
+                    case 'a': output(WEEKDAY_NAMES[(u32)ymd.day()].substr(0, 3)); continue;
+                    case 'h': FormatOnto(output, hms.hours().count() % 12); continue;
+                    case 'H': FormatOnto(output, hms.hours().count()); continue;
+                    case 'g': output(hms.hours() >= 12h ? "PM" : "AM"); continue;
+                    case 'm': FormatOnto(output, hms.minutes().count()); continue;
+                    case 's': FormatOnto(output, hms.seconds().count()); continue;
+                    case 'u': FormatOnto(output, hms.subseconds().count()); continue;
+                    default:;
+                }
+            }
+        }
+    };
+}

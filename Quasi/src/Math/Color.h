@@ -1,4 +1,5 @@
 #pragma once
+#include "Match.h"
 #include "Vector.h"
 
 namespace Quasi::Math {
@@ -243,4 +244,104 @@ namespace Quasi::Math {
     template <class T> auto VectorN<3, T>::to_color(T alpha) const -> std::conditional_t<traits_float, fColor, Color> { return { x, y, z, alpha }; }
     template <class T> auto VectorN<3, T>::to_color3() const -> std::conditional_t<traits_float, fColor3, Color3> { return { x, y, z }; }
     template <class T> auto VectorN<4, T>::to_color() const -> std::conditional_t<traits_float, fColor, Color> { return { x, y, z, w }; }
+
+    namespace details {
+        template <ColorLike C>
+        struct ColorFormatter {
+            enum { HEX, VECTOR, RGB, HSL, HSV, HSL_PC, HSV_PC } mode = HEX;
+            bool AddOption(Str args) {
+                if (args.empty()) return true;
+                // :[%][#|*|rgb|hsl|hsv]
+                match (args) {
+                    when (== "#") { mode = HEX; }
+                    when (== "*")   { mode = VECTOR; }
+                    when (== "rgb") { mode = RGB; }
+                    when (== "hsl") { mode = HSL; }
+                    when (== "hsv") { mode = HSV; }
+                    when (== "%hsl") { mode = HSL; }
+                    when (== "%hsv") { mode = HSV; }
+                    otherwise return false;
+                }
+                return true;
+            }
+            void FormatTo(const C& color, Text::StringOutput output) {
+                switch (mode) {
+                    case HEX:
+                        output(color.hexcode());
+                        break;
+                    case VECTOR:
+                        Text::FormatOnto(output, "{{ {}, {}, {}",
+                            color.r, color.g, color.b);
+                        if constexpr (C::traits_has_alpha) {
+                            Text::FormatOnto(output, ", {}", color.a);
+                        }
+                        output(" }");
+                        break;
+                    case RGB:
+                        Text::FormatOnto(output,
+                            "rgb({}, {}, {}",
+                            color.r, color.g, color.b);
+                        if constexpr (C::traits_has_alpha) {
+                            Text::FormatOnto(output, ", {}", color.a);
+                        }
+                        output(')');
+                        break;
+                    case HSL: {
+                        const auto [h, s, l, a] = color.as_hsla();
+                        Text::FormatOnto(output,
+                            "hsl({}deg, {}, {}",
+                            h * 360, s, l);
+                        if constexpr (C::traits_has_alpha) {
+                            Text::FormatOnto(output, ", {}", a);
+                        }
+                        output(')');
+                        break;
+                    }
+                    case HSV: {
+                        const auto [h, s, v, a] = color.as_hsva();
+                        Text::FormatOnto(output,
+                            "hsv({}deg, {}, {}",
+                            h * 360, s, v);
+                        if constexpr (C::traits_has_alpha) {
+                            Text::FormatOnto(output, ", {}", a);
+                        }
+                        output(')');
+                        break;
+                    }
+                    case HSL_PC: {
+                        const auto [h, s, l, a] = color.as_hsla();
+                        Text::FormatOnto(output,
+                            "hsl({}%, {}%, {}%",
+                            h * 100, s * 100, l * 100);
+                        if constexpr (C::traits_has_alpha) {
+                            Text::FormatOnto(output, ", {}%", a * 100);
+                        }
+                        output(')');
+                        break;
+                    }
+                    case HSV_PC: {
+                        const auto [h, s, v, a] = color.as_hsva();
+                        Text::FormatOnto(output,
+                            "hsv({}%, {}%, {}%",
+                            h * 100, s * 100, v * 100);
+                        if constexpr (C::traits_has_alpha) {
+                            Text::FormatOnto(output, ", {}%", a * 100);
+                        }
+                        output(')');
+                        break;
+                    }
+                }
+            }
+        };
+    }
 }
+
+#pragma region Formatting
+#include "Format.h"
+namespace Quasi::Text {
+    template <> struct Formatter<Math::Color>   : Math::details::ColorFormatter<Math::Color>   {};
+    template <> struct Formatter<Math::fColor>  : Math::details::ColorFormatter<Math::fColor>  {};
+    template <> struct Formatter<Math::Color3>  : Math::details::ColorFormatter<Math::Color3>  {};
+    template <> struct Formatter<Math::fColor3> : Math::details::ColorFormatter<Math::fColor3> {};
+}
+#pragma endregion

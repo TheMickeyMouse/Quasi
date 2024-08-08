@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include <type_traits>
-#include <format>
 #include <array>
 #include <cmath>
 
@@ -420,8 +419,6 @@ namespace Quasi::Math {
 
         static constexpr Str params = "x";
 
-        [[nodiscard]] std::string str() const { return std::format("(x: {})", x); }
-
         NODISC const T& value() const { return x; }
         T& value() { return x; }
         NODISC operator const T&() const { return value(); }
@@ -446,8 +443,6 @@ namespace Quasi::Math {
 
         static constexpr Str params = "xy";
 
-        [[nodiscard]] String str() const { return std::format("(x: {}, y: {})", x, y); }
-
         static VectorN RIGHT()                       { return { +1,  0 }; }
         static VectorN LEFT() requires traits_signed { return { -1,  0 }; }
         static VectorN UP()                          { return {  0, +1 }; }
@@ -471,7 +466,7 @@ namespace Quasi::Math {
         NODISC VectorN reflected(const VectorN& normal) const;
         NODISC VectorN transformed_by(const Transform2D& transform) const;
 
-        VectorN& rotate(float angle)                     requires traits_float { return *this = rotated(angle); }
+        VectorN& rotate(float angle)                        requires traits_float { return *this = rotated(angle); }
         VectorN& rotate(float angle, const VectorN& origin) requires traits_float { return *this = rotated(angle, origin); }
         VectorN& rotate_by(const Complex<T>& rotation) requires traits_float;
         VectorN& reflect(const VectorN& normal) { return *this = reflected(normal); }
@@ -516,8 +511,6 @@ namespace Quasi::Math {
              std::convertible_to<T> auto z) : x((T)x), y((T)y), z((T)z) {}
 
         static constexpr Str params = "xyz";
-
-        [[nodiscard]] String str() const { return std::format("(x: {}, y: {}, z: {})", x, y, z); }
 
         static VectorN RIGHT()                       { return {  1,  0,  0 }; }
         static VectorN LEFT() requires traits_signed { return { -1,  0,  0 }; }
@@ -587,8 +580,6 @@ namespace Quasi::Math {
 
         static constexpr Str params = "xyzw";
 
-        [[nodiscard]] String str() const { return std::format("(x: {}, y: {}, z: {}, w: {})", x, y, z, w); }
-
         static constexpr VectorN RIGHT()                       { return {  1,  0,  0,  0 }; }
         static constexpr VectorN LEFT() requires traits_signed { return { -1,  0,  0,  0 }; }
         static constexpr VectorN UP()                          { return {  0,  1,  0,  0 }; }
@@ -618,6 +609,36 @@ namespace Quasi::Math {
     template <class T> Vector3<typename VectorN<4, T>::float_type> VectorN<4, T>::projected() const { return (Vector3<float_type>)xyz() / (float_type)w; }
 #pragma endregion
 #pragma endregion
-
 #undef NODISC
 }
+
+#pragma region Formatting
+#include "Format.h"
+namespace Quasi::Text {
+    template <u32 N, class T>
+    struct Formatter<Math::VectorN<N, T>> : Formatter<Array<T, N>> {
+        void WriteElement(T x, char s, StringOutput output) const {
+            for (const char c : this->elemFormat) {
+                if (c == '#') {
+                    output(s);
+                    continue;
+                }
+                if (c == '$') {
+                    FormatOnto(output, x);
+                    continue;
+                }
+                output(c);
+            }
+        }
+        void FormatTo(const Math::VectorN<N, T>& vec, StringOutput output) {
+            output(this->brack);
+            for (u32 i = 0; i < N; ++i) {
+                WriteElement(vec[i], "xyzw"[i], output);
+                if (i < N - 1 || this->trailingComma)
+                    output(this->seperator);
+            }
+            output(this->brack + 1);
+        }
+    };
+}
+#pragma endregion

@@ -1,7 +1,5 @@
 #include "Light.h"
 
-#include <cmath>
-
 namespace Quasi::Graphics {
     Math::fVector3 Light::Position() const {
         return Visit([]<class L> (const L& light) {
