@@ -170,8 +170,6 @@ set(ALL_FILES
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})
 
-set(APPLE 1)
-find_package(OpenGL REQUIRED)
 target_include_directories(${PROJECT_NAME}
         PRIVATE
     ${PROJECT_SOURCE_DIR}/Dependencies/GLFW/include/
@@ -195,9 +193,8 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     Q_EXT_MATCH_SYNTAX # for cool syntax features for pattern matching
 )
 
-# target_link_options(${PROJECT_NAME} PUBLIC -Wl,-F,/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/System/Library/Frameworks,-framework,OpenGL)
 target_link_libraries(${PROJECT_NAME} PUBLIC
-    ${CMAKE_SOURCE_DIR}/cmake-build-glport/OpenGLPort/libOpenGLPort.a
+    OpenGLPort
     # opengl32.dll
     ${CMAKE_SOURCE_DIR}/Dependencies/GLFW/lib-mingw-w64/libglfw3.a
     ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/freetype/libfreetype.a

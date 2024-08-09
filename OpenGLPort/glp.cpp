@@ -1,4 +1,3 @@
-#include <GL/glew.h>
 #include "glp.h"
 
 namespace GL {

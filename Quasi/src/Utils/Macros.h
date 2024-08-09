@@ -45,7 +45,7 @@
 #define Q_EMPTY()
 #define Q_DEFER(id) id Q_EMPTY()
 
-#define Q_STRLIT_LEN(STR) sizeof(STR) - 1
+#define Q_STRLIT_LEN(STR) (sizeof(STR) - 1)
 #define Q_GETTER_MUT(FN, ...) (decltype(this->FN(__VA_ARGS__)))((const std::remove_pointer_t<decltype(this)>*)this)->FN(__VA_ARGS__)
 
 #ifdef __COUNTER__

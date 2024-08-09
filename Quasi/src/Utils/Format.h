@@ -110,6 +110,7 @@ namespace Quasi::Text {
             formatters[s.index](argAnys[s.index], s.specifier, out);
             lastPos = s.skipPosition + 1;
         }
+        out(fmt.substr(lastPos));
     }
 
     template <class T>
@@ -125,6 +126,18 @@ namespace Quasi::Text {
         FormatOnto(StringOutput::From(str), fmt, args...);
         return str;
     }
+
+    template <class T = Str>
+    struct PadWith {
+        enum { LEFT, MIDDLE, RIGHT } align = LEFT;
+        u32 pad = 0;
+        char fill = ' ';
+        T string;
+    };
+
+    template <class T = Str> PadWith<T> PadLeft  (const T& s, u32 pad, char fill = ' ') { return { PadWith<T>::LEFT,   pad, fill, s }; }
+    template <class T = Str> PadWith<T> PadMiddle(const T& s, u32 pad, char fill = ' ') { return { PadWith<T>::MIDDLE, pad, fill, s }; }
+    template <class T = Str> PadWith<T> PadRight (const T& s, u32 pad, char fill = ' ') { return { PadWith<T>::RIGHT,  pad, fill, s }; }
 
 #pragma region Formattings
     template <class T>
@@ -201,7 +214,8 @@ namespace Quasi::Text {
             const u32 zeros = preciseDigits < padding ?
                 (padding - preciseDigits - (number < 0 || signMode == POSITIVE)) : 0;
             output(useZeroPad ? '0' : ' ', zeros);
-            output(number < 0 ? '-' : '+');
+            if (number < 0 || signMode == POSITIVE)
+                output(number < 0 ? '-' : '+');
 
             const I base = 0x10'10'0A'08'02 >> (radix * 8) & 0xFF;
             I digits[8 * sizeof(I)] {};
@@ -209,8 +223,10 @@ namespace Quasi::Text {
             u32 i = 0;
             for (; num; num /= base)
                 digits[i++] = num % base;
-            while (i--)
-                output(digits[i]);
+            while (i--) {
+                const char c = digits[i] >= 10 ? (radix == CAPITAL_HEX ? 'A' : 'a') - 10 + digits[i] : ('0' + digits[i]);
+                output(c);
+            }
         }
     };
     template <std::floating_point F>
@@ -380,10 +396,16 @@ namespace Quasi::Text {
     struct Formatter<String> : Formatter<Str> {};
     template <>
     struct Formatter<const char*> : Formatter<Str> {};
+    template <>
+    struct Formatter<char*> : Formatter<Str> {};
+    template <>
+    struct Formatter<const char[]> : Formatter<Str> {};
+    template <>
+    struct Formatter<char[]> : Formatter<Str> {};
 
     template <class T>
     struct Formatter<T*> : Formatter<usize> {
-        bool AddOption(Str) { radix = CAPITAL_HEX; return true; }
+        bool AddOption(Str) { radix = CAPITAL_HEX; useZeroPad = true; padding = sizeof(usize) * 8 / 4; return true; }
         void FormatTo(T* ptr, StringOutput output) {
             if constexpr (std::is_void_v<T>) {
                 output("<ptr to 0x");
@@ -460,6 +482,35 @@ namespace Quasi::Text {
                 output("}");
             } else
                 output("None {}");
+        }
+    };
+
+    template <class T>
+    struct Formatter<PadWith<T>> : Formatter<T> {
+        void FormatTo(const PadWith<T>& padded, StringOutput output) const {
+            if (padded.align == PadWith<T>::LEFT) {
+                const usize i = output.position;
+                FormatOnto(output, padded.string);
+                if (output.position - i < padded.pad)
+                    output(padded.fill, padded.pad - (output.position - i));
+            } else if (padded.align == PadWith<T>::RIGHT) {
+                String s;
+                FormatOnto(StringOutput::From(s), padded.pad);
+                if (s.size() < padded.pad)
+                    output(padded.fill, padded.pad - s.size());
+                output(s);
+            } else {
+                String s;
+                FormatOnto(StringOutput::From(s), padded.pad);
+                if (s.size() >= padded.pad) {
+                    output(s);
+                    return;
+                }
+                const usize space = padded.pad - s.size();
+                output(padded.fill, space / 2);
+                output(s);
+                output(padded.fill, space - space / 2);
+            }
         }
     };
 #pragma endregion

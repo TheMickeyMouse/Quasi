@@ -1,5 +1,4 @@
 #pragma once
-#include <charconv>
 
 #include "Type.h"
 #include "Option.h"
@@ -47,7 +46,9 @@ namespace Quasi::Text {
                 if (std::isdigit(str[i])) {
                     number *= (N)10;
                     number += (N)(str[i] - '0');
-                } else if constexpr (std::floating_point<N>) {
+                    continue;
+                }
+                if constexpr (std::floating_point<N>) {
                     if (str[i] == '.') {
                         N sub = 0, pwOfTen = (N)0.1;
                         for (u32 j = i + 1; j < str.size(); ++j) {
@@ -55,9 +56,10 @@ namespace Quasi::Text {
                             sub += pwOfTen * (N)(str[j] - '0');
                             pwOfTen *= (N)0.1;
                         }
-                        return number + sub;
+                        return (negate ? (N)-1 : (N)1) * (number + sub);
                     }
-                } else return nullptr;
+                }
+                return nullptr;
             }
             return negate ? -number : number;
         }

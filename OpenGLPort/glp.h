@@ -1,6 +1,6 @@
 #pragma once
 
-#include <OpenGL/gltypes.h>
+#include <GL/glew.h>
 
 namespace GL {
     using Int      = GLint;
@@ -8102,7 +8102,9 @@ namespace GL {
 #define ARGS_2(V) V ARGS_1
 #define ARGS_1END
 #define ARGS_2END
+
     GLPORT_ON_FUNCTIONS(DEF_FN)
+
 #undef COMMA
 #undef EMPTY
 #undef WAIT

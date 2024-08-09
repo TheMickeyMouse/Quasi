@@ -108,7 +108,7 @@ namespace Quasi::Graphics {
         Math::iVector2 size;
         int BPPixel;
         stbi_set_flip_vertically_on_load(1);
-        Debug::Assert(!*fname.end(), "filename doesn't have null terminator");
+        Debug::AssertMsg(!*fname.end(), "filename doesn't have null terminator");
         const STBIImage localTexture { stbi_load(fname.data(), &size.x, &size.y, &BPPixel, 4) };
         Texture tex = New((const byte*)localTexture.get(), { size.x, size.y }, init);
 
@@ -124,7 +124,7 @@ namespace Quasi::Graphics {
         cubemap.Bind();
         int faceTarget = (int)TextureTarget::CUBEMAP_RIGHT;
         for (Str face : faces) {
-            Debug::Assert(!*face.end(), "filename of cubemap doesn't have null terminator");
+            Debug::AssertMsg(!*face.end(), "filename of cubemap doesn't have null terminator");
             int sx, sy, bpx;
             const STBIImage localTexture { stbi_load(face.data(), &sx, &sy, &bpx, 4) };
             Texture dummy {};

@@ -31,7 +31,7 @@ namespace Quasi {
     }
 
     void* ArenaAllocator::AllocBytes(usize bytes) {
-        Debug::AssertFmt(dataOffset + bytes < sizeBytes, "allocation too much memory: {} + {} > {} (bytes)", dataOffset, bytes, sizeBytes);
+        Debug::Assert(dataOffset + bytes < sizeBytes, "allocation too much memory: {} + {} > {} (bytes)", dataOffset, bytes, sizeBytes);
         void* allocated = data + dataOffset;
         dataOffset += bytes;
         return allocated;

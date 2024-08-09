@@ -84,15 +84,15 @@ namespace Quasi::Debug {
 
         static DateTime Now();
 
-        String FmtLog(const LogEntry& log) const;
-        String FmtLog(Str log, Severity severity, DateTime time, const SourceLoc& fileLoc) const;
+        [[nodiscard]] String FmtLog(const LogEntry& log) const;
+        [[nodiscard]] String FmtLog(Str log, Severity severity, DateTime time, const SourceLoc& fileLoc) const;
         [[nodiscard]] Str FmtFile(Str fullname) const;
         [[nodiscard]] String FmtSourceLoc(const SourceLoc& loc) const;
         void LogNoOut  (Severity sv, Str s, const SourceLoc& loc = SourceLoc::current());
         void ConsoleLog(Severity sv, Str s, const SourceLoc& loc = SourceLoc::current());
         void Log       (Severity sv, Str s, const SourceLoc& loc = SourceLoc::current());
 
-        void Assert(bool assert, Str msg, const SourceLoc& loc = SourceLoc::current());
+        void AssertMsg(bool assert, Str msg, const SourceLoc& loc = SourceLoc::current());
 
         void Write(OutStream& out, Severity filter = Severity::NONE);
 
@@ -100,13 +100,14 @@ namespace Quasi::Debug {
             this->Log(s, Text::Format(fmt.fmt, std::forward<Ts>(args)...), fmt.loc);
         }
 
-        template <class ...Ts> void AssertFmt(bool assert, const FmtStr& fmt, Ts&&... args) {
-            this->Assert(assert, Text::Format(fmt.fmt, std::forward<Ts>(args)...), fmt.loc);
+        template <class ...Ts> void Assert(bool assert, const FmtStr& fmt, Ts&&... args) {
+            if (assert) return;
+            this->AssertMsg(true, Text::Format(fmt.fmt, std::forward<Ts>(args)...), fmt.loc);
         }
 
         template <class T>
         void AssertEq(const T& val, const T& cmp, const SourceLoc& loc = SourceLoc::current()) {
-            this->AssertFmt(val == cmp,
+            this->Assert(val == cmp,
                 { "Left operand {0}({1}) is not equal to Right Operand {0}({2})", loc },
                 TypeName<T>(), val, cmp
             );
@@ -114,7 +115,7 @@ namespace Quasi::Debug {
 
         template <class T>
         void AssertNeq(const T& val, const T& cmp, const SourceLoc& loc = SourceLoc::current()) {
-            this->AssertFmt(val != cmp,
+            this->Assert(val != cmp,
                 { "Left operand {0}({1}) is equal to Right Operand {0}({2})", loc },
                 TypeName<T>(), val, cmp
             );
@@ -143,7 +144,7 @@ namespace Quasi::Debug {
 
     inline void Log(Severity sv, Str s, const SourceLoc& loc = SourceLoc::current()) { Logger::GetInternalLog().Log(sv, s, loc); }
 
-    inline void Assert(bool assert, Str msg, const SourceLoc& loc = SourceLoc::current()) { Logger::GetInternalLog().Assert(assert, msg, loc); }
+    inline void AssertMsg(bool assert, Str msg, const SourceLoc& loc = SourceLoc::current()) { Logger::GetInternalLog().AssertMsg(assert, msg, loc); }
 
     inline void Write(OutStream& out, Severity filter = Severity::NONE) { Logger::GetInternalLog().Write(out, filter); }
 
@@ -151,8 +152,8 @@ namespace Quasi::Debug {
         Logger::GetInternalLog().LogFmt(s, fmt, std::forward<Ts>(args)...);
     }
 
-    template <class ...Ts> void AssertFmt(bool assert, const FmtStr& fmt, Ts&&... args) {
-        Logger::GetInternalLog().Assert(assert, Text::Format(fmt.fmt, std::forward<Ts>(args)...));
+    template <class ...Ts> void Assert(bool assert, const FmtStr& fmt, Ts&&... args) {
+        Logger::GetInternalLog().Assert(assert, fmt.fmt, std::forward<Ts>(args)...);
     }
 
     template <class T>
@@ -174,7 +175,7 @@ namespace Quasi::Debug {
 namespace Quasi {
     template <class T> T& Option<T>::Assert() { return Q_GETTER_MUT(Assert); }
     template <class T> const T& Option<T>::Assert() const {
-        Debug::AssertFmt(HasValue(), "Option<{}> doesn't have a value", Text::TypeName<T>());
+        Debug::Assert(HasValue(), "Option<{}> doesn't have a value", Text::TypeName<T>());
         return value;
     }
 
@@ -186,7 +187,7 @@ namespace Quasi {
 
     template <class T> T& RefImpl<T>::Assert() { return Q_GETTER_MUT(Assert); }
     template <class T> const T& RefImpl<T>::Assert() const {
-        Debug::AssertFmt(HasValue(), "Ref<{}> doesn't have a value", Text::TypeName<T>());
+        Debug::Assert(HasValue(), "Ref<{}> doesn't have a value", Text::TypeName<T>());
         return *obj;
     }
 
@@ -253,19 +254,19 @@ namespace Quasi::Text {
                 }
                 switch (fmt[i + 1]) {
                     case '%': output('%'); ++i; continue;
-                    case 'y': FormatOnto(output, (i32)ymd.year());   continue;
-                    case 'M': FormatOnto(output, (u32)ymd.month());  continue;
-                    case 'N': output(MONTH_NAMES[(u32)ymd.month()]); continue;
-                    case 'n': output(MONTH_NAMES[(u32)ymd.month()].substr(0, 3)); continue;
-                    case 'd': FormatOnto(output, (u32)ymd.day()); continue;
-                    case 'A': output(WEEKDAY_NAMES[(u32)ymd.day()]); continue;
-                    case 'a': output(WEEKDAY_NAMES[(u32)ymd.day()].substr(0, 3)); continue;
-                    case 'h': FormatOnto(output, hms.hours().count() % 12); continue;
-                    case 'H': FormatOnto(output, hms.hours().count()); continue;
-                    case 'g': output(hms.hours() >= 12h ? "PM" : "AM"); continue;
-                    case 'm': FormatOnto(output, hms.minutes().count()); continue;
-                    case 's': FormatOnto(output, hms.seconds().count()); continue;
-                    case 'u': FormatOnto(output, hms.subseconds().count()); continue;
+                    case 'y': FormatOnto(output, (i32)ymd.year());                   ++i; continue;
+                    case 'M': FormatOnto(output, "{:02}", (u32)ymd.month());         ++i; continue;
+                    case 'N': output(MONTH_NAMES[(u32)ymd.month()]);                 ++i; continue;
+                    case 'n': output(MONTH_NAMES[(u32)ymd.month()].substr(0, 3));    ++i; continue;
+                    case 'd': FormatOnto(output, "{:02}", (u32)ymd.day());           ++i; continue;
+                    case 'A': output(WEEKDAY_NAMES[(u32)ymd.day()]);                 ++i; continue;
+                    case 'a': output(WEEKDAY_NAMES[(u32)ymd.day()].substr(0, 3));    ++i; continue;
+                    case 'h': FormatOnto(output, "{:02}", hms.hours().count() % 12); ++i; continue;
+                    case 'H': FormatOnto(output, "{:02}", hms.hours().count());      ++i; continue;
+                    case 'g': output(hms.hours() >= 12h ? "PM" : "AM");              ++i; continue;
+                    case 'm': FormatOnto(output, "{:02}", hms.minutes().count());    ++i; continue;
+                    case 's': FormatOnto(output, "{:02}", hms.seconds().count());    ++i; continue;
+                    case 'u': FormatOnto(output, "{:03}", hms.subseconds().count()); ++i; continue;
                     default:;
                 }
             }

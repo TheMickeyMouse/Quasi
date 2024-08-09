@@ -121,7 +121,7 @@ namespace Quasi::Text {
                 ++indent;
             }
             if (INDENT_DECR.find(text[i + 1]) != NOT_FOUND) {
-                Debug::Assert(indent > 0, "unindenting past level 0");
+                Debug::AssertMsg(indent > 0, "unindenting past level 0");
                 --indent;
             }
             if (c == '\n') {

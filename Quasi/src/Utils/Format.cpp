@@ -43,7 +43,15 @@ namespace Quasi::Text {
     }
 
     void CheckFormatOption(Str tname, bool success, Str spec) {
-        Debug::AssertFmt(success,
+        // if (!success) {
+        //     String message = "format specifier for <";
+        //     message += tname;
+        //     message += "> failed ('";
+        //     message += spec;
+        //     message += "')";
+        //     Debug::Log(Debug::Severity::ERROR, message);
+        // }
+        Debug::Assert(success,
             "format specifier for <{}> failed ('{}')", tname, spec);
     }
 }

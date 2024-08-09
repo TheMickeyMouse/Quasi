@@ -25,7 +25,7 @@ namespace Quasi::Graphics {
         for (const FaceHandle& faceHandle : faceHandles) {
             if (!faceHandle) continue;
             const int error = FT_Set_Char_Size(faceHandle.get(), charWidth, charHeight == 0 ? charWidth : charHeight, dpi, dpi);
-            GLLogger().AssertFmt(!error, {"Font Char size set with err code {}"}, error);
+            GLLogger().Assert(!error, "Font Char size set with err code {}", error);
         }
     }
 

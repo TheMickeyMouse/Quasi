@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.26.0 FATAL_ERROR)
 
-set(CMAKE_C_COMPILER_WORKS 1)
-set(CMAKE_CXX_COMPILER_WORKS 1)
+set(SKIP_APPLE_CHECKS ${APPLE})
+if (APPLE)
+    set(CMAKE_C_COMPILER_WORKS 1)
+    set(CMAKE_CXX_COMPILER_WORKS 1)
+endif ()
+
 project(Quasi CXX)
 set(APPLE 0)
 

@@ -37,10 +37,10 @@ namespace Quasi::Debug {
     String Logger::FmtLog(Str log, Severity severity, DateTime time, const SourceLoc& fileLoc) const {
         const ConsoleColor scol = severity->color;
         return Text::Format(
-            "{}[{:%y-%M-%d %H:%m:%s.%u}]{} {}> {}{:<8} {:<{}} {}{}\n",
+            "{}[{:%y-%M-%d %H:%m:%s.%u}]{} {}> {}{:<8} {} {}{}\n",
             scol, time, RESET, name,
             scol, Text::Format("[{}]:", severity->name),
-            FmtSourceLoc(fileLoc), lPad,
+            Text::PadLeft(FmtSourceLoc(fileLoc), lPad),
             log,
             RESET
         );
@@ -75,7 +75,7 @@ namespace Quasi::Debug {
         }
     }
 
-    void Logger::Assert(const bool assert, Str msg, const SourceLoc& loc) {
+    void Logger::AssertMsg(const bool assert, Str msg, const SourceLoc& loc) {
         if (!assert) {
             Log(Severity::ERROR, Text::Format("Assertion failed: {}", msg), loc);
             Flush();

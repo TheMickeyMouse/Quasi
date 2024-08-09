@@ -42,7 +42,7 @@ namespace Quasi::Graphics {
             return it->second;
 
         const int location = Q_GL_CALL(GL::GetUniformLocation(rendererID, name.data()));
-        GLLogger().AssertFmt(location != -1, "invalid uniform location for '{}'", name);
+        GLLogger().Assert(location != -1, "invalid uniform location for '{}'", name);
         uniformCache[String { name }] = location;
         return location;
     }
