@@ -115,38 +115,26 @@ namespace Quasi {
 
 #define Q_DEFINE_ENUM(ENAME, V, TRAITS, ...) \
         Quasi::u32 _VALUE; \
-        using __THIS_ENUM = ENAME##Data; \
-        static constexpr Quasi::u32 __COUNTING_VALUE_BEGIN = Q_COUNTER() + 1; \
-        Q_CAT(Q_E_GV_1 V, _END) \
-        static constexpr Quasi::u32 NUM = Q_COUNTER() - __COUNTING_VALUE_BEGIN; \
+        Q_ITERATE_ACCW_SEQUENCE(Q_ENUM_GENVAL, (ENAME##Data), Q_ENUM_ACC_INCINT, (0), V) \
+        static constexpr Quasi::u32 NUM = Q_SEQUENCE_LEN_AS_INTEGER(V); \
         static const Quasi::Array<ENAME##Data, NUM> VALUES; \
-        Q_IF(Q_HAS_ARGS(__VA_ARGS__), static const ENAME##Data NONE; ) \
+        Q_IF_ARGS((__VA_ARGS__), static const ENAME##Data NONE;) \
     }; \
-    inline const Quasi::Array<ENAME##Data, ENAME##Data::NUM> ENAME##Data::VALUES = { Q_UNARY(Q_DEFER(Q_REMOVE_FIRST)(Q_CAT(Q_E_PN_1 V, _END))) }; \
-    Q_IF(Q_HAS_ARGS(__VA_ARGS__), inline const ENAME##Data ENAME##Data::NONE = { Q_UNARY __VA_ARGS__, ~0u }; ) \
+    inline const Quasi::Array<ENAME##Data, ENAME##Data::NUM> ENAME##Data::VALUES = { \
+        Q_INVOKE(Q_ARGS_SKIP, Q_ITERATE_SEQUENCE(Q_ENUM_ARRAYVAL, V)) \
+    }; \
+    Q_IF_ARGS((__VA_ARGS__), inline const ENAME##Data ENAME##Data::NONE = { Q_UNARY __VA_ARGS__, ~0u };) \
     struct ENAME : Quasi::Enum<ENAME##Data, TRAITS> { \
-        using __THIS_ENUM = ENAME; \
-        static constexpr Quasi::u32 __COUNTING_VALUE_BEGIN = Q_COUNTER() + 1; \
-        Q_CAT(Q_E_GVR_1 V, _END) \
-        Q_IF(Q_HAS_ARGS(__VA_ARGS__), inline static const InternalData& NONE = ENAME##Data::NONE; ) \
+        Q_ITERATE_ACC_SEQUENCE(Q_ENUM_GENREF, Q_ENUM_ACC_INCINT, (0), V) \
+        Q_IF_ARGS((__VA_ARGS__), inline static const InternalData& NONE = ENAME##Data::NONE;) \
         using Enum::Enum; \
         ENAME(Enum e) : Enum(e) {} \
 
 
-#define Q_E_GV_1(N, X) static __THIS_ENUM Make##N() { return (__THIS_ENUM { Q_UNARY X Q_DEFER(Q_COMMA)() Q_COUNTER() - __COUNTING_VALUE_BEGIN }); } Q_E_GV_2
-#define Q_E_GV_2(N, X) static __THIS_ENUM Make##N() { return (__THIS_ENUM { Q_UNARY X Q_DEFER(Q_COMMA)() Q_COUNTER() - __COUNTING_VALUE_BEGIN }); } Q_E_GV_1
-#define Q_E_GV_2_END
-#define Q_E_GV_1_END
-
-#define Q_E_GVR_1(N, X) inline static const InternalData& N = InternalData::VALUES[Q_COUNTER() - __COUNTING_VALUE_BEGIN]; Q_E_GVR_2
-#define Q_E_GVR_2(N, X) inline static const InternalData& N = InternalData::VALUES[Q_COUNTER() - __COUNTING_VALUE_BEGIN]; Q_E_GVR_1
-#define Q_E_GVR_2_END
-#define Q_E_GVR_1_END
-
-#define Q_E_PN_1(N, X) Q_DEFER(Q_COMMA)() Make##N() Q_E_PN_2
-#define Q_E_PN_2(N, X) Q_DEFER(Q_COMMA)() Make##N() Q_E_PN_1
-#define Q_E_PN_2_END
-#define Q_E_PN_1_END
+#define Q_ENUM_ACC_INCINT(I) (I+1)
+#define Q_ENUM_GENVAL(E, I, N, X) static E Make##N() { return E { Q_UNARY X, I }; }
+#define Q_ENUM_GENREF(I, N, X) inline static const InternalData& N = InternalData::VALUES[I];
+#define Q_ENUM_ARRAYVAL(N, X) , Make##N()
 
 namespace Quasi {
     template <IEnum E, class T>

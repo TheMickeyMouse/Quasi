@@ -3,56 +3,36 @@
 #include "Math/Transform3D.h"
 #include "VertexBufferLayout.h"
 
-#define Q_GL_VERTEX_T(T, DIM, MEMBS, ... /* may use 'custom transform' */) \
-    using _VSelf = T; static constexpr u32 DIMENSION = 0x##DIM >> 4; /* hacking ND into N */ \
-    private: struct types { Q_CAT(__Q_GL_VY1__ MEMBS, END__) }; public: \
-    inline static const auto VERTEX_LAYOUT = Quasi::Graphics::VertexBufferLayout::FromTypes<Q_UNARY(Q_DEFER(Q_REMOVE_FIRST)(Q_CAT(__Q_GL_VL1__ MEMBS, END__)))>(); \
-    template <Q_UNARY(Q_DEFER(Q_REMOVE_FIRST)(Q_CAT(__Q_GL_VTL1__ MEMBS, END__)))> \
+#define Q_GL_DEFINE_VERTEX(T, DIM, MEMBS, ... /* may use 'custom transform' */) \
+    static constexpr bool IS_GL_VERTEX = true; \
+    static constexpr u32 DIMENSION = 0x##DIM >> 4; /* hacking ND into N */ \
+    private: struct types { Q_ITERATE_W_SEQUENCE(Q_GL_VERTTYPES_IT, (T), MEMBS) }; public: \
+    inline static const auto VERTEX_LAYOUT = Quasi::Graphics::VertexBufferLayout::FromTypes< \
+        Q_INVOKE(Q_ARGS_SKIP, Q_ITERATE_SEQUENCE(Q_GL_VERTLAYOUT_IT, MEMBS)) \
+    >(); \
+    template <Q_INVOKE(Q_ARGS_SKIP, Q_ITERATE_SEQUENCE(Q_GL_VERTBTEMPLIST_IT, MEMBS))> \
     struct Blueprint { \
-         Q_CAT(__Q_GL_VML1__ MEMBS, END__) \
-        _VSelf operator()(const auto& args) { \
-            return _VSelf { Q_UNARY(Q_DEFER(Q_REMOVE_FIRST)(Q_CAT(__Q_GL_VBL1__ MEMBS, END__))) }; \
+        Q_ITERATE_SEQUENCE(Q_GL_VERTBMEMBLIST_IT, MEMBS) \
+        T operator()(const auto& args) { \
+            return T { Q_INVOKE(Q_ARGS_SKIP, Q_ITERATE_SEQUENCE(Q_GL_VERTBUILDLIST_IT, MEMBS)) }; \
         } \
     }; \
     \
-    _VSelf _VMul(const Math::ITransformer##DIM auto& _tr) const { \
-        Q_IF_ELSE(Q_HAS_ARGS(__VA_ARGS__), (return __VA_ARGS__(_tr);), ( \
-            return _VSelf { Q_DEFER(Q_REMOVE_FIRST)(Q_CAT(__Q_GL_VT1__ MEMBS, END__)) }; \
+    T _VMul(const Math::ITransformer##DIM auto& _tr) const { \
+        Q_IF_ARGS_ELSE((__VA_ARGS__), (return __VA_ARGS__(_tr);), ( \
+            return T { Q_INVOKE(Q_ARGS_SKIP, Q_ITERATE_SEQUENCE(Q_GL_VERTTRANS_IT, MEMBS)) }; \
         ))\
     } \
 
-#define __Q_GL_VT1__(M, ...) Q_DEFER(Q_COMMA)() .M = Q_IF_ELSE(Q_IS_EMPTY(__VA_ARGS__), (M), (__VA_ARGS__::transform(M, _tr))) __Q_GL_VT2__
-#define __Q_GL_VT2__(M, ...) Q_DEFER(Q_COMMA)() .M = Q_IF_ELSE(Q_IS_EMPTY(__VA_ARGS__), (M), (__VA_ARGS__::transform(M, _tr))) __Q_GL_VT1__
-#define __Q_GL_VT1__END__
-#define __Q_GL_VT2__END__
-
-#define __Q_GL_VY1__(X, ...) using _##X = MemberT<&_VSelf::X>; __Q_GL_VY2__
-#define __Q_GL_VY2__(X, ...) using _##X = MemberT<&_VSelf::X>; __Q_GL_VY1__
-#define __Q_GL_VY1__END__
-#define __Q_GL_VY2__END__
-
-#define __Q_GL_VL1__(X, ...) Q_DEFER(Q_COMMA)() types::_##X __Q_GL_VL2__
-#define __Q_GL_VL2__(X, ...) Q_DEFER(Q_COMMA)() types::_##X __Q_GL_VL1__
-#define __Q_GL_VL1__END__
-#define __Q_GL_VL2__END__
-
-#define __Q_GL_VTL1__(X, ...) Q_DEFER(Q_COMMA)() class X##_t_ = Quasi::Graphics::VertexBuilder::Default<types::_##X> __Q_GL_VTL2__
-#define __Q_GL_VTL2__(X, ...) Q_DEFER(Q_COMMA)() class X##_t_ = Quasi::Graphics::VertexBuilder::Default<types::_##X> __Q_GL_VTL1__
-#define __Q_GL_VTL1__END__
-#define __Q_GL_VTL2__END__
-
-#define __Q_GL_VML1__(X, ...) X##_t_ X {}; __Q_GL_VML2__
-#define __Q_GL_VML2__(X, ...) X##_t_ X {}; __Q_GL_VML1__
-#define __Q_GL_VML1__END__
-#define __Q_GL_VML2__END__
-
-#define __Q_GL_VBL1__(X, ...) Q_DEFER(Q_COMMA)() .X = X(args) __Q_GL_VBL2__
-#define __Q_GL_VBL2__(X, ...) Q_DEFER(Q_COMMA)() .X = X(args) __Q_GL_VBL1__
-#define __Q_GL_VBL1__END__
-#define __Q_GL_VBL2__END__
+#define Q_GL_VERTTRANS_IT(M, ...) , .M = Q_IF_ARGS_ELSE((__VA_ARGS__), (__VA_ARGS__::transform(M, _tr)), (M))
+#define Q_GL_VERTLAYOUT_IT(X, ...) , types::_##X
+#define Q_GL_VERTTYPES_IT(T, X, ...) using _##X = Quasi::MemberT<&T::X>;
+#define Q_GL_VERTBTEMPLIST_IT(X, ...) , class X##_t_ = Quasi::Graphics::VertexBuilder::Default<types::_##X>
+#define Q_GL_VERTBMEMBLIST_IT(X, ...) X##_t_ X {};
+#define Q_GL_VERTBUILDLIST_IT(X, ...) , .X = X(args)
 
 namespace Quasi::Graphics {
-    template <class T> concept IVertex = requires { typename T::_VSelf; };
+    template <class T> concept IVertex = requires { T::IS_GL_VERTEX; };
 
     namespace VertexBuilder {
         struct MeshConstructData2D;
@@ -84,41 +64,41 @@ namespace Quasi::Graphics {
     struct Vertex2D {
         Math::fVector2 Position;
 
-        Q_GL_VERTEX_T(Vertex2D, 2D, (Position, PosTf));
+        Q_GL_DEFINE_VERTEX(Vertex2D, 2D, (Position, PosTf));
     };
 
     struct VertexColor2D {
         Math::fVector2 Position;
         Math::fColor   Color;
 
-        Q_GL_VERTEX_T(VertexColor2D, 2D, (Position, PosTf)(Color));
+        Q_GL_DEFINE_VERTEX(VertexColor2D, 2D, (Position, PosTf)(Color));
     };
 
     struct VertexTexture2D {
         Math::fVector2 Position;
         Math::fVector2 TextureCoordinate;
 
-        Q_GL_VERTEX_T(VertexTexture2D, 2D, (Position, PosTf)(TextureCoordinate));
+        Q_GL_DEFINE_VERTEX(VertexTexture2D, 2D, (Position, PosTf)(TextureCoordinate));
     };
 
     struct Vertex3D {
         Math::fVector3 Position;
 
-        Q_GL_VERTEX_T(Vertex3D, 3D, (Position, PosTf));
+        Q_GL_DEFINE_VERTEX(Vertex3D, 3D, (Position, PosTf));
     };
 
     struct VertexNormal3D {
         Math::fVector3 Position;
         Math::fVector3 Normal;
 
-        Q_GL_VERTEX_T(VertexNormal3D, 3D, (Position, PosTf)(Normal, NormTf));
+        Q_GL_DEFINE_VERTEX(VertexNormal3D, 3D, (Position, PosTf)(Normal, NormTf));
     };
 
     struct VertexColor3D {
         Math::fVector3 Position;
         Math::fColor   Color;
 
-        Q_GL_VERTEX_T(VertexColor3D, 3D, (Position, PosTf)(Color));
+        Q_GL_DEFINE_VERTEX(VertexColor3D, 3D, (Position, PosTf)(Color));
     };
 
     struct VertexColorTexture3D {
@@ -126,7 +106,7 @@ namespace Quasi::Graphics {
         Math::fColor   Color;
         Math::fVector2 TextureCoordinate;
 
-        Q_GL_VERTEX_T(VertexColorTexture3D, 3D, (Position, PosTf)(Color)(TextureCoordinate));
+        Q_GL_DEFINE_VERTEX(VertexColorTexture3D, 3D, (Position, PosTf)(Color)(TextureCoordinate));
     };
 
     struct VertexColorNormal3D {
@@ -134,7 +114,7 @@ namespace Quasi::Graphics {
         Math::fColor   Color;
         Math::fVector3 Normal;
 
-        Q_GL_VERTEX_T(VertexColorNormal3D, 3D, (Position, PosTf)(Color)(Normal, NormTf));
+        Q_GL_DEFINE_VERTEX(VertexColorNormal3D, 3D, (Position, PosTf)(Color)(Normal, NormTf));
     };
 
     struct VertexTextureNormal3D {
@@ -142,7 +122,7 @@ namespace Quasi::Graphics {
         Math::fVector2 TextureCoordinate;
         Math::fVector3 Normal;
 
-        Q_GL_VERTEX_T(VertexTextureNormal3D, 3D, (Position, PosTf)(TextureCoordinate)(Normal, NormTf));
+        Q_GL_DEFINE_VERTEX(VertexTextureNormal3D, 3D, (Position, PosTf)(TextureCoordinate)(Normal, NormTf));
     };
 
     template <IVertex T>
