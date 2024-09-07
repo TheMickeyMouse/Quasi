@@ -36,8 +36,10 @@ namespace Quasi::Physics2D {
         void AddForce(const Math::fVector2& newton);
         void Stop() { velocity = 0; }
 
-        [[nodiscard]] Collision::Event CollidesWith(const Body& target) const;
-        [[nodiscard]] Collision::Event CollidesWith(const Shape& target, const PhysicsTransform& t) const;
+        [[nodiscard]] Manifold CollideWith(const Body& target) const;
+        [[nodiscard]] Manifold CollideWith(const Shape& target, const PhysicsTransform& t) const;
+        [[nodiscard]] bool OverlapsWith(const Body& target) const;
+        [[nodiscard]] bool OverlapsWith(const Shape& target, const PhysicsTransform& t) const;
         [[nodiscard]] PhysicsTransform GetTransform() const;
 
         void Update(float dt);
@@ -53,8 +55,8 @@ namespace Quasi::Physics2D {
         [[nodiscard]] Math::fRect2D ComputeBoundingBox() const;
 
         friend class World;
-        friend void Collision::StaticResolve (Body&, Body&, const Collision::Event&);
-        friend void Collision::DynamicResolve(Body&, Body&, const Collision::Event&);
+        friend void Collision::StaticResolve (Body&, Body&, const Manifold&);
+        friend void Collision::DynamicResolve(Body&, Body&, const Manifold&);
     };
 
     struct BodyCreateOptions {

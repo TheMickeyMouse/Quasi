@@ -74,13 +74,13 @@ namespace Quasi {
         Enum operator%(Enum other) const requires IS_ARITH { return FromOrd(Ord() % other.Ord()); }
         Enum operator%(u32 other)  const requires IS_ARITH { return FromOrd(Ord() % other); }
         Enum& operator+=(Enum other) requires IS_ARITH { value += other.Ord(); return *this; }
-        Enum& operator-=(Enum other) requires IS_ARITH { value += other.Ord(); return *this; }
+        Enum& operator-=(Enum other) requires IS_ARITH { value -= other.Ord(); return *this; }
         Enum& operator+=(u32 other)  requires IS_ARITH { value += other;       return *this; }
-        Enum& operator-=(u32 other)  requires IS_ARITH { value += other;       return *this; }
-        Enum& operator*=(u32 other)  requires IS_ARITH { value += other;       return *this; }
-        Enum& operator/=(u32 other)  requires IS_ARITH { value += other;       return *this; }
-        Enum& operator%=(Enum other) requires IS_ARITH { value += other.Ord(); return *this; }
-        Enum& operator%=(u32 other)  requires IS_ARITH { value += other;       return *this; }
+        Enum& operator-=(u32 other)  requires IS_ARITH { value -= other;       return *this; }
+        Enum& operator*=(u32 other)  requires IS_ARITH { value *= other;       return *this; }
+        Enum& operator/=(u32 other)  requires IS_ARITH { value /= other;       return *this; }
+        Enum& operator%=(Enum other) requires IS_ARITH { value %= other.Ord(); return *this; }
+        Enum& operator%=(u32 other)  requires IS_ARITH { value %= other;       return *this; }
         bool operator< (Enum other) const requires IS_CMP { return Ord() <  other.Ord(); }
         bool operator<=(Enum other) const requires IS_CMP { return Ord() <= other.Ord(); }
         bool operator> (Enum other) const requires IS_CMP { return Ord() >  other.Ord(); }

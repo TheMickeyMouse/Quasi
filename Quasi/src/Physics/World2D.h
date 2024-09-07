@@ -10,13 +10,12 @@ namespace Quasi::Physics2D {
     public:
         Vec<Ref<Body>> bodies;
         Math::fVector2 gravity;
-        float drag = 0.0f;
     private:
         Ref<Body> CreateBodyWithHeap(const BodyCreateOptions& options, Ref<Shape> heapAllocShape);
         void ClearWithoutUpdate() { bodies.clear(); allocator.Clear(); }
     public:
         World() = default;
-        World(const Math::fVector2& gravity, float drag) : gravity(gravity), drag(drag) {}
+        World(const Math::fVector2& gravity) : gravity(gravity) {}
 
         [[nodiscard]] usize BodyCount() const { return bodies.size(); }
         void Reserve(usize size) { bodies.reserve(size); }
@@ -28,11 +27,7 @@ namespace Quasi::Physics2D {
             return this->CreateBodyWithHeap(options, *allocator.Create<S>(std::forward<Rs>(args)...));
         }
 
-        void Update(float dt, int maxCollisionSteps);
-        void Update(float dt, int simUpdates, int maxCollisionSteps);
+        void Update(float dt);
+        void Update(float dt, int simUpdates);
     };
-
-    inline float Drag(float drag, float fps) {
-        return std::pow(drag, fps);
-    }
 } // Physics

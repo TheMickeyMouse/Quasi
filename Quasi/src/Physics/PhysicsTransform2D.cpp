@@ -2,17 +2,17 @@
 #include "Math/Transform2D.h"
 
 namespace Quasi::Physics2D {
-    void PhysicsTransform::Translate(Math::fVector2 p) { position += p; }
+    void PhysicsTransform::Translate(const Math::fVector2& p) { position += p; }
     void PhysicsTransform::Rotate(float r)             { Rotate(Math::fComplex::rotate(r)); }
-    void PhysicsTransform::Rotate(Math::fComplex r)    { rotation *= r; }
+    void PhysicsTransform::Rotate(const Math::fComplex& r)    { rotation *= r; }
 
-    PhysicsTransform PhysicsTransform::Translated(Math::fVector2 p) const {
+    PhysicsTransform PhysicsTransform::Translated(const Math::fVector2& p) const {
         return { position + p, rotation };
     }
     PhysicsTransform PhysicsTransform::Rotated(float r) const {
         return Rotated(Math::fComplex::rotate(r));
     }
-    PhysicsTransform PhysicsTransform::Rotated(Math::fComplex r) const {
+    PhysicsTransform PhysicsTransform::Rotated(const Math::fComplex& r) const {
         return { position, rotation * r };
     }
 
@@ -20,13 +20,18 @@ namespace Quasi::Physics2D {
     PhysicsTransform PhysicsTransform::Rotation(float r) { return Rotation(Math::fComplex::rotate(r)); }
     PhysicsTransform PhysicsTransform::Rotation(const Math::fComplex& q) { return { 0, q }; }
 
-    Math::fVector2 PhysicsTransform::Transform(Math::fVector2 point) const {
+    Math::fVector2 PhysicsTransform::Transform(const Math::fVector2& point) const {
         return point.rotated_by(rotation) + position;
     }
+
+    Math::fVector2 PhysicsTransform::TransformOffset(const Math::fVector2& offset) const {
+        return offset.rotated_by(rotation);
+    }
+
     void PhysicsTransform::TransformInplace(Math::fVector2& point) const {
         point.rotate_by(rotation) += position;
     }
-    Math::fVector2 PhysicsTransform::TransformInverse(Math::fVector2 point) const {
+    Math::fVector2 PhysicsTransform::TransformInverse(const Math::fVector2& point) const {
         return (point - position).rotated_by(rotation.inv());
     }
     void PhysicsTransform::TransformInverseInplace(Math::fVector2& point) const {
@@ -37,7 +42,7 @@ namespace Quasi::Physics2D {
         return Math::fRect2D { Transform(rect.min), Transform(rect.max) }.corrected();
     }
 
-    Math::Transform2D PhysicsTransform::AsObjectTransform(Math::fVector2 scale) const {
+    Math::Transform2D PhysicsTransform::AsObjectTransform(const Math::fVector2& scale) const {
         return { position, scale, rotation };
     }
 

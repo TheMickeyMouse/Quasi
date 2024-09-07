@@ -204,7 +204,7 @@ namespace Quasi::Text {
                 case OCTAL:  preciseDigits = (std::bit_width(Abs(number)) + 2) / 3; break;
                 case DECIMAL:
                     preciseDigits =
-                        std::lower_bound(POWERS_OF_TEN, std::end(POWERS_OF_TEN), Abs(number)) - POWERS_OF_TEN;
+                        std::lower_bound(POWERS_OF_TEN, std::end(POWERS_OF_TEN), Abs(number) - 1) - POWERS_OF_TEN;
                     preciseDigits = std::max(1u, preciseDigits);
                     break;
                 case HEX:

@@ -19,8 +19,12 @@ namespace Quasi::Graphics {
         GLLogger().SetLocPad(0);
     }
 
-    GLErrorCode GLGetErr() {
-        return GLErrorCode::Find(&GLErrorCodeData::glID, GL::GetError());
+    GLErrorCode GLErrorCode::FromID(u32 glid) {
+        return Find(&GLErrorCodeData::glID, glid);
+    }
+
+    u32 GLGetErr() {
+        return GL::GetError();
     }
 
     void GLClearErr() {
@@ -28,18 +32,18 @@ namespace Quasi::Graphics {
     }
 
     void GLReport(const Debug::SourceLoc& loc) {
-        GLErrorCode err;
+        u32 err;
         while ((err = GLGetErr())) {
-            GLLogger().Error({ "GL Error code {} was uncaught.", loc }, err);
+            GLLogger().Error({ "GL Error code {} was uncaught.", loc }, GLErrorCode::FromID(err));
         }
     }
 
     void GLReportFn(Str signature, const Debug::SourceLoc& loc) {
-        GLErrorCode err;
+        u32 err;
         while ((err = GLGetErr())) {
             GLLogger().Error(
                 { "GL Error code {} was uncaught when calling {} (see https://docs.gl/gl3/{}).", loc },
-                err, signature, signature.substr(0, signature.find('(')));
+                GLErrorCode::FromID(err), signature, signature.substr(0, signature.find('(')));
         }
     }
 }

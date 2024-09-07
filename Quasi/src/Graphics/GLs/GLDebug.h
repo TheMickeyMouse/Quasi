@@ -14,7 +14,7 @@ namespace Quasi::Graphics {
     void InitGLLog();
 
     struct GLErrorCodeData {
-        uint glID;
+        u32 glID;
         Str errName;
 
         // taken from https://www.khronos.org/opengl/wiki/OpenGL_Error#Catching_errors_(the_hard_way)
@@ -47,9 +47,11 @@ namespace Quasi::Graphics {
             (TABLE_TOO_LARGE,               (0x8031, "TABLE_TOO_LARGE")),
             NULLABLE, (0, "NO_ERROR")
         )
+
+        static GLErrorCode FromID(u32 glid);
     };
 
-    GLErrorCode GLGetErr();
+    u32 GLGetErr();
     void GLClearErr();
     void GLReport(const Debug::SourceLoc& loc = Debug::SourceLoc::current());
     void GLReportFn(Str signature, const Debug::SourceLoc& loc = Debug::SourceLoc::current());
@@ -86,4 +88,3 @@ namespace Quasi::Text {
         }
     };
 }
-

@@ -11,7 +11,7 @@ namespace Quasi::Math {
         using vec_t = VectorN<N, T>;
         vec_t start, end;
 
-        Line(vec_t s, vec_t e) : start(s), end(e) {}
+        Line(const vec_t& s, const vec_t& e) : start(s), end(e) {}
 
         vec_t forward() const { return end - start; }
 

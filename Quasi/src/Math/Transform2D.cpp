@@ -3,21 +3,21 @@
 #include "Transform3D.h"
 
 namespace Quasi::Math {
-    void Transform2D::Translate(fVector2 p) { position += p; }
-    void Transform2D::Scale(fVector2 s) { scale *= s; }
+    void Transform2D::Translate(const fVector2& p) { position += p; }
+    void Transform2D::Scale(const fVector2& s) { scale *= s; }
     void Transform2D::Rotate(float r) { Rotate(fComplex::rotate(r)); }
-    void Transform2D::Rotate(fComplex r) { rotation *= r; }
+    void Transform2D::Rotate(const fComplex& r) { rotation *= r; }
 
-    Transform2D Transform2D::Translated(fVector2 p) const {
+    Transform2D Transform2D::Translated(const fVector2& p) const {
         return { position + p, scale, rotation };
     }
-    Transform2D Transform2D::Scaled(fVector2 s) const {
+    Transform2D Transform2D::Scaled(const fVector2& s) const {
         return { position, scale * s, rotation };
     }
     Transform2D Transform2D::Rotated(float r) const {
         return Rotated(fComplex::rotate(r));
     }
-    Transform2D Transform2D::Rotated(fComplex r) const {
+    Transform2D Transform2D::Rotated(const fComplex& r) const {
         return { position, scale, rotation * r };
     }
 
@@ -30,7 +30,7 @@ namespace Quasi::Math {
         return { 0, 1.0f / scale, rotation };
     }
 
-    fVector2 Transform2D::Transform(fVector2 point) const {
+    fVector2 Transform2D::Transform(const fVector2& point) const {
         return (point * scale).rotated_by(rotation) + position;
     }
 
@@ -40,7 +40,7 @@ namespace Quasi::Math {
         point += position;
     }
 
-    fVector2 Transform2D::TransformInverse(fVector2 point) const {
+    fVector2 Transform2D::TransformInverse(const fVector2& point) const {
         return (point - position).rotated_by(rotation.inv()) / scale;
     }
 
@@ -50,7 +50,7 @@ namespace Quasi::Math {
         point /= scale;
     }
 
-    fVector2 Transform2D::TransformNormal(fVector2 normal) const {
+    fVector2 Transform2D::TransformNormal(const fVector2& normal) const {
         return (normal / scale).rotated_by(rotation).norm();
     }
 
@@ -60,7 +60,7 @@ namespace Quasi::Math {
         normal /= normal.len();
     }
 
-    fVector2 Transform2D::TransformInverseNormal(fVector2 normal) const {
+    fVector2 Transform2D::TransformInverseNormal(const fVector2& normal) const {
         return (normal.rotated_by(rotation.inv()) * scale).norm();
     }
 

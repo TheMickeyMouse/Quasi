@@ -166,6 +166,10 @@ source_group("Source Files" FILES ${SOURCE_FILES})
 set(ALL_FILES
     ${HEADER_FILES}
     ${SOURCE_FILES}
+        src/Physics/Manifold2D.cpp
+        src/Physics/Manifold2D.h
+        src/Physics/SeperatingAxisSolver.cpp
+        src/Physics/SeperatingAxisSolver.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

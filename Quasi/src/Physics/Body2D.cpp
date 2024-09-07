@@ -11,12 +11,20 @@ namespace Quasi::Physics2D {
         acceleration += newton / mass;
     }
 
-    Collision::Event Body::CollidesWith(const Body& target) const {
-        return CollidesWith(*target.shape, target.GetTransform());
+    Manifold Body::CollideWith(const Body& target) const {
+        return CollideWith(*target.shape, target.GetTransform());
     }
 
-    Collision::Event Body::CollidesWith(const Shape& target, const PhysicsTransform& t) const {
-        return Collision::CollideShapeDyn(*shape, GetTransform(), target, t);
+    Manifold Body::CollideWith(const Shape& target, const PhysicsTransform& t) const {
+        return Collision::CollideShapes(*shape, GetTransform(), target, t);
+    }
+
+    bool Body::OverlapsWith(const Body& target) const {
+        return OverlapsWith(target.shape, target.GetTransform());
+    }
+
+    bool Body::OverlapsWith(const Shape& target, const PhysicsTransform& t) const {
+        return Collision::OverlapShapes(shape, GetTransform(), target, t);
     }
 
     PhysicsTransform Body::GetTransform() const {
