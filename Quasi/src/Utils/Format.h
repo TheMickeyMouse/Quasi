@@ -2,7 +2,6 @@
 #include <concepts>
 #include <cmath>
 
-#include "Func.h"
 #include "Text.h"
 
 namespace Quasi {

@@ -6,7 +6,7 @@
 #define Q_GL_DEFINE_VERTEX(T, DIM, MEMBS, ... /* may use 'custom transform' */) \
     static constexpr bool IS_GL_VERTEX = true; \
     static constexpr u32 DIMENSION = 0x##DIM >> 4; /* hacking ND into N */ \
-    private: struct types { Q_ITERATE_W_SEQUENCE(Q_GL_VERTTYPES_IT, (T), MEMBS) }; public: \
+    private: struct types { Q_ITERATE_W_SEQUENCE(Q_GL_VERTTYPES_IT, T, MEMBS) }; public: \
     inline static const auto VERTEX_LAYOUT = Quasi::Graphics::VertexBufferLayout::FromTypes< \
         Q_INVOKE(Q_ARGS_SKIP, Q_ITERATE_SEQUENCE(Q_GL_VERTLAYOUT_IT, MEMBS)) \
     >(); \
@@ -24,12 +24,13 @@
         ))\
     } \
 
-#define Q_GL_VERTTRANS_IT(M, ...) , .M = Q_IF_ARGS_ELSE((__VA_ARGS__), (__VA_ARGS__::transform(M, _tr)), (M))
-#define Q_GL_VERTLAYOUT_IT(X, ...) , types::_##X
-#define Q_GL_VERTTYPES_IT(T, X, ...) using _##X = Quasi::MemberT<&T::X>;
-#define Q_GL_VERTBTEMPLIST_IT(X, ...) , class X##_t_ = Quasi::Graphics::VertexBuilder::Default<types::_##X>
-#define Q_GL_VERTBMEMBLIST_IT(X, ...) X##_t_ X {};
-#define Q_GL_VERTBUILDLIST_IT(X, ...) , .X = X(args)
+#define Q_GL_VERTTRANS_IT(MX) , .Q_ARGS_FIRST MX = Q_GL_VERTTRANS_WHEN_T MX
+#define Q_GL_VERTTRANS_WHEN_T(M, ...) __VA_OPT__(__VA_ARGS__::transform Q_LPAREN() ) M __VA_OPT__(, _tr Q_RPAREN())
+#define Q_GL_VERTLAYOUT_IT(X_) , types::Q_CAT(_, Q_ARGS_FIRST X_)
+#define Q_GL_VERTTYPES_IT(T, X_) using Q_CAT(_, Q_ARGS_FIRST X_) = Quasi::MemberT<&T::Q_ARGS_FIRST X_>;
+#define Q_GL_VERTBTEMPLIST_IT(X_) , class Q_CAT(Q_ARGS_FIRST X_, _t_) = Quasi::Graphics::VertexBuilder::Default<types::Q_CAT(_, Q_ARGS_FIRST X_)>
+#define Q_GL_VERTBMEMBLIST_IT(X_) Q_CAT(Q_ARGS_FIRST X_, _t_) Q_ARGS_FIRST X_ {};
+#define Q_GL_VERTBUILDLIST_IT(X_) , .Q_ARGS_FIRST X_ = Q_ARGS_FIRST X_ (args)
 
 namespace Quasi::Graphics {
     template <class T> concept IVertex = requires { T::IS_GL_VERTEX; };

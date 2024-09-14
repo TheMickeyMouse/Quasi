@@ -115,7 +115,7 @@ namespace Quasi {
 
 #define Q_DEFINE_ENUM(ENAME, V, TRAITS, ...) \
         Quasi::u32 _VALUE; \
-        Q_ITERATE_ACCW_SEQUENCE(Q_ENUM_GENVAL, (ENAME##Data), Q_ENUM_ACC_INCINT, (0), V) \
+        Q_UNARY(Q_ITERATE_ACCW_SEQUENCE(Q_ENUM_GENVAL, ENAME##Data, Q_ENUM_ACC_INCINT, 0, V)) \
         static constexpr Quasi::u32 NUM = Q_SEQUENCE_LEN_AS_INTEGER(V); \
         static const Quasi::Array<ENAME##Data, NUM> VALUES; \
         Q_IF_ARGS((__VA_ARGS__), static const ENAME##Data NONE;) \
@@ -125,16 +125,16 @@ namespace Quasi {
     }; \
     Q_IF_ARGS((__VA_ARGS__), inline const ENAME##Data ENAME##Data::NONE = { Q_UNARY __VA_ARGS__, ~0u };) \
     struct ENAME : Quasi::Enum<ENAME##Data, TRAITS> { \
-        Q_ITERATE_ACC_SEQUENCE(Q_ENUM_GENREF, Q_ENUM_ACC_INCINT, (0), V) \
+        Q_ITERATE_ACC_SEQUENCE(Q_ENUM_GENREF, Q_ENUM_ACC_INCINT, 0, V) \
         Q_IF_ARGS((__VA_ARGS__), inline static const InternalData& NONE = ENAME##Data::NONE;) \
         using Enum::Enum; \
         ENAME(Enum e) : Enum(e) {} \
 
 
-#define Q_ENUM_ACC_INCINT(I) (I+1)
-#define Q_ENUM_GENVAL(E, I, N, X) static E Make##N() { return E { Q_UNARY X, I }; }
-#define Q_ENUM_GENREF(I, N, X) inline static const InternalData& N = InternalData::VALUES[I];
-#define Q_ENUM_ARRAYVAL(N, X) , Make##N()
+#define Q_ENUM_ACC_INCINT(I) I+1
+#define Q_ENUM_GENVAL(E, I, NX) static E Q_CAT(Make, Q_ARGS_FIRST NX)() { return E { Q_UNARY2 Q_ARGS_SECOND NX, I }; }
+#define Q_ENUM_GENREF(I, NX) inline static const InternalData& Q_ARGS_FIRST NX = InternalData::VALUES[I];
+#define Q_ENUM_ARRAYVAL(NX) , Q_CAT(Make, Q_ARGS_FIRST NX)()
 
 namespace Quasi {
     template <IEnum E, class T>

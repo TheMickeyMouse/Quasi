@@ -52,4 +52,57 @@ namespace Quasi {
             );
         }
     };
+
+    template <class T, class... Ts> union Union;
+
+    template <class T, class... Ts>
+    union Union {
+        T first;
+        Union<Ts...> rest;
+
+        template <class U> static constexpr bool IsApartOf = std::is_same_v<T, std::remove_cvref_t<U>> || (std::is_same_v<Ts, std::remove_cvref_t<U>> || ...);
+
+        Union(const T& t) : first(t) {}
+        Union(T&& t) : first(std::move(t)) {}
+        template <class U> requires IsApartOf<U>
+        Union(U&& t) : rest(std::forward<U>(t)) {}
+
+        template <class U> requires IsApartOf<U> const U& As() const {
+            if constexpr (std::is_same_v<T, std::remove_cvref_t<U>>) return first;
+            else return rest.template As<U>();
+        }
+        template <class U> requires IsApartOf<U> U& As() {
+            if constexpr (std::is_same_v<T, std::remove_cvref_t<U>>) return first;
+            else return rest.template As<U>();
+        }
+
+        template <class U> requires IsApartOf<U> void Set(U&& u) {
+            if constexpr (std::is_same_v<T, std::remove_cvref_t<U>>) { first = std::forward<U>(u); }
+            else { rest.Set(std::forward<U>(u)); }
+        }
+
+        template <class U> requires IsApartOf<U>
+        void Destroy() { first.~U(); }
+    };
+
+    template <class T>
+    union Union<T> {
+        T first;
+
+        template <class U> static constexpr bool IsApartOf = std::is_same_v<T, U>;
+
+        Union(const T& t) : first(t) {}
+        Union(T&& t) : first(std::move(t)) {}
+        ~Union() { first.~T(); }
+
+        template <std::same_as<T> U> const U& As() const { return first; }
+        template <std::same_as<T> U> U& As() { return first; }
+
+        template <class U> requires IsApartOf<U> void Set(U&& u) {
+            first = std::forward<U>(u);
+        }
+
+        template <class U> requires IsApartOf<U>
+        void Destroy() { first.~U(); }
+    };
 }
