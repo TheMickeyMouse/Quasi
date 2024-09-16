@@ -252,16 +252,16 @@ namespace Quasi::Math {
             bool AddOption(Str args) {
                 if (args.empty()) return true;
                 // :[%][#|*|rgb|hsl|hsv]
-                match (args) {
-                    when (== "#") { mode = HEX; }
-                    when (== "*")   { mode = VECTOR; }
-                    when (== "rgb") { mode = RGB; }
-                    when (== "hsl") { mode = HSL; }
-                    when (== "hsv") { mode = HSV; }
-                    when (== "%hsl") { mode = HSL; }
-                    when (== "%hsv") { mode = HSV; }
-                    otherwise return false;
-                }
+                qmatch (args, (
+                    case ("#")    { mode = HEX; },
+                    case ("*")    { mode = VECTOR; },
+                    case ("rgb")  { mode = RGB; },
+                    case ("hsl")  { mode = HSL; },
+                    case ("hsv")  { mode = HSV; },
+                    case ("%hsl") { mode = HSL; },
+                    case ("%hsv") { mode = HSV; },
+                    else return false;
+                ))
                 return true;
             }
             void FormatTo(const C& color, Text::StringOutput output) {

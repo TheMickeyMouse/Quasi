@@ -22,8 +22,8 @@ namespace Quasi {
         Variant(T&& val) : v(std::forward<T>(val)) {}
 
         template <class T> [[nodiscard]] bool Is() const { return std::holds_alternative<T>(v); }
-        template <class T> Ref<const T> As() const { return Is<T>() ? Refer(std::get<T>(v)) : Ref<const T> { nullptr }; }
-        template <class T> Ref<T> As() { return Is<T>() ? Refer(std::get<T>(v)) : Ref<T> { nullptr }; }
+        template <class T> Ref<const T> As() const { return DerefPtr(std::get_if<T>(&v)); }
+        template <class T> Ref<T> As() { return DerefPtr(std::get_if<T>(&v)); }
 
         template <class T> void Set(T&& val) { v = std::forward<T>(val); }
 
@@ -66,6 +66,10 @@ namespace Quasi {
         Union(T&& t) : first(std::move(t)) {}
         template <class U> requires IsApartOf<U>
         Union(U&& t) : rest(std::forward<U>(t)) {}
+        ~Union() {}
+
+        Union(const Union&) = delete;
+        Union& operator=(const Union&) = delete;
 
         template <class U> requires IsApartOf<U> const U& As() const {
             if constexpr (std::is_same_v<T, std::remove_cvref_t<U>>) return first;
@@ -74,6 +78,10 @@ namespace Quasi {
         template <class U> requires IsApartOf<U> U& As() {
             if constexpr (std::is_same_v<T, std::remove_cvref_t<U>>) return first;
             else return rest.template As<U>();
+        }
+        template <class U> requires IsApartOf<U> U&& MoveAs() && {
+            if constexpr (std::is_same_v<T, std::remove_cvref_t<U>>) return std::move(first);
+            else return std::move(rest.template As<U>());
         }
 
         template <class U> requires IsApartOf<U> void Set(U&& u) {
@@ -93,7 +101,10 @@ namespace Quasi {
 
         Union(const T& t) : first(t) {}
         Union(T&& t) : first(std::move(t)) {}
-        ~Union() { first.~T(); }
+        ~Union() {}
+
+        Union(const Union&) = delete;
+        Union& operator=(const Union&) = delete;
 
         template <std::same_as<T> U> const U& As() const { return first; }
         template <std::same_as<T> U> U& As() { return first; }

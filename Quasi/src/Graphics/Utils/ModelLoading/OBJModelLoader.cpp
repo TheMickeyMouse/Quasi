@@ -28,25 +28,19 @@ namespace Quasi::Graphics {
         const Str prefix = line.substr(0, spaceIdx),
                   data   = line.substr(spaceIdx + 1);
 
-#define MATCH_BEGIN if (false) {}
-#define MATCH_PREFIX(M, T) else if (prefix == (M)) { properties.emplace_back(CreateProperty<T>(data)); }
-        MATCH_BEGIN
-        MATCH_PREFIX("v",  Vertex)
-        MATCH_PREFIX("vt", VertexTex)
-        MATCH_PREFIX("vn", VertexNormal)
-        MATCH_PREFIX("vp", VertexParam)
-
-        MATCH_PREFIX("f",  Face)
-        MATCH_PREFIX("l",  Line)
-        MATCH_PREFIX("o",  Object)
-        MATCH_PREFIX("g",  Group)
-
-        MATCH_PREFIX("s",  SmoothShade)
-
-        MATCH_PREFIX("usemtl", UseMaterial)
-        MATCH_PREFIX("mtllib", MaterialLib)
-#undef MATCH_BEGIN
-#undef MATCH_PREFIX
+        qmatch (prefix, (
+            case ("v")      properties.emplace_back(CreateProperty<Vertex>      (data));,
+            case ("vt")     properties.emplace_back(CreateProperty<VertexTex>   (data));,
+            case ("vn")     properties.emplace_back(CreateProperty<VertexNormal>(data));,
+            case ("vp")     properties.emplace_back(CreateProperty<VertexParam> (data));,
+            case ("f")      properties.emplace_back(CreateProperty<Face>        (data));,
+            case ("l")      properties.emplace_back(CreateProperty<Line>        (data));,
+            case ("o")      properties.emplace_back(CreateProperty<Object>      (data));,
+            case ("g")      properties.emplace_back(CreateProperty<Group>       (data));,
+            case ("s")      properties.emplace_back(CreateProperty<SmoothShade> (data));,
+            case ("usemtl") properties.emplace_back(CreateProperty<UseMaterial> (data));,
+            case ("mtllib") properties.emplace_back(CreateProperty<MaterialLib> (data));
+        ))
     }
 
     void OBJModelLoader::ParseProperties(Str string) {
@@ -55,6 +49,53 @@ namespace Quasi::Graphics {
             ParseProperty(Str { line.begin(), line.end() });
         }
     }
+
+    template <class OBJ>
+    OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty(Str data) {
+        using namespace std::literals;
+        qmatch ((typename)OBJ, (
+            in (MaterialLib, UseMaterial, Object, Group) { return { OBJ { String { data } } }; },
+            in (Vertex, VertexNormal, VertexParam) {
+                return { OBJ { Math::fVector3::parse(data, " ", "", "").ValueOr(Math::fVector3 { NAN }) } };
+            },
+            case (VertexTex) {
+                return { OBJ { Math::fVector2::parse(data, " ", "", "").ValueOr(Math::fVector2 { NAN }) } };
+            },
+            case (Line) {
+                Vec<int> indices;
+                for (const auto idx : std::views::split(data, ' ')) {
+                    indices.push_back(Text::Parse<int>({ idx.begin(), idx.end() }).Or(-1));
+                }
+                return { Line { std::move(indices) } };
+            },
+            case (Face) ({
+                Face face;
+                u32 i = 0;
+                for (const auto idx : std::views::split(data, ' ')) {
+                    if (i >= 3) return {};
+                    const auto [v, t, n] = Math::iVector3::parse(Str { idx.begin(), idx.end() }, "/", "", "",
+                        [](Str x) -> Option<int> { return Text::Parse<int>(x).ValueOr(-1); }).ValueOr({ -1 });
+                    face.indices[i][0] = v; face.indices[i][1] = t; face.indices[i][2] = n;
+                    ++i;
+                }
+                if (i != 3) return {};
+                return { face };
+            });,
+            case (SmoothShade) { return { SmoothShade { data != "0" } }; },
+            else return {};
+        ))
+    }
+    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::MaterialLib> (Str data);
+    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::UseMaterial> (Str data);
+    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::Object>      (Str data);
+    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::Group>       (Str data);
+    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::Vertex>      (Str data);
+    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::VertexNormal>(Str data);
+    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::VertexParam> (Str data);
+    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::VertexTex>   (Str data);
+    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::Line>        (Str data);
+    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::Face>        (Str data);
+    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::SmoothShade> (Str data);
 
     void OBJModelLoader::CreateModel() {
         u32 lastObj = 0;
@@ -93,8 +134,8 @@ namespace Quasi::Graphics {
                 [&] (const VertexTex&    t) { vertexTexture.push_back(t.tex); },
                 [&] (const VertexNormal& n) { vertexNormal .push_back(n.nrm); },
                 [&] (const Face&         f) { faces.push_back(f); },
-                [&] (SmoothShade ss) { object.smoothShading = ss.enabled; },
-                [&] (const auto& _) {}
+                [&] (SmoothShade        ss) { object.smoothShading = ss.enabled; },
+                [] (const auto&) {}
             );
         }
         ResolveObjectIndices(object);
@@ -147,20 +188,21 @@ namespace Quasi::Graphics {
 
     String OBJModelLoader::DebugStr() const {
         String ss {};
-#define MATCH_PROP(T, S, P) else if (const auto val_##T = p.As<T>()) { ss += S; ss += ": "; const auto& $ = val_##T; ss += P; }
         for (const OBJProperty& p : properties) {
-            if constexpr (false) {}
-            MATCH_PROP(Vertex,       "v",  Text::Format($->pos))
-            MATCH_PROP(VertexTex,    "vt", Text::Format($->tex))
-            MATCH_PROP(VertexNormal, "vn", Text::Format($->nrm))
-            MATCH_PROP(VertexParam,  "vp", Text::Format($->prm))
-            MATCH_PROP(Face,         "f",  Text::ArrStr($->indices, ", ", [] (const int (&vtn)[3]) { return Text::ArrStr(vtn, "/"); }))
-            MATCH_PROP(Line,         "l",  Text::ArrStr($->indices))
-            MATCH_PROP(Object,       "o",  $->name)
-            MATCH_PROP(Group,        "g",  $->name)
-            MATCH_PROP(SmoothShade,  "s",  $->enabled ? "true" : "false")
-            MATCH_PROP(UseMaterial,  "usemtl", $->name)
-            MATCH_PROP(MaterialLib,  "mtllib", $->dir)
+            p.Visit(
+                [&] (const Vertex&       x) { ss += "v: ";      ss += Text::Format(x.pos); },
+                [&] (const VertexTex&    x) { ss += "vt: ";     ss += Text::Format(x.tex); },
+                [&] (const VertexNormal& x) { ss += "vn: ";     ss += Text::Format(x.nrm); },
+                [&] (const VertexParam&  x) { ss += "vp: ";     ss += Text::Format(x.prm); },
+                [&] (const Face&         x) { ss += "f: ";      ss += Text::ArrStr(x.indices, ", ", [] (const int (&vtn)[3]) { return Text::ArrStr(vtn, "/"); }); },
+                [&] (const Line&         x) { ss += "l: ";      ss += Text::ArrStr(x.indices); },
+                [&] (const Object&       x) { ss += "o: ";      ss += x.name; },
+                [&] (const Group&        x) { ss += "g: ";      ss += x.name; },
+                [&] (const SmoothShade&  x) { ss += "s: ";      ss += x.enabled ? "true" : "false"; },
+                [&] (const UseMaterial&  x) { ss += "usemtl: "; ss += x.name; },
+                [&] (const MaterialLib&  x) { ss += "mtllib: "; ss += x.dir;  },
+                [] (const auto&) {}
+            );
         }
         ss += "========\n";
         ss += mats.DebugStr();

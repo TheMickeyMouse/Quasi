@@ -1,24 +1,23 @@
 #include "Collision2D.h"
 
 #include "Body2D.h"
-#include "Geometry.h"
 #include "SeperatingAxisSolver.h"
 
-namespace Quasi::Physics2D::Collision {
+namespace Quasi::Physics2D {
     Manifold CollideShapes(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
-        const Shape::ClipPrimitive prim1 = s1.PreferedClipPrimitive(),
-                                   prim2 = s2.PreferedClipPrimitive();
+        const Shape::ClipPrimitive prim1 = s1.PreferedPrimitive(),
+                                   prim2 = s2.PreferedPrimitive();
 
-#define SHAPE_PRIM_PAIR(X, Y) case Shape::X * 3 + Shape::Y
+#define SHAPE_PRIM_PAIR(X, Y) case Shape::PRIM_##X * 3 + Shape::PRIM_##Y
         switch (prim1 * 3 + prim2) {
             SHAPE_PRIM_PAIR(CIRCLE, CIRCLE):
-                return CollideCircles(Refer(s1).As<CircleShape>(), xf1, Refer(s2).As<CircleShape>(), xf2);
+                return CollideCircles(s1.As<CircleShape>(), xf1, s2.As<CircleShape>(), xf2);
 
             SHAPE_PRIM_PAIR(CIRCLE, POINT):  SHAPE_PRIM_PAIR(CIRCLE, EDGE):
-                return CollideCircleShape(Refer(s1).As<CircleShape>(), xf1, s2, xf2);
+                return CollideCircleShape(s1, xf1, s2, xf2);
 
             SHAPE_PRIM_PAIR(POINT,  CIRCLE): SHAPE_PRIM_PAIR(EDGE,   CIRCLE):
-                return Manifold::Flip(CollideCircleShape(Refer(s2).As<CircleShape>(), xf2, s1, xf1));
+                return Manifold::Flip(CollideCircleShape(s2, xf2, s1, xf1));
 
             SHAPE_PRIM_PAIR(POINT,  POINT):
                 return CollideCurves(s1, xf1, s2, xf2);
@@ -50,9 +49,10 @@ namespace Quasi::Physics2D::Collision {
         };
     }
 
-    Manifold CollideCircleShape(const CircleShape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
+    Manifold CollideCircleShape(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
         const Math::fVector2& center = xf1.position;
         SeperatingAxisSolver sat = SeperatingAxisSolver::CheckCollisionFor(s1, xf1, s2, xf2);
+        const auto& circle = *s1.As<CircleShape>();
 
         sat.SetCheckFor(SeperatingAxisSolver::BASE);
         sat.CheckAxis(center - s2.NearestPointTo(center, xf2));
@@ -66,7 +66,7 @@ namespace Quasi::Physics2D::Collision {
 
         return Manifold {
             .seperatingNormal = sat.GetSepAxis(),
-            .contactPoint = { center + sat.GetSepAxis() * s1.radius },
+            .contactPoint = { center + sat.GetSepAxis() * circle.radius },
             .contactDepth = { sat.GetDepth() },
             .contactCount = 1,
         };
@@ -128,17 +128,17 @@ namespace Quasi::Physics2D::Collision {
     }
 
     bool OverlapShapes(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
-        const bool circ1 = s1.PreferedClipPrimitive() == Shape::CIRCLE,
-                   circ2 = s2.PreferedClipPrimitive() == Shape::CIRCLE;
+        const bool circ1 = s1.PreferedPrimitive() == Shape::PRIM_CIRCLE,
+                   circ2 = s2.PreferedPrimitive() == Shape::PRIM_CIRCLE;
 
         if (circ1 && circ2) {
-            return OverlapCircles(Refer(s1).As<CircleShape>(), xf1, Refer(s2).As<CircleShape>(), xf2);
+            return OverlapCircles(s1.As<CircleShape>(), xf1, s2.As<CircleShape>(), xf2);
         }
         if (circ1) {
-            return OverlapCircleShape(Refer(s1).As<CircleShape>(), xf1, s2, xf2);
+            return OverlapCircleShape(s1, xf1, s2, xf2);
         }
         if (circ2) {
-            return OverlapCircleShape(Refer(s2).As<CircleShape>(), xf2, s1, xf1);
+            return OverlapCircleShape(s2, xf2, s1, xf1);
         }
         return OverlapNonCircles(s1, xf1, s2, xf2);
     }
@@ -147,7 +147,7 @@ namespace Quasi::Physics2D::Collision {
         return xf1.position.in_range(xf2.position, s1.radius + s2.radius);
     }
 
-    bool OverlapCircleShape(const CircleShape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
+    bool OverlapCircleShape(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
         SeperatingAxisSolver sat = SeperatingAxisSolver::CheckOverlapFor(s1, xf1, s2, xf2);
         sat.CheckAxisFor(SeperatingAxisSolver::TARGET);
         sat.SetCheckFor(SeperatingAxisSolver::BASE);
@@ -201,7 +201,8 @@ namespace Quasi::Physics2D::Collision {
             return;
         }
 
-        const Math::fVector2 impulse = -2.0f * j * normal;
+        const float e = std::min(body.restitution, target.restitution);
+        const Math::fVector2 impulse = -(1 + e) * j * normal;
 
         if (bodyDyn && targetDyn) {
             const float invTotalMass = 1.0f / (body.mass + target.mass);

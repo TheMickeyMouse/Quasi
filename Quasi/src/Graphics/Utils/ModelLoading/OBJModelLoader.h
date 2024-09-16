@@ -1,6 +1,4 @@
 #pragma once
-#include <cmath>
-#include <ranges>
 #include <vector>
 
 #include "MTLMaterialLoader.h"
@@ -66,40 +64,4 @@ namespace Quasi::Graphics {
 
         [[nodiscard]] String DebugStr() const;
     };
-
-    template <class OBJ> OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty(Str data) {
-        using namespace std::literals;
-        if constexpr (std::is_same_v<OBJ, MaterialLib> ||
-                      std::is_same_v<OBJ, UseMaterial> ||
-                      std::is_same_v<OBJ, Object> ||
-                      std::is_same_v<OBJ, Group>) {
-            return { OBJ { String { data } } };
-        } else if constexpr (std::is_same_v<OBJ, Line>) {
-            Vec<int> indices;
-            for (const auto idx : std::views::split(data, ' ')) {
-                indices.push_back(Text::Parse<int>({ idx.begin(), idx.end() }).Or(-1));
-            }
-            return { Line { std::move(indices) } };
-        } else if constexpr (std::is_same_v<OBJ, Face>) {
-            Face face;
-            u32 i = 0;
-            for (const auto idx : std::views::split(data, ' ')) {
-                if (i >= 3) return {};
-                const auto [v, t, n] = Math::iVector3::parse(Str { idx.begin(), idx.end() }, "/", "", "",
-                    [](Str x) -> Option<int> { return Text::Parse<int>(x).ValueOr(-1); }).ValueOr({ -1 });
-                face.indices[i][0] = v; face.indices[i][1] = t; face.indices[i][2] = n;
-                ++i;
-            }
-            if (i != 3) return {};
-            return { face };
-        } else if constexpr (std::is_same_v<OBJ, Vertex> ||
-                             std::is_same_v<OBJ, VertexNormal> ||
-                             std::is_same_v<OBJ, VertexParam>) {
-            return { OBJ { Math::fVector3::parse(data, " ", "", "").ValueOr(Math::fVector3 { NAN }) } };
-        } else if constexpr (std::is_same_v<OBJ, VertexTex>) {
-            return { OBJ { Math::fVector2::parse(data, " ", "", "").ValueOr(Math::fVector2 { NAN }) } };
-        } else if constexpr (std::is_same_v<OBJ, SmoothShade>) {
-            return { SmoothShade { data != "0" } };
-        } else return {};
-    }
 }

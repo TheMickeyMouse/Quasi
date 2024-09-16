@@ -14,23 +14,17 @@ namespace Quasi::Graphics {
         const Str prefix = line.substr(0, spaceIdx),
                   data   = line.substr(spaceIdx + 1);
 
-#define MATCH_BEGIN if (false) {}
-#define MATCH_PREFIX(M, T) else if (prefix == (M)) properties.emplace_back(CreateProperty<T>(data));
-        MATCH_BEGIN
-        MATCH_PREFIX("newmtl", NewMaterial)
-
-        MATCH_PREFIX("Ka", AmbientCol)
-        MATCH_PREFIX("Kd", DiffuseCol)
-        MATCH_PREFIX("Ks", SpecularCol)
-        MATCH_PREFIX("Ke", EmissiveCol)
-
-        MATCH_PREFIX("Ns", SpecularExp)
-        MATCH_PREFIX("Ni", OpticalDen)
-        MATCH_PREFIX("d", Dissolve)
-
-        MATCH_PREFIX("illum", IlluminationType)
-#undef MATCH_BEGIN
-#undef MATCH_PREFIX
+        qmatch (prefix, (
+            case ("newmtl") properties.emplace_back(CreateProperty<NewMaterial>     (data));,
+            case ("Ka")     properties.emplace_back(CreateProperty<AmbientCol>      (data));,
+            case ("Kd")     properties.emplace_back(CreateProperty<DiffuseCol>      (data));,
+            case ("Ks")     properties.emplace_back(CreateProperty<SpecularCol>     (data));,
+            case ("Ke")     properties.emplace_back(CreateProperty<EmissiveCol>     (data));,
+            case ("Ns")     properties.emplace_back(CreateProperty<SpecularExp>     (data));,
+            case ("Ni")     properties.emplace_back(CreateProperty<OpticalDen>      (data));,
+            case ("d")      properties.emplace_back(CreateProperty<Dissolve>        (data));,
+            case ("illum")  properties.emplace_back(CreateProperty<IlluminationType>(data));
+        ))
     }
 
     void MTLMaterialLoader::ParseProperties(Str string) {
@@ -40,6 +34,38 @@ namespace Quasi::Graphics {
         }
     }
 
+    template <class MTL> MTLMaterialLoader::MTLProperty MTLMaterialLoader::CreateProperty(Str data) {
+        using namespace std::literals;
+        qmatch ((typename)MTL, (
+            case (NewMaterial) return { NewMaterial { String { data } } };,
+            if ((MTL m) { { m.color }; }) {
+                const auto color = Math::fVector3::parse(data, " ", "", "");
+                if (!color) return {};
+                return { MTL { color->to_color3() } };
+            },
+            in (SpecularExp, OpticalDen, Dissolve) {
+                const auto fnum = Text::Parse<float>(data);
+                if (!fnum) return {};
+                return { MTL { *fnum } };
+            },
+            case (IlluminationType) {
+                const auto inum = Text::Parse<u32>(data);
+                if (!inum) return {};
+                return { IlluminationType { *inum } };
+            },
+            else return {};
+        ))
+    }
+    template MTLMaterialLoader::MTLProperty MTLMaterialLoader::CreateProperty<MTLMaterialLoader::NewMaterial>     (Str data);
+    template MTLMaterialLoader::MTLProperty MTLMaterialLoader::CreateProperty<MTLMaterialLoader::AmbientCol>      (Str data);
+    template MTLMaterialLoader::MTLProperty MTLMaterialLoader::CreateProperty<MTLMaterialLoader::DiffuseCol>      (Str data);
+    template MTLMaterialLoader::MTLProperty MTLMaterialLoader::CreateProperty<MTLMaterialLoader::SpecularCol>     (Str data);
+    template MTLMaterialLoader::MTLProperty MTLMaterialLoader::CreateProperty<MTLMaterialLoader::EmissiveCol>     (Str data);
+    template MTLMaterialLoader::MTLProperty MTLMaterialLoader::CreateProperty<MTLMaterialLoader::SpecularExp>     (Str data);
+    template MTLMaterialLoader::MTLProperty MTLMaterialLoader::CreateProperty<MTLMaterialLoader::OpticalDen>      (Str data);
+    template MTLMaterialLoader::MTLProperty MTLMaterialLoader::CreateProperty<MTLMaterialLoader::Dissolve>        (Str data);
+    template MTLMaterialLoader::MTLProperty MTLMaterialLoader::CreateProperty<MTLMaterialLoader::IlluminationType>(Str data);
+
     void MTLMaterialLoader::CreateMaterial(Span<const MTLProperty> matprop) {
         if (matprop.empty() || !matprop.front().Is<NewMaterial>()) return;
 
@@ -47,19 +73,19 @@ namespace Quasi::Graphics {
         MTLMaterial& mat = materials.back();
         mat.name = matprop.front().As<NewMaterial>()->name;
 
-#define MATCH_PROP(T, P, M) else if (const auto val_##T = prop.As<T>()) { mat.M = val_##T->P; }
         for (const MTLProperty& prop : matprop.subspan(1)) {
-            if (false) {}
-            MATCH_PROP(AmbientCol,       color,    Ka)
-            MATCH_PROP(DiffuseCol,       color,    Kd)
-            MATCH_PROP(SpecularCol,      color,    Ks)
-            MATCH_PROP(EmissiveCol,      color,    Ke)
-            MATCH_PROP(SpecularExp,      exp,      Ns)
-            MATCH_PROP(OpticalDen,       density,  Ni)
-            MATCH_PROP(Dissolve,         dissolve, d)
-            MATCH_PROP(IlluminationType, itype,    illum)
+            prop.Visit(
+                [&] (const AmbientCol&       x) { mat.Ka    = x.color;    },
+                [&] (const DiffuseCol&       x) { mat.Kd    = x.color;    },
+                [&] (const SpecularCol&      x) { mat.Ks    = x.color;    },
+                [&] (const EmissiveCol&      x) { mat.Ke    = x.color;    },
+                [&] (const SpecularExp&      x) { mat.Ns    = x.exp;      },
+                [&] (const OpticalDen&       x) { mat.Ni    = x.density;  },
+                [&] (const Dissolve&         x) { mat.d     = x.dissolve; },
+                [&] (const IlluminationType& x) { mat.illum = x.itype;    },
+                [] (const auto&) {}
+            );
         }
-#undef MATCH_PROP
     }
 
     void MTLMaterialLoader::CreateMaterials() {
@@ -75,20 +101,20 @@ namespace Quasi::Graphics {
 
     String MTLMaterialLoader::DebugStr() const {
         String ss {};
-#define MATCH_PROP(T, S, P) else if (const auto val_##T = p.As<T>()) { const auto& $ = val_##T; ss += S; ss += ": "; ss += P; }
         for (const MTLProperty& p : properties) {
-            if (false) {}
-            MATCH_PROP(NewMaterial,      "newmtl",       $->name)
-            MATCH_PROP(AmbientCol,       "ambient",      $->color.hexcode())
-            MATCH_PROP(DiffuseCol,       "diffuse",      $->color.hexcode())
-            MATCH_PROP(SpecularCol,      "specular",     $->color.hexcode())
-            MATCH_PROP(EmissiveCol,      "emmisive",     $->color.hexcode())
-            MATCH_PROP(SpecularExp,      "specular exp", $->exp)
-            MATCH_PROP(OpticalDen,       "optical den",  $->density)
-            MATCH_PROP(Dissolve,         "dissolve",     $->dissolve)
-            MATCH_PROP(IlluminationType, "illumtype",    std::to_string($->itype))
+            p.Visit(
+                [&] (const NewMaterial&      x) { ss += "newmtl: ";       ss += x.name;                     },
+                [&] (const AmbientCol&       x) { ss += "ambient: ";      ss += x.color.hexcode();          },
+                [&] (const DiffuseCol&       x) { ss += "diffuse: ";      ss += x.color.hexcode();          },
+                [&] (const SpecularCol&      x) { ss += "specular: ";     ss += x.color.hexcode();          },
+                [&] (const EmissiveCol&      x) { ss += "emmisive: ";     ss += x.color.hexcode();          },
+                [&] (const SpecularExp&      x) { ss += "specular exp: "; ss += std::to_string(x.exp);      },
+                [&] (const OpticalDen&       x) { ss += "optical den: ";  ss += std::to_string(x.density);  },
+                [&] (const Dissolve&         x) { ss += "dissolve: ";     ss += std::to_string(x.dissolve); },
+                [&] (const IlluminationType& x) { ss += "illumtype: ";    ss += std::to_string(x.itype);    },
+                [] (const auto&) {}
+            );
         }
         return ss;
     }
-#undef MATCH_PROP
 }

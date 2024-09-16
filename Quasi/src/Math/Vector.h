@@ -287,16 +287,16 @@ namespace Quasi::Math {
 
         NODISC auto operator+() const { return as_vec(); }
         NODISC auto operator-() const requires traits_signed { return details::negate(as_vec()); }
-        template <class V> NODISC auto operator+(const V& v) const { return details::operate(add {}, as_vec(), v); }
-        template <class V> NODISC auto operator-(const V& v) const { return details::operate(sub {}, as_vec(), v); }
-        template <class V> NODISC auto operator*(const V& v) const { return details::operate(mul {}, as_vec(), v); }
-        template <class V> NODISC auto operator/(const V& v) const { return details::operate(div {}, as_vec(), v); }
-        template <class V> NODISC auto operator%(const V& v) const { return details::operate(mod {}, as_vec(), v); }
-        template <class V> VectorN<N, T>& operator+=(const V& v) {  details::operate_inplace(add {}, as_vec(), v); return as_vec(); }
-        template <class V> VectorN<N, T>& operator-=(const V& v) {  details::operate_inplace(sub {}, as_vec(), v); return as_vec(); }
-        template <class V> VectorN<N, T>& operator*=(const V& v) {  details::operate_inplace(mul {}, as_vec(), v); return as_vec(); }
-        template <class V> VectorN<N, T>& operator/=(const V& v) {  details::operate_inplace(div {}, as_vec(), v); return as_vec(); }
-        template <class V> VectorN<N, T>& operator%=(const V& v) {  details::operate_inplace(mod {}, as_vec(), v); return as_vec(); }
+        NODISC auto operator+(const auto& v) const { return details::operate(add {}, as_vec(), v); }
+        NODISC auto operator-(const auto& v) const { return details::operate(sub {}, as_vec(), v); }
+        NODISC auto operator*(const auto& v) const { return details::operate(mul {}, as_vec(), v); }
+        NODISC auto operator/(const auto& v) const { return details::operate(div {}, as_vec(), v); }
+        NODISC auto operator%(const auto& v) const { return details::operate(mod {}, as_vec(), v); }
+        VectorN<N, T>& operator+=(const auto& v) {  details::operate_inplace(add {}, as_vec(), v); return as_vec(); }
+        VectorN<N, T>& operator-=(const auto& v) {  details::operate_inplace(sub {}, as_vec(), v); return as_vec(); }
+        VectorN<N, T>& operator*=(const auto& v) {  details::operate_inplace(mul {}, as_vec(), v); return as_vec(); }
+        VectorN<N, T>& operator/=(const auto& v) {  details::operate_inplace(div {}, as_vec(), v); return as_vec(); }
+        VectorN<N, T>& operator%=(const auto& v) {  details::operate_inplace(mod {}, as_vec(), v); return as_vec(); }
 
         NODISC bool eq(const vect& other) const { return as_vec() == other; }
         NODISC bool neq(const vect& other) const { return !eq(other); }
@@ -309,12 +309,12 @@ namespace Quasi::Math {
         }
         NODISC bool iszero() const { return eq(as_vec().ZERO()); }
 
-        template <class V> NODISC bool operator==(const V& v) const { return details::operate(details::eq  {}, as_vec(), v).all(); }
-        template <class V> NODISC bool operator!=(const V& v) const { return details::operate(details::neq {}, as_vec(), v).all(); }
-        template <class V> NODISC bool operator< (const V& v) const { return details::operate(details::lt  {}, as_vec(), v).all(); }
-        template <class V> NODISC bool operator<=(const V& v) const { return details::operate(details::le  {}, as_vec(), v).all(); }
-        template <class V> NODISC bool operator>=(const V& v) const { return details::operate(details::ge  {}, as_vec(), v).all(); }
-        template <class V> NODISC bool operator> (const V& v) const { return details::operate(details::gt  {}, as_vec(), v).all(); }
+        NODISC bool operator==(const auto& v) const { return details::operate(details::eq  {}, as_vec(), v).all(); }
+        NODISC bool operator!=(const auto& v) const { return details::operate(details::neq {}, as_vec(), v).all(); }
+        NODISC bool operator< (const auto& v) const { return details::operate(details::lt  {}, as_vec(), v).all(); }
+        NODISC bool operator<=(const auto& v) const { return details::operate(details::le  {}, as_vec(), v).all(); }
+        NODISC bool operator>=(const auto& v) const { return details::operate(details::ge  {}, as_vec(), v).all(); }
+        NODISC bool operator> (const auto& v) const { return details::operate(details::gt  {}, as_vec(), v).all(); }
 
         NODISC float_type len() const { return std::sqrt((float_type)lensq()); }
         NODISC T          lensq() const { return dot(as_vec()); }
@@ -345,8 +345,8 @@ namespace Quasi::Math {
         vect& len_clamp() { return as_vec() = len_clamped(); }
         NODISC static vect max(const vect& a, const vect& b) { return details::operate(details::max {}, a, b); }
         NODISC static vect min(const vect& a, const vect& b) { return details::operate(details::min {}, a, b); }
-        template <ArrayOf<vect> R> NODISC static vect max(const R& nums) { vect m = { std::numeric_limits<T>::lowest() }; for (const auto& v : nums) { m = max(m, v); } return m; }
-        template <ArrayOf<vect> R> NODISC static vect min(const R& nums) { vect m = { std::numeric_limits<T>::max()    }; for (const auto& v : nums) { m = min(m, v); } return m; }
+        NODISC static vect max(const CollectionOf<vect> auto& nums) { vect m = { std::numeric_limits<T>::lowest() }; for (const auto& v : nums) { m = max(m, v); } return m; }
+        NODISC static vect min(const CollectionOf<vect> auto& nums) { vect m = { std::numeric_limits<T>::max()    }; for (const auto& v : nums) { m = min(m, v); } return m; }
         NODISC static vect clamp(const RectN<N, T>& r, const vect& x);
 
         NODISC vect map(const RectN<N, T>& input, const RectN<N, T>& output) const;

@@ -61,6 +61,12 @@ namespace Quasi::Math {
         RectN(const vec& min, const details::rect_size_t<vec>& size) : min(min), max(min + size.pos) {}
         RectN(const details::rect_origin_t<vec>& origin, const vec& size) { *this = origin.rect(size); }
 
+        static RectN empty() { return {}; }
+        static RectN whole() { return { std::numeric_limits<T>::lowest(), std::numeric_limits<T>::max() }; }
+        static RectN unrange() { return { std::numeric_limits<T>::max(), std::numeric_limits<T>::lowest() }; }
+        static RectN over(const CollectionOf<vec> auto& nums);
+        static RectN over(const CollectionOf<scalar> auto& nums) requires is1D;
+
         NODISC bool operator==(const RectN& other) const { return min == other.min && max == other.max; }
         NODISC vec operator[](const usize i) const { return corner(i); }
         
@@ -108,8 +114,9 @@ namespace Quasi::Math {
         RectN& offset(const vec& off) { max += off; min += off; return *this; }
         NODISC RectN offseted(const vec& off) const { return { (vec)(min + off), (vec)(max + off) }; }
 
-        NODISC RectN expand(const RectN& other) const { return { vec::min(min, other.min), vec::max(max, other.max) }; }
-        NODISC RectN shrink(const RectN& other) const { return { vec::min(min, other.min), vec::max(max, other.max) }; }
+        NODISC RectN expand(const RectN& other)     const { return { vec::min(min, other.min), vec::max(max, other.max) }; }
+        NODISC RectN expand_until(const vec& other) const { return { vec::min(min, other),     vec::max(max, other)     }; }
+        NODISC RectN shrink(const RectN& other)     const { return { vec::min(min, other.min), vec::max(max, other.max) }; }
 
         NODISC RectN inset  (T radius)          const { return { (vec)(min + radius), (vec)(max - radius) }; }
         NODISC RectN inset  (const vec& radius) const { return { (vec)(min + radius), (vec)(max - radius) }; }
@@ -150,6 +157,18 @@ namespace Quasi::Math {
     template <class V> typename details::rect_origin_t<V>::rect_t
     details::rect_origin_t<V>::rect(const V& size) const {
         return { (V)(pos + size / 2), (V)(pos - size / 2) };
+    }
+
+    template <u32 N, class T> RectN<N, T> RectN<N, T>::over(const CollectionOf<VectorN<N, T>> auto& nums) {
+        RectN r = unrange();
+        for (const auto& v : nums) r = r.expand_until(v);
+        return r;
+    }
+
+    template <u32 N, class T> RectN<N, T> RectN<N, T>::over(const CollectionOf<T> auto& nums) requires is1D {
+        RectN r = unrange();
+        for (const auto v : nums) r = r.expand_until({ v });
+        return r;
     }
 
     template <u32 N, class T> RectIter<RectN<N, T>> RectN<N, T>::begin() const {

@@ -4,59 +4,57 @@
 
 namespace Quasi::Physics2D {
     void World::Clear() {
-        for (auto body : bodies)
-            body->world = nullptr;
+        for (auto& body : bodies)
+            body.world = nullptr;
         ClearWithoutUpdate();
     }
 
-    Ref<Body> World::CreateBodyWithHeap(const BodyCreateOptions& options, Ref<Shape> heapAllocShape) {
-        const float area = heapAllocShape->ComputeArea();
-        RefImpl body = *allocator.Create<Body>(
+    BodyHandle World::CreateBody(const BodyCreateOptions& options, Shape shape) {
+        const float area = shape.ComputeArea();
+        bodies.emplace_back(
             options.position,
             area * options.density,
+            options.restitution,
             options.type,
             *this,
-            heapAllocShape
+            std::move(shape)
         );
-        return bodies.emplace_back(body);
-    }
-
-    Ref<Body> World::CreateBody(const BodyCreateOptions& options, const Shape& shape) {
-        return CreateBodyWithHeap(options, shape.CloneOn(allocator));
+        bodyIndicesSorted.emplace_back(bodies.size() - 1);
+        return BodyHandle::At(*this, bodies.size() - 1);
     }
 
     void World::Update(float dt) {
-        for (auto b : bodies) {
-            if (!b->enabled) continue;
+        for (auto& b : bodies) {
+            if (!b.enabled) continue;
 
-            if (b->type == BodyType::DYNAMIC)
-                b->velocity += gravity * dt;
-            b->Update(dt);
+            if (b.type == BodyType::DYNAMIC)
+                b.velocity += gravity * dt;
+            b.Update(dt);
         }
 
         const auto cmpr = [](const Body& p) { return p.ComputeBoundingBox().min.x; };
 
-        for (int i = 1; i < bodies.size(); ++i) {
-            for (int j = i - 1; j >= 0; --j) {
-                // this is different than lt ('<') because nan always returns false
-                const float curr = cmpr(bodies[j]), next = cmpr(bodies[j + 1]);
-                if (std::isnan(next) || (!std::isnan(curr) && curr < next)) break;
-                std::swap(bodies[j], bodies[j + 1]);
-            }
-        }
+        // for (int i = 1; i < bodies.size(); ++i) {
+        //     for (int j = i - 1; j >= 0; --j) {
+        //         // this is different than lt ('<') because nan always returns false
+        //         const float curr = cmpr(bodies[j]), next = cmpr(bodies[j + 1]);
+        //         if (std::isnan(next) || (!std::isnan(curr) && curr < next)) break;
+        //         std::swap(bodies[j], bodies[j + 1]);
+        //     }
+        // }
 
-        // std::ranges::sort(bodies, [&](const auto a, const auto b) { return cmpr(*a) < cmpr(*b); });
+        std::ranges::sort(bodyIndicesSorted, [&](u32 i, u32 j) { return cmpr(bodies[i]) < cmpr(bodies[j]); });
 
         // sweep impl
         // std::vector<std::tuple<Body*, Body*, Collision::Event>> collisionPairs;
-        Vec<usize> active;
-        for (usize i = 0; i < bodies.size(); ++i) {
-            Ref<Body> b = bodies[i];
-            if (!b->enabled) continue;
-            const float min = b->ComputeBoundingBox().min.x;
+        Vec<u32> active;
+        for (u32 i = 0; i < bodyIndicesSorted.size(); ++i) {
+            Body& b = BodyAt(bodyIndicesSorted[i]);
+            if (!b.enabled) continue;
+            const float min = b.ComputeBoundingBox().min.x;
             for (auto actIt = active.begin(); actIt != active.end();) {
-                Ref<Body> c = bodies[*actIt];
-                if (c->ComputeBoundingBox().max.x > min) {
+                Body& c = BodyAt(bodyIndicesSorted[*actIt]);
+                if (c.ComputeBoundingBox().max.x > min) {
 #if 0
                     const Collision::Event event = b->CollideWith(c);
                     if (event && event.Valid()) {
@@ -65,10 +63,10 @@ namespace Quasi::Physics2D {
                         DynamicResolve(b, c, event);
                     }
 #endif
-                    const Manifold manifold = b->CollideWith(c);
+                    const Manifold manifold = b.CollideWith(c);
                     if (manifold.contactCount) {
-                        Collision::StaticResolve(b, c, manifold);
-                        Collision::DynamicResolve(b, c, manifold);
+                        StaticResolve(b, c, manifold);
+                        DynamicResolve(b, c, manifold);
                     }
                     ++actIt;
                 } else {

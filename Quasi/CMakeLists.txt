@@ -170,6 +170,16 @@ set(ALL_FILES
         src/Physics/Manifold2D.h
         src/Physics/SeperatingAxisSolver.cpp
         src/Physics/SeperatingAxisSolver.h
+        src/Physics/CircleShape2D.cpp
+        src/Physics/CircleShape2D.h
+        src/Physics/CapsuleShape2D.cpp
+        src/Physics/CapsuleShape2D.h
+        src/Physics/PolygonShape2D.h
+        src/Physics/PolygonShape2D.cpp
+        src/Physics/RectShape2D.cpp
+        src/Physics/RectShape2D.h
+        src/Physics/Shape2D.cpp
+        src/Physics/Shape2D.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

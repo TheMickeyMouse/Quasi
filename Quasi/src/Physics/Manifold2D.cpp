@@ -1,6 +1,7 @@
 #include "Manifold2D.h"
 
 #include "SeperatingAxisSolver.h"
+#include "IShape2D.h"
 #include "Shape2D.h"
 
 namespace Quasi::Physics2D {

@@ -225,20 +225,20 @@ namespace Quasi::Text {
                 styleFlags = (byte)(styleFlags & ~(1 << i) | (s->isOn << i));
             }
             return;
-            case 1: match (s) {
-                when(== Style::FONT_TYPE)  { font = *data; }
-                when(== Style::CODE_BLOCK) { codeLang = *data; }
-                when(== Style::ALIGNMENT)  { alignment = *data; }
-                otherwise {}
-            }
+            case 1: qmatch (s, (
+                case (Style::FONT_TYPE)  { font = *data; },
+                case (Style::CODE_BLOCK) { codeLang = *data; },
+                case (Style::ALIGNMENT)  { alignment = *data; },
+                else;
+            ))
             return;
             case 2:
                 if (s == Style::FONT_SIZE) fontSizeP64 = (short)((data[0] << 8) + data[1]); break;
-            case 4: match (s) {
-                when(== Style::TEXT_COLOR)      { std::copy_n(data, 4, color);     }
-                when(== Style::HIGHLIGHT_COLOR) { std::copy_n(data, 4, highlight); }
-                otherwise;
-            }
+            case 4: qmatch (s, (
+                case (Style::TEXT_COLOR)      { std::copy_n(data, 4, color);     },
+                case (Style::HIGHLIGHT_COLOR) { std::copy_n(data, 4, highlight); },
+                else;
+            ))
             default:;
         }
     }

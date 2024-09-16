@@ -1,8 +1,9 @@
 #pragma once
 #include "Collision2D.h"
 
-#include "Shape2D.h"
+#include "IShape2D.h"
 #include "PhysicsTransform2D.h"
+#include "Shape2D.h"
 #include "Vector.h"
 
 namespace Quasi::Physics2D {
@@ -20,15 +21,14 @@ namespace Quasi::Physics2D {
     public:
         Math::fVector2 position, velocity, acceleration;
         float mass = 1.0f;
+        float restitution = 0.8f;
         BodyType type = BodyType::NONE;
         bool enabled = true;
-    private:
         Ref<World> world = nullptr;
-    public:
-        Ref<Shape> shape; // heap managed
+        Shape shape;
 
-        Body(const Math::fVector2& p, float m, BodyType type, Ref<World> world, Ref<Shape> shape)
-            : position(p), mass(m), type(type), world(world), shape(shape) {}
+        Body(const Math::fVector2& p, float m, float restitution, BodyType type, Ref<World> world, Shape shape)
+            : position(p), mass(m), restitution(restitution), type(type), world(world), shape(std::move(shape)) {}
 
         void AddVelocity(const Math::fVector2& vel) { velocity += vel; }
         void AddAcceleration(const Math::fVector2& acc) { acceleration += acc; }
@@ -55,13 +55,38 @@ namespace Quasi::Physics2D {
         [[nodiscard]] Math::fRect2D ComputeBoundingBox() const;
 
         friend class World;
-        friend void Collision::StaticResolve (Body&, Body&, const Manifold&);
-        friend void Collision::DynamicResolve(Body&, Body&, const Manifold&);
+        friend void StaticResolve (Body&, Body&, const Manifold&);
+        friend void DynamicResolve(Body&, Body&, const Manifold&);
+    };
+
+    struct BodyHandle {
+        u32 index;
+        Ref<World> world;
+
+        BodyHandle(std::nullptr_t) : index(0), world(nullptr) {}
+        BodyHandle() : BodyHandle(nullptr) {}
+        BodyHandle(Body& b);
+        BodyHandle(const Body& b) : BodyHandle(const_cast<Body&>(b)) {}
+        BodyHandle(u32 i, World& w) : index(i), world(w) {}
+
+        static BodyHandle At(World& w, u32 i) { return { i, w }; }
+
+        Body& Value();
+        [[nodiscard]] const Body& Value() const;
+        Body* Address();
+        [[nodiscard]] const Body* Address() const;
+
+        [[nodiscard]] operator bool() const { return world; }
+        operator Body&() { return Value(); }
+        [[nodiscard]] operator const Body&() const { return Value(); }
+        Body* operator->() { return Address(); }
+        [[nodiscard]] const Body* operator->() const { return Address(); }
     };
 
     struct BodyCreateOptions {
         Math::fVector2 position {};
         BodyType type = BodyType::DYNAMIC;
         float density = 1.0f;
+        float restitution = 0.8f;
     };
 } // Physics2D

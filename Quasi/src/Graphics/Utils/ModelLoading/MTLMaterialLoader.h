@@ -51,25 +51,4 @@ namespace Quasi::Graphics {
 
         friend class OBJModelLoader;
     };
-
-    template <class MTL> MTLMaterialLoader::MTLProperty MTLMaterialLoader::CreateProperty(Str data) {
-        using namespace std::literals;
-        if constexpr (std::is_same_v<MTL, NewMaterial>)
-            return { NewMaterial { String { data } } };
-        else if constexpr (requires (const MTL p) { { p.color } -> std::same_as<const Math::fColor3&>; }) {
-            const auto color = Math::fVector3::parse(data, " ", "", "");
-            if (!color) return {};
-            return { MTL { color->to_color3() } };
-        } else if constexpr (std::is_same_v<MTL, SpecularExp> ||
-                      std::is_same_v<MTL, OpticalDen> ||
-                      std::is_same_v<MTL, Dissolve>) {
-            const auto fnum = Text::Parse<float>(data);
-            if (!fnum) return {};
-            return { MTL { *fnum } };
-        } else if constexpr (std::is_same_v<MTL, IlluminationType>) {
-            const auto inum = Text::Parse<u32>(data);
-            if (!inum) return {};
-            return { IlluminationType { *inum } };
-        } else return {};
-    }
 }

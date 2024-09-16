@@ -1,18 +1,19 @@
 #pragma once
 #include <vector>
 
-#include "ArenaAllocator.h"
 #include "Body2D.h"
 
 namespace Quasi::Physics2D {
     class World {
-        ArenaAllocator allocator { 8 * 1024 };
     public:
-        Vec<Ref<Body>> bodies;
+        Vec<Body> bodies;
+        Vec<u32> bodyIndicesSorted;
+
         Math::fVector2 gravity;
     private:
-        Ref<Body> CreateBodyWithHeap(const BodyCreateOptions& options, Ref<Shape> heapAllocShape);
-        void ClearWithoutUpdate() { bodies.clear(); allocator.Clear(); }
+        void ClearWithoutUpdate() { bodies.clear(); bodyIndicesSorted.clear(); }
+        [[nodiscard]] const Body& BodyAt(u32 i) const { return bodies[i]; }
+        Body& BodyAt(u32 i) { return bodies[i]; }
     public:
         World() = default;
         World(const Math::fVector2& gravity) : gravity(gravity) {}
@@ -22,12 +23,14 @@ namespace Quasi::Physics2D {
         void ReserveExtra(usize size) { bodies.reserve(BodyCount() + size); }
         void Clear();
 
-        Ref<Body> CreateBody(const BodyCreateOptions& options, const Shape& shape);
-        template <class S, class... Rs> Ref<Body> CreateBody(const BodyCreateOptions& options, Rs&&... args) {
-            return this->CreateBodyWithHeap(options, *allocator.Create<S>(std::forward<Rs>(args)...));
+        BodyHandle CreateBody(const BodyCreateOptions& options, Shape shape);
+        template <class S, class... Rs> BodyHandle CreateBody(const BodyCreateOptions& options, Rs&&... args) {
+            return this->CreateBody(options, S(std::forward<Rs>(args)...));
         }
 
         void Update(float dt);
         void Update(float dt, int simUpdates);
+
+        friend struct BodyHandle;
     };
 } // Physics

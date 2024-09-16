@@ -12,7 +12,7 @@
 
 #define Q_MATCH_BRANCH_case Q_MATCH_BRANCH_MACRO, Q_MATCH_BRANCH_CASE_,
 #define Q_MATCH_BRANCH_CASE_VALS(U, VAL, STMT) if (_mv_##U == VAL) { STMT goto _m_end_##U; }
-#define Q_MATCH_BRANCH_CASE_TYPE(U, VAL, STMT) if constexpr (std::is_same_v<_mv_##U, VAL>) { STMT } else
+#define Q_MATCH_BRANCH_CASE_TYPE(U, VAL, STMT) if constexpr (std::is_same_v<_mv_##U, Q_UNARY VAL>) { STMT } else
 
 #define Q_MATCH_BRANCH_if Q_MATCH_BRANCH_MACRO, Q_MATCH_BRANCH_IF_,
 #define Q_MATCH_BRANCH_IF_VALS(U, COND, STMT) if (_mv_##U Q_UNARY COND) { STMT goto _m_end_##U; }

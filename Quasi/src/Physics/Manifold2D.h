@@ -1,5 +1,5 @@
 #pragma once
-#include "Shape2D.h"
+#include "IShape2D.h"
 #include "Vector.h"
 
 namespace Quasi::Physics2D {
