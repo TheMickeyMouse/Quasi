@@ -9,20 +9,32 @@ namespace Quasi::Physics2D {
         return { -radius, radius };
     }
 
-    Math::fVector2 CircleShape::NearestPointTo(const Math::fVector2& point, const PhysicsTransform& xf) const {
-        return xf.position + (point - xf.position).norm(radius);
+    TransformedCircleShape CircleShape::Transform(const PhysicsTransform& xf) const {
+        return { xf.position, radius };
     }
 
-    Math::fVector2 CircleShape::FurthestAlong(const Math::fVector2& normal, const PhysicsTransform& xf) const {
-        return xf.position + normal * radius;
+    float TransformedCircleShape::ComputeArea() const {
+        return Math::PI * radius * radius;
     }
 
-    Math::fRange CircleShape::ProjectOntoAxis(const Math::fVector2& axis, const PhysicsTransform& xf) const {
-        const float center = axis.dot(xf.position);
+    Math::fRect2D TransformedCircleShape::ComputeBoundingBox() const {
         return { center - radius, center + radius };
     }
 
-    Math::fRange CircleShape::ProjectOntoOwnAxis(u32 axisID, const Math::fVector2& axis, const PhysicsTransform& xf) const {
-        return ProjectOntoAxis(axis, xf);
+    Math::fVector2 TransformedCircleShape::NearestPointTo(const Math::fVector2& point) const {
+        return center + (point - center).norm(radius);
+    }
+
+    Math::fVector2 TransformedCircleShape::FurthestAlong(const Math::fVector2& normal) const {
+        return center + normal * radius;
+    }
+
+    Math::fRange TransformedCircleShape::ProjectOntoAxis(const Math::fVector2& axis) const {
+        const float c = axis.dot(center);
+        return { c - radius, c + radius };
+    }
+
+    Math::fRange TransformedCircleShape::ProjectOntoOwnAxis(u32 axisID, const Math::fVector2& axis) const {
+        return ProjectOntoAxis(axis);
     }
 } // Quasi

@@ -7,39 +7,54 @@ namespace Quasi::Physics2D {
         return { px ? hx : -hx, py ? hy : -hy };
     }
 
-    Math::fVector2 RectShape::NearestPointTo(const Math::fVector2& point, const PhysicsTransform& xf) const {
-        const Math::fVector2 p = xf.TransformInverse(point);
-        return xf * Corner(p.x > 0, p.y > 0);
+    TransformedRectShape RectShape::Transform(const PhysicsTransform& xf) const {
+        return { xf.position, xf.rotation.as_vec() * hx, xf.rotation.muli().as_vec() * hy };
     }
 
-    Math::fVector2 RectShape::FurthestAlong(const Math::fVector2& normal, const PhysicsTransform& xf) const {
-        const float x = xf.rotation.as_vec().dot(normal), y = xf.rotation.muli().as_vec().dot(normal);
-        return xf * Corner(x > 0, y > 0);
+    Math::fVector2 TransformedRectShape::Corner(bool px, bool py) const {
+        return center + (px ? x : -x) + (py ? y : -y);
     }
 
-    Math::fLine2D RectShape::BestEdgeFor(const Math::fVector2& normal, const PhysicsTransform& xf) const {
-        const float x = xf.rotation.as_vec().dot(normal), y = xf.rotation.muli().as_vec().dot(normal);
-        const bool xPerpendicular = std::abs(x * hx) < std::abs(y * hy);
-        return { xf * Corner(x > 0, y > 0), xf * Corner(x > 0 ^ xPerpendicular, y > 0 ^ !xPerpendicular) };
+    Math::fRect2D TransformedRectShape::ComputeBoundingBox() const {
+        const Math::fVector2 max = {
+            std::max(std::abs(x.x + y.x), std::abs(x.x - y.x)),
+            std::max(std::abs(x.y + y.y), std::abs(x.y - y.y)) };
+        return { center - max, center + max };
     }
 
-    Math::fRange RectShape::ProjectOntoAxis(const Math::fVector2& axis, const PhysicsTransform& xf) const {
-        const float center = xf.position.dot(axis);
-        const float dCorner1 = (xf * Corner(false, false)).dot(axis), dCorner2 = (xf * Corner(true, false)).dot(axis),
-                    maxD = std::max(std::abs(dCorner1 - center), std::abs(dCorner2 - center));
-        return { center - maxD, center + maxD };
+    Math::fVector2 TransformedRectShape::NearestPointTo(const Math::fVector2& point) const {
+        const Math::fVector2 p = Math::fComplex::from_vec(x).conj().rotate(point - center);
+        return Corner(p.x > 0, p.y > 0);
     }
 
-    Math::fRange RectShape::ProjectOntoOwnAxis(u32 axisID, const Math::fVector2& axis, const PhysicsTransform& xf) const {
-        const float center = xf.position.dot(axis);
-        const float half = axisID & 1 ? hy : hx;
-        return { center - half, center + half };
+    Math::fVector2 TransformedRectShape::FurthestAlong(const Math::fVector2& normal) const {
+        const float dx = x.dot(normal), dy = y.dot(normal);
+        return Corner(dx > 0, dy > 0);
     }
 
-    bool RectShape::AddSeperatingAxes(SeperatingAxisSolver& sat, const PhysicsTransform& xf) const {
+    Math::fLine2D TransformedRectShape::BestEdgeFor(const Math::fVector2& normal) const {
+        const float dx = x.dot(normal), dy = y.dot(normal);
+        const bool xPerpendicular = std::abs(dx) < std::abs(dy);
+        return { Corner(dx > 0, dy > 0), Corner(dx > 0 ^ xPerpendicular, dy > 0 ^ !xPerpendicular) };
+    }
+
+    Math::fRange TransformedRectShape::ProjectOntoAxis(const Math::fVector2& axis) const {
+        const float c = center.dot(axis);
+        const float dCorner1 = (x + y).dot(axis), dCorner2 = (x - y).dot(axis),
+                    maxD = std::max(std::abs(dCorner1), std::abs(dCorner2));
+        return { c - maxD, c + maxD };
+    }
+
+    Math::fRange TransformedRectShape::ProjectOntoOwnAxis(u32 axisID, const Math::fVector2& axis) const {
+        const float c = center.dot(axis);
+        const float half = axisID == 0 ? x.dot(axis) : y.dot(axis);
+        return { c - half, c + half };
+    }
+
+    bool TransformedRectShape::AddSeperatingAxes(SeperatingAxisSolver& sat) const {
         bool success = false;
-        success |= sat.CheckAxis(xf.rotation.as_vec());
-        success |= sat.CheckAxis(xf.rotation.muli().as_vec());
+        success |= sat.CheckAxis(x);
+        success |= sat.CheckAxis(y);
         return success;
     }
 } // Quasi

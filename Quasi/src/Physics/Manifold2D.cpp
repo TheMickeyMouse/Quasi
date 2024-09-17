@@ -12,12 +12,11 @@ namespace Quasi::Physics2D {
     }
 
     Manifold Manifold::From(const SeperatingAxisSolver& sat) {
-        const Shape& base = sat.base, &target = sat.target;
-        const PhysicsTransform& baseXf = sat.baseXf, &targetXf = sat.targetXf;
+        const TransformedShape& base = sat.base, &target = sat.target;
         const Math::fVector2& n = sat.seperatingAxis;
 
-        const Math::fLine2D baseClips   = base  .BestEdgeFor(n,  baseXf),
-                            targetClips = target.BestEdgeFor(-n, targetXf);
+        const Math::fLine2D baseClips   = base  .BestEdgeFor(n),
+                            targetClips = target.BestEdgeFor(-n);
 
         const bool flip = std::abs(baseClips.forward().dot(n)) > std::abs(targetClips.forward().dot(n));
         const Math::fLine2D& ref = flip ? targetClips : baseClips, &inc = flip ? baseClips : targetClips;
@@ -25,10 +24,8 @@ namespace Quasi::Physics2D {
         const Math::fVector2 refFwd = ref.forward().norm();
 
         Manifold manifold = Clip(inc.start, inc.end, refFwd, refFwd.dot(ref.start));
-        if (manifold.contactCount < 2) return None();
 
         manifold = Clip(manifold.contactPoint[0], manifold.contactPoint[1], -refFwd, -refFwd.dot(ref.end));
-        if (manifold.contactCount < 2) return None();
 
         Manifold result = None();
         result.seperatingNormal = n;

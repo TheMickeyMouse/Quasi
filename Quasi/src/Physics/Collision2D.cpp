@@ -4,58 +4,57 @@
 #include "SeperatingAxisSolver.h"
 
 namespace Quasi::Physics2D {
-    Manifold CollideShapes(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
+    Manifold CollideShapes(const TransformedShape& s1, const TransformedShape& s2) {
         const Shape::ClipPrimitive prim1 = s1.PreferedPrimitive(),
                                    prim2 = s2.PreferedPrimitive();
 
 #define SHAPE_PRIM_PAIR(X, Y) case Shape::PRIM_##X * 3 + Shape::PRIM_##Y
         switch (prim1 * 3 + prim2) {
             SHAPE_PRIM_PAIR(CIRCLE, CIRCLE):
-                return CollideCircles(s1.As<CircleShape>(), xf1, s2.As<CircleShape>(), xf2);
+                return CollideCircles(s1.As<TransformedCircleShape>(), s2.As<TransformedCircleShape>());
 
             SHAPE_PRIM_PAIR(CIRCLE, POINT):  SHAPE_PRIM_PAIR(CIRCLE, EDGE):
-                return CollideCircleShape(s1, xf1, s2, xf2);
+                return CollideCircleShape(s1, s2);
 
             SHAPE_PRIM_PAIR(POINT,  CIRCLE): SHAPE_PRIM_PAIR(EDGE,   CIRCLE):
-                return Manifold::Flip(CollideCircleShape(s2, xf2, s1, xf1));
+                return Manifold::Flip(CollideCircleShape(s2, s1));
 
             SHAPE_PRIM_PAIR(POINT,  POINT):
-                return CollideCurves(s1, xf1, s2, xf2);
+                return CollideCurves(s1, s2);
 
             SHAPE_PRIM_PAIR(EDGE,   POINT):
-                return CollidePolygonCurve(s1, xf1, s2, xf2);
+                return CollidePolygonCurve(s1, s2);
 
             SHAPE_PRIM_PAIR(POINT,  EDGE):
-                return Manifold::Flip(CollidePolygonCurve(s2, xf2, s1, xf1));
+                return Manifold::Flip(CollidePolygonCurve(s2, s1));
 
             SHAPE_PRIM_PAIR(EDGE,  EDGE):
-                return CollidePolygons(s1, xf1, s2, xf2);
+                return CollidePolygons(s1, s2);
 
             default:
                 return Manifold::None();
         }
     }
 
-    Manifold CollideCircles(const CircleShape& s1, const PhysicsTransform& xf1, const CircleShape& s2, const PhysicsTransform& xf2) {
-        const float dist = xf1.position.dist(xf2.position), depth = s1.radius + s2.radius - dist;
+    Manifold CollideCircles(const TransformedCircleShape& s1, const TransformedCircleShape& s2) {
+        const float dist = s1.center.dist(s2.center), depth = s1.radius + s2.radius - dist;
         if (depth <= 0)
             return Manifold::None();
-        const Math::fVector2 n = (xf2.position - xf1.position) / dist;
+        const Math::fVector2 n = (s2.center - s1.center) / dist;
         return Manifold {
             .seperatingNormal = n,
-            .contactPoint = { xf2.position - n * s2.radius },
+            .contactPoint = { s2.center - n * s2.radius },
             .contactDepth = { depth },
             .contactCount = 1,
         };
     }
 
-    Manifold CollideCircleShape(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
-        const Math::fVector2& center = xf1.position;
-        SeperatingAxisSolver sat = SeperatingAxisSolver::CheckCollisionFor(s1, xf1, s2, xf2);
-        const auto& circle = *s1.As<CircleShape>();
+    Manifold CollideCircleShape(const TransformedShape& s1, const TransformedShape& s2) {
+        SeperatingAxisSolver sat = SeperatingAxisSolver::CheckCollisionFor(s1, s2);
+        const auto& circle = *s1.As<TransformedCircleShape>();
 
         sat.SetCheckFor(SeperatingAxisSolver::BASE);
-        sat.CheckAxis(center - s2.NearestPointTo(center, xf2));
+        sat.CheckAxis(circle.center - s2.NearestPointTo(circle.center));
 
         sat.CheckAxisFor(SeperatingAxisSolver::TARGET);
 
@@ -66,14 +65,14 @@ namespace Quasi::Physics2D {
 
         return Manifold {
             .seperatingNormal = sat.GetSepAxis(),
-            .contactPoint = { center + sat.GetSepAxis() * circle.radius },
+            .contactPoint = { circle.center + sat.GetSepAxis() * circle.radius },
             .contactDepth = { sat.GetDepth() },
             .contactCount = 1,
         };
     }
 
-    Manifold CollidePolygons(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
-        SeperatingAxisSolver sat = SeperatingAxisSolver::CheckCollisionFor(s1, xf1, s2, xf2);
+    Manifold CollidePolygons(const TransformedShape& s1, const TransformedShape& s2) {
+        SeperatingAxisSolver sat = SeperatingAxisSolver::CheckCollisionFor(s1, s2);
         sat.CheckAxisFor(SeperatingAxisSolver::BASE);
         sat.CheckAxisFor(SeperatingAxisSolver::TARGET);
         sat.Finish();
@@ -83,8 +82,8 @@ namespace Quasi::Physics2D {
         return Manifold::From(sat);
     }
 
-    Manifold CollideCurves(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
-        SeperatingAxisSolver sat = SeperatingAxisSolver::CheckCollisionFor(s1, xf1, s2, xf2);
+    Manifold CollideCurves(const TransformedShape& s1, const TransformedShape& s2) {
+        SeperatingAxisSolver sat = SeperatingAxisSolver::CheckCollisionFor(s1, s2);
 
         sat.CheckAxisFor(SeperatingAxisSolver::BASE);
         const bool usesTarget = sat.CheckAxisFor(SeperatingAxisSolver::TARGET);
@@ -98,21 +97,21 @@ namespace Quasi::Physics2D {
         if (usesTarget) {
             return Manifold {
                 .seperatingNormal = n,
-                .contactPoint = { s1.FurthestAlong(n, xf1) },
+                .contactPoint = { s1.FurthestAlong(n) },
                 .contactDepth = { sat.GetDepth() },
                 .contactCount = 1,
             };
         }
         return Manifold {
             .seperatingNormal = n,
-            .contactPoint = { s2.FurthestAlong(n, xf2) },
+            .contactPoint = { s2.FurthestAlong(n) },
             .contactDepth = { sat.GetDepth() },
             .contactCount = 1,
         };
     }
 
-    Manifold CollidePolygonCurve(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
-        SeperatingAxisSolver sat = SeperatingAxisSolver::CheckCollisionFor(s1, xf1, s2, xf2);
+    Manifold CollidePolygonCurve(const TransformedShape& s1, const TransformedShape& s2) {
+        SeperatingAxisSolver sat = SeperatingAxisSolver::CheckCollisionFor(s1, s2);
         sat.CheckAxisFor(SeperatingAxisSolver::BASE);
         sat.CheckAxisFor(SeperatingAxisSolver::TARGET);
         sat.Finish();
@@ -121,42 +120,43 @@ namespace Quasi::Physics2D {
 
         return Manifold {
             .seperatingNormal = sat.GetSepAxis(),
-            .contactPoint = { s2.FurthestAlong(sat.GetSepAxis(), xf2) },
+            .contactPoint = { s2.FurthestAlong(sat.GetSepAxis()) },
             .contactDepth = { sat.GetDepth() },
             .contactCount = 1,
         };
     }
 
-    bool OverlapShapes(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
+    bool OverlapShapes(const TransformedShape& s1, const TransformedShape& s2) {
         const bool circ1 = s1.PreferedPrimitive() == Shape::PRIM_CIRCLE,
                    circ2 = s2.PreferedPrimitive() == Shape::PRIM_CIRCLE;
 
         if (circ1 && circ2) {
-            return OverlapCircles(s1.As<CircleShape>(), xf1, s2.As<CircleShape>(), xf2);
+            return OverlapCircles(s1.As<TransformedCircleShape>(), s2.As<TransformedCircleShape>());
         }
         if (circ1) {
-            return OverlapCircleShape(s1, xf1, s2, xf2);
+            return OverlapCircleShape(s1, s2);
         }
         if (circ2) {
-            return OverlapCircleShape(s2, xf2, s1, xf1);
+            return OverlapCircleShape(s2, s1);
         }
-        return OverlapNonCircles(s1, xf1, s2, xf2);
+        return OverlapNonCircles(s1, s2);
     }
 
-    bool OverlapCircles(const CircleShape& s1, const PhysicsTransform& xf1, const CircleShape& s2, const PhysicsTransform& xf2) {
-        return xf1.position.in_range(xf2.position, s1.radius + s2.radius);
+    bool OverlapCircles(const TransformedCircleShape& s1, const TransformedCircleShape& s2) {
+        return s1.center.in_range(s2.center, s1.radius + s2.radius);
     }
 
-    bool OverlapCircleShape(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
-        SeperatingAxisSolver sat = SeperatingAxisSolver::CheckOverlapFor(s1, xf1, s2, xf2);
+    bool OverlapCircleShape(const TransformedShape& s1, const TransformedShape& s2) {
+        SeperatingAxisSolver sat = SeperatingAxisSolver::CheckOverlapFor(s1, s2);
+        const auto& circ = *s1.As<TransformedCircleShape>();
         sat.CheckAxisFor(SeperatingAxisSolver::TARGET);
         sat.SetCheckFor(SeperatingAxisSolver::BASE);
-        sat.CheckAxis(xf1.position - s2.NearestPointTo(xf1.position, xf2));
+        sat.CheckAxis(circ.center - s2.NearestPointTo(circ.center));
         return sat.Collides();
     }
 
-    bool OverlapNonCircles(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
-        SeperatingAxisSolver sat = SeperatingAxisSolver::CheckOverlapFor(s1, xf1, s2, xf2);
+    bool OverlapNonCircles(const TransformedShape& s1, const TransformedShape& s2) {
+        SeperatingAxisSolver sat = SeperatingAxisSolver::CheckOverlapFor(s1, s2);
         sat.CheckAxisFor(SeperatingAxisSolver::BASE);
         sat.CheckAxisFor(SeperatingAxisSolver::TARGET);
         return sat.Collides();

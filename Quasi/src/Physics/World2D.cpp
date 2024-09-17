@@ -32,45 +32,40 @@ namespace Quasi::Physics2D {
             b.Update(dt);
         }
 
-        const auto cmpr = [](const Body& p) { return p.ComputeBoundingBox().min.x; };
+        const auto cmpr = [](const Body& p) { return p.boundingBox.min.x; };
 
-        // for (int i = 1; i < bodies.size(); ++i) {
-        //     for (int j = i - 1; j >= 0; --j) {
-        //         // this is different than lt ('<') because nan always returns false
-        //         const float curr = cmpr(bodies[j]), next = cmpr(bodies[j + 1]);
-        //         if (std::isnan(next) || (!std::isnan(curr) && curr < next)) break;
-        //         std::swap(bodies[j], bodies[j + 1]);
-        //     }
-        // }
+        for (int i = 1; i < bodies.size(); ++i) {
+            for (int j = i - 1; j >= 0; --j) {
+                // this is different than lt ('<') because nan always returns false
+                const float curr = cmpr(bodies[bodyIndicesSorted[j]]), next = cmpr(bodies[bodyIndicesSorted[j + 1]]);
+                if (std::isnan(next) || (!std::isnan(curr) && curr < next)) break;
+                std::swap(bodyIndicesSorted[j], bodyIndicesSorted[j + 1]);
+            }
+        }
 
-        std::ranges::sort(bodyIndicesSorted, [&](u32 i, u32 j) { return cmpr(bodies[i]) < cmpr(bodies[j]); });
+        // std::ranges::sort(bodyIndicesSorted, [&](u32 i, u32 j) { return cmpr(bodies[i]) < cmpr(bodies[j]); });
 
         // sweep impl
         // std::vector<std::tuple<Body*, Body*, Collision::Event>> collisionPairs;
         Vec<u32> active;
-        for (u32 i = 0; i < bodyIndicesSorted.size(); ++i) {
-            Body& b = BodyAt(bodyIndicesSorted[i]);
+        for (u32 i : bodyIndicesSorted) {
+            Body& b = BodyAt(i);
             if (!b.enabled) continue;
-            const float min = b.ComputeBoundingBox().min.x;
-            for (auto actIt = active.begin(); actIt != active.end();) {
-                Body& c = BodyAt(bodyIndicesSorted[*actIt]);
-                if (c.ComputeBoundingBox().max.x > min) {
-#if 0
-                    const Collision::Event event = b->CollideWith(c);
-                    if (event && event.Valid()) {
-                        // collisionPairs.emplace_back(b, c, event);
-                        StaticResolve (b, c, event);
-                        DynamicResolve(b, c, event);
-                    }
-#endif
+            const float min = b.boundingBox.min.x;
+            for (u32 j = 0; j < active.size();) {
+                Body& c = BodyAt(active[j]);
+                if (c.boundingBox.max.x > min) {
                     const Manifold manifold = b.CollideWith(c);
-                    if (manifold.contactCount) {
+                    if (manifold.contactCount && std::max(manifold.contactDepth[0], manifold.contactDepth[1]) > Math::EPSILON) {
                         StaticResolve(b, c, manifold);
                         DynamicResolve(b, c, manifold);
+                        if (b.IsDynamic()) b.UpdateTransformShape();
+                        if (c.IsDynamic()) c.UpdateTransformShape();
                     }
-                    ++actIt;
+                    ++j;
                 } else {
-                    actIt = active.erase(actIt);
+                    std::swap(active[j], active.back());
+                    active.pop_back();
                 }
             }
             active.emplace_back(i);

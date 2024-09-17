@@ -25,10 +25,14 @@ namespace Quasi::Physics2D {
         BodyType type = BodyType::NONE;
         bool enabled = true;
         Ref<World> world = nullptr;
+
         Shape shape;
+        TransformedShape transformedShape;
+        Math::fRect2D boundingBox;
 
         Body(const Math::fVector2& p, float m, float restitution, BodyType type, Ref<World> world, Shape shape)
-            : position(p), mass(m), restitution(restitution), type(type), world(world), shape(std::move(shape)) {}
+            : position(p), mass(m), restitution(restitution), type(type), world(world),
+              shape(std::move(shape)), transformedShape(this->shape.Transform(position)) {}
 
         void AddVelocity(const Math::fVector2& vel) { velocity += vel; }
         void AddAcceleration(const Math::fVector2& acc) { acceleration += acc; }
@@ -37,12 +41,13 @@ namespace Quasi::Physics2D {
         void Stop() { velocity = 0; }
 
         [[nodiscard]] Manifold CollideWith(const Body& target) const;
-        [[nodiscard]] Manifold CollideWith(const Shape& target, const PhysicsTransform& t) const;
+        [[nodiscard]] Manifold CollideWith(const TransformedShape& target) const;
         [[nodiscard]] bool OverlapsWith(const Body& target) const;
-        [[nodiscard]] bool OverlapsWith(const Shape& target, const PhysicsTransform& t) const;
+        [[nodiscard]] bool OverlapsWith(const TransformedShape& target) const;
         [[nodiscard]] PhysicsTransform GetTransform() const;
 
         void Update(float dt);
+        void UpdateTransformShape();
 
         [[nodiscard]] bool IsStatic()  const { return type == BodyType::STATIC; }
         [[nodiscard]] bool IsDynamic() const { return type == BodyType::DYNAMIC; }

@@ -50,6 +50,7 @@ namespace Quasi {
     template <class T> using IterMutOf = typename T::iterator;
 
     template <class... Ts> using Tuple = std::tuple<Ts...>;
+	template <class T, class U> using Pair = std::pair<T, U>;
 
 	template <class T> using Implicit = std::type_identity_t<T>;
 

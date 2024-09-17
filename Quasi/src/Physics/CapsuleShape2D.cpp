@@ -18,28 +18,46 @@ namespace Quasi::Physics2D {
         }
     }
 
-    Math::fVector2 CapsuleShape::NearestPointTo(const Math::fVector2& point, const PhysicsTransform& xf) const {
-        const Math::fVector2 p = xf.TransformInverse(point);
-        const float t = std::clamp(p.dot(forward) / forward.lensq(), 0.0f, 1.0f);
-        const Math::fVector2 closest = xf * (forward * t);
+    TransformedCapsuleShape CapsuleShape::Transform(const PhysicsTransform& xf) const {
+        return { xf.position, xf.rotation.rotate(forward), radius };
+    }
+
+    float TransformedCapsuleShape::ComputeArea() const {
+        return radius * (Math::PI * radius + forward.len() * 2);
+    }
+
+    Math::fRect2D TransformedCapsuleShape::ComputeBoundingBox() const {
+        const bool negX = forward.x < 0, negY = forward.y < 0;
+        switch (2 * negX + negY) {
+            case 0:  return { start - radius, start + forward + radius };
+            case 1:  return { { start.x - radius, start.y + forward.y - radius }, { start.x + forward.x + radius, start.y + radius } };
+            case 2:  return { { start.x + forward.x - radius, start.y - radius }, { start.x + radius, start.y + forward.y + radius } };
+            case 3:  return { start + forward - radius, start + radius };
+            default: return {};
+        }
+    }
+
+    Math::fVector2 TransformedCapsuleShape::NearestPointTo(const Math::fVector2& point) const {
+        const float t = std::clamp(forward.dot(point - start) / forward.lensq(), 0.0f, 1.0f);
+        const Math::fVector2 closest = start + (forward * t);
         return closest + (point - closest).norm(radius);
     }
 
-    Math::fVector2 CapsuleShape::FurthestAlong(const Math::fVector2& normal, const PhysicsTransform& xf) const {
-        const Math::fVector2& furthest = (0 > xf.TransformOffset(forward).dot(normal) ? xf.position : xf * forward);
+    Math::fVector2 TransformedCapsuleShape::FurthestAlong(const Math::fVector2& normal) const {
+        const Math::fVector2& furthest = (0 > forward.dot(normal) ? start : start + forward);
         return furthest + normal * radius;
     }
 
-    Math::fRange CapsuleShape::ProjectOntoAxis(const Math::fVector2& axis, const PhysicsTransform& xf) const {
-        return Math::fRange { xf.position.dot(axis), (xf * forward).dot(axis) }.corrected().extrude(radius);
+    Math::fRange TransformedCapsuleShape::ProjectOntoAxis(const Math::fVector2& axis) const {
+        return Math::fRange { 0, forward.dot(axis) }.corrected().extrude(radius) + start.dot(axis);
     }
 
-    Math::fRange CapsuleShape::ProjectOntoOwnAxis(u32 axisID, const Math::fVector2& axis, const PhysicsTransform& xf) const {
-        const float center = xf.position.dot(axis);
+    Math::fRange TransformedCapsuleShape::ProjectOntoOwnAxis(u32 axisID, const Math::fVector2& axis) const {
+        const float center = start.dot(axis);
         return { center - radius, center + radius };
     }
 
-    bool CapsuleShape::AddSeperatingAxes(SeperatingAxisSolver& sat, const PhysicsTransform& xf) const {
-        return sat.CheckAxis(xf.TransformOffset(forward).perpend());
+    bool TransformedCapsuleShape::AddSeperatingAxes(SeperatingAxisSolver& sat) const {
+        return sat.CheckAxis(forward.perpend());
     }
 } // Quasi

@@ -48,41 +48,45 @@ namespace Quasi::Physics2D {
         return std::reduce(points.begin(), points.end(), Math::fVector2 {}) / (float)Size();
     }
 
+    template <u32 N> PolygonShape<N> PolygonShape<N>::Transform(const PhysicsTransform& xf) const {
+        PolygonShape tpoly = *this;
+        for (u32 i = 0; i < Size(); ++i)
+            xf.TransformInplace(tpoly.points[i]);
+        return tpoly;
+    }
+
     template <u32 N>
-    Math::fVector2 PolygonShape<N>::NearestPointTo(const Math::fVector2& point, const PhysicsTransform& xf) const {
-        const Math::fVector2 p = xf.TransformInverse(point);
+    Math::fVector2 PolygonShape<N>::NearestPointTo(const Math::fVector2& point) const {
         u32 nearest = 0;
-        float mindist = p.distsq(points[0]);
+        float mindist = point.distsq(points[0]);
         for (u32 i = 1; i < Size(); ++i) {
-            if (const float d = p.distsq(points[i]); d < mindist) {
+            if (const float d = point.distsq(points[i]); d < mindist) {
                 mindist = d;
                 nearest = i;
             }
         }
-        return xf * points[nearest];
+        return points[nearest];
     }
 
     template <u32 N>
-    Math::fVector2 PolygonShape<N>::FurthestAlong(const Math::fVector2& normal, const PhysicsTransform& xf) const {
-        const Math::fVector2 invNorm = xf.rotation.inv().rotate(normal);
+    Math::fVector2 PolygonShape<N>::FurthestAlong(const Math::fVector2& normal) const {
         u32 furthest = 0;
-        float m = invNorm.dot(points[0]);
+        float m = normal.dot(points[0]);
         for (u32 i = 1; i < Size(); ++i) {
-            if (const float d = invNorm.dot(points[i]); d > m) {
+            if (const float d = normal.dot(points[i]); d > m) {
                 m = d;
                 furthest = i;
             }
         }
-        return xf * points[furthest];
+        return points[furthest];
     }
 
     template <u32 N>
-    Math::fLine2D PolygonShape<N>::BestEdgeFor(const Math::fVector2& normal, const PhysicsTransform& xf) const {
-        const Math::fVector2 invNorm = xf.rotation.inv().rotate(normal);
-        float maxDepth = invNorm.dot(points[0]);
+    Math::fLine2D PolygonShape<N>::BestEdgeFor(const Math::fVector2& normal) const {
+        float maxDepth = normal.dot(points[0]);
         u32 furthest = 0;
         for (u32 i = 1; i < Size(); ++i) {
-            if (const float d = invNorm.dot(points[i]); d > maxDepth) {
+            if (const float d = normal.dot(points[i]); d > maxDepth) {
                 maxDepth = d;
                 furthest = i;
             }
@@ -91,45 +95,41 @@ namespace Quasi::Physics2D {
         const Math::fVector2 &f     = points[furthest],
                              &edge0 = PointAt(furthest + 1),
                              &edge1 = PointAt(furthest - 1);
-        if (std::abs((f - edge0).norm().dot(invNorm)) > std::abs((f - edge1).norm().dot(invNorm)))
-            return { xf * f, xf * edge1 };
-        return { xf * f, xf * edge0 };
+        if (std::abs((f - edge0).norm().dot(normal)) > std::abs((f - edge1).norm().dot(normal)))
+            return { f, edge1 };
+        return { f, edge0 };
     }
 
     template <u32 N>
-    Math::fRange PolygonShape<N>::ProjectOntoAxis(const Math::fVector2& axis, const PhysicsTransform& xf) const {
-        const Math::fVector2 n = xf.rotation.inv().rotate(axis);
-        float min = n.dot(points[0]), max = min;
+    Math::fRange PolygonShape<N>::ProjectOntoAxis(const Math::fVector2& axis) const {
+        float min = axis.dot(points[0]), max = min;
         for (u32 i = 1; i < Size(); ++i) {
-            const float d = n.dot(points[i]);
+            const float d = axis.dot(points[i]);
             min = std::min(min, d);
             max = std::max(max, d);
         }
-        const float p = xf.position.dot(axis);
-        return { min + p, max + p };
+        return { min, max };
     }
 
     template <u32 N>
-    Math::fRange PolygonShape<N>::ProjectOntoOwnAxis(u32 axisID, const Math::fVector2& axis, const PhysicsTransform& xf) const {
-        const Math::fVector2 n = xf.rotation.inv().rotate(axis);
-        float min = n.dot(points[axisID]), max = min;
+    Math::fRange PolygonShape<N>::ProjectOntoOwnAxis(u32 axisID, const Math::fVector2& axis) const {
+        float min = axis.dot(points[axisID]), max = min;
         for (u32 i = 0; i < Size(); ++i) {
             if (i == axisID || i == (axisID + 1) % Size()) continue;
-            const float d = n.dot(points[i]);
+            const float d = axis.dot(points[i]);
             min = std::min(min, d);
             max = std::max(max, d);
         }
-        const float p = xf.position.dot(axis);
-        return { min + p, max + p };
+        return { min, max };
     }
 
     template <u32 N>
-    bool PolygonShape<N>::AddSeperatingAxes(SeperatingAxisSolver& sat, const PhysicsTransform& xf) const {
+    bool PolygonShape<N>::AddSeperatingAxes(SeperatingAxisSolver& sat) const {
         bool success = false;
         for (u32 i = 0; i < Size() - 1; ++i) {
-            success |= sat.CheckAxis(xf.TransformOffset(points[i + 1] - points[i]).perpend());
+            success |= sat.CheckAxis((points[i + 1] - points[i]).perpend());
         }
-        success |= sat.CheckAxis(xf.TransformOffset(points[0] - points[Size() - 1]).perpend());
+        success |= sat.CheckAxis((points[0] - points[Size() - 1]).perpend());
         return success;
     }
 

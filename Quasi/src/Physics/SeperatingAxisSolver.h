@@ -3,11 +3,10 @@
 #include "Ref.h"
 
 namespace Quasi::Physics2D {
-    class Shape;
+    class TransformedShape;
 
     class SeperatingAxisSolver {
-        Ref<const Shape> base, target;
-        PhysicsTransform baseXf, targetXf;
+        Ref<const TransformedShape> base, target;
     public:
         enum class Subject { BASE = 0, TARGET = 1 };
         enum class CheckMode { OVERLAP, COLLISION };
@@ -23,15 +22,14 @@ namespace Quasi::Physics2D {
         u32 axisIndex = 0;
 
 
-        SeperatingAxisSolver(const Shape& s1, const PhysicsTransform& xf1,
-                             const Shape& s2, const PhysicsTransform& xf2, CheckMode mode) :
-            base(s1), target(s2), baseXf(xf1), targetXf(xf2), checkMode(mode) {}
+        SeperatingAxisSolver(const TransformedShape& s1,
+                             const TransformedShape& s2, CheckMode mode) :
+            base(s1), target(s2), checkMode(mode) {}
     public:
-        static SeperatingAxisSolver CheckOverlapFor(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2);
-        static SeperatingAxisSolver CheckCollisionFor(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2);
+        static SeperatingAxisSolver CheckOverlapFor  (const TransformedShape& s1, const TransformedShape& s2);
+        static SeperatingAxisSolver CheckCollisionFor(const TransformedShape& s1, const TransformedShape& s2);
 
-        [[nodiscard]] const Shape& CurrentlyCheckedShape() const { return currentChecked == BASE ? base : target; }
-        [[nodiscard]] const PhysicsTransform& CurrentlyCheckedTransform() const { return currentChecked == BASE ? baseXf : targetXf; }
+        [[nodiscard]] const TransformedShape& CurrentlyCheckedShape() const { return currentChecked == BASE ? base : target; }
 
         void SetCheckFor(Subject s);
         bool CheckAxisFor(Subject s);

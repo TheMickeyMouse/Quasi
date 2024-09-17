@@ -8,6 +8,7 @@ namespace Quasi::Physics2D {
         static constexpr bool DYNAMIC = N == 0;
         std::conditional_t<DYNAMIC, Vec<Math::fVector2>, Array<Math::fVector2, N>> points;
 
+        PolygonShape() = default;
         PolygonShape(decltype(points)&& ps) : points(std::move(ps)) {}
         template <class... Ts>
         PolygonShape(const Ts& ...ps) : points { ps... } {}
@@ -28,12 +29,14 @@ namespace Quasi::Physics2D {
         [[nodiscard]] Math::fRect2D ComputeBoundingBox() const;
         [[nodiscard]] Math::fVector2 CenterOfMass() const;
 
-        [[nodiscard]] Math::fVector2 NearestPointTo(const Math::fVector2& point, const PhysicsTransform& xf) const;
-        [[nodiscard]] Math::fVector2 FurthestAlong(const Math::fVector2& normal, const PhysicsTransform& xf) const;
-        [[nodiscard]] Math::fLine2D BestEdgeFor(const Math::fVector2& normal, const PhysicsTransform& xf) const;
-        [[nodiscard]] Math::fRange ProjectOntoAxis(const Math::fVector2& axis, const PhysicsTransform& xf) const;
-        [[nodiscard]] Math::fRange ProjectOntoOwnAxis(u32 axisID, const Math::fVector2& axis, const PhysicsTransform& xf) const;
-        bool AddSeperatingAxes(SeperatingAxisSolver& sat, const PhysicsTransform& xf) const;
+        [[nodiscard]] PolygonShape Transform(const PhysicsTransform& xf) const;
+
+        [[nodiscard]] Math::fVector2 NearestPointTo(const Math::fVector2& point) const;
+        [[nodiscard]] Math::fVector2 FurthestAlong(const Math::fVector2& normal) const;
+        [[nodiscard]] Math::fLine2D BestEdgeFor(const Math::fVector2& normal) const;
+        [[nodiscard]] Math::fRange ProjectOntoAxis(const Math::fVector2& axis) const;
+        [[nodiscard]] Math::fRange ProjectOntoOwnAxis(u32 axisID, const Math::fVector2& axis) const;
+        bool AddSeperatingAxes(SeperatingAxisSolver& sat) const;
     };
 
     using TriangleShape = PolygonShape<3>;
