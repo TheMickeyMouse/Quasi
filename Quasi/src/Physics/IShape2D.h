@@ -1,8 +1,8 @@
 #pragma once
 #include "Geometry.h"
-#include "PhysicsTransform2D.h"
 #include "Rect.h"
 #include "Utils/ArenaAllocator.h"
+#include "PhysicsTransform2D.h"
 
 namespace Quasi::Physics2D {
     class SeperatingAxisSolver;
@@ -14,7 +14,7 @@ namespace Quasi::Physics2D {
         [[nodiscard]] Math::fRect2D ComputeBoundingBox() const = delete;
         [[nodiscard]] Math::fVector2 CenterOfMass() const = delete;
 
-        enum ClipPrimitive { PRIM_CIRCLE, PRIM_POINT, PRIM_EDGE };
+        enum ClipPrimitive { PRIM_CIRCLE, PRIM_LINE, PRIM_POLYGON };
         enum Type { CIRCLE, CAPSULE, RECT, TRI, QUAD, POLY };
     };
 

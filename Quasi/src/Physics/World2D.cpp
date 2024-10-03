@@ -55,12 +55,15 @@ namespace Quasi::Physics2D {
             for (u32 j = 0; j < active.size();) {
                 Body& c = BodyAt(active[j]);
                 if (c.boundingBox.max.x > min) {
-                    const Manifold manifold = b.CollideWith(c);
-                    if (manifold.contactCount && std::max(manifold.contactDepth[0], manifold.contactDepth[1]) > Math::EPSILON) {
-                        StaticResolve(b, c, manifold);
-                        DynamicResolve(b, c, manifold);
-                        if (b.IsDynamic()) b.UpdateTransformShape();
-                        if (c.IsDynamic()) c.UpdateTransformShape();
+                    const bool bDyn = b.IsDynamic(), cDyn = c.IsDynamic();
+                    if ((bDyn || cDyn) && c.boundingBox.yrange().overlaps(b.boundingBox.yrange())) {
+                        const Manifold manifold = b.CollideWith(c);
+                        if (manifold.contactCount && std::max(manifold.contactDepth[0], manifold.contactDepth[1]) > Math::EPSILON) {
+                            StaticResolve(b, c, manifold);
+                            DynamicResolve(b, c, manifold);
+                            if (bDyn) b.UpdateTransformShape();
+                            if (cDyn) c.UpdateTransformShape();
+                        }
                     }
                     ++j;
                 } else {

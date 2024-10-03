@@ -29,14 +29,13 @@ namespace Quasi::Physics2D {
 
         Manifold result = None();
         result.seperatingNormal = n;
-        Math::fVector2 refNorm = refFwd.perpend();
-        if ((refNorm.dot(n) < 0.0f) ^ !flip) refNorm *= -1.0f;
+        const Math::fVector2 refNorm = flip ? n : -n;
         const float max = ref.start.dot(refNorm);
 
-        if (const float d = refNorm.dot(manifold.contactPoint[0]) - max; d >= 0) {
+        if (const float d = refNorm.dot(manifold.contactPoint[0]) - max; d > 0) {
             result.AddPoint(manifold.contactPoint[0], d);
         }
-        if (const float d = refNorm.dot(manifold.contactPoint[1]) - max; d >= 0) {
+        if (const float d = refNorm.dot(manifold.contactPoint[1]) - max; d > 0) {
             result.AddPoint(manifold.contactPoint[1], d);
         }
         // return the valid points

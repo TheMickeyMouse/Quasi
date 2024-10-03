@@ -225,7 +225,7 @@ namespace Quasi::Text {
                 styleFlags = (byte)(styleFlags & ~(1 << i) | (s->isOn << i));
             }
             return;
-            case 1: qmatch (s, (
+            case 1: Qmatch (s, (
                 case (Style::FONT_TYPE)  { font = *data; },
                 case (Style::CODE_BLOCK) { codeLang = *data; },
                 case (Style::ALIGNMENT)  { alignment = *data; },
@@ -234,7 +234,7 @@ namespace Quasi::Text {
             return;
             case 2:
                 if (s == Style::FONT_SIZE) fontSizeP64 = (short)((data[0] << 8) + data[1]); break;
-            case 4: qmatch (s, (
+            case 4: Qmatch (s, (
                 case (Style::TEXT_COLOR)      { std::copy_n(data, 4, color);     },
                 case (Style::HIGHLIGHT_COLOR) { std::copy_n(data, 4, highlight); },
                 else;

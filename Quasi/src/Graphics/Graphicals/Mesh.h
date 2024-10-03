@@ -39,6 +39,20 @@ namespace Quasi::Graphics {
 
         void PushVertex(const Vtx& v) { vertices.push_back(v); }
         void PushIndex(TriIndices i) { indices.push_back(i); }
+        void PushVertices(const CollectionOf<Vtx> auto& vs) { for (const Vtx& v : vs) PushVertex(v); }
+        void PushVertices(IList<Vtx> vs) { for (const Vtx& v : vs) PushVertex(v); }
+        void PushIndices(const CollectionOf<TriIndices> auto& is) { for (const TriIndices& i : is) PushIndex(i); }
+        void PushIndices(IList<TriIndices> is) { for (const TriIndices& i : is) PushIndex(i); }
+        void PushTriangle(const Vtx& a, const Vtx& b, const Vtx& c) {
+            PushIndex({ vertices.size(), vertices.size() + 1, vertices.size() + 2 });
+            PushVertex(a); PushVertex(b); PushVertex(c);
+        }
+        void PushPolygon(const CollectionOf<Vtx> auto& vs) {
+            const u32 begin = vertices.size();
+            PushVertices(vs);
+            for (u32 i = begin + 1; i < vertices.size() - 1; ++i) PushIndex({ begin, i, i + 1 });
+        }
+        void PushPolygon(IList<Vtx> vs) { PushPolygon(Span { vs }); }
 
         struct BatchProxy {
             u32 iOffset;
@@ -47,14 +61,18 @@ namespace Quasi::Graphics {
             void PushV(const Vtx& v) { mesh.PushVertex(v); }
             void ReserveV(u32 amount) { mesh.vertices.resize(mesh.vertices.size() + amount); }
             Vtx& VertAt(u32 i) { return mesh.vertices[iOffset + i]; }
+            void PushVs(const CollectionOf<Vtx> auto& vs) { mesh.PushVertices(vs); }
+            void PushVs(IList<Vtx> vs) { mesh.PushVertices(vs); }
 
             void PushI(TriIndices i) { mesh.PushIndex(i + iOffset); }
             void PushI(u32 i, u32 j, u32 k) { mesh.PushIndex({ i + iOffset, j + iOffset, k + iOffset }); }
             void ReserveI(u32 amount) { mesh.indices.resize(mesh.indices.size() + amount); }
+            void PushIs(const CollectionOf<TriIndices> auto& is) { mesh.PushIndices(is); }
+            void PushIs(IList<TriIndices> is) { mesh.PushIndices(is); }
 
             void PushTri(const Vtx& a, const Vtx& b, const Vtx& c) {
                 PushV(a); PushV(b); PushV(c);
-                const u32 i = (u32)mesh.indices.size();
+                const u32 i = (u32)mesh.vertices.size();
                 mesh.PushIndex({ i - 3, i - 2, i - 1 });
             }
 
@@ -62,6 +80,9 @@ namespace Quasi::Graphics {
                 for (const auto& v : vs) PushV(v);
                 for (const auto& i : is) PushI(i);
             }
+
+            void PushPolygon(const CollectionOf<Vtx> auto& vs) { mesh.PushPolygon(vs); }
+            void PushPolygon(IList<Vtx> vs) { PushPolygon(Span { vs }); }
         };
 
         BatchProxy NewBatch() { return { (u32)vertices.size(), *this }; }

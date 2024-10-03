@@ -64,6 +64,7 @@ namespace Quasi::Math {
         static RectN empty() { return {}; }
         static RectN whole() { return { std::numeric_limits<T>::lowest(), std::numeric_limits<T>::max() }; }
         static RectN unrange() { return { std::numeric_limits<T>::max(), std::numeric_limits<T>::lowest() }; }
+        static RectN at(const vec& point) { return { point, point }; }
         static RectN over(const CollectionOf<vec> auto& nums);
         static RectN over(const CollectionOf<scalar> auto& nums) requires is1D;
 
@@ -116,7 +117,7 @@ namespace Quasi::Math {
 
         NODISC RectN expand(const RectN& other)     const { return { vec::min(min, other.min), vec::max(max, other.max) }; }
         NODISC RectN expand_until(const vec& other) const { return { vec::min(min, other),     vec::max(max, other)     }; }
-        NODISC RectN shrink(const RectN& other)     const { return { vec::min(min, other.min), vec::max(max, other.max) }; }
+        NODISC RectN intersect(const RectN& other)  const { return { vec::max(min, other.min), vec::min(max, other.max) }; }
 
         NODISC RectN inset  (T radius)          const { return { (vec)(min + radius), (vec)(max - radius) }; }
         NODISC RectN inset  (const vec& radius) const { return { (vec)(min + radius), (vec)(max - radius) }; }
@@ -124,10 +125,22 @@ namespace Quasi::Math {
         NODISC RectN extrude(const vec& radius) const { return { (vec)(min - radius), (vec)(max + radius) }; }
 
         NODISC bool overlaps(const RectN& other) const { return (min < other.max) && (max > other.min); }
+        NODISC vec  overlap (const RectN& other) const { return vec::max(max - other.min, other.max - min); }
+
+        NODISC RectN<1, scalar> xrange() const requires (N >= 1) { return { min.x, max.x }; }
+        NODISC RectN<1, scalar> yrange() const requires (N >= 2) { return { min.y, max.y }; }
+        NODISC RectN<1, scalar> zrange() const requires (N >= 3) { return { min.z, max.z }; }
+        NODISC RectN<1, scalar> wrange() const requires (N >= 4) { return { min.w, max.w }; }
 
         NODISC RectIter<RectN> begin() const;
         NODISC RectIter<RectN> end() const;
     };
+
+    template <class T, u32 D, u32 N>
+    RectN<N - 1, T> operator%(const RectN<D, T>& rect, const char (&swizz)[N]) {
+        return { rect.min % swizz, rect.max % swizz };
+    }
+
 #undef RECT_OP
     template <RectLike R>
     struct RectIter {

@@ -67,12 +67,12 @@
 #define Q_MATCH_BRANCH_else Q_MATCH_BRANCH_ELSE, ~,
 #define Q_MATCH_BRANCH_ELSE(M, B, N, U) B
 
-#define Q_MATCH_VALUE(U, X, B) { const auto& Q_CAT(_mv_, U) = X; Q_MATCH_BRANCHES(U, VALS, Q_TUP_TO_SEQUENCE(B)) Q_CAT(_m_end_, U): Q_NOOP(); }
+#define Q_MATCH_VALUE(U, X, B) { auto& Q_CAT(_mv_, U) = X; Q_MATCH_BRANCHES(U, VALS, Q_TUP_TO_SEQUENCE(B)) Q_CAT(_m_end_, U): Q_NOOP(); }
 #define Q_MATCH_TYPE(U, X, B)  { using Q_CAT(_mv_, U) = Q_EAT X; Q_MATCH_BRANCHES(U, TYPE, Q_TUP_TO_SEQUENCE(B)) Q_NOOP(); }
-#define Q_MATCH_VALUE(U, X, B) { const auto& Q_CAT(_mv_, U) = X; Q_MATCH_BRANCHES(U, VALS, Q_TUP_TO_SEQUENCE(B)) Q_CAT(_m_end_, U): Q_NOOP(); }
+#define Q_MATCH_VALUE(U, X, B) { auto& Q_CAT(_mv_, U) = X; Q_MATCH_BRANCHES(U, VALS, Q_TUP_TO_SEQUENCE(B)) Q_CAT(_m_end_, U): Q_NOOP(); }
 
 #ifdef Q_EXT_MATCH_SYNTAX
-#define qmatch(...) Q_MATCH_EXPR(__VA_ARGS__)
+#define Qmatch(...) Q_MATCH_EXPR(__VA_ARGS__)
 #else
 #warning Extended Match syntax has been disabled (define Q_EXT_MATCH_SYNTAX to enable), some syntax features wont work properly
 #endif
@@ -113,31 +113,26 @@ namespace Quasi::Matching {
 
     template <class T, class U> requires std::is_base_of_v<U, T> && (std::is_const_v<T> || !std::is_const_v<U>)
     Ref<T> InstanceOf(U& u) {
-        T* const tptr = dynamic_cast<T*>(&u);
-        return { tptr != nullptr, DerefPtr(tptr) };
+        return DerefPtr(dynamic_cast<T*>(&u));
     }
 
     template <class T, class U> requires std::is_base_of_v<U, T> && (std::is_const_v<T> || !std::is_const_v<U>)
-    T* InstanceOf(U* u) {
-        T* const tptr = dynamic_cast<T*>(u);
-        return { tptr != nullptr, tptr };
+    Ref<T> InstanceOf(U* u) {
+        return DerefPtr(dynamic_cast<T*>(u));
     }
 
     template <class Der, class Base> requires std::is_base_of_v<Base, Der> && (std::is_const_v<Der> || !std::is_const_v<Base>)
     Ref<Der> InstanceOf(RefImpl<Base> u) {
-        const Ref<Der> ref = u.template As<Der>();
-        return { ref.HasValue(), ref };
+        return u.template As<Der>();
     }
 
     template <class T, class... Us> requires (std::is_same_v<T, Us> || ...)
     Ref<const T> InstanceOf(const Variant<Us...>& u) {
-        const Ref<const T> ref = u.template As<T>();
-        return { ref.HasValue(), ref };
+        return u.template As<T>();
     }
 
     template <class T, class... Us> requires (std::is_same_v<T, Us> || ...)
     Ref<T> InstanceOf(Variant<Us...>& u) {
-        const Ref<T> ref = u.template As<T>();
-        return { ref.HasValue(), ref };
+        return u.template As<T>();
     }
 }

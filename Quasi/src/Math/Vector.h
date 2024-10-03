@@ -83,10 +83,10 @@ namespace Quasi::Math {
 #pragma region Vector Swizzle Impl
 #define VECTOR_SWIZZLING 1
 #if VECTOR_SWIZZLING == 1
-    template <class Vector, u32 N>
-    VectorN<N - 1, typename Vector::scalar> operator%(const Vector& vector, const char (&swizz)[N]) {
+    template <class T, u32 D, u32 N>
+    VectorN<N - 1, T> operator%(const VectorN<D, T>& vector, const char (&swizz)[N]) {
         return [&]<u32... I>(std::integer_sequence<u32, I...>) {
-            return VectorN<N - 1, typename Vector::scalar> { vector[Vector::params.find(swizz[I])]... };
+            return VectorN<N - 1, T> { vector[VectorN<D, T>::params.find(swizz[I])]... };
         }(std::make_integer_sequence<u32, N - 1> {});
     }
 #endif

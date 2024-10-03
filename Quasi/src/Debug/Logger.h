@@ -5,6 +5,7 @@
 
 #include "ConsoleColor.h"
 #include "Text.h"
+#include "Timer.h"
 #include "Type.h"
 #include "Utils/Enum.h"
 #include "Utils/Option.h"
@@ -29,7 +30,6 @@ namespace Quasi::Debug {
         COMPARABLE, ("NEVER", ConsoleColor::GRAY))
     };
 
-    using DateTime = std::chrono::time_point<std::chrono::system_clock>;
     using SourceLoc = std::source_location;
 
     // captures source location
@@ -60,8 +60,8 @@ namespace Quasi::Debug {
         bool recordLogs : 1 = false;
         int lPad = 50;
 
-        static Logger InternalLog;
     public:
+        static Logger InternalLog;
 #ifdef NDEBUG
         static constexpr bool DEBUG = false;
 #else
@@ -81,8 +81,6 @@ namespace Quasi::Debug {
         void SetAlwaysFlush(const bool flag) { alwaysFlush = flag; }
         void SetRecordLogs(const bool flag) { recordLogs = flag; }
         void SetLocPad(const int pad) { lPad = pad; }
-
-        static DateTime Now();
 
         [[nodiscard]] String FmtLog(const LogEntry& log) const;
         [[nodiscard]] String FmtLog(Str log, Severity severity, DateTime time, const SourceLoc& fileLoc) const;
@@ -200,7 +198,7 @@ namespace Quasi {
 
 namespace Quasi::Text {
     template <>
-    struct Formatter<Debug::DateTime> {
+    struct Formatter<DateTime> {
         Str fmt;
         bool AddOption(Str args) {
             for (u32 i = 0; i < args.size(); ++i) {
@@ -219,7 +217,7 @@ namespace Quasi::Text {
             fmt = args;
             return true;
         }
-        void FormatTo(const Debug::DateTime& time, StringOutput output) {
+        void FormatTo(const DateTime& time, StringOutput output) {
             const auto d = floor<std::chrono::days>(time);
             const std::chrono::year_month_day ymd = d;
             const std::chrono::hh_mm_ss       hms { floor<std::chrono::milliseconds>(time - d) };

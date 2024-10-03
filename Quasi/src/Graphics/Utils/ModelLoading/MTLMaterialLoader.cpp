@@ -14,7 +14,7 @@ namespace Quasi::Graphics {
         const Str prefix = line.substr(0, spaceIdx),
                   data   = line.substr(spaceIdx + 1);
 
-        qmatch (prefix, (
+        Qmatch (prefix, (
             case ("newmtl") properties.emplace_back(CreateProperty<NewMaterial>     (data));,
             case ("Ka")     properties.emplace_back(CreateProperty<AmbientCol>      (data));,
             case ("Kd")     properties.emplace_back(CreateProperty<DiffuseCol>      (data));,
@@ -36,7 +36,7 @@ namespace Quasi::Graphics {
 
     template <class MTL> MTLMaterialLoader::MTLProperty MTLMaterialLoader::CreateProperty(Str data) {
         using namespace std::literals;
-        qmatch ((typename)MTL, (
+        Qmatch ((typename)MTL, (
             case (NewMaterial) return { NewMaterial { String { data } } };,
             if ((MTL m) { { m.color }; }) {
                 const auto color = Math::fVector3::parse(data, " ", "", "");

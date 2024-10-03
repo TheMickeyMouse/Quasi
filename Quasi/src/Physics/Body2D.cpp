@@ -51,8 +51,8 @@ namespace Quasi::Physics2D {
         position += shape.CenterOfMass();
     }
 
-    Math::fRect2D Body::ComputeBoundingBox() const {
-        return GetTransform() * shape.ComputeBoundingBox();
+    Math::fRect2D Body::BoundingBox() const {
+        return boundingBox;
     }
 
     BodyHandle::BodyHandle(Body& b) : index(&b - b.world->bodies.data()), world(b.world) {}

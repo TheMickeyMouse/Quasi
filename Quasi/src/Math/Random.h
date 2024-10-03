@@ -41,6 +41,16 @@ namespace Quasi::Math {
         template <std::floating_point F> F GetIncl(F min = 0, F max = 1)
         { return getf(min, std::nextafter(max, std::numeric_limits<F>::max())); }
 
+        template <std::floating_point F> F GetLogarithmic(F min = 0, F max = 1)
+        { return std::log(Get(std::exp(min), std::exp(max))); }
+        template <std::floating_point F> F GetLogarithmicIncl(F min = 0, F max = 1)
+        { return std::log(GetIncl(std::exp(min), std::exp(max))); }
+
+        template <std::floating_point F> F GetExponential(F min = 0, F max = 1)
+        { return std::exp(Get(std::log(min), std::log(max))); }
+        template <std::floating_point F> F GetExponentialIncl(F min = 0, F max = 1)
+        { return std::exp(GetIncl(std::log(min), std::log(max))); }
+
         char Get    (const char min, const char max) { return (char)Get<i16>(min, max); }
         char GetIncl(const char min, const char max) { return (char)Get<i16>(min, (i16)(max + 1)); }
         byte Get    (const byte min, const byte max) { return (byte)Get<u16>(min, max); }
@@ -59,7 +69,7 @@ namespace Quasi::Math {
             return GetIncl<common_t>((common_t)min, (common_t)max);
         }
 
-        bool GetBool(std::floating_point auto probability) { return bool_dist_t { probability } (device); }
+        bool GetBool(std::floating_point auto probability = 0.5f) { return bool_dist_t { probability } (device); }
 
         template <class F> auto Get(F f) -> decltype(f(0)) { return f(device); }
 
@@ -73,7 +83,7 @@ namespace Quasi::Math {
         T Choose(IList<T> ilist) { return *Choose(ilist.begin(), ilist.end()); }
 
         template <ArrayLike C> ArrayElement<C>& Choose(C& arr) { return *Choose(std::begin(arr), std::end(arr)); }
-        template <ArrayLike C> const ArrayElement<C>& choose(const C& arr) { return *Choose(std::begin(arr), std::end(arr)); }
+        template <ArrayLike C> const ArrayElement<C>& Choose(const C& arr) { return *Choose(std::begin(arr), std::end(arr)); }
 
         template <class T, template <typename> class C = Vec> C<T> Generate(T min, T max, usize size) {
             C<T> arr;

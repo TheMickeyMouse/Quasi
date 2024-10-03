@@ -81,7 +81,7 @@ namespace Quasi::Text {
         bool AddOption(Str) { return true; }
         void FormatTo(Graphics::GLErrorCode err, StringOutput output) const {
             FormatOnto(output,
-                "0x{:X4} ({})",
+                "0x{:X04} ({})",
                 err->glID,
                 err->errName
             );

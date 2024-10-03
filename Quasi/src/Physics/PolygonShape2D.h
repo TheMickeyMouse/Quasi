@@ -2,6 +2,7 @@
 #include "IShape2D.h"
 
 namespace Quasi::Physics2D {
+    // ! Important ! assumes points are in anti-clockwise order
     template <u32 N>
     class PolygonShape : public IShape {
     public:
@@ -9,21 +10,20 @@ namespace Quasi::Physics2D {
         std::conditional_t<DYNAMIC, Vec<Math::fVector2>, Array<Math::fVector2, N>> points;
 
         PolygonShape() = default;
-        PolygonShape(decltype(points)&& ps) : points(std::move(ps)) {}
-        template <class... Ts>
-        PolygonShape(const Ts& ...ps) : points { ps... } {}
+        PolygonShape(UncheckedMarker, decltype(points)&& ps) : points(std::move(ps)) {}
+        PolygonShape(decltype(points)&& ps);
         ~PolygonShape() = default;
 
-        [[nodiscard]] u32 Size() const;
+        [[nodiscard]] i32 Size() const;
         void AddPoint(const Math::fVector2& p) requires DYNAMIC;
         void AddPoint(const Math::fVector2& p, u32 i) requires DYNAMIC;
         void RemovePoint(u32 i) requires DYNAMIC;
         void PopPoint() requires DYNAMIC;
 
-        [[nodiscard]] const Math::fVector2& PointAt(u32 i) const { return points[i % Size()]; }
-        Math::fVector2& PointAt(u32 i) { return points[i % Size()]; }
-        [[nodiscard]] float Xof(u32 i) const { return PointAt(i).x; }
-        [[nodiscard]] float Yof(u32 i) const { return PointAt(i).y; }
+        [[nodiscard]] const Math::fVector2& PointAt(i32 i) const { return points[(i % Size() + Size()) % Size()]; }
+        Math::fVector2& PointAt(i32 i) { return points[(i % Size() + Size()) % Size()]; }
+        [[nodiscard]] float Xof(i32 i) const { return PointAt(i).x; }
+        [[nodiscard]] float Yof(i32 i) const { return PointAt(i).y; }
 
         [[nodiscard]] float ComputeArea() const;
         [[nodiscard]] Math::fRect2D ComputeBoundingBox() const;

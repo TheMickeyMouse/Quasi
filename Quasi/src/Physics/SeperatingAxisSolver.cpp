@@ -11,9 +11,15 @@ namespace Quasi::Physics2D {
         return { s1, s2, COLLISION };
     }
 
+    Ref<const TransformedShape> SeperatingAxisSolver::CurrentlyCheckedShape() const {
+        return currentChecked == BASE   ? Refer(base)   :
+               currentChecked == TARGET ? Refer(target) :
+               nullptr;
+    }
+
     bool SeperatingAxisSolver::CheckAxisFor(Subject s) {
         SetCheckFor(s);
-        return CurrentlyCheckedShape().AddSeperatingAxes(*this);
+        return CurrentlyCheckedShape()->AddSeperatingAxes(*this);
     }
 
     void SeperatingAxisSolver::SetCheckFor(Subject s) {
@@ -28,28 +34,22 @@ namespace Quasi::Physics2D {
         const Math::fVector2 pAxis = axis.norm();
         const Math::fRange bproj = currentChecked == BASE   ? base  ->ProjectOntoOwnAxis(axisIndex - 1, pAxis) : base  ->ProjectOntoAxis(pAxis),
                            tproj = currentChecked == TARGET ? target->ProjectOntoOwnAxis(axisIndex - 1, pAxis) : target->ProjectOntoAxis(pAxis);
-        if (!bproj.overlaps(tproj)) {
+
+        const float d1 = bproj.max - tproj.min, d2 = tproj.max - bproj.min,
+                    depth = std::min(d1, d2);
+
+        if (depth <= 0) {
             collides = false;
             return false;
         }
-
         if (checkMode == OVERLAP) return false;
 
-        const float depth = std::min(bproj.max - tproj.min, tproj.max - bproj.min);
         if (depth < overlap) {
             overlap = depth;
-            seperatingAxis = pAxis;
+            seperatingAxis = d1 > d2 ? -pAxis : pAxis;
             return true;
         }
         return false;
-    }
-
-    void SeperatingAxisSolver::Finish() {
-        if (checkMode == OVERLAP) return;
-
-        if ((target->CenterOfMass() - base->CenterOfMass()).dot(seperatingAxis) < 0.0f) {
-            seperatingAxis = -seperatingAxis;
-        }
     }
 
     float SeperatingAxisSolver::GetDepth() const {

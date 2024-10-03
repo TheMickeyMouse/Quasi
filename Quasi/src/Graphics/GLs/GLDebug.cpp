@@ -42,8 +42,8 @@ namespace Quasi::Graphics {
         u32 err;
         while ((err = GLGetErr())) {
             GLLogger().Error(
-                { "GL Error code {} was uncaught when calling {} (see https://docs.gl/gl3/{}).", loc },
-                GLErrorCode::FromID(err), signature, signature.substr(0, signature.find('(')));
+                { "GL Error code {} was uncaught when calling gl{} (see https://docs.gl/gl3/{}).", loc },
+                GLErrorCode::FromID(err), signature.substr(signature.find("::") + 2), signature.substr(0, signature.find('(')));
         }
     }
 }

@@ -10,9 +10,9 @@ namespace Quasi::Physics2D {
         return Visit([&] (const auto& s) { return TransformedShape { s.Transform(xf) }; });
     }
 
-    float            IMPLEMENT_SHAPE_FN(TransformedShape, ComputeArea,        (), ())
-    Math::fRect2D    IMPLEMENT_SHAPE_FN(TransformedShape, ComputeBoundingBox, (), ())
-    Math::fVector2   IMPLEMENT_SHAPE_FN(TransformedShape, CenterOfMass,       (), ())
+    float          IMPLEMENT_SHAPE_FN(TransformedShape, ComputeArea,        (), ())
+    Math::fRect2D  IMPLEMENT_SHAPE_FN(TransformedShape, ComputeBoundingBox, (), ())
+    Math::fVector2 IMPLEMENT_SHAPE_FN(TransformedShape, CenterOfMass,       (), ())
 
     Math::fVector2 IMPLEMENT_SHAPE_FN(TransformedShape, NearestPointTo,     (const Math::fVector2& point),            (point))
     Math::fVector2 IMPLEMENT_SHAPE_FN(TransformedShape, FurthestAlong,      (const Math::fVector2& normal),           (normal))

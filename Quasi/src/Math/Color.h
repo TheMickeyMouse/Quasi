@@ -252,7 +252,7 @@ namespace Quasi::Math {
             bool AddOption(Str args) {
                 if (args.empty()) return true;
                 // :[%][#|*|rgb|hsl|hsv]
-                qmatch (args, (
+                Qmatch (args, (
                     case ("#")    { mode = HEX; },
                     case ("*")    { mode = VECTOR; },
                     case ("rgb")  { mode = RGB; },

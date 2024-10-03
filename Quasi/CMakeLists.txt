@@ -72,6 +72,13 @@ set(HEADER_FILES
     src/Physics/Body2D.h
     src/Physics/Collision2D.h
     src/Physics/PhysicsTransform2D.h
+    src/Physics/Manifold2D.h
+    src/Physics/SeperatingAxisSolver.h
+    src/Physics/CircleShape2D.h
+    src/Physics/CapsuleShape2D.h
+    src/Physics/PolygonShape2D.h
+    src/Physics/RectShape2D.h
+    src/Physics/Shape2D.h
 
     src/Utils/Enum.h
     src/Utils/Text.h
@@ -81,6 +88,8 @@ set(HEADER_FILES
     src/Utils/Type.h
     src/Utils/ArenaAllocator.h
     src/Utils/Match.h
+    src/Utils/Timer.h
+    src/Utils/Format.h
 
     src/vendor/imgui/imconfig.h
     src/vendor/imgui/imgui.h
@@ -93,7 +102,6 @@ set(HEADER_FILES
     src/vendor/imgui/imgui_stdlib.h
 
     src/vendor/stb_image/stb_image.h
-        src/Utils/Format.h
 )
 source_group("Header Files" FILES ${HEADER_FILES})
 
@@ -143,11 +151,20 @@ set(SOURCE_FILES
     src/Physics/Body2D.cpp
     src/Physics/Collision2D.cpp
     src/Physics/PhysicsTransform2D.cpp
+    src/Physics/Manifold2D.cpp
+    src/Physics/SeperatingAxisSolver.cpp
+    src/Physics/CircleShape2D.cpp
+    src/Physics/CapsuleShape2D.cpp
+    src/Physics/PolygonShape2D.cpp
+    src/Physics/RectShape2D.cpp
+    src/Physics/Shape2D.cpp
 
     src/Utils/RichString.cpp
     src/Utils/StringList.cpp
     src/Utils/Text.cpp
     src/Utils/ArenaAllocator.cpp
+    src/Utils/Timer.cpp
+    src/Utils/Format.cpp
 
     src/vendor/imgui/imgui.cpp
     src/vendor/imgui/imgui_demo.cpp
@@ -159,27 +176,12 @@ set(SOURCE_FILES
     src/vendor/imgui/imgui_stdlib.cpp
 
     src/vendor/stb_image/stb_image.cpp
-        src/Utils/Format.cpp
 )
 source_group("Source Files" FILES ${SOURCE_FILES})
 
 set(ALL_FILES
     ${HEADER_FILES}
     ${SOURCE_FILES}
-        src/Physics/Manifold2D.cpp
-        src/Physics/Manifold2D.h
-        src/Physics/SeperatingAxisSolver.cpp
-        src/Physics/SeperatingAxisSolver.h
-        src/Physics/CircleShape2D.cpp
-        src/Physics/CircleShape2D.h
-        src/Physics/CapsuleShape2D.cpp
-        src/Physics/CapsuleShape2D.h
-        src/Physics/PolygonShape2D.h
-        src/Physics/PolygonShape2D.cpp
-        src/Physics/RectShape2D.cpp
-        src/Physics/RectShape2D.h
-        src/Physics/Shape2D.cpp
-        src/Physics/Shape2D.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

@@ -7,6 +7,8 @@
 #include <vector>
 #include <string>
 
+#include "Macros.h"
+
 namespace Quasi {
     using i8   = std::int8_t;
     using i16  = std::int16_t;
@@ -36,8 +38,8 @@ namespace Quasi {
     template <class K, class V, class Cmp = std::less<K>, class Alc = std::allocator<std::pair<const K, V>>>
     using Map = std::map<K, V, Cmp, Alc>;
 
-    template <class T, auto N> requires std::is_integral_v<decltype(N)> || std::is_enum_v<decltype(N)>
-    using Array = std::array<T, (usize)N>;
+    template <class T, usize N>
+    using Array = std::array<T, N>;
 
     template <class T>
     using IList = std::initializer_list<T>;
@@ -58,8 +60,8 @@ namespace Quasi {
 
     template <class T, usize Ext = std::dynamic_extent> using Span = std::span<T, Ext>;
 #pragma region Spanlike Types
-    using ByteSpan    = Span<const byte>;
-    using ByteSpanMut = Span<byte>;
+    using Bytes    = Span<const byte>;
+    using MutBytes = Span<byte>;
 
     template <class R> concept ArrayLike = std::ranges::contiguous_range<R> && std::ranges::sized_range<R>;
     template <class R> using ArrayElement = std::ranges::range_value_t<R>;
@@ -83,7 +85,7 @@ namespace Quasi {
 #pragma endregion
 
 	struct Empty {
-		Empty(auto...) {}
+		Empty(auto&&...) {}
 	};
 
 	template <class> concept AlwaysTrue  = true;
@@ -102,13 +104,7 @@ namespace Quasi {
     namespace details {
         template <class T>
         [[nodiscard]] constexpr Str raw_typename() {
-#if defined(__clang__) || defined(__GNUC__)
-            return __PRETTY_FUNCTION__;
-#elif defined(_MSC_VER)
-            return __FUNCSIG__;  // NOLINT(clang-diagnostic-language-extension-token)
-#else
-#error "Pretty Function Not supported"
-#endif
+			return Q_FUNC_NAME();
         }
 
         constexpr usize type_junk_prefix = raw_typename<int>().find("int");
@@ -128,4 +124,6 @@ namespace Quasi {
         if constexpr (std::is_same_v<std::remove_cvref_t<T>, std::remove_cvref_t<U>>) return t == u;
         else return false;
     }
+
+    inline struct UncheckedMarker {} Unchecked;
 }

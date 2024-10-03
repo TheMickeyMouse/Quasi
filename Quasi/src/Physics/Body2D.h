@@ -57,7 +57,7 @@ namespace Quasi::Physics2D {
 
         [[nodiscard]] Math::fVector2 CenterOfMass() const;
         void ShiftOriginToMassCenter();
-        [[nodiscard]] Math::fRect2D ComputeBoundingBox() const;
+        [[nodiscard]] Math::fRect2D BoundingBox() const;
 
         friend class World;
         friend void StaticResolve (Body&, Body&, const Manifold&);

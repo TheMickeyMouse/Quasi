@@ -193,26 +193,6 @@ namespace Quasi::Text {
         }
 
         void FormatTo(I number, StringOutput output) const {
-            u32 preciseDigits = 0;
-            constexpr u32 POWERS_OF_TEN[] = {
-                1, 10, 100, 1'000, 10'000, 100'000,
-                1'000'000, 10'000'000, 100'000'000, 1'000'000'000
-            };
-            switch (radix) {
-                case BINARY: preciseDigits =  std::bit_width(Abs(number));          break;
-                case OCTAL:  preciseDigits = (std::bit_width(Abs(number)) + 2) / 3; break;
-                case DECIMAL:
-                    preciseDigits =
-                        std::lower_bound(POWERS_OF_TEN, std::end(POWERS_OF_TEN), Abs(number) - 1) - POWERS_OF_TEN;
-                    preciseDigits = std::max(1u, preciseDigits);
-                    break;
-                case HEX:
-                case CAPITAL_HEX: preciseDigits = (std::bit_width(Abs(number)) + 3) / 4; break;
-            }
-
-            const u32 zeros = preciseDigits < padding ?
-                (padding - preciseDigits - (number < 0 || signMode == POSITIVE)) : 0;
-            output(useZeroPad ? '0' : ' ', zeros);
             if (number < 0 || signMode == POSITIVE)
                 output(number < 0 ? '-' : '+');
 
@@ -222,6 +202,9 @@ namespace Quasi::Text {
             u32 i = 0;
             for (; num; num /= base)
                 digits[i++] = num % base;
+
+            output(useZeroPad ? '0' : ' ', padding >= i ? padding - i : 0);
+
             while (i--) {
                 const char c = digits[i] >= 10 ? (radix == CAPITAL_HEX ? 'A' : 'a') - 10 + digits[i] : ('0' + digits[i]);
                 output(c);
@@ -298,9 +281,21 @@ namespace Quasi::Text {
                 }
                 return output(properDenormals ? "Infinity" : "inf");
             }
+            if (showPositiveSign && number > 0) {
+                output('+');
+            } else if (number < 0) {
+                output('-');
+                number = std::abs(number);
+            }
             if (mode == SCIENTIFIC || mode == SCI_CAPS) {
-                const F log = std::log(number),
-                        powerOf10 = std::pow(10, std::floor(log));
+                if (number == (F)0) {
+                    output('0');
+                    output(mode == SCI_CAPS ? 'E' : 'e');
+                    output('0');
+                    return;
+                }
+                const F log       = std::floor(std::log(number)),
+                        powerOf10 = std::pow(10, log);
                 F       mantisa   = number / powerOf10;
                 output('0' + (u32)mantisa);
                 output(decimalPoint);
@@ -310,12 +305,12 @@ namespace Quasi::Text {
                     output('0' + (u32)mantisa);
                 }
                 output(mode == SCI_CAPS ? 'E' : 'e');
-                FormatOnto(output, (u32)log);
+                FormatOnto(output, (i32)log);
                 return;
             }
-            const u32 log = (u32)std::log(number);
+            const i32 log = std::max((i32)std::log(number), 1);
             F x = number;
-            for (u32 i = log; i--;) {
+            for (i32 i = log; i--;) {
                 const F rem = x / std::pow((F)10, (F)i);
                 output('0' + (u32)rem);
                 x -= std::floor(rem);

@@ -26,10 +26,6 @@ namespace Quasi::Debug {
             debug_break();
     }
 
-    DateTime Logger::Now() {
-        return std::chrono::system_clock::now();
-    }
-
     String Logger::FmtLog(const LogEntry& log) const {
         return FmtLog(log.log, log.severity, log.time, log.fileLoc);
     }
@@ -58,11 +54,11 @@ namespace Quasi::Debug {
 
     void Logger::LogNoOut(const Severity sv, const Str s, const SourceLoc& loc) {
         if (recordLogs)
-            logs.emplace_back(LogEntry { String { s }, sv, Now(), loc });
+            logs.emplace_back(LogEntry { String { s }, sv, Timer::Now(), loc });
     }
 
     void Logger::ConsoleLog(const Severity sv, const Str s, const SourceLoc& loc) {
-        *logOut << FmtLog(s, sv, Now(), loc );
+        *logOut << FmtLog(s, sv, Timer::Now(), loc );
         if (alwaysFlush) Flush();
     }
 
