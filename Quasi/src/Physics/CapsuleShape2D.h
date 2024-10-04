@@ -15,17 +15,20 @@ namespace Quasi::Physics2D {
         [[nodiscard]] Math::fRect2D ComputeBoundingBox() const;
         [[nodiscard]] Math::fVector2 CenterOfMass() const { return forward * 0.5f; }
 
-        [[nodiscard]] TransformedCapsuleShape Transform(const PhysicsTransform& xf) const;
+        using TransformedVariant = TransformedCapsuleShape;
+        void TransformTo(const PhysicsTransform& xf, Out<TransformedVariant*> out) const;
+        [[nodiscard]] TransformedVariant Transform(const PhysicsTransform& xf) const;
     };
 
     class TransformedCapsuleShape : public ITransformedShape {
     public:
-        Math::fVector2 start, forward;
-        float radius = 0.0f;
+        Math::fVector2 start, forward, fwdOverLensq;
+        float radius = 0.0f, invLength = 1.0f;
 
-        TransformedCapsuleShape(const Math::fVector2& s, const Math::fVector2& fwd, float r) : start(s), forward(fwd), radius(r) {}
-        TransformedCapsuleShape(const CapsuleShape& c, const PhysicsTransform& xf = {})
-            : TransformedCapsuleShape(c.Transform(xf)) {}
+        TransformedCapsuleShape() = default;
+        TransformedCapsuleShape(const Math::fVector2& s, const Math::fVector2& fwd, float r)
+            : start(s), forward(fwd), fwdOverLensq(fwd / fwd.lensq()), radius(r), invLength(1.0f / fwd.len()) {}
+        TransformedCapsuleShape(const CapsuleShape& c, const PhysicsTransform& xf = {}) { c.TransformTo(xf, this); }
 
         [[nodiscard]] float ComputeArea() const;
         [[nodiscard]] Math::fRect2D ComputeBoundingBox() const;

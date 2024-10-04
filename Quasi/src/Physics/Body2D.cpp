@@ -39,7 +39,7 @@ namespace Quasi::Physics2D {
     }
 
     void Body::UpdateTransformShape() {
-        transformedShape = shape.Transform(GetTransform());
+        shape.TransformTo(GetTransform(), &transformedShape);
         boundingBox = transformedShape.ComputeBoundingBox();
     }
 

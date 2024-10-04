@@ -6,8 +6,12 @@ namespace Quasi::Physics2D {
     float            IMPLEMENT_SHAPE_FN(Shape, ComputeArea,        (), ())
     Math::fRect2D    IMPLEMENT_SHAPE_FN(Shape, ComputeBoundingBox, (), ())
     Math::fVector2   IMPLEMENT_SHAPE_FN(Shape, CenterOfMass,       (), ())
-    TransformedShape Shape::Transform(const PhysicsTransform& xf) const {
-        return Visit([&] (const auto& s) { return TransformedShape { s.Transform(xf) }; });
+    void Shape::TransformTo(const PhysicsTransform& xf, Out<TransformedVariant*> out) const {
+        Visit([&]<class T>(const T& s) {
+            using R = typename T::TransformedVariant;
+            if (!out->Is<R>()) out->Set(R {});
+            s.TransformTo(xf, out->As<R>().Address());
+        });
     }
 
     float          IMPLEMENT_SHAPE_FN(TransformedShape, ComputeArea,        (), ())

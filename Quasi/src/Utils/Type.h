@@ -87,6 +87,9 @@ namespace Quasi {
 	struct Empty {
 		Empty(auto&&...) {}
 	};
+	template <class T> using Nullable = T;
+	template <class T> using NotNull = T;
+	template <class T> using Out = T;
 
 	template <class> concept AlwaysTrue  = true;
 	template <class> concept AlwaysFalse = false;

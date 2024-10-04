@@ -79,11 +79,16 @@ namespace Quasi::Physics2D {
         return { x * invArea, y * invArea };
     }
 
-    template <u32 N> PolygonShape<N> PolygonShape<N>::Transform(const PhysicsTransform& xf) const {
-        PolygonShape tpoly = *this;
-        for (u32 i = 0; i < Size(); ++i)
-            xf.TransformInplace(tpoly.points[i]);
-        return tpoly;
+    template <u32 N> void PolygonShape<N>::TransformTo(const PhysicsTransform& xf, Out<TransformedVariant*> out) const {
+        if constexpr (DYNAMIC)
+            out->points.resize(Size());
+        std::transform(points.begin(), points.end(), out->points.begin(),
+                [&] (const Math::fVector2& p) { return xf.Transform(p); });
+    }
+
+    template <u32 N>
+    PolygonShape<N> PolygonShape<N>::Transform(const PhysicsTransform& xf) const {
+        return { *this, xf };
     }
 
     template <u32 N>
@@ -156,7 +161,7 @@ namespace Quasi::Physics2D {
     bool PolygonShape<N>::AddSeperatingAxes(SeperatingAxisSolver& sat) const {
         bool success = false;
         for (u32 i = 0; i < Size(); ++i) {
-            success |= sat.CheckAxis((PointAt(i + 1) - points[i]).perpend());
+            success |= sat.CheckAxis((PointAt(i + 1) - points[i]).perpend().norm());
         }
         return success;
     }

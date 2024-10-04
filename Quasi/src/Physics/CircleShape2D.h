@@ -13,7 +13,9 @@ namespace Quasi::Physics2D {
         [[nodiscard]] Math::fRect2D ComputeBoundingBox() const;
         [[nodiscard]] Math::fVector2 CenterOfMass() const { return 0; }
 
-        [[nodiscard]] TransformedCircleShape Transform(const PhysicsTransform& xf) const;
+        using TransformedVariant = TransformedCircleShape;
+        void TransformTo(const PhysicsTransform& xf, Out<TransformedVariant*> out) const;
+        [[nodiscard]] TransformedVariant Transform(const PhysicsTransform& xf) const;
     };
 
     class TransformedCircleShape : public ITransformedShape {
@@ -21,9 +23,9 @@ namespace Quasi::Physics2D {
         Math::fVector2 center;
         float radius = 1.0f;
 
+        TransformedCircleShape() = default;
         TransformedCircleShape(const Math::fVector2& center, float r) : center(center), radius(r) {}
-        TransformedCircleShape(const CircleShape& c, const PhysicsTransform& xf = {})
-            : TransformedCircleShape(c.Transform(xf)) {}
+        TransformedCircleShape(const CircleShape& c, const PhysicsTransform& xf = {}) { c.TransformTo(xf, this); }
 
         [[nodiscard]] float ComputeArea() const;
         [[nodiscard]] Math::fRect2D ComputeBoundingBox() const;

@@ -16,16 +16,20 @@ namespace Quasi::Physics2D {
         [[nodiscard]] Math::fRect2D ComputeBoundingBox() const { return { { -hx, -hy }, { hx, hy } }; }
         [[nodiscard]] Math::fVector2 CenterOfMass() const { return 0; }
 
-        [[nodiscard]] TransformedRectShape Transform(const PhysicsTransform& xf) const;
+        using TransformedVariant = TransformedRectShape;
+        void TransformTo(const PhysicsTransform& xf, Out<TransformedVariant*> out) const;
+        [[nodiscard]] TransformedVariant Transform(const PhysicsTransform& xf) const;
     };
 
     class TransformedRectShape : public ITransformedShape {
     public:
         Math::fVector2 center, x, y;
+        float xInvLen = 1.0f, yInvLen = 1.0f;
 
-        TransformedRectShape(const Math::fVector2& c, const Math::fVector2& x, const Math::fVector2& y) : center(c), x(x), y(y) {}
-        TransformedRectShape(const RectShape& r, const PhysicsTransform& xf = {})
-            : TransformedRectShape(r.Transform(xf)) {}
+        TransformedRectShape() = default;
+        TransformedRectShape(const Math::fVector2& c, const Math::fVector2& x, const Math::fVector2& y)
+            : center(c), x(x), y(y), xInvLen(1.0f / x.len()), yInvLen(1.0f / y.len()) {}
+        TransformedRectShape(const RectShape& r, const PhysicsTransform& xf = {}) { r.TransformTo(xf, this); }
 
         [[nodiscard]] Math::fVector2 Corner(bool px, bool py) const;
 

@@ -45,7 +45,8 @@ namespace Quasi::Physics2D {
         [[nodiscard]] Math::fRect2D ComputeBoundingBox() const;
         [[nodiscard]] Math::fVector2 CenterOfMass() const;
 
-        [[nodiscard]] TransformedShape Transform(const PhysicsTransform& xf) const;
+        using TransformedVariant = TransformedShape;
+        void TransformTo(const PhysicsTransform& xf, Out<TransformedVariant*> out) const;
     };
 
     class TransformedShape :

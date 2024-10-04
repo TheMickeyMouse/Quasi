@@ -12,6 +12,7 @@ namespace Quasi::Physics2D {
         PolygonShape() = default;
         PolygonShape(UncheckedMarker, decltype(points)&& ps) : points(std::move(ps)) {}
         PolygonShape(decltype(points)&& ps);
+        PolygonShape(const PolygonShape& poly, const PhysicsTransform& xf = {}) { poly.TransformTo(xf, this); }
         ~PolygonShape() = default;
 
         [[nodiscard]] i32 Size() const;
@@ -29,7 +30,9 @@ namespace Quasi::Physics2D {
         [[nodiscard]] Math::fRect2D ComputeBoundingBox() const;
         [[nodiscard]] Math::fVector2 CenterOfMass() const;
 
-        [[nodiscard]] PolygonShape Transform(const PhysicsTransform& xf) const;
+        using TransformedVariant = PolygonShape;
+        void TransformTo(const PhysicsTransform& xf, Out<TransformedVariant*> out) const;
+        [[nodiscard]] TransformedVariant Transform(const PhysicsTransform& xf) const;
 
         [[nodiscard]] Math::fVector2 NearestPointTo(const Math::fVector2& point) const;
         [[nodiscard]] Math::fVector2 FurthestAlong(const Math::fVector2& normal) const;
@@ -42,4 +45,8 @@ namespace Quasi::Physics2D {
     using TriangleShape = PolygonShape<3>;
     using QuadShape = PolygonShape<4>;
     using DynPolyShape = PolygonShape<0>;
+
+    class TransformedDynPolyShape : ITransformedShape {
+
+    };
 } // Quasi

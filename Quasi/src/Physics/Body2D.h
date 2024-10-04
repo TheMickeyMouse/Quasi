@@ -32,7 +32,7 @@ namespace Quasi::Physics2D {
 
         Body(const Math::fVector2& p, float m, float restitution, BodyType type, Ref<World> world, Shape shape)
             : position(p), mass(m), restitution(restitution), type(type), world(world),
-              shape(std::move(shape)), transformedShape(this->shape.Transform(position)) {}
+              shape(std::move(shape)) { UpdateTransformShape(); }
 
         void AddVelocity(const Math::fVector2& vel) { velocity += vel; }
         void AddAcceleration(const Math::fVector2& acc) { acceleration += acc; }

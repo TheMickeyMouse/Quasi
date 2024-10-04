@@ -9,8 +9,13 @@ namespace Quasi::Physics2D {
         return { -radius, radius };
     }
 
-    TransformedCircleShape CircleShape::Transform(const PhysicsTransform& xf) const {
-        return { xf.position, radius };
+    void CircleShape::TransformTo(const PhysicsTransform& xf, Out<TransformedVariant*> out) const {
+        out->center = xf.position;
+        out->radius = radius;
+    }
+
+    CircleShape::TransformedVariant CircleShape::Transform(const PhysicsTransform& xf) const {
+        return { *this, xf };
     }
 
     float TransformedCircleShape::ComputeArea() const {

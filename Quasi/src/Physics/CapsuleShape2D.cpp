@@ -18,8 +18,16 @@ namespace Quasi::Physics2D {
         }
     }
 
-    TransformedCapsuleShape CapsuleShape::Transform(const PhysicsTransform& xf) const {
-        return { xf.position, xf.rotation.rotate(forward), radius };
+    void CapsuleShape::TransformTo(const PhysicsTransform& xf, Out<TransformedVariant*> out) const {
+        out->start = xf.position;
+        out->forward = xf.rotation.rotate(forward);
+        out->fwdOverLensq = out->forward / forward.lensq();
+        out->radius = radius;
+        out->invLength = 1.0f / forward.len();
+    }
+
+    CapsuleShape::TransformedVariant CapsuleShape::Transform(const PhysicsTransform& xf) const {
+        return { *this, xf };
     }
 
     float TransformedCapsuleShape::ComputeArea() const {
@@ -38,7 +46,7 @@ namespace Quasi::Physics2D {
     }
 
     Math::fVector2 TransformedCapsuleShape::NearestPointTo(const Math::fVector2& point) const {
-        const float t = std::clamp(forward.dot(point - start) / forward.lensq(), 0.0f, 1.0f);
+        const float t = std::clamp(fwdOverLensq.dot(point - start), 0.0f, 1.0f);
         const Math::fVector2 closest = start + (forward * t);
         return closest + (point - closest).norm(radius);
     }
@@ -58,6 +66,6 @@ namespace Quasi::Physics2D {
     }
 
     bool TransformedCapsuleShape::AddSeperatingAxes(SeperatingAxisSolver& sat) const {
-        return sat.CheckAxis(forward.perpend());
+        return sat.CheckAxis(forward.perpend() * invLength);
     }
 } // Quasi

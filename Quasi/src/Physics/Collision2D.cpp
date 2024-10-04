@@ -56,7 +56,7 @@ namespace Quasi::Physics2D {
         const auto& circle = *s1.As<TransformedCircleShape>();
 
         sat.SetCheckFor(SeperatingAxisSolver::BASE);
-        sat.CheckAxis(s2.NearestPointTo(circle.center) - circle.center);
+        sat.CheckAxis((s2.NearestPointTo(circle.center) - circle.center).norm());
 
         sat.CheckAxisFor(SeperatingAxisSolver::TARGET);
 
@@ -87,17 +87,16 @@ namespace Quasi::Physics2D {
         const TransformedCapsuleShape& cap1 = s1.As<TransformedCapsuleShape>(),
                                      & cap2 = s2.As<TransformedCapsuleShape>();
 
-        const Math::fVector2 invFwd1 = cap1.forward / cap1.forward.lensq(), invFwd2 = cap2.forward / cap2.forward.lensq();
         const Math::fVector2 off = cap1.start - cap2.start;
-        const Math::fVector2 axis1 =  off                - cap2.forward * std::clamp( off                .dot(invFwd2), 0.0f, 1.0f),
-                             axis2 =  off + cap1.forward - cap2.forward * std::clamp((off + cap1.forward).dot(invFwd2), 0.0f, 1.0f),
-                             axis3 = -off                + cap1.forward * std::clamp( off                .dot(invFwd1), 0.0f, 1.0f),
-                             axis4 = -off + cap2.forward + cap1.forward * std::clamp((off + cap2.forward).dot(invFwd1), 0.0f, 1.0f);
+        const Math::fVector2 axis1 =  off                - cap2.forward * std::clamp( off                .dot(cap2.fwdOverLensq), 0.0f, 1.0f),
+                             axis2 =  off + cap1.forward - cap2.forward * std::clamp((off + cap1.forward).dot(cap2.fwdOverLensq), 0.0f, 1.0f),
+                             axis3 = -off                + cap1.forward * std::clamp( off                .dot(cap1.fwdOverLensq), 0.0f, 1.0f),
+                             axis4 = -off + cap2.forward + cap1.forward * std::clamp((off + cap2.forward).dot(cap1.fwdOverLensq), 0.0f, 1.0f);
         sat.SetCheckFor(SeperatingAxisSolver::NEITHER);
-        sat.CheckAxis(axis1);
-        sat.CheckAxis(axis2);
-        sat.CheckAxis(axis3);
-        sat.CheckAxis(axis4);
+        sat.CheckAxis(axis1.norm());
+        sat.CheckAxis(axis2.norm());
+        sat.CheckAxis(axis3.norm());
+        sat.CheckAxis(axis4.norm());
 
         if (!sat.Collides())
             return Manifold::None();
@@ -166,7 +165,7 @@ namespace Quasi::Physics2D {
         const auto& circ = *s1.As<TransformedCircleShape>();
         sat.CheckAxisFor(SeperatingAxisSolver::TARGET);
         sat.SetCheckFor(SeperatingAxisSolver::BASE);
-        sat.CheckAxis(s2.NearestPointTo(circ.center) - circ.center);
+        sat.CheckAxis((s2.NearestPointTo(circ.center) - circ.center).norm());
         return sat.Collides();
     }
 

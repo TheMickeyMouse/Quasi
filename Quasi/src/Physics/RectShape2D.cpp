@@ -7,8 +7,16 @@ namespace Quasi::Physics2D {
         return { px ? hx : -hx, py ? hy : -hy };
     }
 
-    TransformedRectShape RectShape::Transform(const PhysicsTransform& xf) const {
-        return { xf.position, xf.rotation.as_vec() * hx, xf.rotation.muli().as_vec() * hy };
+    void RectShape::TransformTo(const PhysicsTransform& xf, Out<TransformedVariant*> out) const {
+        out->center = xf.position;
+        out->x = xf.rotation.as_vec() * hx;
+        out->y = xf.rotation.muli().as_vec() * hy;
+        out->xInvLen = 1.0f / hx;
+        out->yInvLen = 1.0f / hy;
+    }
+
+    RectShape::TransformedVariant RectShape::Transform(const PhysicsTransform& xf) const {
+        return { *this, xf };
     }
 
     Math::fVector2 TransformedRectShape::Corner(bool px, bool py) const {
@@ -53,8 +61,8 @@ namespace Quasi::Physics2D {
 
     bool TransformedRectShape::AddSeperatingAxes(SeperatingAxisSolver& sat) const {
         bool success = false;
-        success |= sat.CheckAxis(x);
-        success |= sat.CheckAxis(y);
+        success |= sat.CheckAxis(x * xInvLen);
+        success |= sat.CheckAxis(y * yInvLen);
         return success;
     }
 } // Quasi

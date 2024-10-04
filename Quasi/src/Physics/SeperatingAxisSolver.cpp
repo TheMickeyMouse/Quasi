@@ -31,9 +31,8 @@ namespace Quasi::Physics2D {
         ++axisIndex;
         if (!collides) return false;
 
-        const Math::fVector2 pAxis = axis.norm();
-        const Math::fRange bproj = currentChecked == BASE   ? base  ->ProjectOntoOwnAxis(axisIndex - 1, pAxis) : base  ->ProjectOntoAxis(pAxis),
-                           tproj = currentChecked == TARGET ? target->ProjectOntoOwnAxis(axisIndex - 1, pAxis) : target->ProjectOntoAxis(pAxis);
+        const Math::fRange bproj = currentChecked == BASE   ? base  ->ProjectOntoOwnAxis(axisIndex - 1, axis) : base  ->ProjectOntoAxis(axis),
+                           tproj = currentChecked == TARGET ? target->ProjectOntoOwnAxis(axisIndex - 1, axis) : target->ProjectOntoAxis(axis);
 
         const float d1 = bproj.max - tproj.min, d2 = tproj.max - bproj.min,
                     depth = std::min(d1, d2);
@@ -46,7 +45,7 @@ namespace Quasi::Physics2D {
 
         if (depth < overlap) {
             overlap = depth;
-            seperatingAxis = d1 > d2 ? -pAxis : pAxis;
+            seperatingAxis = d1 > d2 ? -axis : axis;
             return true;
         }
         return false;
