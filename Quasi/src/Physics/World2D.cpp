@@ -2,29 +2,140 @@
 
 #include <algorithm>
 
+#include "Memory.h"
+
 namespace Quasi::Physics2D {
+    World::~World() {
+        Span<Body> bodiesTemp = Memory::ReleaseData(std::move(bodies));
+        for (u32 i = 0; i < bodiesTemp.size(); ++i) {
+            if (!BodyIsValid(i)) continue;
+            Memory::DestructAt(&bodiesTemp[i]);
+        }
+        Memory::FreeNoDestruct(bodiesTemp.data());
+    }
+
+    World::World(World&& w) noexcept {
+        bodies            = std::move(w.bodies);
+        bodySparseEnabled = std::move(w.bodySparseEnabled);
+        bodyIndicesSorted = std::move(w.bodyIndicesSorted);
+        bodyCount         = w.bodyCount;
+        gravity           = w.gravity;
+    }
+
+    World& World::operator=(World&& w) noexcept {
+        bodies            = std::move(w.bodies);
+        bodySparseEnabled = std::move(w.bodySparseEnabled);
+        bodyIndicesSorted = std::move(w.bodyIndicesSorted);
+        bodyCount         = w.bodyCount;
+        gravity           = w.gravity;
+        return *this;
+    }
+
+    World World::Clone() const {
+        World w;
+        w.bodies            = bodies;
+        w.bodySparseEnabled = bodySparseEnabled;
+        w.bodyIndicesSorted = bodyIndicesSorted;
+        w.bodyCount         = bodyCount;
+        w.gravity           = gravity;
+        return w;
+    }
+
+    void World::SortBodyIndices() {
+        for (int i = 1; i < bodyIndicesSorted.size(); ++i) {
+            for (int j = i - 1; j >= 0; --j) {
+                // filters out (~0) to the back
+                const u32 iCurr = bodyIndicesSorted[j], iNext = bodyIndicesSorted[j + 1];
+                if (iNext == ~0 || (iCurr != ~0 &&
+                    bodies[iCurr].boundingBox.min.x < bodies[iNext].boundingBox.min.x))
+                    break;
+                std::swap(bodyIndicesSorted[j], bodyIndicesSorted[j + 1]);
+                /* if (iNext != ~0) */ bodies[iNext].sortedIndex = j;
+                if (iCurr != ~0) bodies[iCurr].sortedIndex = j + 1;
+            }
+        }
+
+        while (bodyIndicesSorted.back() == ~0)
+            bodyIndicesSorted.pop_back();
+    }
+
+    void World::Reserve(usize size) {
+        bodies.reserve(size);
+        bodySparseEnabled.reserve((size + BITS_IN_USIZE - 1) / BITS_IN_USIZE);
+        bodyIndicesSorted.reserve(size);
+    }
+
     void World::Clear() {
-        for (auto& body : bodies)
-            body.world = nullptr;
-        ClearWithoutUpdate();
+        bodies.clear();
+        bodyCount = 0;
+        bodySparseEnabled.clear();
+        bodyIndicesSorted.clear();
+    }
+
+    u32 World::FindVacantIndex() const {
+        if (bodySparseEnabled.empty()) return 0;
+        for (u32 i = 0; i < bodySparseEnabled.size(); ++i) {
+            if (bodySparseEnabled[i] == ~(usize)0) continue;
+            return i * BITS_IN_USIZE + std::countr_one(bodySparseEnabled[i]);
+        }
+        return bodySparseEnabled.size() * BITS_IN_USIZE;
     }
 
     BodyHandle World::CreateBody(const BodyCreateOptions& options, Shape shape) {
         const float area = shape.ComputeArea();
-        bodies.emplace_back(
-            options.position,
-            area * options.density,
-            options.restitution,
-            options.type,
-            *this,
-            std::move(shape)
-        );
-        bodyIndicesSorted.emplace_back(bodies.size() - 1);
-        return BodyHandle::At(*this, bodies.size() - 1);
+        const u32 i = FindVacantIndex();
+        if (i >= bodySparseEnabled.size() * BITS_IN_USIZE) {
+            bodySparseEnabled.push_back(1);
+            bodies.emplace_back(
+                options.position,
+                area * options.density,
+                options.restitution,
+                options.type,
+                *this,
+                std::move(shape)
+            );
+            bodies.back().sortedIndex = bodyIndicesSorted.size();
+            bodyIndicesSorted.push_back(bodies.size() - 1);
+        } else {
+            bodySparseEnabled[i / BITS_IN_USIZE] |= (usize)1 << (i % BITS_IN_USIZE);
+            if (i >= bodies.size()) {
+                bodies.emplace_back(
+                    options.position,
+                    area * options.density,
+                    options.restitution,
+                    options.type,
+                    *this,
+                    std::move(shape)
+                );
+            } else
+                Memory::ConstructAt(&bodies[i],
+                    options.position,
+                    area * options.density,
+                    options.restitution,
+                    options.type,
+                    *this,
+                    std::move(shape)
+                );
+            bodies[i].sortedIndex = bodyIndicesSorted.size();
+            bodyIndicesSorted.push_back(i);
+        }
+        ++bodyCount;
+        return BodyHandle::At(*this, i);
+    }
+
+    void World::DeleteBody(usize i) {
+        if (BodyIsValid(i)) {
+            bodySparseEnabled[i / BITS_IN_USIZE] &= ~((usize)1 << i % BITS_IN_USIZE);
+            bodyIndicesSorted[bodies[i].sortedIndex] = ~0;
+            Memory::DestructAt(&bodies[i]);
+            --bodyCount;
+        }
     }
 
     void World::Update(float dt) {
-        for (auto& b : bodies) {
+        for (u32 i = 0; i < bodies.size(); ++i) {
+            if (!BodyIsValid(i)) continue;
+            Body& b = bodies[i];
             if (!b.enabled) continue;
 
             if (b.type == BodyType::DYNAMIC)
@@ -32,28 +143,18 @@ namespace Quasi::Physics2D {
             b.Update(dt);
         }
 
-        const auto cmpr = [](const Body& p) { return p.boundingBox.min.x; };
-
-        for (int i = 1; i < bodies.size(); ++i) {
-            for (int j = i - 1; j >= 0; --j) {
-                // this is different than lt ('<') because nan always returns false
-                const float curr = cmpr(bodies[bodyIndicesSorted[j]]), next = cmpr(bodies[bodyIndicesSorted[j + 1]]);
-                if (std::isnan(next) || (!std::isnan(curr) && curr < next)) break;
-                std::swap(bodyIndicesSorted[j], bodyIndicesSorted[j + 1]);
-            }
-        }
-
+        SortBodyIndices();
         // std::ranges::sort(bodyIndicesSorted, [&](u32 i, u32 j) { return cmpr(bodies[i]) < cmpr(bodies[j]); });
 
         // sweep impl
         // std::vector<std::tuple<Body*, Body*, Collision::Event>> collisionPairs;
         Vec<u32> active;
         for (u32 i : bodyIndicesSorted) {
-            Body& b = BodyAt(i);
+            Body& b = BodyDirectAt(i);
             if (!b.enabled) continue;
             const float min = b.boundingBox.min.x;
             for (u32 j = 0; j < active.size();) {
-                Body& c = BodyAt(active[j]);
+                Body& c = BodyDirectAt(active[j]);
                 if (c.boundingBox.max.x > min) {
                     const bool bDyn = b.IsDynamic(), cDyn = c.IsDynamic();
                     if ((bDyn || cDyn) && c.boundingBox.yrange().overlaps(b.boundingBox.yrange())) {
@@ -99,5 +200,17 @@ namespace Quasi::Physics2D {
         for (int i = 0; i < simUpdates; ++i) {
             Update(dt / (float)simUpdates);
         }
+    }
+
+    Ref<Body> World::BodyAt(usize i) {
+        return QGetterMut$(BodyAt, i);
+    }
+
+    Ref<const Body> World::BodyAt(usize i) const {
+        return BodyIsValid(i) ? Refer(bodies[i]) : nullptr;
+    }
+
+    bool World::BodyIsValid(usize i) const {
+        return bodySparseEnabled[i / BITS_IN_USIZE] & ((usize)1 << i % BITS_IN_USIZE);
     }
 } // Physics

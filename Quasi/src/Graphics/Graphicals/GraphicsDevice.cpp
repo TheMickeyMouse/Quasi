@@ -66,9 +66,12 @@ namespace Quasi::Graphics {
         Instance = dest;
     }
 
-    void GraphicsDevice::BeginRender() {
+    void GraphicsDevice::Begin() {
         if (IsClosed()) return;
-        
+
+        frameBeginTime = Debug::Timer::Now();
+        GLDebugContainer::GpuProcessDuration = Debug::Timer::Instant();
+
         Render::Clear();
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -81,9 +84,13 @@ namespace Quasi::Graphics {
         renderOptions.drawCalls = 0;
     }
 
-    void GraphicsDevice::EndRender() {
+    void GraphicsDevice::End() {
         if (IsClosed()) return;
-        
+
+        const auto end = Debug::Timer::Now();
+        frameDurationTime = end - frameBeginTime;
+        frameBeginTime = end;
+
         ImGui::Render();
         
         glfwPollEvents();
@@ -165,7 +172,13 @@ namespace Quasi::Graphics {
 
     void GraphicsDevice::ShowDebugWindow() {
         ImGui::Begin("Debug Menu", &ShowDebugMenu);
+        const u32 totalUs = Debug::Timer::UnitConvert<Debug::Microsecond>(frameDurationTime),
+                  gpuUs = Debug::Timer::UnitConvert<Debug::Microsecond>(GLDebugContainer::GpuProcessDuration),
+                  cpuUs = totalUs - gpuUs;
+        ImGui::Text("CPU   Time: %d.%03dms", cpuUs   / 1000, cpuUs   % 1000);
+        ImGui::Text("GPU   Time: %d.%03dms", gpuUs   / 1000, gpuUs   % 1000);
         ImGui::Text("Application Averages %.2fms/frame (%.1f FPS)", 1000.0 * ioDevice.Time.DeltaTime(), ioDevice.Time.Framerate());
+        ImGui::Text("       Theoretically %.2fms/frame (%.1f FPS)", (float)totalUs / 1000.0f, 1'000'000.0f / (float)totalUs);
 
         ImGui::BeginTabBar("Debug Items");
 
@@ -265,10 +278,10 @@ namespace Quasi::Graphics {
     }
 
     GraphicsDevice GraphicsDevice::Initialize(Math::iVector2 winSize) {
-        InitGLLog();
+        InitGLDebugTools();
         /* Initialize the library */
         if (!glfwInit()) {
-            GLLogger().Error("GLFW failed to initialize");
+            GLLogger().QError$("GLFW failed to initialize");
         }
 
         /* Create a windowed mode window and its OpenGL context */
@@ -278,7 +291,7 @@ namespace Quasi::Graphics {
 
         if (!window) {
             glfwTerminate();
-            GLLogger().Error("Failed to create window");
+            GLLogger().QError$("Failed to create window");
         }
 
         /* Make the window's context current */
@@ -288,10 +301,10 @@ namespace Quasi::Graphics {
 
         /* SETTING UP GLEW W/ GLEWINIT*/
         if (GL::InitGLEW() != 0) {
-            GLLogger().Error("GLEW failed to initialize");
+            GLLogger().QError$("GLEW failed to initialize");
         }
 
-        GLLogger().Info("{}", (const char*)GL::GetString(GL::VERSION));
+        GLLogger().QInfo$("{}", (const char*)GL::GetString(GL::VERSION));
 
         Render::EnableBlend();
         Render::UseBlendFunc(BlendFactor::SRC_ALPHA, BlendFactor::INVERT_SRC_ALPHA);

@@ -709,7 +709,6 @@ Q_TUP2SEQ_BINCHECK_0 N (Q_TUP2SEQ_2)((Q_ARGS_SKIP N), X1, X2) Q_TUP2SEQ_BINCHECK
 
 #define Q_STRLIT_LEN(STR) (sizeof(STR) - 1)
 #define Q_ARRAY_LEN(ARR) (sizeof(ARR) / sizeof(ARR[0]))
-#define Q_GETTER_MUT(FN, ...) (decltype(this->FN(__VA_ARGS__)))((const std::remove_pointer_t<decltype(this)>*)this)->FN(__VA_ARGS__)
 
 #ifdef __COUNTER__
 #define Q_COUNTER() __COUNTER__

@@ -6,7 +6,7 @@ namespace Quasi::Graphics {
     struct GLTypeIDData {
         u32 glID, typeSize;
 
-        Q_DEFINE_ENUM(GLTypeID,
+        QDefineEnum$(GLTypeID,
             (FLOAT,  (0x1406, sizeof(float)))
             (DOUBLE, (0x140A, sizeof(double)))
             (INT,    (0x1404, sizeof(int)))

@@ -14,7 +14,7 @@ namespace Quasi::Text {
         Str debugStr;
         bool isSwitch : 1 = false, isOn : 1 = false;
 
-        Q_DEFINE_ENUM(Style,
+        QDefineEnum$(Style,
             STYLE_SWITCH(BOLD,          "b")
             STYLE_SWITCH(ITALIC,        "i")
             STYLE_SWITCH(UNDERLINE,     "u")

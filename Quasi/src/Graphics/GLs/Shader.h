@@ -13,7 +13,7 @@ namespace Quasi::Graphics {
         u32 glID;
         Str shaderName;
 
-        Q_DEFINE_ENUM(ShaderType,
+        QDefineEnum$(ShaderType,
             (VERTEX,   (0x8B31, "Vertex"))
             (FRAGMENT, (0x8B30, "Fragment"))
             (GEOMETRY, (0x8DD9, "Geometry"))

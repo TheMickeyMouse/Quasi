@@ -113,7 +113,7 @@ namespace Quasi {
     };
 }
 
-#define Q_DEFINE_ENUM(ENAME, V, TRAITS, ...) \
+#define QDefineEnum$(ENAME, V, TRAITS, ...) \
         Quasi::u32 _VALUE; \
         Q_UNARY(Q_ITERATE_ACCW_SEQUENCE(Q_ENUM_GENVAL, ENAME##Data, Q_ENUM_ACC_INCINT, 0, V)) \
         static constexpr Quasi::u32 NUM = Q_SEQUENCE_LEN_AS_INTEGER(V); \

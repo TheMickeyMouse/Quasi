@@ -22,6 +22,7 @@ namespace Quasi::Physics2D {
         Math::fVector2 position, velocity, acceleration;
         float mass = 1.0f;
         float restitution = 0.8f;
+        u32 sortedIndex = 0;
         BodyType type = BodyType::NONE;
         bool enabled = true;
         Ref<World> world = nullptr;
@@ -76,16 +77,18 @@ namespace Quasi::Physics2D {
 
         static BodyHandle At(World& w, u32 i) { return { i, w }; }
 
-        Body& Value();
-        [[nodiscard]] const Body& Value() const;
         Body* Address();
         [[nodiscard]] const Body* Address() const;
+        Ref<Body> Reference();
+        [[nodiscard]] Ref<const Body> Reference() const;
 
         [[nodiscard]] operator bool() const { return world; }
-        operator Body&() { return Value(); }
-        [[nodiscard]] operator const Body&() const { return Value(); }
+        operator Body&() { return *Address(); }
+        [[nodiscard]] operator const Body&() const { return *Address(); }
         Body* operator->() { return Address(); }
         [[nodiscard]] const Body* operator->() const { return Address(); }
+
+        void Remove();
     };
 
     struct BodyCreateOptions {

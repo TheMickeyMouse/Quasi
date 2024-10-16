@@ -19,7 +19,7 @@ namespace Quasi::Graphics {
 
     void Texture::Init() {
         GL::GetIntegerv(GL::MAX_TEXTURE_IMAGE_UNITS, &SlotCount);
-        GLLogger().Info("Texture count: {}", SlotCount);
+        GLLogger().QInfo$("Texture count: {}", SlotCount);
 
         Slots.resize(SlotCount, nullptr);
     }

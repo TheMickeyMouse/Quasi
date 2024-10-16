@@ -12,7 +12,6 @@ set(HEADER_FILES
     src/Graphics/GLs/VertexArray.h
     src/Graphics/GLs/VertexBufferLayout.h
     src/Graphics/GLs/VertexElement.h
-    src/Graphics/GLs/VertexConverter.h
     src/Graphics/GLs/FrameBuffer.h
     src/Graphics/GLs/GLDebug.h
     src/Graphics/GLs/GLObject.h
@@ -88,7 +87,7 @@ set(HEADER_FILES
     src/Utils/Type.h
     src/Utils/ArenaAllocator.h
     src/Utils/Match.h
-    src/Utils/Timer.h
+        src/Debug/Timer.h
     src/Utils/Format.h
 
     src/vendor/imgui/imconfig.h
@@ -163,7 +162,7 @@ set(SOURCE_FILES
     src/Utils/StringList.cpp
     src/Utils/Text.cpp
     src/Utils/ArenaAllocator.cpp
-    src/Utils/Timer.cpp
+        src/Debug/Timer.cpp
     src/Utils/Format.cpp
 
     src/vendor/imgui/imgui.cpp
@@ -182,6 +181,8 @@ source_group("Source Files" FILES ${SOURCE_FILES})
 set(ALL_FILES
     ${HEADER_FILES}
     ${SOURCE_FILES}
+        src/Utils/Memory.h
+        src/Graphics/GLs/VertexBlueprint.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

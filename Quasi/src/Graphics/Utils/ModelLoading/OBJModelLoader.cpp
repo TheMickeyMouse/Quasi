@@ -28,7 +28,7 @@ namespace Quasi::Graphics {
         const Str prefix = line.substr(0, spaceIdx),
                   data   = line.substr(spaceIdx + 1);
 
-        Qmatch (prefix, (
+        Qmatch$ (prefix, (
             case ("v")      properties.emplace_back(CreateProperty<Vertex>      (data));,
             case ("vt")     properties.emplace_back(CreateProperty<VertexTex>   (data));,
             case ("vn")     properties.emplace_back(CreateProperty<VertexNormal>(data));,
@@ -53,7 +53,7 @@ namespace Quasi::Graphics {
     template <class OBJ>
     OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty(Str data) {
         using namespace std::literals;
-        Qmatch ((typename)OBJ, (
+        Qmatch$ ((typename)OBJ, (
             in (MaterialLib, UseMaterial, Object, Group) { return { OBJ { String { data } } }; },
             in (Vertex, VertexNormal, VertexParam) {
                 return { OBJ { Math::fVector3::parse(data, " ", "", "").ValueOr(Math::fVector3 { NAN }) } };

@@ -29,6 +29,9 @@ namespace Quasi::Graphics {
         IO::IO ioDevice {};
         Math::RandomGenerator randDevice {};
 
+        Debug::DateTime frameBeginTime;
+        Debug::TimeDuration frameDurationTime;
+
         inline static Ref<GraphicsDevice> Instance = nullptr;
         inline static bool ShowDebugMenu = false;
     public:
@@ -44,8 +47,8 @@ namespace Quasi::Graphics {
         GraphicsDevice(GraphicsDevice&& gd) noexcept { Transfer(*this, std::move(gd)); }
         GraphicsDevice& operator=(GraphicsDevice&& gd) noexcept { Transfer(*this, std::move(gd)); return *this; }
 
-        void BeginRender();
-        void EndRender();
+        void Begin();
+        void End();
 
         template <class T> RenderObject<T> CreateNewRender(u32 vsize = MAX_VERTEX_COUNT, u32 isize = MAX_INDEX_COUNT);
         void BindRender(RenderData& render);

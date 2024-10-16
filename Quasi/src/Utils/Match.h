@@ -72,7 +72,7 @@
 #define Q_MATCH_VALUE(U, X, B) { auto& Q_CAT(_mv_, U) = X; Q_MATCH_BRANCHES(U, VALS, Q_TUP_TO_SEQUENCE(B)) Q_CAT(_m_end_, U): Q_NOOP(); }
 
 #ifdef Q_EXT_MATCH_SYNTAX
-#define Qmatch(...) Q_MATCH_EXPR(__VA_ARGS__)
+#define Qmatch$(...) Q_MATCH_EXPR(__VA_ARGS__)
 #else
 #warning Extended Match syntax has been disabled (define Q_EXT_MATCH_SYNTAX to enable), some syntax features wont work properly
 #endif

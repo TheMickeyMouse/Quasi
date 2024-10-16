@@ -5,20 +5,21 @@
 namespace Quasi::Graphics {
     // a very thin wrapper for an extern variable
     // (couldnt get them to work so here's an alternative)
-    struct GLLoggerContainer {
-        static Debug::Logger logger;
+    struct GLDebugContainer {
+        static Debug::Logger Logger;
+        static Debug::TimeDuration GpuProcessDuration;
     };
 
     Debug::Logger& GLLogger();
 
-    void InitGLLog();
+    void InitGLDebugTools();
 
     struct GLErrorCodeData {
         u32 glID;
         Str errName;
 
         // taken from https://www.khronos.org/opengl/wiki/OpenGL_Error#Catching_errors_(the_hard_way)
-        Q_DEFINE_ENUM(GLErrorCode,
+        QDefineEnum$(GLErrorCode,
             // Given when an enumeration parameter is not a legal enumeration for that function.
             // This is given only for local problems; if the spec allows the enumeration in certain circumstances,
             // where other parameters or state dictate those circumstances, then GL_INVALID_OPERATION is the result instead.
@@ -59,11 +60,17 @@ namespace Quasi::Graphics {
     template <class F> auto GLCall(F&& f, Str fsig, const Debug::SourceLoc& loc = Debug::SourceLoc::current()) -> decltype(f()) {
         GLClearErr();
         if constexpr (std::is_void_v<decltype(f())>) {
+            const auto begin = Debug::Timer::Now();
             f();
+            const Debug::DateTime end = Debug::Timer::Now();
+            GLDebugContainer::GpuProcessDuration += end - begin;
             GLReportFn(fsig, loc);
             return;
         } else {
+            const auto begin = Debug::Timer::Now();
             auto res = f();
+            const Debug::DateTime end = Debug::Timer::Now();
+            GLDebugContainer::GpuProcessDuration += end - begin;
             GLReportFn(fsig, loc);
             return res;
         }

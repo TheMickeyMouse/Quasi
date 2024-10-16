@@ -57,8 +57,12 @@ namespace Quasi::Physics2D {
 
     BodyHandle::BodyHandle(Body& b) : index(&b - b.world->bodies.data()), world(b.world) {}
 
-    Body& BodyHandle::Value() { return world->bodies[index]; }
-    const Body& BodyHandle::Value() const { return world->bodies[index]; }
-    Body* BodyHandle::Address() { return &world->bodies[index]; }
-    const Body* BodyHandle::Address() const { return &world->bodies[index]; }
+    Body* BodyHandle::Address() { return world ? world->BodyAt(index).Address() : nullptr; }
+    const Body* BodyHandle::Address() const { return world ? world->BodyAt(index).Address() : nullptr; }
+    Ref<Body> BodyHandle::Reference() { return DerefPtr(Address()); }
+    Ref<const Body> BodyHandle::Reference() const { return DerefPtr(Address()); }
+
+    void BodyHandle::Remove() {
+        world->DeleteBody(index);
+    }
 } // Physics2D

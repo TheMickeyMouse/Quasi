@@ -8,7 +8,7 @@
 
 namespace Quasi::Physics2D {
     template <class T> static constexpr IShape::Type ShapeTypeIndexOf() {
-        Qmatch ((typename)T, (
+        Qmatch$ ((typename)T, (
             case (CircleShape)   { return IShape::CIRCLE; },
             case (CapsuleShape)  { return IShape::CAPSULE; },
             case (RectShape)     { return IShape::RECT; },

@@ -2,7 +2,6 @@
 #include "Constants.h"
 #include "Mesh.h"
 #include "MeshConstructor.h"
-#include "VertexConverter.h"
 
 namespace Quasi::Graphics::MeshUtils {
     struct StadiumCreator;

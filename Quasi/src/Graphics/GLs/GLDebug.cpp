@@ -3,13 +3,14 @@
 #include <glp.h>
 
 namespace Quasi::Graphics {
-    Debug::Logger GLLoggerContainer::logger { std::cout };
+    Debug::Logger GLDebugContainer::Logger { std::cout };
+    Debug::TimeDuration GLDebugContainer::GpuProcessDuration { 0 };
 
     Debug::Logger& GLLogger() {
-        return GLLoggerContainer::logger;
+        return GLDebugContainer::Logger;
     }
 
-    void InitGLLog() {
+    void InitGLDebugTools() {
         GLLogger().SetName("OpenGL");
         GLLogger().SetNameColor(Debug::ConsoleColor::FG_GREEN);
         GLLogger().SetBreakLevel(Debug::Severity::ERROR);

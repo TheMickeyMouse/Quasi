@@ -5,7 +5,7 @@
 namespace Quasi::IO {
     void TimeType::Update() {
         ++currentFrame;
-        const double newTime = glfwGetTime();
+        const float newTime = (float)glfwGetTime();
 
         dtIndex = (dtIndex + 1) % DELTATIME_HISTORY_NUM;
         timeFor2s -= deltaTime[dtIndex];
@@ -15,10 +15,12 @@ namespace Quasi::IO {
         currentTime = newTime;
     }
 
-    void TimeType::SetTime(double time) {
+    void TimeType::SetTime(float time) {
         currentTime = time;
         glfwSetTime(time);
     }
 
-    double TimeType::Framerate() const { return (double)DELTATIME_HISTORY_NUM / timeFor2s; }
+    float TimeType::Framerate() const {
+        return (float)DELTATIME_HISTORY_NUM / timeFor2s;
+    }
 }

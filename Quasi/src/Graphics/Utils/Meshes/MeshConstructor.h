@@ -1,7 +1,6 @@
 #pragma once
 #include <utility>
 
-#include "VertexConverter.h"
 #include "VertexElement.h"
 
 namespace Quasi::Graphics::MeshUtils {

@@ -9,6 +9,7 @@
 #include "Type.h"
 #include "Utils/Enum.h"
 #include "Utils/Option.h"
+#include "Memory.h"
 
 namespace Quasi::Debug {
     void DebugBreak();
@@ -19,7 +20,7 @@ namespace Quasi::Debug {
 
         [[nodiscard]] ColoredText ColoredName() const { return { color, name }; }
 
-        Q_DEFINE_ENUM(Severity,
+        QDefineEnum$(Severity,
             (OFF,      ("OFF",      ConsoleColor::RESET))
             (TRACE,    ("TRACE",    FgColor(ConsoleColor::GREEN)))
             (DEBUG,    ("DEBUG",    FgColor(ConsoleColor::CYAN)))
@@ -127,6 +128,7 @@ namespace Quasi::Debug {
         template <class ...Ts> void Critical(const FmtStr& fmt, Ts&&... args) { this->LogFmt(Severity::CRITICAL, fmt, std::forward<Ts>(args)...); }
 
         void Flush();
+        void NoOp() const {}
 
         static Logger& GetInternalLog();
     };
@@ -166,18 +168,35 @@ namespace Quasi::Debug {
     template <class ...Ts> void Warn    (const FmtStr& fmt, Ts&&... args) { Logger::GetInternalLog().Warn    (fmt, std::forward<Ts>(args)...); }
     template <class ...Ts> void Error   (const FmtStr& fmt, Ts&&... args) { Logger::GetInternalLog().Error   (fmt, std::forward<Ts>(args)...); }
     template <class ...Ts> void Critical(const FmtStr& fmt, Ts&&... args) { Logger::GetInternalLog().Critical(fmt, std::forward<Ts>(args)...); }
+    void NoOp();
+
+#ifdef NDEBUG
+    #define QTrace$    NoOp
+    #define QDebug$    NoOp
+    #define QInfo$     NoOp
+    #define QWarn$     NoOp
+    #define QError$    NoOp
+    #define QCritical$ NoOp
+#else
+    #define QTrace$    Trace
+    #define QDebug$    Debug
+    #define QInfo$     Info
+    #define QWarn$     Warn
+    #define QError$    Error
+    #define QCritical$ Critical
+#endif
 
     void Flush();
 }
 
 namespace Quasi {
-    template <class T> T& Option<T>::Assert() { return Q_GETTER_MUT(Assert); }
+    template <class T> T& Option<T>::Assert() { return QGetterMut$(Assert); }
     template <class T> const T& Option<T>::Assert() const {
         Debug::Assert(HasValue(), "Option<{}> doesn't have a value", Text::TypeName<T>());
         return value;
     }
 
-    template <class T> template <class Asrt> T& Option<T>::Assert(Asrt&& assertfn) { return Q_GETTER_MUT(Assert, assertfn); }
+    template <class T> template <class Asrt> T& Option<T>::Assert(Asrt&& assertfn) { return QGetterMut$(Assert, assertfn); }
     template <class T> template <class Asrt> const T& Option<T>::Assert(Asrt&& assertfn) const {
         if (IsNull()) assertfn();
         return value;
@@ -198,7 +217,7 @@ namespace Quasi {
 
 namespace Quasi::Text {
     template <>
-    struct Formatter<DateTime> {
+    struct Formatter<Debug::DateTime> {
         Str fmt;
         bool AddOption(Str args) {
             for (u32 i = 0; i < args.size(); ++i) {
@@ -217,7 +236,7 @@ namespace Quasi::Text {
             fmt = args;
             return true;
         }
-        void FormatTo(const DateTime& time, StringOutput output) {
+        void FormatTo(const Debug::DateTime& time, StringOutput output) {
             const auto d = floor<std::chrono::days>(time);
             const std::chrono::year_month_day ymd = d;
             const std::chrono::hh_mm_ss       hms { floor<std::chrono::milliseconds>(time - d) };
