@@ -76,9 +76,9 @@ namespace Quasi::Graphics {
         }
     }
 #ifdef NDEBUG
-#define Q_GL_CALL(X) (X)
+#define QGLCall$(X) (X)
 #else
-#define Q_GL_CALL(X) GLCall([&]{ return X; }, #X)
+#define QGLCall$(X) GLCall([&]{ return X; }, #X)
 #endif
 }
 

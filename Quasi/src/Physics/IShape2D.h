@@ -11,20 +11,19 @@ namespace Quasi::Physics2D {
     class IShape {
     public:
         [[nodiscard]] float ComputeArea() const = delete;
-        [[nodiscard]] Math::fRect2D ComputeBoundingBox() const = delete;
-        [[nodiscard]] Math::fVector2 CenterOfMass() const = delete;
+        [[nodiscard]] fRect2D ComputeBoundingBox() const = delete;
+        [[nodiscard]] fVector2 CenterOfMass() const = delete;
+
+        [[nodiscard]] fVector2 NearestPointTo(const fVector2& point) const = delete;
+        [[nodiscard]] fVector2 FurthestAlong(const fVector2& normal) const = delete;
+        [[nodiscard]] fLine2D BestEdgeFor(const fVector2& normal) const { return { {}, {} }; }
+        [[nodiscard]] fRange ProjectOntoAxis(const fVector2& axis) const = delete;
+        [[nodiscard]] fRange ProjectOntoOwnAxis(u32 axisID, const fVector2& axis) const = delete;
+        bool AddSeperatingAxes(SeperatingAxisSolver& sat) const = delete;
+
+        void UpdateTransform(const PhysicsTransform& xf) = delete;
 
         enum ClipPrimitive { PRIM_CIRCLE, PRIM_LINE, PRIM_POLYGON };
         enum Type { CIRCLE, CAPSULE, RECT, TRI, QUAD, POLY };
-    };
-
-    class ITransformedShape : public IShape {
-    public:
-        [[nodiscard]] Math::fVector2 NearestPointTo(const Math::fVector2& point) const = delete;
-        [[nodiscard]] Math::fVector2 FurthestAlong(const Math::fVector2& normal) const = delete;
-        [[nodiscard]] Math::fLine2D BestEdgeFor(const Math::fVector2& normal) const { return { {}, {} }; }
-        [[nodiscard]] Math::fRange ProjectOntoAxis(const Math::fVector2& axis) const = delete;
-        [[nodiscard]] Math::fRange ProjectOntoOwnAxis(u32 axisID, const Math::fVector2& axis) const = delete;
-        bool AddSeperatingAxes(SeperatingAxisSolver& sat) const = delete;
     };
 }

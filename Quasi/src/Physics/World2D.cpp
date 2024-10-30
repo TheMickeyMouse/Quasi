@@ -84,38 +84,26 @@ namespace Quasi::Physics2D {
     BodyHandle World::CreateBody(const BodyCreateOptions& options, Shape shape) {
         const float area = shape.ComputeArea();
         const u32 i = FindVacantIndex();
+        const bool isStatic = options.type == BodyType::STATIC;
+        Body b {
+            options.position,
+            fComplex::rotate(RAD2DEG * options.rotAngle),
+            isStatic ? 0 : area * options.density,
+            options.type,
+            *this,
+            std::move(shape)
+        };
         if (i >= bodySparseEnabled.size() * BITS_IN_USIZE) {
             bodySparseEnabled.push_back(1);
-            bodies.emplace_back(
-                options.position,
-                area * options.density,
-                options.restitution,
-                options.type,
-                *this,
-                std::move(shape)
-            );
+            bodies.emplace_back(std::move(b));
             bodies.back().sortedIndex = bodyIndicesSorted.size();
             bodyIndicesSorted.push_back(bodies.size() - 1);
         } else {
             bodySparseEnabled[i / BITS_IN_USIZE] |= (usize)1 << (i % BITS_IN_USIZE);
             if (i >= bodies.size()) {
-                bodies.emplace_back(
-                    options.position,
-                    area * options.density,
-                    options.restitution,
-                    options.type,
-                    *this,
-                    std::move(shape)
-                );
+                bodies.emplace_back(std::move(b));
             } else
-                Memory::ConstructAt(&bodies[i],
-                    options.position,
-                    area * options.density,
-                    options.restitution,
-                    options.type,
-                    *this,
-                    std::move(shape)
-                );
+                Memory::ConstructAt(&bodies[i], std::move(b));
             bodies[i].sortedIndex = bodyIndicesSorted.size();
             bodyIndicesSorted.push_back(i);
         }
@@ -159,11 +147,11 @@ namespace Quasi::Physics2D {
                     const bool bDyn = b.IsDynamic(), cDyn = c.IsDynamic();
                     if ((bDyn || cDyn) && c.boundingBox.yrange().overlaps(b.boundingBox.yrange())) {
                         const Manifold manifold = b.CollideWith(c);
-                        if (manifold.contactCount && std::max(manifold.contactDepth[0], manifold.contactDepth[1]) > Math::EPSILON) {
+                        if (manifold.contactCount && std::max(manifold.contactDepth[0], manifold.contactDepth[1]) > EPSILON) {
                             StaticResolve(b, c, manifold);
                             DynamicResolve(b, c, manifold);
-                            if (bDyn) b.UpdateTransformShape();
-                            if (cDyn) c.UpdateTransformShape();
+                            if (bDyn) b.TryUpdateTransforms();
+                            if (cDyn) c.TryUpdateTransforms();
                         }
                     }
                     ++j;
@@ -182,7 +170,7 @@ namespace Quasi::Physics2D {
 
         // for (uint i = 0; i < BodyCount(); ++i) {
         //     Body& base = bodies[i];
-        //     Math::fVector2 prevPosition = base.position, prevVelocity = base.velocity;
+        //     fVector2 prevPosition = base.position, prevVelocity = base.velocity;
         //     for (uint j = i + 1; j < BodyCount(); ++j) {
         //         Body& target = bodies[j];
         //         if (const Collision::Event event = base.CollideWith(target)) {

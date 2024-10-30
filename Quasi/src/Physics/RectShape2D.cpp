@@ -3,66 +3,48 @@
 #include "SeperatingAxisSolver.h"
 
 namespace Quasi::Physics2D {
-    Math::fVector2 RectShape::Corner(bool px, bool py) const {
+    float RectShape::Inertia() const {
+        return (hx * hx + hy * hy) / 3.0f;
+    }
+
+    fVector2 RectShape::Corner(bool px, bool py) const {
         return { px ? hx : -hx, py ? hy : -hy };
     }
 
-    void RectShape::TransformTo(const PhysicsTransform& xf, Out<TransformedVariant*> out) const {
-        out->center = xf.position;
-        out->x = xf.rotation.as_vec() * hx;
-        out->y = xf.rotation.muli().as_vec() * hy;
-        out->xInvLen = 1.0f / hx;
-        out->yInvLen = 1.0f / hy;
+    fRect2D RectShape::ComputeBoundingBox() const {
+        return { { -hx, -hy }, { hx, hy } };
     }
 
-    RectShape::TransformedVariant RectShape::Transform(const PhysicsTransform& xf) const {
-        return { *this, xf };
+    fVector2 RectShape::NearestPointTo(const fVector2& point) const {
+        return Corner(point.x > 0, point.y > 0);
     }
 
-    Math::fVector2 TransformedRectShape::Corner(bool px, bool py) const {
-        return center + (px ? x : -x) + (py ? y : -y);
-    }
-
-    Math::fRect2D TransformedRectShape::ComputeBoundingBox() const {
-        const Math::fVector2 max = {
-            std::max(std::abs(x.x + y.x), std::abs(x.x - y.x)),
-            std::max(std::abs(x.y + y.y), std::abs(x.y - y.y)) };
-        return { center - max, center + max };
-    }
-
-    Math::fVector2 TransformedRectShape::NearestPointTo(const Math::fVector2& point) const {
-        const Math::fVector2 p = Math::fComplex::from_vec(x).conj().rotate(point - center);
-        return Corner(p.x > 0, p.y > 0);
-    }
-
-    Math::fVector2 TransformedRectShape::FurthestAlong(const Math::fVector2& normal) const {
-        const float dx = x.dot(normal), dy = y.dot(normal);
+    fVector2 RectShape::FurthestAlong(const fVector2& normal) const {
+        const float dx = hx * normal.x, dy = hy * normal.y;
         return Corner(dx > 0, dy > 0);
     }
 
-    Math::fLine2D TransformedRectShape::BestEdgeFor(const Math::fVector2& normal) const {
-        const float dx = x.dot(normal), dy = y.dot(normal);
+    fLine2D RectShape::BestEdgeFor(const fVector2& normal) const {
+        const float dx = hx * normal.x, dy = hy * normal.y;
         const bool xPerpendicular = std::abs(dx) < std::abs(dy);
         return { Corner(dx > 0, dy > 0), Corner(dx > 0 ^ xPerpendicular, dy > 0 ^ !xPerpendicular) };
     }
 
-    Math::fRange TransformedRectShape::ProjectOntoAxis(const Math::fVector2& axis) const {
-        const float c = center.dot(axis);
-        const float dCorner1 = (x + y).dot(axis), dCorner2 = (x - y).dot(axis),
-                    maxD = std::max(std::abs(dCorner1), std::abs(dCorner2));
-        return { c - maxD, c + maxD };
+    fRange RectShape::ProjectOntoAxis(const fVector2& axis) const {
+        const float mean = hx * axis.x, off = hy * axis.y,
+                    maxD = std::max(std::abs(mean + off), std::abs(mean - off));
+        return { -maxD, maxD };
     }
 
-    Math::fRange TransformedRectShape::ProjectOntoOwnAxis(u32 axisID, const Math::fVector2& axis) const {
-        const float c = center.dot(axis);
-        const float half = axisID == 0 ? x.dot(axis) : y.dot(axis);
-        return { c - half, c + half };
+    fRange RectShape::ProjectOntoOwnAxis(u32 axisID, const fVector2& axis) const {
+        const float half = axisID == 0 ? hx : hy;
+        return { -half, half };
     }
 
-    bool TransformedRectShape::AddSeperatingAxes(SeperatingAxisSolver& sat) const {
+    bool RectShape::AddSeperatingAxes(SeperatingAxisSolver& sat) const {
         bool success = false;
-        success |= sat.CheckAxis(x * xInvLen);
-        success |= sat.CheckAxis(y * yInvLen);
+        success |= sat.CheckAxis({ 1, 0 });
+        success |= sat.CheckAxis({ 0, 1 });
         return success;
     }
 } // Quasi

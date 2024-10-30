@@ -45,12 +45,12 @@ namespace Quasi::Math {
     }
 
     fVector3 Transform3D::TransformInverse(const fVector3& point) const {
-        return rotation.inv().rotate(point - position) / scale;
+        return rotation.invrotate(point - position) / scale;
     }
 
     void Transform3D::TransformInverseInplace(fVector3& point) const {
         point -= position;
-        point.rotate_by(rotation.inv());
+        point = rotation.invrotate(point);
         point /= scale;
     }
 
@@ -65,11 +65,11 @@ namespace Quasi::Math {
     }
 
     fVector3 Transform3D::TransformInverseNormal(const fVector3& normal) const {
-        return (normal.rotated_by(rotation.inv()) * scale).norm();
+        return (rotation.invrotate(normal) * scale).norm();
     }
 
     void Transform3D::TransformInverseNormalInplace(fVector3& normal) const {
-        normal.rotate_by(rotation.inv());
+        normal = rotation.invrotate(normal);
         normal *= scale;
         normal /= normal.len();
     }

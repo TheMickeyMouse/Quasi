@@ -122,7 +122,7 @@ namespace Quasi::Matching {
     }
 
     template <class Der, class Base> requires std::is_base_of_v<Base, Der> && (std::is_const_v<Der> || !std::is_const_v<Base>)
-    Ref<Der> InstanceOf(RefImpl<Base> u) {
+    Ref<Der> InstanceOf(Ref<Base> u) {
         return u.template As<Der>();
     }
 

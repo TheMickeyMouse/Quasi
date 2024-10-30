@@ -66,7 +66,8 @@ namespace Quasi::Math {
         [[nodiscard]] Matrix2D as_rotation_matrix() const {
             return { fVector3 { freal(), fimag(), 0 }, fVector3 { -fimag(), freal(), 0 }, fVector3 { 0, 0, 1 } };
         }
-        [[nodiscard]] Vector2<T> rotate(const Vector2<T>& v) const { return ((*this) * from_vec(v)).as_vec(); }
+        [[nodiscard]] Vector2<T> rotate(const Vector2<T>& v)    const { return { v.x * re - v.y * im, v.x * im + v.y * re }; }
+        [[nodiscard]] Vector2<T> invrotate(const Vector2<T>& v) const { return { v.x * re + v.y * im, v.y * re - v.x * im }; }
 
         [[nodiscard]] Complex muli()    const { return { -im, re }; }
         [[nodiscard]] Complex mulnegi() const { return { im, -re }; }

@@ -28,7 +28,7 @@ namespace Quasi::Graphics {
 
     Texture Texture::New(const byte* raw, const Math::uVector3& size, const TextureInitParams& init) {
         GraphicsID rendererID;
-        Q_GL_CALL(GL::GenTextures(1, &rendererID));
+        QGLCall$(GL::GenTextures(1, &rendererID));
         Texture t { rendererID, size };
         t.SetTarget(init.target);
         t.LoadTexture(raw, init);
@@ -36,31 +36,31 @@ namespace Quasi::Graphics {
     }
 
     void Texture::DestroyObject(const GraphicsID id) {
-        Q_GL_CALL(GL::DeleteTextures(1, &id));
+        QGLCall$(GL::DeleteTextures(1, &id));
     }
 
     void Texture::BindObject(TextureTarget target, GraphicsID id) {
-        Q_GL_CALL(GL::BindTexture((int)target, id));
+        QGLCall$(GL::BindTexture((int)target, id));
     }
 
     void Texture::UnbindObject(TextureTarget target) {
-        Q_GL_CALL(GL::BindTexture((int)target, 0));
+        QGLCall$(GL::BindTexture((int)target, 0));
     }
 
     void Texture::SetParam(TextureParamName param, float val) const {
-        Q_GL_CALL(GL::TexParameterf(TargetI(), (int)param, val));
+        QGLCall$(GL::TexParameterf(TargetI(), (int)param, val));
     }
 
     void Texture::SetParam(TextureParamName param, int val) const {
-        Q_GL_CALL(GL::TexParameteri(TargetI(), (int)param, val));
+        QGLCall$(GL::TexParameteri(TargetI(), (int)param, val));
     }
 
     void Texture::SetParam(TextureParamName param, const float* vals) const {
-        Q_GL_CALL(GL::TexParameterfv(TargetI(), (int)param, vals));
+        QGLCall$(GL::TexParameterfv(TargetI(), (int)param, vals));
     }
 
     void Texture::SetParam(TextureParamName param, const int* vals) const {
-        Q_GL_CALL(GL::TexParameterIiv(TargetI(), (int)param, vals));
+        QGLCall$(GL::TexParameterIiv(TargetI(), (int)param, vals));
     }
 
     void Texture::DefaultParams() const {
@@ -72,17 +72,17 @@ namespace Quasi::Graphics {
         const int newTarget = overrideTarget == TextureTarget::NONE ? TargetI() : (int)overrideTarget;
         switch (Dimension()) {
             case 1:
-                return Q_GL_CALL(GL::TexImage1D(newTarget, params.level, (int)params.internalformat, dim.x, 0, (int)params.format, params.type->glID, data));
+                return QGLCall$(GL::TexImage1D(newTarget, params.level, (int)params.internalformat, dim.x, 0, (int)params.format, params.type->glID, data));
             case 2:
-                return Q_GL_CALL(GL::TexImage2D(newTarget, params.level, (int)params.internalformat, dim.x, dim.y, 0, (int)params.format, params.type->glID, data));
+                return QGLCall$(GL::TexImage2D(newTarget, params.level, (int)params.internalformat, dim.x, dim.y, 0, (int)params.format, params.type->glID, data));
             case 3:
-                return Q_GL_CALL(GL::TexImage3D(newTarget, params.level, (int)params.internalformat, dim.x, dim.y, dim.z, 0, (int)params.format, params.type->glID, data));
+                return QGLCall$(GL::TexImage3D(newTarget, params.level, (int)params.internalformat, dim.x, dim.y, dim.z, 0, (int)params.format, params.type->glID, data));
             default:;
         }
     }
 
     void Texture::SetPixelStore(PixelStoreParam param, int val) {
-        Q_GL_CALL(GL::PixelStorei((int)param, val));
+        QGLCall$(GL::PixelStorei((int)param, val));
     }
 
     void Texture::LoadTexture(const byte* img, const TextureInitParams& init) {
@@ -144,14 +144,14 @@ namespace Quasi::Graphics {
             slot = FindEmptySlot();
         if (slot == -1) return; // if slot is still -1, then the slots are full
 
-        Q_GL_CALL(GL::ActiveTexture(GL::TEXTURE0 + slot));
+        QGLCall$(GL::ActiveTexture(GL::TEXTURE0 + slot));
         Bind();
         Slots[slot] = *this;
         textureSlot.reset((void*)(usize)(slot + 1));
     }
 
     void Texture::Deactivate() {
-        Q_GL_CALL(GL::ActiveTexture(GL::TEXTURE0 + Slot()));
+        QGLCall$(GL::ActiveTexture(GL::TEXTURE0 + Slot()));
         Unbind();
         textureSlot.reset(nullptr);
     }
@@ -207,11 +207,11 @@ namespace Quasi::Graphics {
     void Texture::SetSubTexture(const void* data, const Math::uRect3D& rect, const TextureLoadParams& params) {
         switch (Dimension()) {
             case 1:
-                return Q_GL_CALL(GL::TexSubImage1D(TargetI(), params.level, rect.min.x, rect.width(), (int)params.format, params.type->glID, data));
+                return QGLCall$(GL::TexSubImage1D(TargetI(), params.level, rect.min.x, rect.width(), (int)params.format, params.type->glID, data));
             case 2:
-                return Q_GL_CALL(GL::TexSubImage2D(TargetI(), params.level, rect.min.x, rect.min.y, rect.width(), rect.height(), (int)params.format, params.type->glID, data));
+                return QGLCall$(GL::TexSubImage2D(TargetI(), params.level, rect.min.x, rect.min.y, rect.width(), rect.height(), (int)params.format, params.type->glID, data));
             case 3:
-                return Q_GL_CALL(GL::TexSubImage3D(TargetI(), params.level, rect.min.x, rect.min.y, rect.min.z, rect.width(), rect.height(), rect.depth(), (int)params.format, params.type->glID, data));
+                return QGLCall$(GL::TexSubImage3D(TargetI(), params.level, rect.min.x, rect.min.y, rect.min.z, rect.width(), rect.height(), rect.depth(), (int)params.format, params.type->glID, data));
             default:;
         }
     }

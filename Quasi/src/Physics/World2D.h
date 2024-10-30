@@ -12,10 +12,10 @@ namespace Quasi::Physics2D {
         u32 bodyCount = 0;
         static constexpr u32 BITS_IN_USIZE = 8 * sizeof(usize);
 
-        Math::fVector2 gravity;
+        fVector2 gravity;
     public:
         World() = default;
-        World(const Math::fVector2& gravity) : gravity(gravity) {}
+        World(const fVector2& gravity) : gravity(gravity) {}
         ~World();
         World(const World& w) = delete;
         World& operator=(const World& w) = delete;

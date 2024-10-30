@@ -450,6 +450,8 @@ namespace Quasi::Math {
         static VectorN ZERO()                        { return {  0,  0 }; }
         static VectorN ONE()                         { return { +1, +1 }; }
 
+        NODISC float_type zcross(const VectorN& other) const;
+
         NODISC float_type slope() const;
 
         NODISC float_type angle() const;
@@ -481,6 +483,7 @@ namespace Quasi::Math {
         static VectorN unit_y(T y) { return { 0, y }; }
     };
 
+    template <class T> typename VectorN<2, T>::float_type VectorN<2, T>::zcross(const VectorN& other) const { return x * other.y - y * other.x; }
     template <class T> typename VectorN<2, T>::float_type VectorN<2, T>::slope() const { return (float_type)y / (float_type)x; }
     template <class T> typename VectorN<2, T>::float_type VectorN<2, T>::angle() const { return std::atan2((float_type)y, (float_type)x); }
     template <class T> typename VectorN<2, T>::float_type VectorN<2, T>::angle_signed(const VectorN& other) const { return std::atan2((float_type)(y * other.x - x * other.y), (float_type)this->dot(other)); }

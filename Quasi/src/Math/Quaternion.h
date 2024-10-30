@@ -85,6 +85,7 @@ namespace Quasi::Math {
         [[nodiscard]] Quaternion then(const Quaternion& q) const;
         Quaternion& rotate_by(const Quaternion& q);
         [[nodiscard]] fVector3 rotate(const fVector3& v) const;
+        [[nodiscard]] fVector3 invrotate(const fVector3& v) const;
 
         bool operator==(const Quaternion&) const = default;
 

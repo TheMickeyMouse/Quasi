@@ -19,36 +19,46 @@ namespace Quasi::Physics2D {
 
     class Body {
     public:
-        Math::fVector2 position, velocity, acceleration;
-        float mass = 1.0f;
-        float restitution = 0.8f;
+        fVector2 position, velocity;
+        fComplex rotation; float angularVelocity = 0.0f;
+        float mass = 1.0f, invMass = 1.0f, inertia = 1.0f, invInertia = 1.0f;
+        fRect2D boundingBox;
         u32 sortedIndex = 0;
         BodyType type = BodyType::NONE;
-        bool enabled = true;
         Ref<World> world = nullptr;
+        bool enabled = true;
+        bool shapeHasChanged = true;
 
         Shape shape;
-        TransformedShape transformedShape;
-        Math::fRect2D boundingBox;
+        fRect2D baseBoundingBox;
+        fVector2 centerOfMass;
 
-        Body(const Math::fVector2& p, float m, float restitution, BodyType type, Ref<World> world, Shape shape)
-            : position(p), mass(m), restitution(restitution), type(type), world(world),
-              shape(std::move(shape)) { UpdateTransformShape(); }
+        Body(const fVector2& p, const fComplex& r, float m, BodyType type, Ref<World> world, Shape shape)
+            : position(p), rotation(r), mass(m), invMass(m > 0 ? 1 / m : 0), type(type), world(world),
+              shape(std::move(shape)) { TryUpdateTransforms(); }
 
-        void AddVelocity(const Math::fVector2& vel) { velocity += vel; }
-        void AddAcceleration(const Math::fVector2& acc) { acceleration += acc; }
-        void AddMomentum(const Math::fVector2& newtonSeconds);
-        void AddForce(const Math::fVector2& newton);
-        void Stop() { velocity = 0; }
+        void AddVelocity    (const fVector2& vel) { velocity += vel; }
+        void AddMomentum    (const fVector2& newtonSeconds);
+        void AddAngularVelocity    (float angVel) { angularVelocity += angVel; }
+        void AddAngularMomentum    (float angMomentum);
+
+        // void AddRelativeForceToMass(const fVector2& msPosition,  const fVector2& force);
+        // void AddRelativeForce      (const fVector2& relPosition, const fVector2& force);
+        // void AddForceAt            (const fVector2& absPosition, const fVector2& force);
+
+        void SetMass(float newMass);
+
+        void Stop() { velocity = 0; angularVelocity = 0; }
 
         [[nodiscard]] Manifold CollideWith(const Body& target) const;
-        [[nodiscard]] Manifold CollideWith(const TransformedShape& target) const;
+        [[nodiscard]] Manifold CollideWith(const Shape& target, const PhysicsTransform& xf) const;
         [[nodiscard]] bool OverlapsWith(const Body& target) const;
-        [[nodiscard]] bool OverlapsWith(const TransformedShape& target) const;
+        [[nodiscard]] bool OverlapsWith(const Shape& target, const PhysicsTransform& xf) const;
         [[nodiscard]] PhysicsTransform GetTransform() const;
 
         void Update(float dt);
-        void UpdateTransformShape();
+        void TryUpdateTransforms();
+        void SetShapeHasChanged();
 
         [[nodiscard]] bool IsStatic()  const { return type == BodyType::STATIC; }
         [[nodiscard]] bool IsDynamic() const { return type == BodyType::DYNAMIC; }
@@ -56,9 +66,7 @@ namespace Quasi::Physics2D {
         void Enable()  { enabled = true; }
         void Disable() { enabled = false; }
 
-        [[nodiscard]] Math::fVector2 CenterOfMass() const;
-        void ShiftOriginToMassCenter();
-        [[nodiscard]] Math::fRect2D BoundingBox() const;
+        [[nodiscard]] fRect2D BoundingBox() const;
 
         friend class World;
         friend void StaticResolve (Body&, Body&, const Manifold&);
@@ -92,9 +100,9 @@ namespace Quasi::Physics2D {
     };
 
     struct BodyCreateOptions {
-        Math::fVector2 position {};
+        fVector2 position {};
+        float rotAngle = 0.0f;
         BodyType type = BodyType::DYNAMIC;
         float density = 1.0f;
-        float restitution = 0.8f;
     };
 } // Physics2D

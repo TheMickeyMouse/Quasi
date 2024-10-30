@@ -202,14 +202,14 @@ namespace Quasi {
         return value;
     }
 
-    template <class T> T& RefImpl<T>::Assert() { return Q_GETTER_MUT(Assert); }
-    template <class T> const T& RefImpl<T>::Assert() const {
+    template <class T> T& Ref<T>::Assert() { return Q_GETTER_MUT(Assert); }
+    template <class T> const T& Ref<T>::Assert() const {
         Debug::Assert(HasValue(), "Ref<{}> doesn't have a value", Text::TypeName<T>());
         return *obj;
     }
 
-    template <class T> template <class Asrt> T& RefImpl<T>::Assert(Asrt&& assertfn) { return Q_GETTER_MUT(Assert, assertfn); }
-    template <class T> template <class Asrt> const T& RefImpl<T>::Assert(Asrt&& assertfn) const {
+    template <class T> template <class Asrt> T& Ref<T>::Assert(Asrt&& assertfn) { return Q_GETTER_MUT(Assert, assertfn); }
+    template <class T> template <class Asrt> const T& Ref<T>::Assert(Asrt&& assertfn) const {
         if (IsNull()) assertfn();
         return *obj;
     }

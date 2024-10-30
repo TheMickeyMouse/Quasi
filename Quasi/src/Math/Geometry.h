@@ -88,7 +88,7 @@ namespace Quasi::Math {
         }
 
         [[nodiscard]] bool leftside(const vec_t& p) const {
-            return (end.x - start.x) * (p.y - start.y) - (end.y - start.y) * (p.x - start.x) > 0;
+            return (end - start).zcross(p - start) > 0;
         }
     };
 

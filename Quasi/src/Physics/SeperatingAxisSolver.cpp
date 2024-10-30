@@ -3,17 +3,27 @@
 #include "Shape2D.h"
 
 namespace Quasi::Physics2D {
-    SeperatingAxisSolver SeperatingAxisSolver::CheckOverlapFor  (const TransformedShape& s1, const TransformedShape& s2) {
-        return { s1, s2, OVERLAP };
+    SeperatingAxisSolver SeperatingAxisSolver::CheckOverlapFor(
+        const Shape& s1, const PhysicsTransform& xf1,
+        const Shape& s2, const PhysicsTransform& xf2) {
+        return { s1, xf1, s2, xf2, OVERLAP };
     }
 
-    SeperatingAxisSolver SeperatingAxisSolver::CheckCollisionFor(const TransformedShape& s1, const TransformedShape& s2) {
-        return { s1, s2, COLLISION };
+    SeperatingAxisSolver SeperatingAxisSolver::CheckCollisionFor(
+        const Shape& s1, const PhysicsTransform& xf1,
+        const Shape& s2, const PhysicsTransform& xf2) {
+        return { s1, xf1, s2, xf2, COLLISION };
     }
 
-    Ref<const TransformedShape> SeperatingAxisSolver::CurrentlyCheckedShape() const {
+    Ref<const Shape> SeperatingAxisSolver::CurrentlyCheckedShape() const {
         return currentChecked == BASE   ? Refer(base)   :
                currentChecked == TARGET ? Refer(target) :
+               nullptr;
+    }
+
+    Ref<const PhysicsTransform> SeperatingAxisSolver::CurrentlyCheckedTransform() const {
+        return currentChecked == BASE   ? Refer(baseXf)   :
+               currentChecked == TARGET ? Refer(targetXf) :
                nullptr;
     }
 
@@ -27,12 +37,22 @@ namespace Quasi::Physics2D {
         axisIndex = 0;
     }
 
-    bool SeperatingAxisSolver::CheckAxis(const Math::fVector2& axis) {
+    bool SeperatingAxisSolver::CheckAxis(const fVector2& axis) {
         ++axisIndex;
         if (!collides) return false;
 
-        const Math::fRange bproj = currentChecked == BASE   ? base  ->ProjectOntoOwnAxis(axisIndex - 1, axis) : base  ->ProjectOntoAxis(axis),
-                           tproj = currentChecked == TARGET ? target->ProjectOntoOwnAxis(axisIndex - 1, axis) : target->ProjectOntoAxis(axis);
+        const fVector2 worldAxis = IsChecking(BASE)   ? baseXf  ->TransformOffset(axis) :
+                                   IsChecking(TARGET) ? targetXf->TransformOffset(axis) :
+                                   axis;
+
+        const fRange bproj = (IsChecking(BASE) ?
+                             base->ProjectOntoOwnAxis(axisIndex - 1, axis) :
+                             base->ProjectOntoAxis(baseXf->TransformInverseOffset(worldAxis)))
+                           + baseXf->position.dot(worldAxis),
+                     tproj = (IsChecking(TARGET) ?
+                             target->ProjectOntoOwnAxis(axisIndex - 1, axis) :
+                             target->ProjectOntoAxis(targetXf->TransformInverseOffset(worldAxis)))
+                           + targetXf->position.dot(worldAxis);
 
         const float d1 = bproj.max - tproj.min, d2 = tproj.max - bproj.min,
                     depth = std::min(d1, d2);
@@ -45,17 +65,21 @@ namespace Quasi::Physics2D {
 
         if (depth < overlap) {
             overlap = depth;
-            seperatingAxis = d1 > d2 ? -axis : axis;
+            seperatingAxis = d1 > d2 ? -worldAxis : worldAxis;
             return true;
         }
         return false;
+    }
+
+    bool SeperatingAxisSolver::IsChecking(Subject subject) const {
+        return currentChecked == subject;
     }
 
     float SeperatingAxisSolver::GetDepth() const {
         return overlap;
     }
 
-    const Math::fVector2& SeperatingAxisSolver::GetSepAxis() const {
+    const fVector2& SeperatingAxisSolver::GetSepAxis() const {
         return seperatingAxis;
     }
 } // Quasi

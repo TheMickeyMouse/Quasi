@@ -245,28 +245,28 @@ namespace Quasi::Math {
     Matrix<N, M> Matrix<N, M>::inv() const requires is_square {
         // a bit cheaty but fast
         // https://en.wikipedia.org/wiki/Invertible_matrix#Analytic_solution
-        float deter = det();
+        const float invdet = 1 / det();
         const Matrix& self = *this;
         if constexpr (N == 2) {
             return Matrix {
-                col { +self[1][1] / deter, -self[1][0] / deter },
-                col { -self[0][1] / deter, +self[0][0] / deter },
+                col { +self[1][1] * invdet, -self[1][0] * invdet },
+                col { -self[0][1] * invdet, +self[0][0] * invdet },
             };
         } else if constexpr (N == 3) {
             return Matrix {
                 self[1].cross(self[2]),
                 self[2].cross(self[0]),
                 self[0].cross(self[1])
-            }.transpose() * (1 / deter);
+            }.transpose() * invdet;
         } else if constexpr (N == 4) {
             const Matrix A2 = squared(), A3 = A2 * self;
             const float trA = trace(), trA2 = A2.trace(), trA3 = A3.trace();
 
             float factors[4] = {
-                ((trA * trA * trA) - 3 * trA * trA2 + 2 * trA3) / +6.0f / deter,
-                ((trA * trA)       -           trA2           ) / -2.0f / deter,
-                trA                                                     / deter,
-                -1.0f                                                   / deter
+                ((trA * trA * trA) - 3 * trA * trA2 + 2 * trA3) / +6.0f * invdet,
+                ((trA * trA)       -           trA2           ) / -2.0f * invdet,
+                trA                                                     * invdet,
+                -1.0f                                                   * invdet
             };
 
             return Matrix::identity() * factors[0] + self * factors[1] + A2 * factors[2] + A3 * factors[3];

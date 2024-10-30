@@ -6,8 +6,8 @@ namespace Quasi::Physics2D {
     class SeperatingAxisSolver;
 
     struct Manifold {
-        Math::fVector2 seperatingNormal;
-        Math::fVector2 contactPoint[2];
+        fVector2 seperatingNormal;
+        fVector2 contactPoint[2];
         float contactDepth[2];
         u32 contactCount = 0;
 
@@ -15,11 +15,11 @@ namespace Quasi::Physics2D {
 
         static Manifold From(const SeperatingAxisSolver& sat);
 
-        static Manifold Clip(const Math::fVector2& v0, const Math::fVector2& v1,
-                             const Math::fVector2& normal, float threshold);
+        static Manifold Clip(const fVector2& v0, const fVector2& v1,
+                             const fVector2& normal, float threshold);
 
         void Invert();
         static Manifold Flip(Manifold&& m);
-        void AddPoint(const Math::fVector2& point, float depth = 0);
+        void AddPoint(const fVector2& point, float depth = 0);
     };
 } // Quasi

@@ -1,12 +1,14 @@
 #pragma once
+#include "PhysicsTransform2D.h"
 #include "Ref.h"
 #include "Vector.h"
 
 namespace Quasi::Physics2D {
-    class TransformedShape;
-
+    class Shape;
+    
     class SeperatingAxisSolver {
-        Ref<const TransformedShape> base, target;
+        Ref<const Shape> base, target;
+        Ref<const PhysicsTransform> baseXf, targetXf;
     public:
         enum class Subject   { BASE = 0, TARGET = 1, NEITHER };
         enum class CheckMode { OVERLAP, COLLISION };
@@ -17,27 +19,31 @@ namespace Quasi::Physics2D {
         Subject currentChecked = BASE;
         bool collides = true;
 
-        Math::fVector2 seperatingAxis;
+        fVector2 seperatingAxis;
         float overlap = INFINITY;
         u32 axisIndex = 0;
 
 
-        SeperatingAxisSolver(const TransformedShape& s1,
-                             const TransformedShape& s2, CheckMode mode) :
-            base(s1), target(s2), checkMode(mode) {}
+        SeperatingAxisSolver(const Shape& s1, const PhysicsTransform& xf1,
+                             const Shape& s2, const PhysicsTransform& xf2, CheckMode mode) :
+            base(s1), target(s2), baseXf(xf1), targetXf(xf2), checkMode(mode) {}
     public:
-        static SeperatingAxisSolver CheckOverlapFor  (const TransformedShape& s1, const TransformedShape& s2);
-        static SeperatingAxisSolver CheckCollisionFor(const TransformedShape& s1, const TransformedShape& s2);
+        static SeperatingAxisSolver CheckOverlapFor  (const Shape& s1, const PhysicsTransform& xf1,
+                                                      const Shape& s2, const PhysicsTransform& xf2);
+        static SeperatingAxisSolver CheckCollisionFor(const Shape& s1, const PhysicsTransform& xf1,
+                                                      const Shape& s2, const PhysicsTransform& xf2);
 
-        [[nodiscard]] Ref<const TransformedShape> CurrentlyCheckedShape() const;
+        [[nodiscard]] Ref<const Shape>            CurrentlyCheckedShape() const;
+        [[nodiscard]] Ref<const PhysicsTransform> CurrentlyCheckedTransform() const;
 
         void SetCheckFor(Subject s);
         bool CheckAxisFor(Subject s);
-        bool CheckAxis(const Math::fVector2& axis);
+        bool CheckAxis(const fVector2& axis);
+        bool IsChecking(Subject subject) const;
         [[nodiscard]] bool Collides() const { return collides; }
 
         [[nodiscard]] float GetDepth() const;
-        [[nodiscard]] const Math::fVector2& GetSepAxis() const;
+        [[nodiscard]] const fVector2& GetSepAxis() const;
 
         friend struct Manifold;
     };

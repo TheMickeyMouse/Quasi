@@ -4,68 +4,47 @@
 
 namespace Quasi::Physics2D {
     float CapsuleShape::ComputeArea() const {
-        return radius * (Math::PI * radius + forward.len() * 2);
+        return radius * (PI * radius + length * 4);
     }
 
-    Math::fRect2D CapsuleShape::ComputeBoundingBox() const {
-        const bool negX = forward.x < 0, negY = forward.y < 0;
-        switch (2 * negX + negY) {
-            case 0:  return { -radius, forward + radius };
-            case 1:  return { { -radius, forward.y - radius }, { forward.x + radius, +radius } };
-            case 2:  return { { forward.x - radius, -radius }, { +radius, forward.y + radius } };
-            case 3:  return { forward - radius, +radius };
-            default: return {};
-        }
+    float CapsuleShape::Inertia() const {
+        // $$ m \frac {1} {4L + \pi r} (\frac {\pi r^3}{2} + \frac {L^3 + 4r^2L} {3}) $$
+        const float rSquared = radius * radius;
+        return (HALF_PI * rSquared * radius +
+                length * (length * length + 4 * rSquared) / 3)
+              / (PI * radius + 4 * length);
     }
 
-    void CapsuleShape::TransformTo(const PhysicsTransform& xf, Out<TransformedVariant*> out) const {
-        out->start = xf.position;
-        out->forward = xf.rotation.rotate(forward);
-        out->fwdOverLensq = out->forward / forward.lensq();
-        out->radius = radius;
-        out->invLength = 1.0f / forward.len();
+    void CapsuleShape::SetForward(const fVector2& f) {
+        forward = f;
+        length = f.len();
+        invLength = 1 / length;
     }
 
-    CapsuleShape::TransformedVariant CapsuleShape::Transform(const PhysicsTransform& xf) const {
-        return { *this, xf };
+    fRect2D CapsuleShape::ComputeBoundingBox() const {
+        return fRect2D { -forward, forward }.corrected().extrude(radius);
     }
 
-    float TransformedCapsuleShape::ComputeArea() const {
-        return radius * (Math::PI * radius + forward.len() * 2);
-    }
-
-    Math::fRect2D TransformedCapsuleShape::ComputeBoundingBox() const {
-        const bool negX = forward.x < 0, negY = forward.y < 0;
-        switch (2 * negX + negY) {
-            case 0:  return { start - radius, start + forward + radius };
-            case 1:  return { { start.x - radius, start.y + forward.y - radius }, { start.x + forward.x + radius, start.y + radius } };
-            case 2:  return { { start.x + forward.x - radius, start.y - radius }, { start.x + radius, start.y + forward.y + radius } };
-            case 3:  return { start + forward - radius, start + radius };
-            default: return {};
-        }
-    }
-
-    Math::fVector2 TransformedCapsuleShape::NearestPointTo(const Math::fVector2& point) const {
-        const float t = std::clamp(fwdOverLensq.dot(point - start), 0.0f, 1.0f);
-        const Math::fVector2 closest = start + (forward * t);
+    fVector2 CapsuleShape::NearestPointTo(const fVector2& point) const {
+        const float t = std::clamp(fwdOverLsq.dot(point), -1.0f, 1.0f);
+        const fVector2 closest = forward * t;
         return closest + (point - closest).norm(radius);
     }
 
-    Math::fVector2 TransformedCapsuleShape::FurthestAlong(const Math::fVector2& normal) const {
-        const Math::fVector2& furthest = (0 > forward.dot(normal) ? start : start + forward);
-        return furthest + normal * radius;
+    fVector2 CapsuleShape::FurthestAlong(const fVector2& normal) const {
+        return (0 > forward.dot(normal) ? -forward : forward) + normal * radius;
     }
 
-    Math::fRange TransformedCapsuleShape::ProjectOntoAxis(const Math::fVector2& axis) const {
-        return Math::fRange { 0, forward.dot(axis) }.corrected().extrude(radius) + start.dot(axis);
+    fRange CapsuleShape::ProjectOntoAxis(const fVector2& axis) const {
+        const float f = std::abs(forward.dot(axis));
+        return fRange { -f, f }.extrude(radius);
     }
 
-    Math::fRange TransformedCapsuleShape::ProjectOntoOwnAxis(u32 axisID, const Math::fVector2& axis) const {
-        const float center = start.dot(axis);
-        return { center - radius, center + radius };
+    fRange CapsuleShape::ProjectOntoOwnAxis(u32 axisID, const fVector2& axis) const {
+        return { -radius, +radius };
     }
 
-    bool TransformedCapsuleShape::AddSeperatingAxes(SeperatingAxisSolver& sat) const {
+    bool CapsuleShape::AddSeperatingAxes(SeperatingAxisSolver& sat) const {
         return sat.CheckAxis(forward.perpend() * invLength);
     }
 } // Quasi

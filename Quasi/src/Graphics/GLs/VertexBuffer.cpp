@@ -9,27 +9,27 @@ namespace Quasi::Graphics {
 
     VertexBuffer VertexBuffer::New(u32 size) {
         GraphicsID id;
-        Q_GL_CALL(GL::GenBuffers(1, &id));
+        QGLCall$(GL::GenBuffers(1, &id));
         BindObject(id);
-        Q_GL_CALL(GL::BufferData(GL::ARRAY_BUFFER, size, nullptr, GL::DYNAMIC_DRAW));
+        QGLCall$(GL::BufferData(GL::ARRAY_BUFFER, size, nullptr, GL::DYNAMIC_DRAW));
         return VertexBuffer { id, size };
     }
 
     void VertexBuffer::DestroyObject(GraphicsID id) {
-        Q_GL_CALL(GL::DeleteBuffers(1, &id));
+        QGLCall$(GL::DeleteBuffers(1, &id));
     }
 
     void VertexBuffer::BindObject(GraphicsID id) {
-        Q_GL_CALL(GL::BindBuffer(GL::ARRAY_BUFFER, id));
+        QGLCall$(GL::BindBuffer(GL::ARRAY_BUFFER, id));
     }
 
     void VertexBuffer::UnbindObject() {
-        Q_GL_CALL(GL::BindBuffer(GL::ARRAY_BUFFER, 0));
+        QGLCall$(GL::BindBuffer(GL::ARRAY_BUFFER, 0));
     }
 
     void VertexBuffer::SetDataBytes(Span<const byte> data) {
         Bind();
-        Q_GL_CALL(GL::BufferSubData(GL::ARRAY_BUFFER, 0, (int)data.size_bytes(), data.data()));
+        QGLCall$(GL::BufferSubData(GL::ARRAY_BUFFER, 0, (int)data.size_bytes(), data.data()));
     }
 
     void VertexBuffer::ClearData() {
@@ -38,7 +38,7 @@ namespace Quasi::Graphics {
 
     void VertexBuffer::AddDataBytes(Span<const byte> data) {
         Bind();
-        Q_GL_CALL(GL::BufferSubData(GL::ARRAY_BUFFER, (int)dataOffset, (int)data.size_bytes(), data.data()));
+        QGLCall$(GL::BufferSubData(GL::ARRAY_BUFFER, (int)dataOffset, (int)data.size_bytes(), data.data()));
         dataOffset += data.size_bytes();
     }
 }

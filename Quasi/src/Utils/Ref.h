@@ -3,19 +3,19 @@
 
 namespace Quasi {
     template <class T>
-    struct RefImpl {
+    struct Ref {
         T* obj = nullptr;
     private:
-        RefImpl(T* t) : obj(t) {}
+        Ref(T* t) : obj(t) {}
     public:
-        RefImpl() : obj(nullptr) {}
-        RefImpl(T& t) : obj(&t) {}
-        RefImpl(std::nullptr_t) : obj(nullptr) {}
-        RefImpl(std::nullopt_t) : obj(nullptr) {}
+        Ref() : obj(nullptr) {}
+        Ref(T& t) : obj(&t) {}
+        Ref(std::nullptr_t) : obj(nullptr) {}
+        Ref(std::nullopt_t) : obj(nullptr) {}
 
-        using ConstRef = RefImpl<const T>;
+        using ConstRef = Ref<const T>;
 
-        static RefImpl From(T* t) { return { t }; }
+        static Ref From(T* t) { return { t }; }
 
         T& Value() requires (!std::is_const_v<T>) { return *obj; }
         [[nodiscard]] const T& Value() const { return *obj; }
@@ -23,15 +23,15 @@ namespace Quasi {
         [[nodiscard]] const T& ValueOr(const T& none) const { return obj == nullptr ? none : *obj; }
         T& ValueOr(T& none) { return obj == nullptr ? none : *obj; }
         [[nodiscard]] ConstRef ValueOr(ConstRef none) const { return obj == nullptr ? none : Refer(*obj); }
-        RefImpl ValueOr(RefImpl none) { return obj == nullptr ? none : Refer(*obj); }
+        Ref ValueOr(Ref none) { return obj == nullptr ? none : Refer(*obj); }
 
         [[nodiscard]] bool HasValue() const { return obj; }
         [[nodiscard]] bool IsNull() const { return obj == nullptr; }
-        [[nodiscard]] bool Equals(RefImpl r) const {
+        [[nodiscard]] bool Equals(Ref r) const {
             return IsNull() ? r.IsNull() : r.HasValue() && *r == *obj;
         }
-        [[nodiscard]] bool RefEquals(RefImpl r) const { return r.obj == obj; }
-        void SetRef(RefImpl r) { obj = &*r; }
+        [[nodiscard]] bool RefEquals(Ref r) const { return r.obj == obj; }
+        void SetRef(Ref r) { obj = &*r; }
         void SetNull() { obj = nullptr; }
 
         T& operator*() requires (!std::is_const_v<T>) { return *obj; }
@@ -47,44 +47,40 @@ namespace Quasi {
         [[nodiscard]] const T* Address() const { return obj; }
         T* Address() { return obj; }
 
-        [[nodiscard]] RefImpl<std::remove_const_t<T>> AsMut() requires std::is_const_v<T> { return { (std::remove_const_t<T>*)obj }; }
-        [[nodiscard]] RefImpl<const T> AsConst() const requires (!std::is_const_v<T>) { return { (const T*)obj }; }
+        [[nodiscard]] Ref<std::remove_const_t<T>> AsMut() requires std::is_const_v<T> { return { (std::remove_const_t<T>*)obj }; }
+        [[nodiscard]] Ref<const T> AsConst() const requires (!std::is_const_v<T>) { return { (const T*)obj }; }
 
         operator ConstRef() const { return AsConst(); }
-        explicit operator RefImpl<std::remove_const_t<T>>() { return AsMut(); }
-        template <class Base> requires (!std::is_same_v<Base, T>) && std::is_base_of_v<Base, T> operator RefImpl<const Base>() const { return obj; }
-        template <class Base> requires (!std::is_same_v<Base, T>) && std::is_base_of_v<Base, T> && (!std::is_const_v<Base>) operator RefImpl<Base>() { return obj; }
+        explicit operator Ref<std::remove_const_t<T>>() { return AsMut(); }
+        template <class Base> requires (!std::is_same_v<Base, T>) && std::is_base_of_v<Base, T> operator Ref<const Base>() const { return obj; }
+        template <class Base> requires (!std::is_same_v<Base, T>) && std::is_base_of_v<Base, T> && (!std::is_const_v<Base>) operator Ref<Base>() { return obj; }
 
         template <class Derived> requires std::is_base_of_v<T, Derived>
-        RefImpl<const Derived> As() const { return dynamic_cast<const Derived*>(obj); }
+        Ref<const Derived> As() const { return dynamic_cast<const Derived*>(obj); }
         template <class Derived> requires std::is_base_of_v<T, Derived> && (!std::is_const_v<T>)
-        RefImpl<Derived> As() { return dynamic_cast<Derived*>(obj); }
+        Ref<Derived> As() { return dynamic_cast<Derived*>(obj); }
 
         template <class Re>
-        RefImpl<Re> TransmuteAs() { return reinterpret_cast<Re*>(obj); }
+        Ref<Re> TransmuteAs() { return reinterpret_cast<Re*>(obj); }
         template <class Re>
-        RefImpl<const Re> TransmuteAs() const { return reinterpret_cast<const Re*>(obj); }
+        Ref<const Re> TransmuteAs() const { return reinterpret_cast<const Re*>(obj); }
 
         T& Assert();
         [[nodiscard]] const T& Assert() const;
         template <class Asrt> T& Assert(Asrt&& assertfn);
         template <class Asrt> [[nodiscard]] const T& Assert(Asrt&& assertfn) const;
 
-        static RefImpl Deref(T* val) { return { val }; }
+        static Ref Deref(T* val) { return { val }; }
 
-        template <class U> friend struct RefImpl;
+        template <class U> friend struct Ref;
     };
-
-    template <class T> RefImpl<T> Null = nullptr;
-
-    template <class T> struct RemoveRefDispatch : std::type_identity<T> {};
-    template <class T> struct RemoveRefDispatch<RefImpl<T>> : std::type_identity<T> {};
-    template <class T> struct RemoveRefDispatch<const RefImpl<T>> : std::type_identity<const T> {};
-
-    template <class T> using Ref = RefImpl<typename RemoveRefDispatch<T>::type>;
 
     template <class T> using CRef = Ref<const T>;
 
-    template <class T> Ref<T> Refer(T& val) { return { val }; }
+    template <class T> struct RemoveQRef : std::type_identity<T> {};
+    template <class T> struct RemoveQRef<Ref<T>> : std::type_identity<T> {};
+    template <class T> struct RemoveQRef<const Ref<T>> : std::type_identity<const T> {};
+
+    template <class T> Ref<typename RemoveQRef<T>::type> Refer(T& val) { return { val }; }
     template <class T> Ref<T> DerefPtr(T* val) { return Ref<T>::Deref(val); }
 }

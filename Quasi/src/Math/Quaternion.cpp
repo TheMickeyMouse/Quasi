@@ -52,7 +52,7 @@ namespace Quasi::Math {
 
     Matrix3D Quaternion::as_rotation_matrix() const {
         // same as following, but its faster this way:
-        const Quaternion inverse = inv();
+        const Quaternion inverse = conj();
         return { (muli() * inverse).xyz(), (mulj() * inverse).xyz(), (mulk() * inverse).xyz() };
 
         // also assumes quaternion is unit
@@ -134,7 +134,8 @@ namespace Quasi::Math {
 
     Quaternion Quaternion::then(const Quaternion& q) const { return q * *this; }
     Quaternion& Quaternion::rotate_by(const Quaternion& q) { return *this = then(q); }
-    fVector3 Quaternion::rotate(const fVector3& v) const { return ((*this) * v * inv()).xyz(); }
+    fVector3 Quaternion::rotate(const fVector3& v) const { return ((*this) * v * conj()).xyz(); }
+    fVector3 Quaternion::invrotate(const fVector3& v) const { return (conj() * v * (*this)).xyz(); }
 
     Quaternion operator+(float w, const Quaternion& q) { return  q + w; }
     Quaternion operator-(float w, const Quaternion& q) { return -q + w; }

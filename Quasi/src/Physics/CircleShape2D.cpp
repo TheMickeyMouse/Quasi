@@ -2,44 +2,30 @@
 
 namespace Quasi::Physics2D {
     float CircleShape::ComputeArea() const {
-        return Math::PI * radius * radius;
+        return PI * radius * radius;
     }
 
-    Math::fRect2D CircleShape::ComputeBoundingBox() const {
+    fRect2D CircleShape::ComputeBoundingBox() const {
         return { -radius, radius };
     }
 
-    void CircleShape::TransformTo(const PhysicsTransform& xf, Out<TransformedVariant*> out) const {
-        out->center = xf.position;
-        out->radius = radius;
+    float CircleShape::Inertia() const {
+        return 0.5f * radius * radius;
     }
 
-    CircleShape::TransformedVariant CircleShape::Transform(const PhysicsTransform& xf) const {
-        return { *this, xf };
+    fVector2 CircleShape::NearestPointTo(const fVector2& point) const {
+        return point.norm(radius);
     }
 
-    float TransformedCircleShape::ComputeArea() const {
-        return Math::PI * radius * radius;
+    fVector2 CircleShape::FurthestAlong(const fVector2& normal) const {
+        return normal * radius;
     }
 
-    Math::fRect2D TransformedCircleShape::ComputeBoundingBox() const {
-        return { center - radius, center + radius };
+    fRange CircleShape::ProjectOntoAxis(const fVector2& axis) const {
+        return { -radius, +radius };
     }
 
-    Math::fVector2 TransformedCircleShape::NearestPointTo(const Math::fVector2& point) const {
-        return center + (point - center).norm(radius);
-    }
-
-    Math::fVector2 TransformedCircleShape::FurthestAlong(const Math::fVector2& normal) const {
-        return center + normal * radius;
-    }
-
-    Math::fRange TransformedCircleShape::ProjectOntoAxis(const Math::fVector2& axis) const {
-        const float c = axis.dot(center);
-        return { c - radius, c + radius };
-    }
-
-    Math::fRange TransformedCircleShape::ProjectOntoOwnAxis(u32 axisID, const Math::fVector2& axis) const {
+    fRange CircleShape::ProjectOntoOwnAxis(u32 axisID, const fVector2& axis) const {
         return ProjectOntoAxis(axis);
     }
 } // Quasi

@@ -4,6 +4,7 @@ set(HEADER_FILES
     src/Debug/ConsoleColor.h
     src/Debug/internal_debug_break.h
     src/Debug/Logger.h
+    src/Debug/Timer.h
 
     src/Graphics/GLs/IndexBuffer.h
     src/Graphics/GLs/VertexBuffer.h
@@ -17,6 +18,7 @@ set(HEADER_FILES
     src/Graphics/GLs/GLObject.h
     src/Graphics/GLs/GLTypeID.h
     src/Graphics/GLs/RenderBuffer.h
+    src/Graphics/GLs/VertexBlueprint.h
 
     src/Graphics/Graphicals/GraphicsDevice.h
     src/Graphics/Graphicals/Mesh.h
@@ -77,7 +79,6 @@ set(HEADER_FILES
     src/Physics/CapsuleShape2D.h
     src/Physics/PolygonShape2D.h
     src/Physics/RectShape2D.h
-    src/Physics/Shape2D.h
 
     src/Utils/Enum.h
     src/Utils/Text.h
@@ -87,8 +88,8 @@ set(HEADER_FILES
     src/Utils/Type.h
     src/Utils/ArenaAllocator.h
     src/Utils/Match.h
-        src/Debug/Timer.h
     src/Utils/Format.h
+    src/Utils/Memory.h
 
     src/vendor/imgui/imconfig.h
     src/vendor/imgui/imgui.h
@@ -106,6 +107,7 @@ source_group("Header Files" FILES ${HEADER_FILES})
 
 set(SOURCE_FILES
     src/Debug/Logger.cpp
+    src/Debug/Timer.cpp
 
     src/Graphics/GLs/FrameBuffer.cpp
     src/Graphics/GLs/GLDebug.cpp
@@ -156,13 +158,11 @@ set(SOURCE_FILES
     src/Physics/CapsuleShape2D.cpp
     src/Physics/PolygonShape2D.cpp
     src/Physics/RectShape2D.cpp
-    src/Physics/Shape2D.cpp
 
     src/Utils/RichString.cpp
     src/Utils/StringList.cpp
     src/Utils/Text.cpp
     src/Utils/ArenaAllocator.cpp
-        src/Debug/Timer.cpp
     src/Utils/Format.cpp
 
     src/vendor/imgui/imgui.cpp
@@ -181,8 +181,6 @@ source_group("Source Files" FILES ${SOURCE_FILES})
 set(ALL_FILES
     ${HEADER_FILES}
     ${SOURCE_FILES}
-        src/Utils/Memory.h
-        src/Graphics/GLs/VertexBlueprint.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})
@@ -198,6 +196,7 @@ target_include_directories(${PROJECT_NAME}
     src/Graphics/Graphicals/
     src/Graphics/Utils/
     src/Math/
+    src/Physics/
     src/IO/
     src/Utils/
     src/vendor/imgui/
