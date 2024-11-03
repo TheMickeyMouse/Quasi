@@ -19,6 +19,7 @@ namespace Quasi::Physics2D {
         forward = f;
         length = f.len();
         invLength = 1 / length;
+        invLenSq = invLength * invLength;
     }
 
     fRect2D CapsuleShape::ComputeBoundingBox() const {
@@ -26,7 +27,7 @@ namespace Quasi::Physics2D {
     }
 
     fVector2 CapsuleShape::NearestPointTo(const fVector2& point) const {
-        const float t = std::clamp(fwdOverLsq.dot(point), -1.0f, 1.0f);
+        const float t = std::clamp(forward.dot(point) * invLenSq, -1.0f, 1.0f);
         const fVector2 closest = forward * t;
         return closest + (point - closest).norm(radius);
     }

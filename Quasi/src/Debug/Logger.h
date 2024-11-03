@@ -168,15 +168,15 @@ namespace Quasi::Debug {
     template <class ...Ts> void Warn    (const FmtStr& fmt, Ts&&... args) { Logger::GetInternalLog().Warn    (fmt, std::forward<Ts>(args)...); }
     template <class ...Ts> void Error   (const FmtStr& fmt, Ts&&... args) { Logger::GetInternalLog().Error   (fmt, std::forward<Ts>(args)...); }
     template <class ...Ts> void Critical(const FmtStr& fmt, Ts&&... args) { Logger::GetInternalLog().Critical(fmt, std::forward<Ts>(args)...); }
-    void NoOp();
+    inline void NoOp() {}
 
 #ifdef NDEBUG
-    #define QTrace$    NoOp
-    #define QDebug$    NoOp
-    #define QInfo$     NoOp
-    #define QWarn$     NoOp
-    #define QError$    NoOp
-    #define QCritical$ NoOp
+    #define QTrace$    NoOp() Q_EAT
+    #define QDebug$    NoOp() Q_EAT
+    #define QInfo$     NoOp() Q_EAT
+    #define QWarn$     NoOp() Q_EAT
+    #define QError$    NoOp() Q_EAT
+    #define QCritical$ NoOp() Q_EAT
 #else
     #define QTrace$    Trace
     #define QDebug$    Debug

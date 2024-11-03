@@ -5,7 +5,6 @@ namespace Quasi::Physics2D {
 
     float    IMPLEMENT_SHAPE_FN(Shape, ComputeArea,        (), ())
     fRect2D  IMPLEMENT_SHAPE_FN(Shape, ComputeBoundingBox, (), ())
-    fVector2 IMPLEMENT_SHAPE_FN(Shape, CenterOfMass,       (), ())
     float    IMPLEMENT_SHAPE_FN(Shape, Inertia,            (), ())
     fVector2 IMPLEMENT_SHAPE_FN(Shape, NearestPointTo,     (const fVector2& point),            (point))
     fVector2 IMPLEMENT_SHAPE_FN(Shape, FurthestAlong,      (const fVector2& normal),           (normal))
@@ -13,4 +12,12 @@ namespace Quasi::Physics2D {
     fRange   IMPLEMENT_SHAPE_FN(Shape, ProjectOntoAxis,    (const fVector2& axis),             (axis))
     fRange   IMPLEMENT_SHAPE_FN(Shape, ProjectOntoOwnAxis, (u32 axisID, const fVector2& axis), (axisID, axis))
     bool     IMPLEMENT_SHAPE_FN(Shape, AddSeperatingAxes,  (SeperatingAxisSolver& sat),        (sat))
+
+    Shape MakePolygon(Span<const fVector2> points) {
+        switch (points.size()) {
+            case 3:  return TriangleShape { points.first<3>() };
+            case 4:  return QuadShape     { points.first<4>() };
+            default: return DynPolygonShape { points };
+        }
+    }
 } // Quasi

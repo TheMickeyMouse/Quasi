@@ -196,7 +196,6 @@ target_include_directories(${PROJECT_NAME}
     src/Graphics/Graphicals/
     src/Graphics/Utils/
     src/Math/
-    src/Physics/
     src/IO/
     src/Utils/
     src/vendor/imgui/

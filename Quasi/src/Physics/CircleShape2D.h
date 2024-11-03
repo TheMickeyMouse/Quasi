@@ -9,7 +9,6 @@ namespace Quasi::Physics2D {
         CircleShape(float r) : radius(r) {}
         [[nodiscard]] float ComputeArea() const;
         [[nodiscard]] fRect2D ComputeBoundingBox() const;
-        [[nodiscard]] fVector2 CenterOfMass() const { return 0; }
         [[nodiscard]] float Inertia() const;
 
         [[nodiscard]] fVector2 NearestPointTo(const fVector2& point) const;

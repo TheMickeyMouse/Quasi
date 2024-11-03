@@ -14,6 +14,7 @@ namespace Quasi::Physics2D {
         static Manifold None();
 
         static Manifold From(const SeperatingAxisSolver& sat);
+        static Manifold FromEdges(const fLine2D& ref, const fLine2D& inc, const fVector2& n);
 
         static Manifold Clip(const fVector2& v0, const fVector2& v1,
                              const fVector2& normal, float threshold);

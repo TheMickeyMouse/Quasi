@@ -39,7 +39,7 @@ namespace Quasi::Physics2D {
         void SetCheckFor(Subject s);
         bool CheckAxisFor(Subject s);
         bool CheckAxis(const fVector2& axis);
-        bool IsChecking(Subject subject) const;
+        [[nodiscard]] bool IsChecking(Subject subject) const;
         [[nodiscard]] bool Collides() const { return collides; }
 
         [[nodiscard]] float GetDepth() const;

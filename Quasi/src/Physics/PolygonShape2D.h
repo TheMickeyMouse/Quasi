@@ -22,6 +22,7 @@ namespace Quasi::Physics2D {
         void UpdateLenBtwnWrap(i32 i) { InvLenBtwnWrap(i) = 1 / PointAtWrap(i).dist(PointAtWrap(i + 1)); }
 
         void FixPolygon();
+        void FixCenterOfMass();
 
         [[nodiscard]] float ComputeArea() const;
         [[nodiscard]] fRect2D ComputeBoundingBox() const;

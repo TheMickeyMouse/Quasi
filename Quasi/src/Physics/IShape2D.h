@@ -12,7 +12,6 @@ namespace Quasi::Physics2D {
     public:
         [[nodiscard]] float ComputeArea() const = delete;
         [[nodiscard]] fRect2D ComputeBoundingBox() const = delete;
-        [[nodiscard]] fVector2 CenterOfMass() const = delete;
 
         [[nodiscard]] fVector2 NearestPointTo(const fVector2& point) const = delete;
         [[nodiscard]] fVector2 FurthestAlong(const fVector2& normal) const = delete;

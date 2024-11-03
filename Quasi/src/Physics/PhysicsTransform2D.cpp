@@ -24,23 +24,32 @@ namespace Quasi::Physics2D {
         return point.rotated_by(rotation) + position;
     }
 
-    fVector2 PhysicsTransform::TransformOffset(const fVector2& offset) const {
-        return offset.rotated_by(rotation);
+    fVector2 PhysicsTransform::TransformDir(const fVector2& dir) const {
+        return dir.rotated_by(rotation);
     }
 
     void PhysicsTransform::TransformInplace(fVector2& point) const {
         point.rotate_by(rotation) += position;
     }
+
+    void PhysicsTransform::TransformInplaceDir(fVector2& dir) const {
+        dir.rotate_by(rotation);
+    }
+
     fVector2 PhysicsTransform::TransformInverse(const fVector2& point) const {
         return rotation.invrotate(point - position);
     }
 
-    fVector2 PhysicsTransform::TransformInverseOffset(const fVector2& offset) const {
-        return rotation.invrotate(offset);
+    fVector2 PhysicsTransform::TransformInverseDir(const fVector2& dir) const {
+        return rotation.invrotate(dir);
     }
 
     void PhysicsTransform::TransformInverseInplace(fVector2& point) const {
         (point -= position).rotate_by(rotation.conj());
+    }
+
+    void PhysicsTransform::TransformInverseInplaceDir(fVector2& dir) const {
+        dir.rotate_by(rotation.conj());
     }
 
     fLine2D PhysicsTransform::TransformLine(const fLine2D& line) const {
@@ -48,8 +57,8 @@ namespace Quasi::Physics2D {
     }
 
     fRect2D PhysicsTransform::TransformRect(const fRect2D& rect) const {
-        fVector2 c = TransformOffset(rect.center());
-        const fVector2 p1 = TransformOffset(rect.corner(0)), p2 = TransformOffset(rect.corner(1));
+        fVector2 c = TransformDir(rect.center());
+        const fVector2 p1 = TransformDir(rect.corner(0)), p2 = TransformDir(rect.corner(1));
         const fVector2 diff = { std::max(std::abs(p1.x - c.x), std::abs(p2.x - c.x)),
                                 std::max(std::abs(p1.y - c.y), std::abs(p2.y - c.y)) };
         c += position;
@@ -61,7 +70,7 @@ namespace Quasi::Physics2D {
     }
 
     PhysicsTransform PhysicsTransform::Inverse() const {
-        return { -position.rotated_by(rotation), rotation.conj() };
+        return { -rotation.invrotate(position), rotation.conj() };
     }
 
     PhysicsTransform PhysicsTransform::Applied(const PhysicsTransform& transformer) const {

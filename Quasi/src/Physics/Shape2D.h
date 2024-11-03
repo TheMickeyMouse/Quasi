@@ -33,7 +33,6 @@ namespace Quasi::Physics2D {
 
         [[nodiscard]] float ComputeArea() const;
         [[nodiscard]] fRect2D ComputeBoundingBox() const;
-        [[nodiscard]] fVector2 CenterOfMass() const;
         [[nodiscard]] float Inertia() const;
 
         [[nodiscard]] fVector2 NearestPointTo(const fVector2& point) const;
@@ -46,4 +45,6 @@ namespace Quasi::Physics2D {
         [[nodiscard]] Type TypeIndex() const { return (Type)ID(); }
         [[nodiscard]] ClipPrimitive PreferedPrimitive() const { return PrimitiveOfType(TypeIndex()); }
     };
+
+    Shape MakePolygon(Span<const fVector2> points);
 } // Quasi

@@ -31,20 +31,18 @@ namespace Quasi::Physics2D {
 
         Shape shape;
         fRect2D baseBoundingBox;
-        fVector2 centerOfMass;
 
         Body(const fVector2& p, const fComplex& r, float m, BodyType type, Ref<World> world, Shape shape)
             : position(p), rotation(r), mass(m), invMass(m > 0 ? 1 / m : 0), type(type), world(world),
               shape(std::move(shape)) { TryUpdateTransforms(); }
 
-        void AddVelocity    (const fVector2& vel) { velocity += vel; }
-        void AddMomentum    (const fVector2& newtonSeconds);
-        void AddAngularVelocity    (float angVel) { angularVelocity += angVel; }
-        void AddAngularMomentum    (float angMomentum);
+        void AddVelocity       (const fVector2& vel) { velocity += vel; }
+        void AddMomentum       (const fVector2& newtonSeconds);
+        void AddAngularVelocity(float angVel) { angularVelocity += angVel; }
+        void AddAngularMomentum(float angMomentum);
 
-        // void AddRelativeForceToMass(const fVector2& msPosition,  const fVector2& force);
-        // void AddRelativeForce      (const fVector2& relPosition, const fVector2& force);
-        // void AddForceAt            (const fVector2& absPosition, const fVector2& force);
+        void AddRelativeVelocity(const fVector2& relPosition, const fVector2& vel);
+        void AddVelocityAt      (const fVector2& absPosition, const fVector2& vel);
 
         void SetMass(float newMass);
 

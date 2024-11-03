@@ -12,7 +12,6 @@ namespace Quasi::Physics2D {
 
         [[nodiscard]] float ComputeArea() const { return 4 * hx * hy; }
         [[nodiscard]] fRect2D ComputeBoundingBox() const;
-        [[nodiscard]] fVector2 CenterOfMass() const { return 0; }
         [[nodiscard]] float Inertia() const;
 
         [[nodiscard]] fVector2 NearestPointTo(const fVector2& point) const;

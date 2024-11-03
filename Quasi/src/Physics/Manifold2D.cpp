@@ -16,12 +16,19 @@ namespace Quasi::Physics2D {
         const PhysicsTransform& bXf  = sat.baseXf, tXf    = sat.targetXf;
         const fVector2& n = sat.seperatingAxis;
 
-        const fLine2D baseClips   = bXf.TransformLine(base  .BestEdgeFor(bXf.TransformInverseOffset(n))),
-                      targetClips = tXf.TransformLine(target.BestEdgeFor(tXf.TransformInverseOffset(-n)));
+        const fLine2D baseClips   = bXf.TransformLine(base  .BestEdgeFor(bXf.TransformInverseDir(n))),
+                      targetClips = tXf.TransformLine(target.BestEdgeFor(tXf.TransformInverseDir(-n)));
 
         const bool flip = std::abs(baseClips.forward().dot(n)) > std::abs(targetClips.forward().dot(n));
         const fLine2D& ref = flip ? targetClips : baseClips, &inc = flip ? baseClips : targetClips;
 
+        Manifold manifold = FromEdges(ref, inc, flip ? n : -n);
+        manifold.seperatingNormal = n;
+        // return the valid points
+        return manifold;
+    }
+
+    Manifold Manifold::FromEdges(const fLine2D& ref, const fLine2D& inc, const fVector2& n) {
         const fVector2 refFwd = ref.forward().norm();
 
         Manifold manifold = Clip(inc.start, inc.end, refFwd, refFwd.dot(ref.start));
@@ -29,8 +36,7 @@ namespace Quasi::Physics2D {
         manifold = Clip(manifold.contactPoint[0], manifold.contactPoint[1], -refFwd, -refFwd.dot(ref.end));
 
         Manifold result = None();
-        result.seperatingNormal = n;
-        const fVector2 refNorm = flip ? n : -n;
+        const fVector2 refNorm = n;
         const float max = ref.start.dot(refNorm);
 
         if (const float d = refNorm.dot(manifold.contactPoint[0]) - max; d > 0) {

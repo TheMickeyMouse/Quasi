@@ -41,17 +41,17 @@ namespace Quasi::Physics2D {
         ++axisIndex;
         if (!collides) return false;
 
-        const fVector2 worldAxis = IsChecking(BASE)   ? baseXf  ->TransformOffset(axis) :
-                                   IsChecking(TARGET) ? targetXf->TransformOffset(axis) :
+        const fVector2 worldAxis = IsChecking(BASE)   ? baseXf  ->TransformDir(axis) :
+                                   IsChecking(TARGET) ? targetXf->TransformDir(axis) :
                                    axis;
 
         const fRange bproj = (IsChecking(BASE) ?
                              base->ProjectOntoOwnAxis(axisIndex - 1, axis) :
-                             base->ProjectOntoAxis(baseXf->TransformInverseOffset(worldAxis)))
+                             base->ProjectOntoAxis(baseXf->TransformInverseDir(worldAxis)))
                            + baseXf->position.dot(worldAxis),
                      tproj = (IsChecking(TARGET) ?
                              target->ProjectOntoOwnAxis(axisIndex - 1, axis) :
-                             target->ProjectOntoAxis(targetXf->TransformInverseOffset(worldAxis)))
+                             target->ProjectOntoAxis(targetXf->TransformInverseDir(worldAxis)))
                            + targetXf->position.dot(worldAxis);
 
         const float d1 = bproj.max - tproj.min, d2 = tproj.max - bproj.min,

@@ -10,6 +10,14 @@ namespace Quasi::Physics2D {
         for (u32 i = 0; i < Size(); ++i) {
             UpdateLenBtwn(i);
         }
+        FixCenterOfMass();
+    }
+
+    template <class T> void BasicPolygonShape<T>::FixCenterOfMass() {
+        const fVector2 centroid = CenterOfMass();
+        for (u32 i = 0; i < Size(); ++i) {
+            PointAt(i) -= centroid;
+        }
     }
 
     template <class T> float BasicPolygonShape<T>::ComputeArea() const {
@@ -49,7 +57,7 @@ namespace Quasi::Physics2D {
         y += (p0.y + p1.y) * areaSum;
         area += areaSum;
 
-        const float invArea = 1.0f / 6.0f / area;
+        const float invArea = 1.0f / 3.0f / area;
         return { x * invArea, y * invArea };
     }
 
@@ -137,6 +145,8 @@ namespace Quasi::Physics2D {
         return success;
     }
 
+    template class StaticPolygonShape<3>;
+    template class StaticPolygonShape<4>;
     template class BasicPolygonShape<StaticPolygonShape<3>>;
     template class BasicPolygonShape<StaticPolygonShape<4>>;
     template class BasicPolygonShape<DynPolygonShape>;
@@ -146,10 +156,9 @@ namespace Quasi::Physics2D {
             points[i]   = ps[i];
             invDists[i] = 1 / ps[(i + 1) % N].dist(ps[i]);
         }
+        this->FixCenterOfMass();
     }
 
-    template class StaticPolygonShape<3>;
-    template class StaticPolygonShape<4>;
 
     DynPolygonShape::DynPolygonShape(Span<const fVector2> points) {
         data.reserve(points.size());
@@ -158,6 +167,7 @@ namespace Quasi::Physics2D {
             data.emplace_back(points[i], 1 / points[i + 1].dist(points[i]));
         }
         data.emplace_back(points[i], 1 / points[0].dist(points[i]));
+        FixCenterOfMass();
     }
 
     u32 DynPolygonShape::Size() const {

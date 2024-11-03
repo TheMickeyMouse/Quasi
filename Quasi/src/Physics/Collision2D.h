@@ -9,6 +9,9 @@ namespace Quasi::Physics2D {
 }
 
 namespace Quasi::Physics2D {
+    float ClosestBetweenSegments(const fVector2& a1, const fVector2& b1, const fVector2& a2, const fVector2& b2,
+                                 float* s, float* t, fVector2* c1, fVector2* c2);
+
     Manifold CollideShapes(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2);
 
     Manifold CollideCircles       (const CircleShape& s1, const PhysicsTransform& xf1, const CircleShape& s2, const PhysicsTransform& xf2);
@@ -26,5 +29,7 @@ namespace Quasi::Physics2D {
     bool OverlapPolygonCapsule(const Shape& s1,       const PhysicsTransform& xf1, const Shape& s2,       const PhysicsTransform& xf2);
 
     void StaticResolve (Body& body, Body& target, const Manifold& manifold);
+    template <u32 ContactCount, bool BDyn, bool TDyn>
+    void DynamicResolveFor(Body& body, Body& target, const Manifold& manifold);
     void DynamicResolve(Body& body, Body& target, const Manifold& manifold);
 } // Physics2D::Collision

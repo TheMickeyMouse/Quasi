@@ -4,16 +4,15 @@
 namespace Quasi::Physics2D {
     class CapsuleShape : public IShape {
     public:
-        fVector2 forward, fwdOverLsq;
-        float length = 1.0f, invLength = 1.0f;
+        fVector2 forward;
+        float length = 1.0f, invLength = 1.0f, invLenSq;
         float radius = 0.0f;
 
         CapsuleShape(const fVector2& fwd, float r)
-            : forward(fwd), fwdOverLsq(fwd / fwd.lensq()), length(fwd.len()), invLength(1.0f / length), radius(r) {}
+            : forward(fwd), length(fwd.len()), invLength(1.0f / length), invLenSq(invLength * invLength), radius(r) {}
 
         [[nodiscard]] float ComputeArea() const;
         [[nodiscard]] fRect2D ComputeBoundingBox() const;
-        [[nodiscard]] fVector2 CenterOfMass() const { return 0; }
         [[nodiscard]] float Inertia() const;
 
         [[nodiscard]] fVector2 NearestPointTo(const fVector2& point) const;

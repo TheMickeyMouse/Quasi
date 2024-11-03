@@ -24,12 +24,14 @@ namespace Quasi::Physics2D {
         static PhysicsTransform Rotation(float r);
         static PhysicsTransform Rotation(const fComplex& q);
 
-        [[nodiscard]] fVector2 Transform       (const fVector2& point) const;
-        [[nodiscard]] fVector2 TransformOffset (const fVector2& offset) const;
+        [[nodiscard]] fVector2 Transform(const fVector2& point) const;
+        [[nodiscard]] fVector2 TransformDir(const fVector2& dir) const;
                       void     TransformInplace(fVector2& point) const;
-        [[nodiscard]] fVector2 TransformInverse       (const fVector2& point) const;
-        [[nodiscard]] fVector2 TransformInverseOffset (const fVector2& offset) const;
+                      void     TransformInplaceDir(fVector2& dir) const;
+        [[nodiscard]] fVector2 TransformInverse(const fVector2& point) const;
+        [[nodiscard]] fVector2 TransformInverseDir(const fVector2& dir) const;
                       void     TransformInverseInplace(fVector2& point) const;
+                      void     TransformInverseInplaceDir(fVector2& dir) const;
         [[nodiscard]] fLine2D  TransformLine(const fLine2D& line) const;
         [[nodiscard]] fRect2D  TransformRect(const fRect2D& rect) const;
 

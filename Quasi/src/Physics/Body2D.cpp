@@ -20,18 +20,14 @@ namespace Quasi::Physics2D {
     //     angularAcceleration += torque * invInertia;
     // }
 
-    // void Body::AddRelativeForceToMass(const fVector2& msPosition, const fVector2& force) {
-    //     AddForce(force);
-    //     AddTorque(msPosition.zcross(force));
-    // }
+    void Body::AddRelativeVelocity(const fVector2& relPosition, const fVector2& vel) {
+        AddMomentum(vel);
+        AddAngularMomentum(relPosition.zcross(vel));
+    }
 
-    // void Body::AddRelativeForce(const fVector2& relPosition, const fVector2& force) {
-    //     return AddRelativeForceToMass(relPosition - centerOfMass, force);
-    // }
-    //
-    // void Body::AddForceAt(const fVector2& absPosition, const fVector2& force) {
-    //     return AddRelativeForce(absPosition - position, force);
-    // }
+    void Body::AddVelocityAt(const fVector2& absPosition, const fVector2& vel) {
+        return AddRelativeVelocity(absPosition - position, vel);
+    }
 
     void Body::SetMass(float newMass) {
         inertia *= newMass / mass;
@@ -69,7 +65,6 @@ namespace Quasi::Physics2D {
     void Body::TryUpdateTransforms() {
         if (shapeHasChanged) {
             baseBoundingBox = shape.ComputeBoundingBox();
-            centerOfMass = shape.CenterOfMass();
             inertia = shape.Inertia() * mass;
             invInertia = inertia > 0 ? 1 / inertia : 0;
             shapeHasChanged = false;
