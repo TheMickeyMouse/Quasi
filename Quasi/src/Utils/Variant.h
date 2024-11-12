@@ -22,8 +22,8 @@ namespace Quasi {
         Variant(T&& val) : v(std::forward<T>(val)) {}
 
         template <class T> [[nodiscard]] bool Is() const { return std::holds_alternative<T>(v); }
-        template <class T> Ref<const T> As() const { return DerefPtr(std::get_if<T>(&v)); }
-        template <class T> Ref<T> As() { return DerefPtr(std::get_if<T>(&v)); }
+        template <class T> OptRef<const T> As() const { return DerefPtr(std::get_if<T>(&v)); }
+        template <class T> OptRef<T> As() { return DerefPtr(std::get_if<T>(&v)); }
 
         template <class T> void Set(T&& val) { v = std::forward<T>(val); }
 

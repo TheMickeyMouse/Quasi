@@ -52,7 +52,7 @@ namespace Quasi::Graphics {
     class Texture : public GLObject<Texture> {
     public:
         inline static int SlotCount = -1;
-        inline static Vec<Ref<Texture>> Slots {};
+        inline static Vec<OptRef<Texture>> Slots {};
         static void Init();
     private:
         using TextureSlot = UniqueRef<void, TextureSlotHandler>;

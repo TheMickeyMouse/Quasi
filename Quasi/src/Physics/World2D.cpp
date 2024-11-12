@@ -190,12 +190,12 @@ namespace Quasi::Physics2D {
         }
     }
 
-    Ref<Body> World::BodyAt(usize i) {
+    OptRef<Body> World::BodyAt(usize i) {
         return QGetterMut$(BodyAt, i);
     }
 
-    Ref<const Body> World::BodyAt(usize i) const {
-        return BodyIsValid(i) ? Refer(bodies[i]) : nullptr;
+    OptRef<const Body> World::BodyAt(usize i) const {
+        return BodyIsValid(i) ? Refer(bodies[i]) : OptRef<const Body>::None();
     }
 
     bool World::BodyIsValid(usize i) const {

@@ -25,14 +25,14 @@ namespace Quasi::Physics2D {
         fRect2D boundingBox;
         u32 sortedIndex = 0;
         BodyType type = BodyType::NONE;
-        Ref<World> world = nullptr;
+        Ref<World> world;
         bool enabled = true;
         bool shapeHasChanged = true;
 
         Shape shape;
         fRect2D baseBoundingBox;
 
-        Body(const fVector2& p, const fComplex& r, float m, BodyType type, Ref<World> world, Shape shape)
+        Body(const fVector2& p, const fComplex& r, float m, BodyType type, World& world, Shape shape)
             : position(p), rotation(r), mass(m), invMass(m > 0 ? 1 / m : 0), type(type), world(world),
               shape(std::move(shape)) { TryUpdateTransforms(); }
 
@@ -71,28 +71,32 @@ namespace Quasi::Physics2D {
         friend void DynamicResolve(Body&, Body&, const Manifold&);
     };
 
-    struct BodyHandle {
+    struct BodyHandle : NullableProxy<Body&, BodyHandle>, RefProxy<Body, BodyHandle> {
         u32 index;
-        Ref<World> world;
+        OptRef<World> world;
 
-        BodyHandle(std::nullptr_t) : index(0), world(nullptr) {}
-        BodyHandle() : BodyHandle(nullptr) {}
+        using RefProxy::operator->;
+        using RefProxy::operator*;
+
+    private:
+        BodyHandle(u32 i, OptRef<World> w) : index(i), world(w) {}
+    public:
+        BodyHandle() = default;
+        BodyHandle(Nullptr) : BodyHandle() {}
         BodyHandle(Body& b);
-        BodyHandle(const Body& b) : BodyHandle(const_cast<Body&>(b)) {}
-        BodyHandle(u32 i, World& w) : index(i), world(w) {}
+        BodyHandle(const Body& b) : BodyHandle(Memory::AsMut(b)) {}
 
         static BodyHandle At(World& w, u32 i) { return { i, w }; }
 
-        Body* Address();
-        [[nodiscard]] const Body* Address() const;
-        Ref<Body> Reference();
-        [[nodiscard]] Ref<const Body> Reference() const;
+        Body& ValueImpl();
+        [[nodiscard]] const Body& ValueImpl() const;
+        Body& UnwrapImpl() { return Value(); }
+        [[nodiscard]] const Body& UnwrapImpl() const { return Value(); }
 
-        [[nodiscard]] operator bool() const { return world; }
-        operator Body&() { return *Address(); }
-        [[nodiscard]] operator const Body&() const { return *Address(); }
-        Body* operator->() { return Address(); }
-        [[nodiscard]] const Body* operator->() const { return Address(); }
+        [[nodiscard]] bool HasValueImpl() const;
+
+        static BodyHandle NoneImpl() { return {}; }
+        static BodyHandle SomeImpl(const Body& b) { return { b }; }
 
         void Remove();
     };

@@ -190,28 +190,22 @@ namespace Quasi::Debug {
 }
 
 namespace Quasi {
-    template <class T> T& Option<T>::Assert() { return QGetterMut$(Assert); }
-    template <class T> const T& Option<T>::Assert() const {
-        Debug::Assert(HasValue(), "Option<{}> doesn't have a value", Text::TypeName<T>());
-        return value;
+    template <class T, class Super> T& NullableProxy<T, Super>::Assert() { return QGetterMut$(Assert); }
+    template <class T, class Super> const T& NullableProxy<T, Super>::Assert() const {
+        Debug::Assert(HasValue(), "{} doesn't have a value", Text::TypeName<Super>());
+        return Unwrap();
     }
 
-    template <class T> template <class Asrt> T& Option<T>::Assert(Asrt&& assertfn) { return QGetterMut$(Assert, assertfn); }
-    template <class T> template <class Asrt> const T& Option<T>::Assert(Asrt&& assertfn) const {
+    template <class T, class Super> T& NullableProxy<T, Super>::Assert(Str msg) { return QGetterMut$(Assert, msg); }
+    template <class T, class Super> const T& NullableProxy<T, Super>::Assert(Str msg) const {
+        Debug::Assert(HasValue(), msg);
+        return Unwrap();
+    }
+
+    template <class T, class Super> T& NullableProxy<T, Super>::Assert(auto&& assertfn) { return QGetterMut$(Assert, assertfn); }
+    template <class T, class Super> const T& NullableProxy<T, Super>::Assert(auto&& assertfn) const {
         if (IsNull()) assertfn();
-        return value;
-    }
-
-    template <class T> T& Ref<T>::Assert() { return Q_GETTER_MUT(Assert); }
-    template <class T> const T& Ref<T>::Assert() const {
-        Debug::Assert(HasValue(), "Ref<{}> doesn't have a value", Text::TypeName<T>());
-        return *obj;
-    }
-
-    template <class T> template <class Asrt> T& Ref<T>::Assert(Asrt&& assertfn) { return Q_GETTER_MUT(Assert, assertfn); }
-    template <class T> template <class Asrt> const T& Ref<T>::Assert(Asrt&& assertfn) const {
-        if (IsNull()) assertfn();
-        return *obj;
+        return Unwrap();
     }
 }
 

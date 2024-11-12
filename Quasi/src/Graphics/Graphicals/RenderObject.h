@@ -5,7 +5,7 @@
 
 namespace Quasi::Graphics {
 	struct DrawOptions {
-		Ref<Shader> shader = nullptr;
+		OptRef<Shader> shader;
 		ShaderArgs arguments = {};
 		bool useDefaultArguments = true;
 	};
@@ -22,9 +22,9 @@ namespace Quasi::Graphics {
 
     template <class T>
     class RenderObject {
-        Ref<RenderData> rd;
+        OptRef<RenderData> rd;
     public:
-        RenderObject() = default;
+		RenderObject() = default;
         RenderObject(RenderData& d) : rd(d) {}
 
         RenderObject(const RenderObject& ro) : rd(ro.rd) {}
@@ -58,13 +58,13 @@ namespace Quasi::Graphics {
     	void EndContext() { rd->BufferLoad(); }
 
      	void DrawContext(const DrawOptions& options = {}) {
-    		rd->Render(const_cast<Shader&>(options.shader.ValueOr(rd->shader)), options.arguments, options.useDefaultArguments);
+    		rd->Render(Memory::AsMut(options.shader.UnwrapOr(rd->shader)), options.arguments, options.useDefaultArguments);
     	}
     	void DrawContextInstanced(int instances, const DrawOptions& options = {}) {
-    		rd->RenderInstanced(const_cast<Shader&>(options.shader.ValueOr(rd->shader)), instances, options.arguments, options.useDefaultArguments);
+    		rd->RenderInstanced(Memory::AsMut(options.shader.UnwrapOr(rd->shader)), instances, options.arguments, options.useDefaultArguments);
     	}
 
-		void Destroy() { rd->Destroy(); rd = nullptr; }
+		void Destroy() { rd->Destroy(); }
 
 	    void SetCamera(const Math::Matrix3D& cam) { rd->SetCamera(cam); }
 	    void SetProjection(const Math::Matrix3D& proj) { rd->SetProjection(proj); }

@@ -56,8 +56,6 @@ namespace Quasi {
 
 	template <class T> using Implicit = std::type_identity_t<T>;
 
-	// concepts after here
-
     template <class T, usize Ext = std::dynamic_extent> using Span = std::span<T, Ext>;
 #pragma region Spanlike Types
     using Bytes    = Span<const byte>;
@@ -87,14 +85,6 @@ namespace Quasi {
 	struct Empty {
 		Empty(auto&&...) {}
 	};
-	template <class T> using Nullable = T;
-	template <class T> using NotNull = T;
-	template <class T> using Out = T;
-
-	template <class> concept AlwaysTrue  = true;
-	template <class> concept AlwaysFalse = false;
-
-	template <class T> constexpr bool IsVoid = std::is_same_v<std::remove_cvref_t<T>, void>;
 
 	namespace details {
 		template <class T, class M> M decltype_member(M T::*) { return M {}; }
@@ -122,11 +112,44 @@ namespace Quasi {
         return fullname.substr(details::type_junk_prefix, fullname.size() - details::type_junk_size);
     }
 
-    template <class T, class U>
-    constexpr bool EqTyped(T&& t, U&& u) {
-        if constexpr (std::is_same_v<std::remove_cvref_t<T>, std::remove_cvref_t<U>>) return t == u;
-        else return false;
-    }
-
+	template <class T> using Nullable = T;
+	template <class T> using NotNull = T;
+	template <class T> using Out = T;
+	using Nullptr = std::nullptr_t;
     inline struct UncheckedMarker {} Unchecked;
+
+	template <class> concept AlwaysTrue  = true;
+	template <class> concept AlwaysFalse = false;
+
+	template <class T> concept IsConst  = std::is_const_v<T>;
+	template <class T> concept IsMut    = !IsConst<T>;
+	template <class T> using   RemConst = std::remove_const_t<T>;
+
+	template <class T> concept IsRef  = std::is_reference_v<T>;
+	template <class T> concept IsPtr  = std::is_pointer_v<T>;
+	template <class T> using   RemRef = std::remove_reference_t<T>;
+	template <class T> using   RemPtr = std::remove_pointer_t<T>;
+
+	template <class T> concept IsConstRef  = IsRef<T> && IsConst<RemRef<T>>;
+	template <class T> concept IsConstPtr  = IsPtr<T> && IsConst<RemPtr<T>>;
+	template <class T> concept IsMutRef    = IsRef<T> && IsMut<RemRef<T>>;
+	template <class T> concept IsMutPtr    = IsPtr<T> && IsMut<RemPtr<T>>;
+	template <class T> using   RemConstRef = RemRef<RemConst<T>>;
+	template <class T> using   RemConstPtr = RemPtr<RemConst<T>>;
+	template <class T> using   RemMutRef   = RemRef<T>;
+	template <class T> using   RemMutPtr   = RemPtr<T>;
+
+	template <class T> using   ToConstRef  = const RemRef<T>&;
+	template <class T> using   ToMutRef    = RemConstRef<T>&;
+
+	template <class T> using RemQual = std::remove_cvref_t<T>;
+
+	template <class T, class U>      concept SameAs      =  std::is_same_v<T, U>;
+	template <class T, class U>      concept DifferentTo = !std::is_same_v<T, U>;
+	template <class T, class U>      concept SimilarTo   =  std::is_same_v<RemQual<T>, RemQual<U>>;
+	template <class T, class U>      concept DistantTo   = !std::is_same_v<RemQual<T>, RemQual<U>>;
+	template <class Der, class Base> concept Extends     =  std::is_base_of_v<Base, Der>;
+	template <class Base, class Der> concept BaseOf      =  std::is_base_of_v<Base, Der>;
+	template <class From, class To>  concept ConvTo      =  std::is_convertible_v<From, To>;
+	template <class To, class From>  concept ConvFrom    =  std::is_convertible_v<From, To>;
 }

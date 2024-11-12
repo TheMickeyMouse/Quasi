@@ -12,11 +12,10 @@ namespace Quasi::IO {
     class IO {
     public:
         Ref<Graphics::GraphicsDevice> gdevice;
-        KeyboardType Keyboard { nullptr };
-        MouseType Mouse { nullptr };
+        KeyboardType Keyboard { *this };
+        MouseType Mouse { *this };
         TimeType Time;
 
-        IO() = default;
         IO(Graphics::GraphicsDevice& gd);
         void SetUserPtr();
         static IO* GetIOPtr(GLFWwindow* win);

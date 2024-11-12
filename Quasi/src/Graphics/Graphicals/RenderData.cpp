@@ -71,7 +71,7 @@ namespace Quasi::Graphics {
 
 	void RenderData::Destroy() {
 		if (device) {
-			Ref<GraphicsDevice> prev = device; // prevent infinte loop: deleterender -> erase renderdata -> destructor
+			OptRef prev = device; // prevent infinte loop: deleterender -> erase renderdata -> destructor
 			device = nullptr;
 			prev->DeleteRender(deviceIndex);
 		}

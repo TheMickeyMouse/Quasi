@@ -383,7 +383,7 @@ namespace Quasi::Math {
                     i == N - 1 ? Str::npos : splittings[i] - (i ? splittings[i - 1] + sep.size() : 0)
                 ));
                 if (!val) return nullptr;
-                vector[i] = val.Value();
+                vector[i] = val.Unwrap();
             }
             return vector;
         }

@@ -32,26 +32,23 @@ namespace Quasi::Graphics {
 		UniqueRef<u32[]> indexData;
 		u32 indexOffset = 0;
 
-		Ref<GraphicsDevice> device = nullptr;
+		OptRef<GraphicsDevice> device;
 		u32 deviceIndex = 0;
 
 		friend class GraphicsDevice;
 	public:
-		explicit RenderData() = default;
-		explicit RenderData(u32 vsize, u32 isize, u32 vertSize, const VertexBufferLayout& layout) :
+		explicit RenderData(GraphicsDevice& gd, u32 vsize, u32 isize, u32 vertSize, const VertexBufferLayout& layout) :
 			varray(VertexArray::New()), vbo(VertexBuffer::New(vsize * vertSize)), ibo(IndexBuffer::New(isize)),
-			vertexData(new byte[vertSize * vsize]), indexData(new u32[isize]) {
+			vertexData(new byte[vertSize * vsize]), indexData(new u32[isize]), device(gd) {
 			varray.Bind();
 			varray.AddBuffer(layout);
 		}
-
-		template <class T> static void New(u32 vsize, u32 isize, RenderData& out);
 
 		RenderData(const RenderData&) = delete;
 		RenderData& operator=(const RenderData&) = delete;
 
 		static void Transfer(RenderData& dest, RenderData&& from);
-		RenderData(RenderData&& rd) noexcept { Transfer(*this, std::move(rd)); }
+		RenderData(RenderData&& rd) noexcept : device(rd.device) { Transfer(*this, std::move(rd)); }
 		RenderData& operator=(RenderData&& rd) noexcept { Transfer(*this, std::move(rd)); return *this; }
 
 		~RenderData();
@@ -89,14 +86,8 @@ namespace Quasi::Graphics {
 		template <IVertex T> friend class Mesh;
 	};
 
-	template <class T>
-	void RenderData::New(u32 vsize, u32 isize, RenderData& out) {
-		// times 3 to account for triangles
-		out = RenderData(vsize, isize * 3, sizeof(T), VertexLayoutOf<T>());
-	}
-
 	template <class T> void RenderData::PushVertex(const T& vertex) {
-		const byte* rawbytes = reinterpret_cast<const byte*>(&vertex);
+		const byte* rawbytes = Memory::TransmutePtr<const byte>(&vertex);
 		std::memcpy(vertexData.get() + vertexOffset, rawbytes, sizeof(T));
 		vertexOffset += sizeof(T);
 	}

@@ -1,8 +1,8 @@
 #pragma once
 #include <chrono>
 
-#include "../Utils/Ref.h"
-#include "../Utils/Type.h"
+#include "Utils/Ref.h"
+#include "Utils/Type.h"
 
 namespace Quasi::Debug {
     class Logger;
@@ -22,9 +22,9 @@ namespace Quasi::Debug {
         TimeDuration total;
         bool paused = false;
         Str name;
-        Ref<Logger> outputLog;
+        OptRef<Logger> outputLog;
 
-        Timer(Str name, Ref<Logger> log = nullptr) : begin(Now()), total(0), name(name), outputLog(log) {}
+        Timer(Str name, OptRef<Logger> log = nullptr) : begin(Now()), total(0), name(name), outputLog(log) {}
         ~Timer();
 
         static DateTime Now();

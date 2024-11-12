@@ -5,16 +5,16 @@ namespace Quasi::Memory {
     template <class T> constexpr usize AlignOf() { return alignof(T); }
     template <class T> constexpr usize SizeOf() { return sizeof(T); }
 
-    template <class T, class U> U& Transmute(T& t)      { return *reinterpret_cast<U*>(&t); }
-    template <class T, class U> U* TransmutePtr(T* t)   { return reinterpret_cast<U*>(t); }
-    template <class T, class U> U& TransmuteRef(T& t) requires (sizeof(T) == sizeof(U)) { return __builtin_bit_cast(U, t); }
+    template <class U, class T> U& TransmuteRef(T& t)   { return *reinterpret_cast<U*>(&t); }
+    template <class U, class T> U* TransmutePtr(T* t)   { return reinterpret_cast<U*>(t); }
+    template <class U, class T> U  Transmute(T& t) requires (sizeof(T) == sizeof(U)) { return __builtin_bit_cast(U, t); }
     template <class T>       void* DowncastPtr(T* t)    { return (void*)t; }
     template <class T>          T* UpcastPtr(void* t)   { return (T*)t; }
 
-    template <class T> const T&& AsConst   (T&& val)       { return const_cast<const T&&>(val); }
-    template <class T> const T*  AsConstPtr(T* ptr)        { return const_cast<const T*> (ptr); }
-    template <class T> T&&       AsMut     (const T&& val) { return const_cast<T&&>(val); }
-    template <class T> T*        AsMutPtr  (const T* ptr)  { return const_cast<T*> (ptr); }
+    template <class T> const T&  AsConst   (T& val)       { return const_cast<const T&>(val); }
+    template <class T> const T*  AsConstPtr(T* ptr)       { return const_cast<const T*>(ptr); }
+    template <class T> T&        AsMut     (const T& val) { return const_cast<T&>(val); }
+    template <class T> T*        AsMutPtr  (const T* ptr) { return const_cast<T*>(ptr); }
 
 
     inline void* AllocateRaw(usize size) { return ::operator new (size); }

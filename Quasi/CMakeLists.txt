@@ -102,6 +102,7 @@ set(HEADER_FILES
     src/vendor/imgui/imgui_stdlib.h
 
     src/vendor/stb_image/stb_image.h
+        src/Utils/Interface.h
 )
 source_group("Header Files" FILES ${HEADER_FILES})
 

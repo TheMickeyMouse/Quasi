@@ -6,7 +6,7 @@
 #include FT_FREETYPE_H
 
 namespace Quasi::Graphics {
-    Ref<FontDevice> FontDevice::Instance = nullptr;
+    OptRef<FontDevice> FontDevice::Instance = nullptr;
 
     FontDevice::FontDevice() {
         if (Instance) return;

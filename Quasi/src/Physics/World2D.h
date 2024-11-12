@@ -43,8 +43,8 @@ namespace Quasi::Physics2D {
         void Update(float dt);
         void Update(float dt, int simUpdates);
 
-        Ref<Body> BodyAt(usize i);
-        [[nodiscard]] Ref<const Body> BodyAt(usize i) const;
+        OptRef<Body> BodyAt(usize i);
+        [[nodiscard]] OptRef<const Body> BodyAt(usize i) const;
         [[nodiscard]] bool BodyIsValid(usize i) const;
 
         friend struct BodyHandle;

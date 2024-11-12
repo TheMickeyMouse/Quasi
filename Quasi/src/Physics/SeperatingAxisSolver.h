@@ -33,8 +33,8 @@ namespace Quasi::Physics2D {
         static SeperatingAxisSolver CheckCollisionFor(const Shape& s1, const PhysicsTransform& xf1,
                                                       const Shape& s2, const PhysicsTransform& xf2);
 
-        [[nodiscard]] Ref<const Shape>            CurrentlyCheckedShape() const;
-        [[nodiscard]] Ref<const PhysicsTransform> CurrentlyCheckedTransform() const;
+        [[nodiscard]] OptRef<const Shape>            CurrentlyCheckedShape() const;
+        [[nodiscard]] OptRef<const PhysicsTransform> CurrentlyCheckedTransform() const;
 
         void SetCheckFor(Subject s);
         bool CheckAxisFor(Subject s);

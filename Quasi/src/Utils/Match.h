@@ -34,26 +34,22 @@
 #define Q_MATCH_BRANCH_INSTANCEOF_TYPE(U, COND, STMT) Q_UNARY(Q_DEFER(Q_MATCH_BRANCH_INSTANCEOF_TYPE_PATCH)(U, Q_CAT(Q_MATCH_BRANCH_INSTANCEOF_TYPE_, Q_UNARY COND), STMT))
 #define Q_MATCH_BRANCH_INSTANCEOF_TYPE_PATCH(...) Q_OVERLOAD_FN((__VA_ARGS__), ~, ~, ~, Q_MATCH_BRANCH_INSTANCEOF_TYPE_C, ~, Q_MATCH_BRANCH_INSTANCEOF_TYPE_R)(__VA_ARGS__)
 #define Q_MATCH_BRANCH_INSTANCEOF_TYPE_C(U, COND, STMT) if constexpr (COND<_mv_##U>) { STMT } else
-#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_R(U, COND, REM, RES, STMT) if constexpr (COND<_mv_##U>) { using RES = REM<_mv_##U>; STMT } else
-#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_enum std::is_enum_v
-#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_int std::is_integral_v
-#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_unsigned std::is_unsigned_v
-#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_float std::is_floating_point_v
-#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_num std::is_arithmetic_v
-#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_void std::is_void_v
-#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_const std::is_const_v, std::remove_const_t,
-#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_ref std::is_reference_v, std::remove_reference_t,
-#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_lref std::is_lvalue_reference_v, std::remove_reference_t,
-#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_const_ref Quasi::Matching::IsConstRef, Quasi::Matching::RemConstRef,
-#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_rref std::is_rvalue_reference_v, std::remove_reference_t,
-#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_ptr std::is_pointer_v, std::remove_pointer_t,
-#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_const_ptr Quasi::Matching::IsConstPtr, Quasi::Matching::RemConstPtr,
-#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_volatile std::is_volatile_v, std::remove_volatile_t,
-#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_conv(T) Quasi::Matching::ConvTo<T>::value
-#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_cvref(T) Quasi::Matching::CvRef<T>::value
-#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_extends(T) Quasi::Matching::DerivedFrom<T>::value
+#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_R(U, COND, REM, RES, STMT) if constexpr (COND () _mv_##U>) { using RES = REM<_mv_##U>; STMT } else
+#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_enum       std::is_enum_v< Q_EMPTY
+#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_int        std::is_integral_v< Q_EMPTY
+#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_unsigned   std::is_unsigned_v< Q_EMPTY
+#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_float      std::is_floating_point_v< Q_EMPTY
+#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_num        std::is_arithmetic_v< Q_EMPTY
+#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_void       std::is_void_v< Q_EMPTY
+#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_const      IsConst< Q_EMPTY, RemConst,
+#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_ref        Quasi::IsRef< Q_EMPTY, Quasi::RemRef,
+#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_const_ref  Quasi::IsConstRef< Q_EMPTY, Quasi::RemConstRef,
+#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_ptr        Quasi::IsPtr< Q_EMPTY, Quasi::RemPtr,
+#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_const_ptr  Quasi::IsConstPtr< Q_EMPTY, Quasi::RemConstPtr,
+#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_conv(T)    Quasi::ConvTo<T Q_COMMA
+#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_similar(T) Quasi::SimilarTo<T Q_COMMA
+#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_extends(T) Quasi::Extends<T Q_COMMA
 #define Q_MATCH_BRANCH_INSTANCEOF_TYPE_satisfies(T) T
-#define Q_MATCH_BRANCH_INSTANCEOF_TYPE_specializes(T) Quasi::Matching::Specializes<T>::value
 
 #define Q_MATCH_BRANCH_has Q_MATCH_BRANCH_MACRO, Q_MATCH_BRANCH_HAS_,
 #define Q_MATCH_BRANCH_HAS_TYPE(U, COND, STMT) Q_UNARY(Q_DEFER(Q_ARGS_SECOND)(Q_CAT(Q_MATCH_BRANCH_HAS_DETECT_, Q_ARGS_FIRST COND), Q_MATCH_BRANCH_HAS_TYPE_MEMBER))(U, COND, STMT)
@@ -82,22 +78,11 @@ namespace Quasi::Matching {
     template <class Res, class Arg> struct TypeOfArg<Res(*)(Arg)> { using type = Arg; };
     template <class Fn> using TypeOfVar = typename TypeOfArg<Fn>::type;
 
-    template <class T> constexpr bool IsConstRef = std::is_reference_v<T> && std::is_const_v<std::remove_reference_t<T>> ;
-    template <class T> constexpr bool IsConstPtr = std::is_pointer_v<T> && std::is_const_v<std::remove_pointer_t<T>> ;
-    template <class T> using RemConstRef = std::remove_const_t<std::remove_reference_t<T>>;
-    template <class T> using RemConstPtr = std::remove_const_t<std::remove_pointer_t<T>>;
-    template <class T> struct ConvTo { template <class U> static constexpr bool value = std::is_convertible_v<U, T>; };
-    template <class T> struct CvRef { template <class U> static constexpr bool value = std::is_same_v<std::remove_cvref_t<U>, std::remove_cvref_t<T>>; };
-    template <class T> struct DerivedFrom { template <class U> static constexpr bool value = std::is_base_of_v<T, U>; };
-    template <template <class> class T> struct Specializes {
-        template <class U> static constexpr bool value = requires (U u) { { T(u) } -> std::same_as<U>; };
-    };
-
     template <class T>
     bool In(const T& value, CollectionOf<T> auto& list) {
-        if constexpr (requires { { list.contains(value) } -> std::same_as<bool>; })
+        if constexpr (requires { { list.contains(value) } -> SameAs<bool>; })
             return list.contains(value);
-        else if constexpr (requires { { list.find(value) } -> std::same_as<decltype(list.begin())>; }) {
+        else if constexpr (requires { { list.find(value) } -> SameAs<decltype(list.begin())>; }) {
             const auto it = list.find(value);
             return it == list.end() ? false : true;
         } else {
@@ -111,28 +96,33 @@ namespace Quasi::Matching {
         return In(value, Span<T> { list });
     }
 
-    template <class T, class U> requires std::is_base_of_v<U, T> && (std::is_const_v<T> || !std::is_const_v<U>)
-    Ref<T> InstanceOf(U& u) {
+    template <class T, BaseOf<T> U> requires (IsConst<T> || IsMut<U>)
+    OptRef<T> InstanceOf(U& u) {
         return DerefPtr(dynamic_cast<T*>(&u));
     }
 
-    template <class T, class U> requires std::is_base_of_v<U, T> && (std::is_const_v<T> || !std::is_const_v<U>)
-    Ref<T> InstanceOf(U* u) {
+    template <class T, BaseOf<T> U> requires (IsConst<T> || IsMut<U>)
+    OptRef<T> InstanceOf(U* u) {
         return DerefPtr(dynamic_cast<T*>(u));
     }
 
-    template <class Der, class Base> requires std::is_base_of_v<Base, Der> && (std::is_const_v<Der> || !std::is_const_v<Base>)
-    Ref<Der> InstanceOf(Ref<Base> u) {
+    template <class Der, BaseOf<Der> Base> requires (IsConst<Der> || IsMut<Base>)
+    OptRef<Der> InstanceOf(Ref<Base> u) {
         return u.template As<Der>();
     }
 
-    template <class T, class... Us> requires (std::is_same_v<T, Us> || ...)
-    Ref<const T> InstanceOf(const Variant<Us...>& u) {
+    template <class Der, BaseOf<Der> Base> requires (IsConst<Der> || IsMut<Base>)
+    OptRef<Der> InstanceOf(OptRef<Base> u) {
+        return u.template As<Der>();
+    }
+
+    template <class T, class... Us> requires (SameAs<T, Us> || ...)
+    OptRef<const T> InstanceOf(const Variant<Us...>& u) {
         return u.template As<T>();
     }
 
-    template <class T, class... Us> requires (std::is_same_v<T, Us> || ...)
-    Ref<T> InstanceOf(Variant<Us...>& u) {
+    template <class T, class... Us> requires (SameAs<T, Us> || ...)
+    OptRef<T> InstanceOf(Variant<Us...>& u) {
         return u.template As<T>();
     }
 }

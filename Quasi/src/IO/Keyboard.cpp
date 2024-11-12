@@ -39,7 +39,7 @@ namespace Quasi::IO {
     bool KeyboardType::KeyOnRelease(Key key) const { return !getCurrKeyStatus(key) && getPrevKeyStatus(key); }
     bool KeyboardType::AnyPressed()  const { return currKeySet.any(); }
     bool KeyboardType::NonePressed() const { return currKeySet.none(); }
-    void KeyboardType::VisitKeysPressed(Func<void(Key k)> callback) const {
+    void KeyboardType::VisitKeysPressed(FuncRef<void(Key k)> callback) const {
         for (usize i = 0; i < KEY_COUNT; ++i) {
             if (currKeySet[i]) {
                 callback(FromKeyIndex(i));

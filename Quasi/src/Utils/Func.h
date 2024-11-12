@@ -1,52 +1,54 @@
 #pragma once
-#include <bit>
 #include <utility>
 
-#include "Type.h"
+#include "Memory.h"
 
 namespace Quasi {
     template <class Res, class... Args>
-    using FnPtr = Res(*)(Args...);
+    using FuncPtr = Res(*)(Args...);
 
     template <class Fn>
-    struct Func {};
+    struct FuncRef {};
 
     template <class Result, class... Args>
-    struct Func<Result(Args...)> {
+    struct FuncRef<Result(Args...)> {
         void* userPtr = nullptr;
-        FnPtr<Result, void*, Args&&...> functionPtr = nullptr;
+        FuncPtr<Result, void*, Args&&...> functionPtr = nullptr;
 
         [[nodiscard]] Result Invoke(Args&&... args) const { return functionPtr(userPtr, std::forward<Args>(args)...); }
         [[nodiscard]] Result operator()(Args&&... args) const { return Invoke(std::forward<Args>(args)...); }
 
-        Func() = default;
-        Func(void* uptr, FnPtr<Result, void*, Args&&...> fptr) : userPtr(uptr), functionPtr(fptr) {}
+        FuncRef() = default;
+        FuncRef(void* uptr, FuncPtr<Result, void*, Args&&...> fptr) : userPtr(uptr), functionPtr(fptr) {}
+        FuncRef(FuncPtr<Result, Args&&...> fptr) : userPtr(fptr), functionPtr(+[] (void* f, Args&&... args) {
+            return (*Memory::UpcastPtr<FuncPtr<Result, Args&&...>>(f))(std::forward<Args>(args)...);
+        }) {}
 
-        Func(const Func& f) = default;
-        Func(Func&& f) noexcept = default;
+        FuncRef(const FuncRef& f) = default;
+        FuncRef(FuncRef&& f) noexcept = default;
 
         template <class Lamb>
-        Func(Lamb&& lamb)
+        FuncRef(Lamb&& lamb)
             : userPtr(&lamb),
-            functionPtr([] (void* functionObj, Args&&... args) {
-                return (*static_cast<std::decay_t<Lamb>*>(functionObj))(std::forward<Args>(args)...);
+            functionPtr(+[] (void* functionObj, Args&&... args) {
+                return (*Memory::UpcastPtr<std::decay_t<Lamb>>(functionObj))(std::forward<Args>(args)...);
             })
         {}
 
         template <class Lamb>
-        static Func Recursive(Lamb&& lamb) {
+        static FuncRef Recursive(Lamb&& lamb) {
             return {
                 &lamb,
                 [] (void* functionObj, Args&&... args) {
-                    auto* f = static_cast<std::decay_t<Lamb>*>(functionObj);
+                    auto* f = Memory::UpcastPtr<std::decay_t<Lamb>>(functionObj);
                     return (*f)(f, std::forward<Args>(args)...);
                 }
             };
         }
 
         template <class OtherFn>
-        Func<OtherFn> Transmute() const {
-            return std::bit_cast<Func<OtherFn>>(*this);
+        FuncRef<OtherFn> Transmute() const {
+            return Memory::Transmute<FuncRef<OtherFn>>(*this);
         }
     };
 
@@ -67,7 +69,7 @@ namespace Quasi {
 
     template <class F, class O, class... I>
     concept Fn = requires (F f, I&&... args) {
-        { f(std::forward<I>(args)...) } -> std::convertible_to<O>;
+        { f(std::forward<I>(args)...) } -> ConvTo<O>;
     };
 
     template <class F, class... I>

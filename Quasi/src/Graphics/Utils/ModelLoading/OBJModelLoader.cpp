@@ -56,15 +56,15 @@ namespace Quasi::Graphics {
         Qmatch$ ((typename)OBJ, (
             in (MaterialLib, UseMaterial, Object, Group) { return { OBJ { String { data } } }; },
             in (Vertex, VertexNormal, VertexParam) {
-                return { OBJ { Math::fVector3::parse(data, " ", "", "").ValueOr(Math::fVector3 { NAN }) } };
+                return { OBJ { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 { NAN }) } };
             },
             case (VertexTex) {
-                return { OBJ { Math::fVector2::parse(data, " ", "", "").ValueOr(Math::fVector2 { NAN }) } };
+                return { OBJ { Math::fVector2::parse(data, " ", "", "").UnwrapOr(Math::fVector2 { NAN }) } };
             },
             case (Line) {
                 Vec<int> indices;
                 for (const auto idx : std::views::split(data, ' ')) {
-                    indices.push_back(Text::Parse<int>({ idx.begin(), idx.end() }).Or(-1));
+                    indices.push_back(Text::Parse<int>({ idx.begin(), idx.end() }).UnwrapOr(-1));
                 }
                 return { Line { std::move(indices) } };
             },
@@ -74,7 +74,7 @@ namespace Quasi::Graphics {
                 for (const auto idx : std::views::split(data, ' ')) {
                     if (i >= 3) return {};
                     const auto [v, t, n] = Math::iVector3::parse(Str { idx.begin(), idx.end() }, "/", "", "",
-                        [](Str x) -> Option<int> { return Text::Parse<int>(x).ValueOr(-1); }).ValueOr({ -1 });
+                        [](Str x) -> Option<int> { return Text::Parse<int>(x).UnwrapOr(-1); }).UnwrapOr({ -1 });
                     face.indices[i][0] = v; face.indices[i][1] = t; face.indices[i][2] = n;
                     ++i;
                 }

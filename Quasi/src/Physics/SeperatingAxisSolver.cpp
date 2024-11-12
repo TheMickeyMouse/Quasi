@@ -15,15 +15,15 @@ namespace Quasi::Physics2D {
         return { s1, xf1, s2, xf2, COLLISION };
     }
 
-    Ref<const Shape> SeperatingAxisSolver::CurrentlyCheckedShape() const {
-        return currentChecked == BASE   ? Refer(base)   :
-               currentChecked == TARGET ? Refer(target) :
+    OptRef<const Shape> SeperatingAxisSolver::CurrentlyCheckedShape() const {
+        return currentChecked == BASE   ? SomeRef(base)   :
+               currentChecked == TARGET ? SomeRef(target) :
                nullptr;
     }
 
-    Ref<const PhysicsTransform> SeperatingAxisSolver::CurrentlyCheckedTransform() const {
-        return currentChecked == BASE   ? Refer(baseXf)   :
-               currentChecked == TARGET ? Refer(targetXf) :
+    OptRef<const PhysicsTransform> SeperatingAxisSolver::CurrentlyCheckedTransform() const {
+        return currentChecked == BASE   ? SomeRef(baseXf)   :
+               currentChecked == TARGET ? SomeRef(targetXf) :
                nullptr;
     }
 

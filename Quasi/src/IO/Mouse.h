@@ -29,7 +29,6 @@ namespace Quasi::IO {
         Ref<IO> io;
 
         explicit MouseType(IO& io);
-        explicit MouseType(std::nullptr_t) {}
 
         void Update();
 

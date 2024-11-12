@@ -23,7 +23,7 @@ namespace Quasi::Graphics {
 
         void SetDPI(uint newDpi) { dpi = newDpi; }
         
-        static Ref<FontDevice> Instance;
+        static OptRef<FontDevice> Instance;
         static FT_LibraryRec_* Library();
         static u32 DPI();
 

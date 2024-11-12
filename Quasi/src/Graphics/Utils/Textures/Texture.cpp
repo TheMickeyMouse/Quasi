@@ -157,13 +157,13 @@ namespace Quasi::Graphics {
     }
 
     void Texture::DeactivateAll() {
-        for (Ref<Texture> t : Slots) {
+        for (OptRef<Texture> t : Slots) {
             if (t) t->Deactivate();
         }
     }
 
     int Texture::FindEmptySlot() {
-        for (u32 i = 0; i < SlotCount; ++i) {
+        for (i32 i = 0; i < SlotCount; ++i) {
             if (!Slots[i]) return i;
         }
         return -1;

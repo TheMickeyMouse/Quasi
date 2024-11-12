@@ -26,13 +26,13 @@ namespace Quasi::Graphics {
         } renderOptions;
 
         FontDevice fontDevice = {};
-        IO::IO ioDevice {};
+        IO::IO ioDevice { *this };
         Math::RandomGenerator randDevice {};
 
         Debug::DateTime frameBeginTime;
         Debug::TimeDuration frameDurationTime;
 
-        inline static Ref<GraphicsDevice> Instance = nullptr;
+        inline static OptRef<GraphicsDevice> Instance;
         inline static bool ShowDebugMenu = false;
     public:
         explicit GraphicsDevice(GLFWwindow* window, Math::iVector2 winSize);
@@ -103,8 +103,7 @@ namespace Quasi::Graphics {
 
     template <class T>
     RenderObject<T> GraphicsDevice::CreateNewRender(u32 vsize, u32 isize) {
-        renders.push_back(NewUnique<RenderData>());
-        RenderData::New<T>(vsize, isize, *renders.back());
+        renders.push_back(NewUnique<RenderData>(*this, vsize, 3 * isize, sizeof(T), VertexLayoutOf<T>()));
         BindRender(*renders.back());
         return *renders.back();
     }

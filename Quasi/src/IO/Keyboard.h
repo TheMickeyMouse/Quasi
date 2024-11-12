@@ -93,7 +93,6 @@ namespace Quasi::IO {
 
     struct KeyboardType {
         explicit KeyboardType(IO& io);
-        explicit KeyboardType(std::nullptr_t) {}
 
         static bool IsValidKey(Key key);
         // ordering: alphabet chars -> nums -> punc -> keypad -> func -> util -> other
@@ -114,7 +113,7 @@ namespace Quasi::IO {
         [[nodiscard]] bool KeyOnRelease(Key key) const;
         [[nodiscard]] bool AnyPressed() const;
         [[nodiscard]] bool NonePressed() const;
-        void VisitKeysPressed(Func<void(Key k)> callback) const;
+        void VisitKeysPressed(FuncRef<void(Key k)> callback) const;
 
         static Str KeyToStr(Key key);
 

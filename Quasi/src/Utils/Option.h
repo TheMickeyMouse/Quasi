@@ -1,38 +1,144 @@
 #pragma once
-#include "Ref.h"
+#include "Func.h"
 
 namespace Quasi {
-    template <class T>
-    struct Option {
-        T value;
-        bool is_some = true;
+    template <class T> struct OptRef;
+    template <class T> struct Option;
 
-        Option() : Option(nullptr) {}
-        Option(std::nullptr_t) : is_some(false) {}
-        Option(const T& value) : value(value) {}
+    /*
+     * An interface that describes nullability.
+     * Must implement:
+     * bool HasValue() const;
+     * const? T& Unwrap() const?;
+     * void PretendHasValue();
+     * void SetNull();
+     * static Super None();
+     * static Super Some(T&&);
+     */
+    template <class T, class Super>
+    struct NullableProxy {
+        using V = RemQual<T>;
+        static constexpr bool USE_RREF = DifferentTo<const T&, T&&>;
 
-        [[nodiscard]] bool IsNull()   const { return !is_some; }
-        [[nodiscard]] bool HasValue() const { return is_some; }
+        Super& super() { return *static_cast<Super*>(this); }
+        const Super& super() const { return *static_cast<const Super*>(this); }
+
+        T&       UnwrapImpl() = delete;
+        const T& UnwrapImpl() const = delete;
+        [[nodiscard]] bool HasValueImpl() const = delete;
+        void SetNullImpl() = delete;
+        void SetImpl(const T& value) = delete;
+        void SetImpl(T&& value) requires USE_RREF = delete;
+        static Super NoneImpl() = delete;
+        static Super SomeImpl(const T&) = delete;
+        static Super SomeImpl(T&&) requires USE_RREF = delete;
+
+        [[nodiscard]] bool HasValue() const { return super().HasValueImpl(); }
+        [[nodiscard]] bool IsNull() const { return !HasValue(); }
         [[nodiscard]] operator bool() const { return HasValue(); }
-        const T& ValueOr(const T& val) const { return is_some ? value : val; }
-        const Option& Or(const Option& val) const { return is_some ? *this : val; }
 
-        [[nodiscard]] Ref<const T> Value() const { return is_some ? Refer(value) : nullptr; }
-        Ref<T> Value() { return is_some ? Refer(value) : nullptr; }
+        void SetNull() { super().SetNull(); }
+        void Set(const T& value)              { super().SetImpl(value); }
+        void Set(T&& value) requires USE_RREF { super().SetImpl(std::move(value)); }
 
-        [[nodiscard]] const T& operator*() const { return Value(); }
-        T& operator*() { return Value(); }
-        [[nodiscard]] const T* operator->() const { return Value().Address(); }
-        T* operator->() { return Value().Address(); }
+        // checks if self has value AND the inner value satisfies pred
+        [[nodiscard]] bool HasValueAnd(Fn<bool, const T&> auto&& pred) const { return HasValue() && pred(Unwrap()); }
+        // checks if self is null OR the inner value satisfies pred
+        [[nodiscard]] bool IsNullOr   (Fn<bool, const T&> auto&& pred) const { return IsNull() || pred(Unwrap()); }
+
+        T& Unwrap() { return super().UnwrapImpl(); }
+        T& operator*() { return Unwrap(); }
+        V* operator->() { return &Unwrap(); }
+        const T& Unwrap() const { return super().UnwrapImpl(); }
+        const T& operator*() const { return Unwrap(); }
+        const V* operator->() const { return &Unwrap(); }
+
+        OptRef<T>       AsRef()          { return HasValue() ? Unwrap() : OptRef<T>::None(); }
+        Span<T>         AsSpan()         { return HasValue() ? Span { &Unwrap(), 1 } : Span<T> {}; }
+        Option<T>       AsOption() const { return HasValue() ? Option<T>::Some(Unwrap()) : nullptr; }
+        OptRef<const T> AsRef()    const { return HasValue() ? SomeRef(Unwrap()) : nullptr; }
+        Span<const T>   AsSpan()   const { return HasValue() ? Span { &Unwrap(), 1 } : Span<T> {}; }
+
+        T UnwrapOr(const T& otherwise) const              { return HasValue() ? Unwrap() : otherwise; }
+        T UnwrapOr(T&& otherwise) const requires USE_RREF { return HasValue() ? Unwrap() : std::move(otherwise); }
+        T UnwrapOrElse(Fn<T> auto&& otherwise) const { return HasValue() ? Unwrap() : otherwise(); }
+        Super Or(const Super& otherwise) const { return HasValue() ? *this : otherwise; }
+        Super Or(Super&& otherwise)      const { return HasValue() ? *this : std::move(otherwise); }
+        Super OrElse(Fn<Super> auto&& otherwise) const { return HasValue() ? *this : otherwise(); }
+
+        // behaves like pythonic and
+        Super And(const Super& onlyif) const { return HasValue() ? onlyif            : None(); }
+        Super And(Super&& onlyif)      const { return HasValue() ? std::move(onlyif) : None(); }
+        Super AndThen(Fn<Super> auto&& onlyif)  const { return HasValue() ? onlyif() : None(); }
+
+        Super Xor(const Super& extra) const { return HasValue() ^ extra.HasValue() ? (HasValue() ? *this : extra) : None(); }
+        Super Xor(Super&& extra)      const { return HasValue() ^ extra.HasValue() ? (HasValue() ? *this : std::move(extra)) : None(); }
+
+        auto Map(auto&& map) const { return HasValue() ? Some(map(Unwrap())) : None(); }
+        auto MapOr(auto&& map, auto&& otherwise) const { return HasValue() ? map(Unwrap()) : std::forward<decltype(otherwise)>(otherwise); }
+        auto MapOrElse(auto&& map, auto&& otherwise) const { return HasValue() ? map(Unwrap()) : otherwise(); }
+
+        Super& Inspect(Fn<void, T&> auto&& inspect) { if (HasValue()) inspect(Unwrap()); return *this; }
+        [[nodiscard]] const Super& Inspect(Fn<void, const T&> auto&& inspect) const { if (HasValue()) inspect(Unwrap()); return *this; }
+
+        Super Filter(Fn<bool, T> auto&& pred) const { return this->HasValue() && pred(this->Unwrap()) ? *this : NoneImpl(); }
+
+        T& Insert(const T& value)              { Set(value);            return Unwrap(); }
+        T& Insert(T&& value) requires USE_RREF { Set(std::move(value)); return Unwrap(); }
+        T& GetOrInsert(const T& value)              { if (IsNull()) Insert(value);            return Unwrap(); }
+        T& GetOrInsert(T&& value) requires USE_RREF { if (IsNull()) Insert(std::move(value)); return Unwrap(); }
+        T& GetOrInsert(Fn<T> auto&& gen)            { if (IsNull()) Insert(gen());            return Unwrap(); }
+
+        Super Take()   { Super out; std::swap(super(), out); return out; }
+        Super TakeIf(Fn<bool, T&> auto&& pred) { if (HasValue() && pred(Unwrap())) return Take(); return None(); }
+
+        Super Replace(const T& value)              { Super out = Take(); Set(value); return out; }
+        Super Replace(T&& value) requires USE_RREF { Super out = Take(); Set(std::move(value)); return out; }
+
+        // TODO: T::View AsView() requires Viewable<T>;
+        // TODO: OptionIter AsIter();
+        // TODO: Option<Tuple<T, U>> Zip<U>(Option<U> extra) const;
+        // TODO: Option<R> ZipWith<U, F, R>(Option<U> extra, F&& zipper) const;
+        // TODO: Tuple<Option<A>, Option<B>> Unzip() const requires T is Tuple<A, B>;
+        // TODO: Option<I> Flatten() const requires T is Option<I>;
 
         T& Assert();
+        T& Assert(Str msg);
+        T& Assert(auto&& assertfn);
         [[nodiscard]] const T& Assert() const;
-        template <class Asrt> T& Assert(Asrt&& assertfn);
-        template <class Asrt> [[nodiscard]] const T& Assert(Asrt&& assertfn) const;
+        [[nodiscard]] const T& Assert(Str msg) const;
+        [[nodiscard]] const T& Assert(auto&& assertfn) const;
+
+        static Super None() { return Super::NoneImpl(); }
+        static Super Some(const T& t) { return Super::SomeImpl(t); }
+        static Super Some(T&& t) requires USE_RREF { return Super::SomeImpl(std::move(t)); }
     };
 
     template <class T>
-    Option<std::remove_cvref_t<T>> Some(T&& value) {
-        return Option<std::remove_cvref_t<T>> { std::forward<T>(value) };
+    struct Option : NullableProxy<T, Option<T>> {
+        T value;
+        bool isSome = true;
+
+        Option() : Option(nullptr) {}
+        Option(Nullptr) : isSome(false) {}
+        Option(const T& value) : value(value) {}
+        Option(T&& value) : value(std::move(value)) {}
+
+        static Option SomeImpl(const T& value) { return { value }; }
+        static Option SomeImpl(T&& value) { return { std::move(value) }; }
+        static Option NoneImpl() { return { nullptr }; }
+
+        [[nodiscard]] bool HasValueImpl() const { return isSome; }
+        T& UnwrapImpl() { return value; }
+        [[nodiscard]] const T& UnwrapImpl() const { return value; }
+
+        void SetNullImpl() { isSome = false; }
+        void SetImpl(const T& v) { isSome = true; value = v; }
+        void SetImpl(T&& v)      { isSome = true; value = std::move(v); }
+    };
+
+    template <class T>
+    Option<RemQual<T>> Some(T&& value) {
+        return Option<RemQual<T>> { std::forward<T>(value) };
     }
 }
