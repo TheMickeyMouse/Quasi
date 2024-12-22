@@ -22,7 +22,7 @@ namespace Quasi::Graphics {
     public:
         Math::fColor color;
     public:
-        [[nodiscard]] Math::fVector3 Position() const;
-        [[nodiscard]] Math::fVector3 Direction() const;
+        Math::fVector3 Position() const;
+        Math::fVector3 Direction() const;
     };
 }

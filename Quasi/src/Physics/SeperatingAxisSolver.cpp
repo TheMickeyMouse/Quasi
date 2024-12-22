@@ -16,14 +16,14 @@ namespace Quasi::Physics2D {
     }
 
     OptRef<const Shape> SeperatingAxisSolver::CurrentlyCheckedShape() const {
-        return currentChecked == BASE   ? SomeRef(base)   :
-               currentChecked == TARGET ? SomeRef(target) :
+        return currentChecked == BASE   ? OptRefs::Some(base)   :
+               currentChecked == TARGET ? OptRefs::Some(target) :
                nullptr;
     }
 
     OptRef<const PhysicsTransform> SeperatingAxisSolver::CurrentlyCheckedTransform() const {
-        return currentChecked == BASE   ? SomeRef(baseXf)   :
-               currentChecked == TARGET ? SomeRef(targetXf) :
+        return currentChecked == BASE   ? OptRefs::Some(baseXf)   :
+               currentChecked == TARGET ? OptRefs::Some(targetXf) :
                nullptr;
     }
 

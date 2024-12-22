@@ -38,7 +38,7 @@ namespace Quasi::Graphics {
 
         textureSize = 0;
         Vec<u32> heights;
-        heights.reserve(faceHandles.size());
+        heights.Reserve(faceHandles.Length());
         for (const FaceHandle& faceHandle : faceHandles) {
             const FT_GlyphSlot glyphHandle = faceHandle->glyph;
             u32 y = 0;
@@ -56,7 +56,7 @@ namespace Quasi::Graphics {
             }
             y += sdfExtrude;
             x += (NUM_GLYPHS - 1 /* space */) * sdfExtrude;
-            heights.push_back(textureSize.y);
+            heights.Push(textureSize.y);
             textureSize.x = std::max(textureSize.x, x);
             textureSize.y += y;
         }
@@ -69,16 +69,16 @@ namespace Quasi::Graphics {
             }
         ); // create blank texture
         atlas.Bind(); // set this texture to the active one
-        glyphs.resize(NUM_GLYPHS * faceHandles.size()); // amt of glyphs-
-        metrics.reserve(faceHandles.size());
-        for (uint i = 0; i < faceHandles.size(); ++i) {
+        glyphs.Resize(NUM_GLYPHS * faceHandles.Length()); // amt of glyphs-
+        metrics.Reserve(faceHandles.Length());
+        for (uint i = 0; i < faceHandles.Length(); ++i) {
             const FaceHandle& faceHandle = faceHandles[i];
             const FT_GlyphSlot glyphHandle = faceHandle->glyph;
-            metrics.emplace_back(
+            metrics.Push({
                 PointPer64::inP64(faceHandle->size->metrics.ascender - faceHandle->size->metrics.descender),
                 PointPer64::inP64(faceHandle->size->metrics.ascender),
                 PointPer64::inP64(faceHandle->size->metrics.descender)
-            );
+            });
             for (char charCode = 32; charCode < 127; ++charCode) { // loop through again, this time drawing textures
                 if (const int error = FT_Load_Char(faceHandle.get(), charCode, loadSDF)) { // loads again
                     GLLogger().Error("Loading char with err code {}", error);
@@ -110,10 +110,10 @@ namespace Quasi::Graphics {
         text.SetFontSize(size);
         text.RenderText(string);
 
-        Vec<TriIndices> ind { text.textVertices.size() / 2 };
-        for (u32 i = 0; i < ind.size(); i += 2) {
-            ind[i]     = TriIndices { 0, 1, 2 } + i * 2;
-            ind[i + 1] = TriIndices { 1, 2, 3 } + i * 2;
+        Vec ind = Vec<TriIndices>::WithCap(text.textVertices.Length() / 2);
+        for (u32 i = 0; i < ind.Length(); i += 2) {
+            ind.Push(TriIndices { 0, 1, 2 } + i * 2);
+            ind.Push(TriIndices { 1, 2, 3 } + i * 2);
         }
         
         return Mesh { std::move(text.textVertices), std::move(ind) }; // return the text mesh
@@ -125,16 +125,16 @@ namespace Quasi::Graphics {
         text.SetFontSize(size);
         text.RenderRichText(string);
 
-        const usize iSize = text.textVertices.size() / 2, back = text.bgIndices.size();
-        usize off = text.bgVertices.size();
-        text.bgIndices.reserve(back + iSize);
+        const usize iSize = text.textVertices.Length() / 2, back = text.bgIndices.Length();
+        usize off = text.bgVertices.Length();
+        text.bgIndices.Reserve(iSize);
         for (usize i = back; i < back + iSize; i += 2) {
-            text.bgIndices.push_back(TriIndices { 0, 1, 2 } + off);
-            text.bgIndices.push_back(TriIndices { 1, 2, 3 } + off);
+            text.bgIndices.Push(TriIndices { 0, 1, 2 } + off);
+            text.bgIndices.Push(TriIndices { 1, 2, 3 } + off);
             off += 4;
         }
-        text.bgVertices.reserve(text.bgVertices.size() + text.textVertices.size());
-        text.bgVertices.insert(text.bgVertices.end(), text.textVertices.begin(), text.textVertices.end());
+        text.bgVertices.Reserve(text.textVertices.Length());
+        text.bgVertices.Extend(text.textVertices);
         
         return Mesh { std::move(text.bgVertices), std::move(text.bgIndices) }; // return the text mesh
     }
@@ -169,17 +169,17 @@ namespace Quasi::Graphics {
     }
 
     void Font::ReserveFont() {
-        faceHandles.resize(faceHandles.size() + 4);
+        faceHandles.ResizeExtraDefault(4);
     }
 
     void Font::AddFontStyle(u32 id, Str filePath, FontStyle style) {
         FT_Face face;
         const int error = FT_New_Face(FontDevice::Library(), filePath.data(), 0, &face);
         if (!error) {
-            if (faceHandles.size() <= (u32)id * 4 + (u32)style) faceHandles.resize(id * 4 + (u32)style + 1);
+            if (faceHandles.Length() <= (u32)id * 4 + (u32)style) faceHandles.ResizeDefault(id * 4 + (u32)style + 1);
             SetFontStyle(id, face, style);
         } else {
-            GLLogger().Error("Font loaded with err code {}", error);
+            GLLogger().QError$("Font loaded with err code {}", error);
         }
     }
 

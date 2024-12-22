@@ -26,6 +26,7 @@ namespace Quasi::Graphics {
         struct SmoothShade { bool enabled; };
 
         struct OBJProperty : Variant<
+            Empty,
             MaterialLib, UseMaterial, Object, Group,
             Vertex, VertexTex, VertexNormal, VertexParam,
             Face, Line,
@@ -51,17 +52,16 @@ namespace Quasi::Graphics {
 
         void ParseProperty(Str line);
         void ParseProperties(Str string);
-        template <class T> static OBJProperty CreateProperty(Str data);
 
         void CreateModel();
         void CreateObject(Span<const OBJProperty> objprop);
         void ResolveObjectIndices(OBJObject& obj);
 
         OBJModel& GetModel() { return model; }
-        [[nodiscard]] const OBJModel& GetModel() const { return model; }
+        const OBJModel& GetModel() const { return model; }
 
         OBJModel&& RetrieveModel();
 
-        [[nodiscard]] String DebugStr() const;
+        String DebugStr() const;
     };
 }

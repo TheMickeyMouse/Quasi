@@ -16,41 +16,41 @@ namespace Quasi::Physics2D {
         void Translate(const fVector2& p);
         void Rotate(float r);
         void Rotate(const fComplex& r);
-        [[nodiscard]] PhysicsTransform Translated(const fVector2& p) const;
-        [[nodiscard]] PhysicsTransform Rotated(float r) const;
-        [[nodiscard]] PhysicsTransform Rotated(const fComplex& r) const;
+        PhysicsTransform Translated(const fVector2& p) const;
+        PhysicsTransform Rotated(float r) const;
+        PhysicsTransform Rotated(const fComplex& r) const;
 
         static PhysicsTransform Translation(const fVector2& p);
         static PhysicsTransform Rotation(float r);
         static PhysicsTransform Rotation(const fComplex& q);
 
-        [[nodiscard]] fVector2 Transform(const fVector2& point) const;
-        [[nodiscard]] fVector2 TransformDir(const fVector2& dir) const;
+        fVector2 Transform(const fVector2& point) const;
+        fVector2 TransformDir(const fVector2& dir) const;
                       void     TransformInplace(fVector2& point) const;
                       void     TransformInplaceDir(fVector2& dir) const;
-        [[nodiscard]] fVector2 TransformInverse(const fVector2& point) const;
-        [[nodiscard]] fVector2 TransformInverseDir(const fVector2& dir) const;
+        fVector2 TransformInverse(const fVector2& point) const;
+        fVector2 TransformInverseDir(const fVector2& dir) const;
                       void     TransformInverseInplace(fVector2& point) const;
                       void     TransformInverseInplaceDir(fVector2& dir) const;
-        [[nodiscard]] fLine2D  TransformLine(const fLine2D& line) const;
-        [[nodiscard]] fRect2D  TransformRect(const fRect2D& rect) const;
+        fLine2D  TransformLine(const fLine2D& line) const;
+        fRect2D  TransformRect(const fRect2D& rect) const;
 
-        [[nodiscard]] Transform2D AsObjectTransform(const fVector2& scale = 1) const;
+        Transform2D AsObjectTransform(const fVector2& scale = 1) const;
 
-        [[nodiscard]] PhysicsTransform Inverse() const;
+        PhysicsTransform Inverse() const;
 
-        [[nodiscard]] PhysicsTransform Applied(const PhysicsTransform& transformer) const; // apply transform onto self
-        [[nodiscard]] PhysicsTransform AppliedTo(const PhysicsTransform& transformed) const { return transformed.Applied(*this); }
+        PhysicsTransform Applied(const PhysicsTransform& transformer) const; // apply transform onto self
+        PhysicsTransform AppliedTo(const PhysicsTransform& transformed) const { return transformed.Applied(*this); }
         PhysicsTransform& Apply(const PhysicsTransform& transformer); // apply transform onto self
         void ApplyTo(PhysicsTransform& transformed) const { transformed.Apply(*this); }
 
-        [[nodiscard]] PhysicsTransform Then(const PhysicsTransform& t) const { return AppliedTo(t); }
+        PhysicsTransform Then(const PhysicsTransform& t) const { return AppliedTo(t); }
 
         void Reset();
 
-        [[nodiscard]] fVector2 operator*(const fVector2& p) const { return Transform(p); }
-        [[nodiscard]] fRect2D  operator*(const fRect2D& r) const { return TransformRect(r); }
-        [[nodiscard]] PhysicsTransform operator*(const PhysicsTransform& t) const { return Applied(t); }
+        fVector2 operator*(const fVector2& p) const { return Transform(p); }
+        fRect2D  operator*(const fRect2D& r) const { return TransformRect(r); }
+        PhysicsTransform operator*(const PhysicsTransform& t) const { return Applied(t); }
         PhysicsTransform& operator*=(const PhysicsTransform& t) { return Apply(t); }
     };
 } // Physics2D

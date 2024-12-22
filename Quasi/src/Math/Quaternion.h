@@ -15,8 +15,8 @@ namespace Quasi::Math {
         Quaternion(float x, float y, float z) : w(0), x(x), y(y), z(z) {}
         Quaternion(const fVector3& xyz) : Quaternion(xyz.x, xyz.y, xyz.z) {}
     public:
-        [[nodiscard]] fVector3 xyz()  const { return { x, y, z }; }
-        [[nodiscard]] fVector4 wxyz() const { return { w, x, y, z }; }
+        fVector3 xyz()  const { return { x, y, z }; }
+        fVector4 wxyz() const { return { w, x, y, z }; }
 
         static constexpr Str ROTATION_ORDER = "ZXY"; // readonly property thats not used
 
@@ -34,47 +34,47 @@ namespace Quasi::Math {
         static Quaternion rotate_z(float zrot);
         static Quaternion rotate_xyz(const fVector3& rotation);
         static Quaternion rotate_to(const fVector3& from, const fVector3& to); // both vectors assumed to be normed
-        [[nodiscard]] fVector3 xyzrot() const;
+        fVector3 xyzrot() const;
 
         static Quaternion from_euler(const fVector3& rotation) { return rotate_xyz(rotation); }
-        [[nodiscard]] fVector3 to_euler() const { return xyzrot(); }
+        fVector3 to_euler() const { return xyzrot(); }
 
         static Quaternion look_at(const fVector3& fwd, const fVector3& worldFront); // both vectors assumed to be normed
 
-        [[nodiscard]] Matrix3x3 as_matrix() const;
-        [[nodiscard]] Matrix3D  as_rotation_matrix() const;
-        [[nodiscard]] Matrix4x4 as_compute_matrix() const;
+        Matrix3x3 as_matrix() const;
+        Matrix3D  as_rotation_matrix() const;
+        Matrix4x4 as_compute_matrix() const;
 
-        [[nodiscard]] float lensq() const;
-        [[nodiscard]] float len() const;
-        [[nodiscard]] float abs() const;
-        [[nodiscard]] float distsq(const Quaternion& q) const;
-        [[nodiscard]] float dist(const Quaternion& q) const;
-        [[nodiscard]] Quaternion norm() const;
+        float lensq() const;
+        float len() const;
+        float abs() const;
+        float distsq(const Quaternion& q) const;
+        float dist(const Quaternion& q) const;
+        Quaternion norm() const;
 
-        [[nodiscard]] Quaternion exp() const;
-        [[nodiscard]] Quaternion log() const;
-        [[nodiscard]] Quaternion pow(float p) const;
+        Quaternion exp() const;
+        Quaternion log() const;
+        Quaternion pow(float p) const;
 
-        [[nodiscard]] Quaternion operator+() const { return *this; }
-        [[nodiscard]] Quaternion operator-() const { return { -w, -x, -y, -z }; }
-        [[nodiscard]] Quaternion conj() const;
-        [[nodiscard]] Quaternion inv() const;
+        Quaternion operator+() const { return *this; }
+        Quaternion operator-() const { return { -w, -x, -y, -z }; }
+        Quaternion conj() const;
+        Quaternion inv() const;
 
-        [[nodiscard]] Quaternion muli() const;
-        [[nodiscard]] Quaternion mulj() const;
-        [[nodiscard]] Quaternion mulk() const;
+        Quaternion muli() const;
+        Quaternion mulj() const;
+        Quaternion mulk() const;
 
-        [[nodiscard]] Quaternion lerp(const Quaternion& q, float t) const;
-        [[nodiscard]] Quaternion slerp(const Quaternion& q, float t) const;
-        [[nodiscard]] Quaternion slerp(const Quaternion& q, float t, int revolutions) const;
+        Quaternion lerp(const Quaternion& q, float t) const;
+        Quaternion slerp(const Quaternion& q, float t) const;
+        Quaternion slerp(const Quaternion& q, float t, int revolutions) const;
 
-        [[nodiscard]] Quaternion operator+(const Quaternion& q) const;
-        [[nodiscard]] Quaternion operator-(const Quaternion& q) const;
-        [[nodiscard]] Quaternion operator*(float v) const;
-        [[nodiscard]] Quaternion operator/(float v) const;
-        [[nodiscard]] Quaternion operator*(const Quaternion& q) const;
-        [[nodiscard]] Quaternion operator/(const Quaternion& q) const;
+        Quaternion operator+(const Quaternion& q) const;
+        Quaternion operator-(const Quaternion& q) const;
+        Quaternion operator*(float v) const;
+        Quaternion operator/(float v) const;
+        Quaternion operator*(const Quaternion& q) const;
+        Quaternion operator/(const Quaternion& q) const;
         Quaternion& operator+=(const Quaternion& q);
         Quaternion& operator-=(const Quaternion& q);
         Quaternion& operator*=(float v);
@@ -82,10 +82,10 @@ namespace Quasi::Math {
         Quaternion& operator/=(float v);
         Quaternion& operator/=(const Quaternion& q);
 
-        [[nodiscard]] Quaternion then(const Quaternion& q) const;
+        Quaternion then(const Quaternion& q) const;
         Quaternion& rotate_by(const Quaternion& q);
-        [[nodiscard]] fVector3 rotate(const fVector3& v) const;
-        [[nodiscard]] fVector3 invrotate(const fVector3& v) const;
+        fVector3 rotate(const fVector3& v) const;
+        fVector3 invrotate(const fVector3& v) const;
 
         bool operator==(const Quaternion&) const = default;
 

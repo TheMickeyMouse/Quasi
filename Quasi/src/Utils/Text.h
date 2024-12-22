@@ -6,6 +6,7 @@
 
 namespace Quasi::Text {
     Option<String> ReadFile(Str fname);
+    Option<String> ReadFileBinary(Str fname);
     bool WriteFile(Str fname, Str contents);
     bool ExistsFile(Str fname);
 
@@ -25,13 +26,13 @@ namespace Quasi::Text {
         return Parser<T>::Parse(str);
     }
 
-    template <class N> requires std::integral<N> || std::floating_point<N>
+    template <Numeric N>
     struct Parser<N> {
         static Option<N> Parse(Str str) {
             if (str.empty()) return nullptr;
             N number = 0;
             bool negate = false;
-            if constexpr (!std::unsigned_integral<N>) {
+            if constexpr (!Unsigned<N>) {
                 if (str[0] == '-') {
                     negate = true;
                     str = str.substr(1);
@@ -48,7 +49,7 @@ namespace Quasi::Text {
                     number += (N)(str[i] - '0');
                     continue;
                 }
-                if constexpr (std::floating_point<N>) {
+                if constexpr (Floating<N>) {
                     if (str[i] == '.') {
                         N sub = 0, pwOfTen = (N)0.1;
                         for (u32 j = i + 1; j < str.size(); ++j) {
@@ -81,26 +82,27 @@ namespace Quasi::Text {
     String AutoIndent(Str text);
     String Quote(Str txt);
 
+    // adapted from https://stackoverflow.com/a/59522794/19968422
     namespace details {
         template <class T> constexpr Str t() { return Q_FUNC_NAME(); }
-        constexpr usize t_startIdx = t<int>().find("int");
-        constexpr usize t_totalSize = t<int>().length() - Q_STRLIT_LEN("int");
+        constexpr usize T_START_IDX = t<int>().find("int");
+        constexpr usize T_TOTAL_SIZE = t<int>().length() - Q_STRLIT_LEN("int");
         // ReSharper disable once CppStaticAssertFailure
-        static_assert(t_startIdx != Str::npos, "nameof type couldn't be found");
+        static_assert(T_START_IDX != Str::npos, "nameof type couldn't be found");
 
         template <auto V> constexpr Str v() { return Q_FUNC_NAME(); }
-        constexpr usize v_startIdx = v<0>().find('0');
-        constexpr usize v_totalSize = v<0>().length() - 1;
+        constexpr usize V_START_IDX = v<0>().find('0');
+        constexpr usize V_TOTAL_SIZE = v<0>().length() - 1;
         // ReSharper disable once CppStaticAssertFailure
-        static_assert(v_startIdx != Str::npos, "nameof value couldn't be found");
+        static_assert(V_START_IDX != Str::npos, "nameof value couldn't be found");
     }
 
     template <class T> constexpr Str TypeName() {
-        return details::t<T>().substr(details::t_startIdx, details::t<T>().length() - details::t_totalSize);
+        return details::t<T>().substr(details::T_START_IDX, details::t<T>().length() - details::T_TOTAL_SIZE);
     }
 
     template <auto V> constexpr Str ValueName() {
-        return details::v<V>().substr(details::v_startIdx, details::v<V>().length() - details::v_totalSize);
+        return details::v<V>().substr(details::V_START_IDX, details::v<V>().length() - details::V_TOTAL_SIZE);
     }
 
     template <usize N>

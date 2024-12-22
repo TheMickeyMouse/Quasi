@@ -13,20 +13,23 @@ namespace Quasi {
      * const? T& ValueImpl() const?;
      */
     template <class T, class Super>
-    struct RefProxy {
+    struct IReference {
+        using Resource = T;
+        friend Super;
+    protected:
         Super& super() { return *static_cast<Super*>(this); }
         const Super& super() const { return *static_cast<const Super*>(this); }
 
+        T& ValueImpl() requires IsMut<T> = delete;
+        const T& ValueImpl() const = delete;
+    public:
         T& Value() requires IsMut<T> { return super().ValueImpl(); }
         const T& Value() const { return super().ValueImpl(); }
         T* Address() requires IsMut<T> { return &Value(); }
         const T* Address() const { return &Value(); }
 
-        T& ValueImpl() requires IsMut<T> = delete;
-        const T& ValueImpl() const = delete;
-
-        [[nodiscard]] operator const T&() const { return Value(); }
-        [[nodiscard]] operator T&() { return Value(); }
+        operator const T&() const { return Value(); }
+        operator T&() { return Value(); }
 
         T& operator*() requires IsMut<T> { return Value(); }
         const T& operator*() const { return Value(); }
@@ -38,7 +41,9 @@ namespace Quasi {
     };
 
     template <class T>
-    struct Ref : RefProxy<T, Ref<T>> {
+    struct Ref : IReference<T, Ref<T>> {
+        friend IReference<T, Ref>;
+
         T* obj;
     private:
         Ref(T* t) : obj(t) {}
@@ -49,16 +54,20 @@ namespace Quasi {
 
         static Ref Deref(T* t) { return { t }; }
 
+    protected:
         T& ValueImpl() { return *obj; }
-        [[nodiscard]] const T& ValueImpl() const { return *obj; }
-
-        [[nodiscard]] bool RefEquals(Ref r) const { return r.obj == obj; }
-        void SetRef(Ref r) { obj = &*r; }
+        const T& ValueImpl() const { return *obj; }
+    public:
+        bool Equals(Ref r) const {
+            return *r == *obj;
+        }
+        bool RefEquals(Ref r) const { return r.obj == obj; }
+        void SetRef(T& r) { obj = &r; }
 
         bool operator==(ConstRef r) const { return this->Equals(r); }
 
-        [[nodiscard]] Ref<RemConst<T>> AsMut() requires IsConst<T> { return { (RemConst<T>*)obj }; }
-        [[nodiscard]] Ref<const T> AsConst() const requires IsMut<T> { return { (const T*)obj }; }
+        Ref<RemConst<T>> AsMut() requires IsConst<T> { return { (RemConst<T>*)obj }; }
+        Ref<const T> AsConst() const requires IsMut<T> { return { (const T*)obj }; }
 
         operator ConstRef() const { return AsConst(); }
         explicit operator Ref<RemConst<T>>() { return AsMut(); }
@@ -77,7 +86,9 @@ namespace Quasi {
     };
 
     template <class T>
-    struct OptRef : NullableProxy<T&, OptRef<T>>, RefProxy<T, OptRef<T>> {
+    struct OptRef : INullable<T&, OptRef<T>>, IReference<T, OptRef<T>> {
+        friend INullable<T&, OptRef>;
+        friend IReference<T, OptRef>;
     private:
         T* obj = nullptr;
         OptRef(T* t) : obj(t) {}
@@ -87,36 +98,38 @@ namespace Quasi {
         OptRef(T& t) : obj(&t) {}
         OptRef(Ref<T> t) : obj(t.Address()) {}
 
-        using RefProxy<T, OptRef>::operator->;
-        using RefProxy<T, OptRef>::operator*;
+        using IReference<T, OptRef>::operator->;
+        using IReference<T, OptRef>::operator*;
 
         using ConstRef = OptRef<const T>;
 
         static OptRef Deref(T* t) { return { t }; }
+
+    protected:
         static OptRef SomeImpl(const T& value) requires IsConst<T> { return { value }; }
         static OptRef SomeImpl(T& value) { return { value }; }
         static OptRef NoneImpl() { return { nullptr }; }
 
         T& ValueImpl() { return *obj; }
-        [[nodiscard]] const T& ValueImpl() const { return *obj; }
+        const T& ValueImpl() const { return *obj; }
 
-        [[nodiscard]] bool HasValueImpl() const { return obj; }
+        bool HasValueImpl() const { return obj; }
         T& UnwrapImpl() const { return *obj; }
 
         void SetNullImpl() { obj = nullptr; }
         void SetImpl(T& v) { obj = &v; }
-
-        [[nodiscard]] bool Equals(OptRef r) const {
+    public:
+        bool Equals(OptRef r) const {
             return this->IsNull() ? r.IsNull() : r.HasValue() && *r == *obj;
         }
-        [[nodiscard]] bool RefEquals(OptRef r) const { return r.obj == obj; }
+        bool RefEquals(OptRef r) const { return r.obj == obj; }
         void SetRef(OptRef r) { obj = r.Address(); }
         void SetNull() { obj = nullptr; }
 
         bool operator==(ConstRef r) const { return this->Equals(r); }
 
-        [[nodiscard]] OptRef<RemConst<T>> AsMut() requires IsConst<T> { return { (RemConst<T>*)obj }; }
-        [[nodiscard]] OptRef<const T> AsConst() const requires IsMut<T> { return { (const T*)obj }; }
+        OptRef<RemConst<T>> AsMut() requires IsConst<T> { return { (RemConst<T>*)obj }; }
+        OptRef<const T> AsConst() const requires IsMut<T> { return { (const T*)obj }; }
 
         operator ConstRef() const { return AsConst(); }
         explicit operator OptRef<RemConst<T>>() { return AsMut(); }
@@ -134,13 +147,14 @@ namespace Quasi {
         template <class U> friend struct OptRef;
     };
 
-    template <class T> struct RemoveQRef : std::type_identity<T> {};
-    template <class T> struct RemoveQRef<Ref<T>> : std::type_identity<T> {};
-    template <class T> struct RemoveQRef<const Ref<T>> : std::type_identity<const T> {};
-    template <class T> struct RemoveQRef<OptRef<T>> : std::type_identity<T> {};
-    template <class T> struct RemoveQRef<const OptRef<T>> : std::type_identity<const T> {};
+    namespace Refs {
+        template <class T> Ref<T> Refer(T& val) { return { val }; }
+        template <class T> Ref<T> Refer(Ref<T> val) { return val; }
+    }
 
-    template <class T> Ref<typename RemoveQRef<T>::type> Refer(T& val) { return { val }; }
-    template <class T> OptRef<typename RemoveQRef<T>::type> SomeRef(T& val) { return { val }; }
-    template <class T> OptRef<T> DerefPtr(T* val) { return OptRef<T>::Deref(val); }
+    namespace OptRefs {
+        template <class T> OptRef<T> Some(Ref<T> ref) { return { ref }; }
+        template <class T> OptRef<T> SomeRef(T& val) { return { val }; }
+        template <class T> OptRef<T> DerefPtr(T* val) { return OptRef<T>::Deref(val); }
+    }
 }

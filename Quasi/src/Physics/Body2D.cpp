@@ -80,7 +80,7 @@ namespace Quasi::Physics2D {
         return boundingBox;
     }
 
-    BodyHandle::BodyHandle(Body& b) : index(&b - b.world->bodies.data()), world(b.world) {}
+    BodyHandle::BodyHandle(Body& b) : index(b.world->bodies.Unaddress(&b)), world(b.world) {}
 
     Body& BodyHandle::ValueImpl() { return world->BodyAt(index); }
     const Body& BodyHandle::ValueImpl() const { return world->BodyAt(index); }

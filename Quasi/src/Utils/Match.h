@@ -79,7 +79,7 @@ namespace Quasi::Matching {
     template <class Fn> using TypeOfVar = typename TypeOfArg<Fn>::type;
 
     template <class T>
-    bool In(const T& value, CollectionOf<T> auto& list) {
+    bool In(const T& value, Collection<T> auto& list) {
         if constexpr (requires { { list.contains(value) } -> SameAs<bool>; })
             return list.contains(value);
         else if constexpr (requires { { list.find(value) } -> SameAs<decltype(list.begin())>; }) {

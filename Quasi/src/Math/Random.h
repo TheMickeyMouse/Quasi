@@ -22,33 +22,33 @@ namespace Quasi::Math {
         RandomGenerator() = default;
 
         static std::seed_seq& GetSeed() { return seeder; }
-        void SetSeed(const uint val) { device.seed(val); }
+        void SetSeed(const u32 val) { device.seed(val); }
         template <class Sq> void SetSeed(Sq& newSeeder) { device.seed(newSeeder()); }
         void Reseed() { device.seed(seeder); }
 
-        void Discard(std::integral auto num) { device.discard((u64)num); }
+        void Discard(Integer auto num) { device.discard((u64)num); }
         u32 GetRaw() { return device(); }
 
-        template <std::integral I> I Get(
+        template <Integer I> I Get(
             I min = std::numeric_limits<I>::min(),
             I max = std::numeric_limits<I>::max()) { return GetIncl(min, (I)(max - 1)); }
-        template <std::integral I> I GetIncl(
+        template <Integer I> I GetIncl(
             I min = std::numeric_limits<I>::min(),
             I max = std::numeric_limits<I>::max()) { return int_dist_t<I> { min, max } (device); }
 
-        template <std::floating_point F> F Get(F min = 0, F max = 1)
+        template <Floating F> F Get(F min = 0, F max = 1)
         { return real_dist_t<F> { min, max } (device); }
-        template <std::floating_point F> F GetIncl(F min = 0, F max = 1)
+        template <Floating F> F GetIncl(F min = 0, F max = 1)
         { return getf(min, std::nextafter(max, std::numeric_limits<F>::max())); }
 
-        template <std::floating_point F> F GetLogarithmic(F min = 0, F max = 1)
+        template <Floating F> F GetLogarithmic(F min = 0, F max = 1)
         { return std::log(Get(std::exp(min), std::exp(max))); }
-        template <std::floating_point F> F GetLogarithmicIncl(F min = 0, F max = 1)
+        template <Floating F> F GetLogarithmicIncl(F min = 0, F max = 1)
         { return std::log(GetIncl(std::exp(min), std::exp(max))); }
 
-        template <std::floating_point F> F GetExponential(F min = 0, F max = 1)
+        template <Floating F> F GetExponential(F min = 0, F max = 1)
         { return std::exp(Get(std::log(min), std::log(max))); }
-        template <std::floating_point F> F GetExponentialIncl(F min = 0, F max = 1)
+        template <Floating F> F GetExponentialIncl(F min = 0, F max = 1)
         { return std::exp(GetIncl(std::log(min), std::log(max))); }
 
         char Get    (const char min, const char max) { return (char)Get<i16>(min, max); }
@@ -57,38 +57,33 @@ namespace Quasi::Math {
         byte GetIncl(const byte min, const byte max) { return (byte)Get<u16>(min, (u16)max + 1); }
 
         template <class N, class M>
-        requires std::is_arithmetic_v<N> && std::is_arithmetic_v<M> && (!std::is_same_v<std::remove_cvref_t<N>, std::remove_cvref_t<M>>)
-        std::common_type_t<N, M> Get(N min, M max) {
-            using common_t = std::common_type_t<N, M>;
-            return Get<common_t>((common_t)min, (common_t)max);
+        requires Numeric<N> && Numeric<M> && DistantTo<N, M>
+        Common<N, M> Get(N min, M max) {
+            using T = Common<N, M>;
+            return Get<T>((T)min, (T)max);
         }
         template <class N, class M>
-        requires std::is_arithmetic_v<N> && std::is_arithmetic_v<M> && (!std::is_same_v<std::remove_cvref_t<N>, std::remove_cvref_t<M>>)
-        std::common_type_t<N, M> GetIncl(N min, M max) {
-            using common_t = std::common_type_t<N, M>;
-            return GetIncl<common_t>((common_t)min, (common_t)max);
+        requires Numeric<N> && Numeric<M> && DistantTo<N, M>
+        Common<N, M> GetIncl(N min, M max) {
+            using T = Common<N, M>;
+            return GetIncl<T>((T)min, (T)max);
         }
 
         bool GetBool(std::floating_point auto probability = 0.5f) { return bool_dist_t { probability } (device); }
 
         template <class F> auto Get(F f) -> decltype(f(0)) { return f(device); }
 
-        template <std::input_iterator It> It Choose(It beg, It end) {
-            const auto size = std::distance(beg, end);
-            using diff_t = typename std::iterator_traits<It>::difference_type;
-            return size ? beg + Get<diff_t>(0, size) : end;
-        }
-
         template <class T>
-        T Choose(IList<T> ilist) { return *Choose(ilist.begin(), ilist.end()); }
+        T Choose(IList<T> ilist) { return Choose(Spans::FromIList(ilist)); }
 
-        template <ArrayLike C> ArrayElement<C>& Choose(C& arr) { return *Choose(std::begin(arr), std::end(arr)); }
-        template <ArrayLike C> const ArrayElement<C>& Choose(const C& arr) { return *Choose(std::begin(arr), std::end(arr)); }
+        template <ContinuousCollectionAny C>
+        CollectionItem<C>&       Choose(C& arr)       { return arr[Get(0, arr.Length())]; }
+        template <ContinuousCollectionAny C>
+        const CollectionItem<C>& Choose(const C& arr) { return arr[Get(0, arr.Length())]; }
 
         template <class T, template <typename> class C = Vec> C<T> Generate(T min, T max, usize size) {
-            C<T> arr;
-            arr.reserve(size);
-            for (usize i = 0; i < size; ++i) arr.emplace_back(Get(min, max));
+            C arr = C<T>::WithCap(size);
+            for (usize i = 0; i < size; ++i) arr.Push(Get(min, max));
             return arr;
         }
 
@@ -99,10 +94,9 @@ namespace Quasi::Math {
         }
 
         template <class F, template <typename> class C = Vec>
-        auto Gen(F f, std::size_t size) -> C<decltype(f(0))> {
-            C<decltype(f(0))> arr;
-            arr.reserve(size);
-            for (usize i = 0; i < size; ++i) arr.emplace_back(Get(f));
+        auto Gen(F f, usize size) -> C<decltype(f(0))> {
+            C arr = C<decltype(f(0))>::WithCap(size);
+            for (usize i = 0; i < size; ++i) arr.Push(Get(f));
             return arr;
         }
 
@@ -112,7 +106,7 @@ namespace Quasi::Math {
             return arr;
         }
 
-        template <class T> T& Choose(Span<T> span) { return span[Get<usize>(0, span.size())]; }
+        template <class T> T& Choose(Span<T> span) { return span[Get<usize>(0, span.Length())]; }
     };
 
     template <u32 N, class T>
@@ -133,7 +127,7 @@ namespace Quasi::Math {
     }
 
     template <class T> Complex<T> Complex<T>::random_rot(RandomGenerator& rg) {
-        return expi(rg.Get(0, TAU));
+        return rotate(rg.Get(0, TAU));
     }
 
     inline Quaternion Quaternion::random_rot(RandomGenerator& rg) {

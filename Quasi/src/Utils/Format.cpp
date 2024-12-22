@@ -9,7 +9,7 @@ namespace Quasi::Text {
             const char c = fstr[i];
             if (c != '{') continue;
             if (i + 1 < fstr.size() && fstr[i + 1] == '{') {
-                f.brackSkips.emplace_back(i);
+                f.brackSkips.Push(i);
                 continue;
             }
 
@@ -17,15 +17,16 @@ namespace Quasi::Text {
                 const char jc = fstr[j];
                 if (jc != '}') continue;
                 if (j + 1 < fstr.size() && fstr[j + 1] == '}') {
-                    f.brackSkips.emplace_back(j);
+                    f.brackSkips.Push(j);
                     continue;
                 }
 
                 Str subsyn = fstr.substr(i + 1, j - i - 1);
-                auto& sb = f.subs.emplace_back();
+                f.subs.Push({});
+                auto& sb = f.subs.LastMut();
                 sb.position = i;
                 sb.skipPosition = j;
-                sb.index = f.subs.size() - 1;
+                sb.index = f.subs.Length() - 1;
                 if (subsyn.empty()) break;
                 if (const usize sep = subsyn.find(':'); sep != Str::npos) {
                     const Str iStr = subsyn.substr(0, sep),

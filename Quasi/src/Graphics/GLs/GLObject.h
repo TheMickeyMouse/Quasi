@@ -30,9 +30,9 @@ namespace Quasi::Graphics {
 
         void Destroy() { G::DestroyObject(rendererID); rendererID = GraphicsNoID; }
 
-        [[nodiscard]] bool IsNull() const { return rendererID == GraphicsNoID; }
+        bool IsNull() const { return rendererID == GraphicsNoID; }
 
-        [[nodiscard]] operator bool() const { return !IsNull(); }
-        [[nodiscard]] operator GraphicsID() const { return rendererID; }
+        operator bool() const { return !IsNull(); }
+        operator GraphicsID() const { return rendererID; }
     };
 }

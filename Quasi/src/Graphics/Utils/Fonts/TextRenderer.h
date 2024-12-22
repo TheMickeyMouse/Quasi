@@ -42,8 +42,8 @@ namespace Quasi::Graphics {
             void MoveMaxX(float x);
             void MoveTexMinX(float x);
             void MoveTexMaxX(float x);
-            [[nodiscard]] float Width() const;
-            [[nodiscard]] float TextureWidth() const;
+            float Width() const;
+            float TextureWidth() const;
         };
 
         TextRenderer(const Font& fnt) : font(fnt) {}
@@ -53,11 +53,11 @@ namespace Quasi::Graphics {
         void Prepare();
 
                             CharQuad* Begin();
-        [[nodiscard]] const CharQuad* Begin() const;
+        const CharQuad* Begin() const;
                             CharQuad* End();
-        [[nodiscard]] const CharQuad* End() const;
+        const CharQuad* End() const;
                             CharQuad& CharAt(u32 index);
-        [[nodiscard]] const CharQuad& CharAt(u32 index) const;
+        const CharQuad& CharAt(u32 index) const;
 
 
         void FixAlignX();

@@ -4,12 +4,12 @@
 namespace Quasi {
     struct StringListIter {
         const char* ptr;
-        [[nodiscard]] Str Value() const;
+        Str Value() const;
         void Advance();
 
         bool operator==(const StringListIter&) const = default;
         StringListIter& operator++() { Advance(); return *this; }
-        [[nodiscard]] Str operator*() const { return Value(); }
+        Str operator*() const { return Value(); }
     };
 
     struct StringList;
@@ -21,15 +21,15 @@ namespace Quasi {
 
         using Iter = StringListIter;
 
-        [[nodiscard]] String Join(Str c) const;
+        String Join(Str c) const;
 
-        [[nodiscard]] Str First() const;
-        [[nodiscard]] StringListView Rest() const;
+        Str First() const;
+        StringListView Rest() const;
 
-        [[nodiscard]] bool Empty() const { return sv.empty(); }
+        bool Empty() const { return sv.empty(); }
 
-        [[nodiscard]] Iter begin() const { return { sv.data() }; }
-        [[nodiscard]] Iter end() const { return { sv.data() + sv.size() }; }
+        Iter begin() const { return { sv.data() }; }
+        Iter end() const { return { sv.data() + sv.size() }; }
     };
 
     // represents a vector of strings as: [len1][string1...][len2][string2...]...
@@ -48,19 +48,19 @@ namespace Quasi {
         void Push(Str str);
         void Connect(StringListView list);
 
-        [[nodiscard]] StringListView AsView() const;
+        StringListView AsView() const;
 
-        [[nodiscard]] Str First() const { return AsView().First(); }
+        Str First() const { return AsView().First(); }
 
-        [[nodiscard]] String Join(Str c) const { return AsView().Join(c); }
+        String Join(Str c) const { return AsView().Join(c); }
 
-        [[nodiscard]] bool Empty() const { return stringlist.empty(); }
+        bool Empty() const { return stringlist.empty(); }
         void Clear() { stringlist.clear(); }
 
         using Iter = StringListIter;
 
-        [[nodiscard]] Iter begin() const { return { stringlist.data() }; }
-        [[nodiscard]] Iter end() const { return { stringlist.data() + stringlist.size() }; }
+        Iter begin() const { return { stringlist.data() }; }
+        Iter end() const { return { stringlist.data() + stringlist.size() }; }
         bool operator==(const StringList&) const = default;
     };
 

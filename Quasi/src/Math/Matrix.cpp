@@ -12,16 +12,16 @@ namespace Quasi::Math {
     template <u32 N, u32 M>
     Matrix<N, M> Matrix<N, M>::from_span(Span<const float> data) {
         return [&]<u32... I>(std::integer_sequence<u32, I...>) {
-            return Matrix { col::from_span(data.subspan(N * I))... };
+            return Matrix { col::from_span(data.Subspan(N * I))... };
         }(std::make_integer_sequence<u32, M> {});
     }
 
-    template <u32 N, u32 M> Span<const float, N * M> Matrix<N, M>::data() const {
-        return std::span { mat.first().begin(), N * M }.template first<N * M>();
+    template <u32 N, u32 M> Span<const float> Matrix<N, M>::data() const {
+        return Spans::FromBuffer(mat.first().begin(), N * M);
     }
 
-    template <u32 N, u32 M> auto Matrix<N, M>::get_cols() const -> Span<const col, M> {
-        return std::span { mat }.template first<M>();
+    template <u32 N, u32 M> auto Matrix<N, M>::get_cols() const -> Span<const col> {
+        return Spans::FromBuffer(mat.begin(), M);
     }
 
     template <u32 N, u32 M> Matrix<N - 1, M - 1> Matrix<N, M>::linear_matrix() const {

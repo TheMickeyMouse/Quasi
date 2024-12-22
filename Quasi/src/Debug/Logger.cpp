@@ -54,7 +54,7 @@ namespace Quasi::Debug {
 
     void Logger::LogNoOut(const Severity sv, const Str s, const SourceLoc& loc) {
         if (recordLogs)
-            logs.emplace_back(LogEntry { String { s }, sv, Timer::Now(), loc });
+            logs.Push(LogEntry { String { s }, sv, Timer::Now(), loc });
     }
 
     void Logger::ConsoleLog(const Severity sv, const Str s, const SourceLoc& loc) {

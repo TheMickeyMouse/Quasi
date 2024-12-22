@@ -22,11 +22,11 @@ namespace Quasi::Math {
         Line  operator- (const vec_t& off) const { return { start - off, end - off }; }
         Line& operator-=(const vec_t& off) { start -= off; end -= off; return *this; }
 
-        [[nodiscard]] float len() const { return start.dist(end); }
-        [[nodiscard]] float lensq() const { return start.distsq(end); }
+        float len() const { return start.dist(end); }
+        float lensq() const { return start.distsq(end); }
 
-        [[nodiscard]] vec_t lerp(float t) const { return start + (end - start) * t; }
-        [[nodiscard]] Tuple<float, float> intersect_solutions(const Line& other) const {
+        vec_t lerp(float t) const { return start + (end - start) * t; }
+        Tuple<float, float> intersect_solutions(const Line& other) const {
             const float det = (start.x - end.x) * (other.start.y - other.end.y) -
                               (start.y - end.y) * (other.start.x - other.end.x);
             const float t   = (start.x - other.start.x) * (other.start.y - other.end.y) -
@@ -38,31 +38,31 @@ namespace Quasi::Math {
             return { t / det, -u / det };
         }
 
-        [[nodiscard]] bool intersects(const Line& other) const {
+        bool intersects(const Line& other) const {
             const auto [t, u] = intersect_solutions(other);
             return 0 <= u && u <= 1 && 0 <= t && t <= 1;
         }
 
-        [[nodiscard]] Option<vec_t> intersection(const Line& other) const {
+        Option<vec_t> intersection(const Line& other) const {
             const auto [t, u] = intersect_solutions(other);
             return 0 <= u && u <= 1 && 0 <= t && t <= 1 ? Some(lerp(t)) : nullptr;
         }
 
-        [[nodiscard]] float nearest_to_solution(const vec_t& p) const {
+        float nearest_to_solution(const vec_t& p) const {
             return (p - start).dot(end - start) / (end - start).lensq();
         }
 
-        [[nodiscard]] vec_t nearest_to(const vec_t& p) const {
+        vec_t nearest_to(const vec_t& p) const {
             return lerp(std::clamp(nearest_to_solution(p), 0.0f, 1.0f));
         }
 
-        [[nodiscard]] float dist_to_signed(const vec_t& p) const {
+        float dist_to_signed(const vec_t& p) const {
             return (p - start).dot((end - start).norm().perpend());
         }
 
-        [[nodiscard]] float dist_to(const vec_t& p) const { return std::abs(dist_to_signed(p)); }
+        float dist_to(const vec_t& p) const { return std::abs(dist_to_signed(p)); }
 
-        [[nodiscard]] Tuple<float, float> nearest_between_solutions(const Line& other) const {
+        Tuple<float, float> nearest_between_solutions(const Line& other) const {
             const auto [t, u] = intersect_solutions(other);
             const bool tOutBounds = t < 0 || t > 1, uOutBounds = u < 0 || u > 1;
             switch (tOutBounds * 2 + uOutBounds) {
@@ -82,12 +82,12 @@ namespace Quasi::Math {
             }
         }
 
-        [[nodiscard]] Tuple<vec_t, vec_t> nearest_between(const Line& other) const {
+        Tuple<vec_t, vec_t> nearest_between(const Line& other) const {
             const auto [t, u] = nearest_between_solutions(other);
             return { lerp(t), other.lerp(u) };
         }
 
-        [[nodiscard]] bool leftside(const vec_t& p) const {
+        bool leftside(const vec_t& p) const {
             return (end - start).zcross(p - start) > 0;
         }
     };
@@ -133,17 +133,17 @@ namespace Quasi::Math {
 
         Triangle(const vec_t& a, const vec_t& b, const vec_t& c) : p1(a), p2(b), p3(c) {}
 
-        [[nodiscard]] Line<N, T> line(u32 i) const { return { points[i], points[(i + 1) % 3] }; }
+        Line<N, T> line(u32 i) const { return { points[i], points[(i + 1) % 3] }; }
 
-        [[nodiscard]] T signed_areaX2() const { return x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2); }
-        [[nodiscard]] T areaX2() const { return std::abs(signed_areaX2()); }
-        [[nodiscard]] T signed_area() const { return signed_areaX2() / 2; }
-        [[nodiscard]] T area() const { return areaX2() / 2; }
+        T signed_areaX2() const { return x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2); }
+        T areaX2() const { return std::abs(signed_areaX2()); }
+        T signed_area() const { return signed_areaX2() / 2; }
+        T area() const { return areaX2() / 2; }
 
-        [[nodiscard]] vec_t center() const { return (p1 + p2 + p3) / (T)3; }
-        [[nodiscard]] bool is_clockwise() const { return signed_areaX2() > 0; }
+        vec_t center() const { return (p1 + p2 + p3) / (T)3; }
+        bool is_clockwise() const { return signed_areaX2() > 0; }
 
-        [[nodiscard]] Vector3<T> barycentric(const vec_t& p) const requires (N == 2 && std::is_floating_point_v<T>) {
+        Vector3<T> barycentric(const vec_t& p) const requires (N == 2 && std::is_floating_point_v<T>) {
             const auto [x, y] = p;
             T det   =  (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
             T lamb1 = ((y2 - y3) * (x  - x3) + (x3 - x2) * (y  - y3)) / det;
@@ -155,11 +155,11 @@ namespace Quasi::Math {
             return 0 <= uvw && uvw <= 1;
         }
 
-        [[nodiscard]] vec_t from_barycentric(float u, float v) const requires (N == 2 && std::is_floating_point_v<T>) {
+        vec_t from_barycentric(float u, float v) const requires (N == 2 && std::is_floating_point_v<T>) {
             return p1 * u + p2 * v + p3 * (1 - u - v);
         }
 
-        [[nodiscard]] u32 categorize(const vec_t& p) const { return categorize_bary(barycentric(p)); }
+        u32 categorize(const vec_t& p) const { return categorize_bary(barycentric(p)); }
 
         static u32 categorize_bary(const Vector3<T>& bc) {
             const auto [u, v, w] = bc;
@@ -168,9 +168,9 @@ namespace Quasi::Math {
             return v < w ? 2 : 0;
         }
 
-        [[nodiscard]] vec_t project(const vec_t& p) const { return project_bary(barycentric(p)); }
+        vec_t project(const vec_t& p) const { return project_bary(barycentric(p)); }
 
-        [[nodiscard]] vec_t project_bary(const Vector3<T>& bc) const {
+        vec_t project_bary(const Vector3<T>& bc) const {
             const auto [u, v, w] = bc;
             const u32 cat = categorize_bary(bc);
             switch (cat) { // see: https://www.desmos.com/calculator/gr29tnw1qx
@@ -181,24 +181,24 @@ namespace Quasi::Math {
             }
         }
 
-        [[nodiscard]] bool contains(vec_t p) const {
+        bool contains(vec_t p) const {
             const Vector3<T> bary = barycentric(p);
             return is_valid_bary(bary);
         }
 
         vec_t* begin() { return points; }
         vec_t* end() { return points + 3; }
-        [[nodiscard]] const vec_t* begin() const { return points; }
-        [[nodiscard]] const vec_t* end() const { return points + 3; }
+        const vec_t* begin() const { return points; }
+        const vec_t* end() const { return points + 3; }
 
         vec_t& point(u32 i) { return points[i]; }
-        [[nodiscard]] const vec_t& point(u32 i) const { return points[i]; }
+        const vec_t& point(u32 i) const { return points[i]; }
         vec_t& cyclic_point(u32 i) { return points[i % 3]; }
-        [[nodiscard]] const vec_t& cyclic_point(u32 i) const { return points[i % 3]; }
+        const vec_t& cyclic_point(u32 i) const { return points[i % 3]; }
 
-        [[nodiscard]] auto asf() const { if constexpr (std::is_floating_point_v<T>) return *this; else return (Triangle<N, float>)*this; }
-        template <class U> [[nodiscard]] operator Triangle<N, U>() const { return { (vec_of_t<U>)p1, (vec_of_t<U>)p2, (vec_of_t<U>)p3 }; }
-        template <uint M>  [[nodiscard]] operator Triangle<M, T>() const { return { (vec_of_n<M>)p1, (vec_of_n<M>)p2, (vec_of_n<M>)p3 }; }
+        auto asf() const { if constexpr (std::is_floating_point_v<T>) return *this; else return (Triangle<N, float>)*this; }
+        template <class U> operator Triangle<N, U>() const { return { (vec_of_t<U>)p1, (vec_of_t<U>)p2, (vec_of_t<U>)p3 }; }
+        template <uint M>  operator Triangle<M, T>() const { return { (vec_of_n<M>)p1, (vec_of_n<M>)p2, (vec_of_n<M>)p3 }; }
     };
 
     template <class T = float> using Triangle2D = Triangle<2, T>;

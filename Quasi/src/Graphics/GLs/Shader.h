@@ -3,6 +3,7 @@
 #include <Utils/Macros.h>
 
 #include "Enum.h"
+#include "Array.h"
 #include "GLObject.h"
 #include "Math/Matrix.h"
 #include "Math/Color.h"
@@ -127,11 +128,11 @@ namespace Quasi::Graphics {
         usize sepPoints[2]; // vertex | fragment | geometery, all seperated with index.
 
     public:
-        [[nodiscard]] usize GetSepPoint(int idx) const {
+        usize GetSepPoint(int idx) const {
             return idx < 0 ? 0 : idx >= 2 ? fullSource.size() : sepPoints[idx];
         }
 
-        [[nodiscard]] Str GetShader(ShaderType type) const {
+        Str GetShader(ShaderType type) const {
             const usize beg = GetSepPoint(type.Ord() - 1);
             return Str { fullSource }.substr(beg, GetSepPoint(type.Ord()) - beg);
         }
@@ -213,15 +214,15 @@ namespace Quasi::Graphics {
             SetUniformOf<FLOAT_FLAG | (ROWS_1 * N) | (COLS_1 * M) | ARRAY_FLAG>(name, val.data());
         }
 
-        void SetUniformMat2x2(Str name, const Math::Matrix2x2& mat) { SetUniformMat2x2(name, Span<const Math::Matrix2x2> { &mat, 1 }); }
-        void SetUniformMat2x3(Str name, const Math::Matrix2x3& mat) { SetUniformMat2x3(name, Span<const Math::Matrix2x3> { &mat, 1 }); }
-        void SetUniformMat2x4(Str name, const Math::Matrix2x4& mat) { SetUniformMat2x4(name, Span<const Math::Matrix2x4> { &mat, 1 }); }
-        void SetUniformMat3x2(Str name, const Math::Matrix3x2& mat) { SetUniformMat3x2(name, Span<const Math::Matrix3x2> { &mat, 1 }); }
-        void SetUniformMat3x3(Str name, const Math::Matrix3x3& mat) { SetUniformMat3x3(name, Span<const Math::Matrix3x3> { &mat, 1 }); }
-        void SetUniformMat3x4(Str name, const Math::Matrix3x4& mat) { SetUniformMat3x4(name, Span<const Math::Matrix3x4> { &mat, 1 }); }
-        void SetUniformMat4x2(Str name, const Math::Matrix4x2& mat) { SetUniformMat4x2(name, Span<const Math::Matrix4x2> { &mat, 1 }); }
-        void SetUniformMat4x3(Str name, const Math::Matrix4x3& mat) { SetUniformMat4x3(name, Span<const Math::Matrix4x3> { &mat, 1 }); }
-        void SetUniformMat4x4(Str name, const Math::Matrix4x4& mat) { SetUniformMat4x4(name, Span<const Math::Matrix4x4> { &mat, 1 }); }
+        void SetUniformMat2x2(Str name, const Math::Matrix2x2& mat) { SetUniformMat2x2(name, Span<const Math::Matrix2x2>::Single(mat)); }
+        void SetUniformMat2x3(Str name, const Math::Matrix2x3& mat) { SetUniformMat2x3(name, Span<const Math::Matrix2x3>::Single(mat)); }
+        void SetUniformMat2x4(Str name, const Math::Matrix2x4& mat) { SetUniformMat2x4(name, Span<const Math::Matrix2x4>::Single(mat)); }
+        void SetUniformMat3x2(Str name, const Math::Matrix3x2& mat) { SetUniformMat3x2(name, Span<const Math::Matrix3x2>::Single(mat)); }
+        void SetUniformMat3x3(Str name, const Math::Matrix3x3& mat) { SetUniformMat3x3(name, Span<const Math::Matrix3x3>::Single(mat)); }
+        void SetUniformMat3x4(Str name, const Math::Matrix3x4& mat) { SetUniformMat3x4(name, Span<const Math::Matrix3x4>::Single(mat)); }
+        void SetUniformMat4x2(Str name, const Math::Matrix4x2& mat) { SetUniformMat4x2(name, Span<const Math::Matrix4x2>::Single(mat)); }
+        void SetUniformMat4x3(Str name, const Math::Matrix4x3& mat) { SetUniformMat4x3(name, Span<const Math::Matrix4x3>::Single(mat)); }
+        void SetUniformMat4x4(Str name, const Math::Matrix4x4& mat) { SetUniformMat4x4(name, Span<const Math::Matrix4x4>::Single(mat)); }
 #pragma endregion
 
 #pragma region Shader Sources
@@ -308,78 +309,68 @@ namespace Quasi::Graphics {
     }
 
     struct ShaderValueVariant {
-        const void* data; // either int, uint, float, or their ptr variants
+        usize data; // either int, uint, float, or their ptr variants
         ShaderUniformType type;
         u32 size;
 
+    private:
+        ShaderValueVariant(usize d, ShaderUniformType t, u32 s) : data(d), type(t), size(s) {}
+        ShaderValueVariant(const void* d, ShaderUniformType t, u32 s) : data(Memory::Transmute<usize>(d)), type(t), size(s) {}
+    public:
 #pragma region Init
-        ShaderValueVariant(bool val) : data((const void*)val), type(UNIF_1I), size(1) {}
-
-        template <class N> requires std::is_arithmetic_v<N>
-        ShaderValueVariant(N num) {
-            using enum ShaderUniformType;
-            type = (ShaderUniformType)(ConvertUniformType<N> | VECTOR_FLAG | SINGLE_FLAG);
-            data = std::bit_cast<const void*>((usize)std::bit_cast<u32>(num));
-            size = 1;
-        }
-
-        template <class T>
-        ShaderValueVariant(Span<const T> val) {
-            using enum ShaderUniformType;
-            type = (ShaderUniformType)(ConvertUniformType<T> | VECTOR_FLAG | SINGLE_FLAG | ARRAY_FLAG);
-            data = val.data();
-            size = (u32)val.size();
-        }
-
-        template <Math::IVector V>
-        ShaderValueVariant(const V& vec) {
-            using enum ShaderUniformType;
-            type = (ShaderUniformType)(ConvertUniformType<typename V::scalar> | VECTOR_FLAG | (COLS_1 * V::dimension));
-            data = vec.begin();
-            size = (u32)vec.size();
-        }
-
-        template <Math::IVector V>
-        ShaderValueVariant(Span<const V> val) {
-            using enum ShaderUniformType;
-            using T = typename V::scalar;
-            constexpr int N = V::dimension;
-            type = (ShaderUniformType)(ConvertUniformType<T> | VECTOR_FLAG | (COLS_1 * N) | ARRAY_FLAG);
-            data = val.data();
-            size = val.size() * N;
-        }
-
-        ShaderValueVariant(const Math::fColor&  val) : data(val.begin()), type(UNIF_4F), size(4) {}
-        ShaderValueVariant(const Math::fColor3& val) : data(val.begin()), type(UNIF_3F), size(3) {}
-        ShaderValueVariant(Span<const Math::fColor>  dat) : data(dat.data()), type(UNIF_4F_ARR), size(4 * (u32)dat.size()) {}
-        ShaderValueVariant(Span<const Math::fColor3> dat) : data(dat.data()), type(UNIF_3F_ARR), size(3 * (u32)dat.size()) {}
-
-        template <ArrayLike R> requires (!Math::IVector<R>)
-        ShaderValueVariant(const R& range) : ShaderValueVariant(TakeSpan(range)) {}
-
+        ShaderValueVariant(bool  num) : ShaderValueVariant(num, UNIF_1I, 1) {}
+        template <class T> ShaderValueVariant(T* t) = delete;
+        ShaderValueVariant(const ContinuousCollectionAny auto& coll) : ShaderValueVariant(coll.AsSpan()) {}
+        ShaderValueVariant(int   num) : ShaderValueVariant(Memory::Transmute<u32>(num), UNIF_1I,  1) {}
+        ShaderValueVariant(uint  num) : ShaderValueVariant(Memory::Transmute<u32>(num), UNIF_1UI, 1) {}
+        ShaderValueVariant(float num) : ShaderValueVariant(Memory::Transmute<u32>(num), UNIF_1F,  1) {}
+        ShaderValueVariant(Span<const int>   vals) : ShaderValueVariant(vals.Data(), UNIF_1I_ARR,  vals.Length()) {}
+        ShaderValueVariant(Span<const uint>  vals) : ShaderValueVariant(vals.Data(), UNIF_1UI_ARR, vals.Length()) {}
+        ShaderValueVariant(Span<const float> vals) : ShaderValueVariant(vals.Data(), UNIF_1F_ARR,  vals.Length()) {}
+        ShaderValueVariant(const Math::iVector2& vec) : ShaderValueVariant(&vec.x, UNIF_2I,  2) {}
+        ShaderValueVariant(const Math::uVector2& vec) : ShaderValueVariant(&vec.x, UNIF_2UI, 2) {}
+        ShaderValueVariant(const Math::fVector2& vec) : ShaderValueVariant(&vec.x, UNIF_2F,  2) {}
+        ShaderValueVariant(const Math::iVector3& vec) : ShaderValueVariant(&vec.x, UNIF_3I,  3) {}
+        ShaderValueVariant(const Math::uVector3& vec) : ShaderValueVariant(&vec.x, UNIF_3UI, 3) {}
+        ShaderValueVariant(const Math::fVector3& vec) : ShaderValueVariant(&vec.x, UNIF_3F,  3) {}
+        ShaderValueVariant(const Math::iVector4& vec) : ShaderValueVariant(&vec.x, UNIF_4I,  4) {}
+        ShaderValueVariant(const Math::uVector4& vec) : ShaderValueVariant(&vec.x, UNIF_4UI, 4) {}
+        ShaderValueVariant(const Math::fVector4& vec) : ShaderValueVariant(&vec.x, UNIF_4F,  4) {}
+        ShaderValueVariant(Span<const Math::iVector2> vecs) : ShaderValueVariant(vecs.Data(), UNIF_2I_ARR,  2 * vecs.Length()) {}
+        ShaderValueVariant(Span<const Math::uVector2> vecs) : ShaderValueVariant(vecs.Data(), UNIF_2UI_ARR, 2 * vecs.Length()) {}
+        ShaderValueVariant(Span<const Math::fVector2> vecs) : ShaderValueVariant(vecs.Data(), UNIF_2F_ARR,  2 * vecs.Length()) {}
+        ShaderValueVariant(Span<const Math::iVector3> vecs) : ShaderValueVariant(vecs.Data(), UNIF_3I_ARR,  3 * vecs.Length()) {}
+        ShaderValueVariant(Span<const Math::uVector3> vecs) : ShaderValueVariant(vecs.Data(), UNIF_3UI_ARR, 3 * vecs.Length()) {}
+        ShaderValueVariant(Span<const Math::fVector3> vecs) : ShaderValueVariant(vecs.Data(), UNIF_3F_ARR,  3 * vecs.Length()) {}
+        ShaderValueVariant(Span<const Math::iVector4> vecs) : ShaderValueVariant(vecs.Data(), UNIF_4I_ARR,  4 * vecs.Length()) {}
+        ShaderValueVariant(Span<const Math::uVector4> vecs) : ShaderValueVariant(vecs.Data(), UNIF_4UI_ARR, 4 * vecs.Length()) {}
+        ShaderValueVariant(Span<const Math::fVector4> vecs) : ShaderValueVariant(vecs.Data(), UNIF_4F_ARR,  4 * vecs.Length()) {}
+        ShaderValueVariant(const Math::fColor&  col) : ShaderValueVariant(col.begin(), UNIF_4F, 4) {}
+        ShaderValueVariant(const Math::fColor3& col) : ShaderValueVariant(col.begin(), UNIF_3F, 3) {}
+        ShaderValueVariant(Span<const Math::fColor>  cols) : ShaderValueVariant(cols.Data(), UNIF_4F_ARR, 4 * cols.Length()) {}
+        ShaderValueVariant(Span<const Math::fColor3> cols) : ShaderValueVariant(cols.Data(), UNIF_3F_ARR, 3 * cols.Length()) {}
         template <u32 N, u32 M>
-        ShaderValueVariant(const Math::Matrix<N, M>& mat) {
-            using enum ShaderUniformType;
-            type = (ShaderUniformType)(FLOAT_FLAG | (ROWS_1 * N) | (COLS_1 * M) | ARRAY_FLAG);
-            data = mat.data().data();
-            size = N * M;
-        }
-
+        ShaderValueVariant(const Math::Matrix<N, M>& mat) : ShaderValueVariant(mat.data().Data(), (ShaderUniformType)(FLOAT_FLAG | (ROWS_1 * N) | (COLS_1 * M) | ARRAY_FLAG), N * M) {}
         template <u32 N, u32 M>
-        ShaderValueVariant(Span<const Math::Matrix<N, M>> mats) {
-            using enum ShaderUniformType;
-            type = (ShaderUniformType)(FLOAT_FLAG | (ROWS_1 * N) | (COLS_1 * M) | ARRAY_FLAG);
-            data = mats.data();
-            size = N * M * (u32)mats.size();
-        }
-
+        ShaderValueVariant(Span<const Math::Matrix<N, M>> mats) : ShaderValueVariant(mats.Data(), (ShaderUniformType)(FLOAT_FLAG | (ROWS_1 * N) | (COLS_1 * M) | ARRAY_FLAG), N * M * mats.Length()) {}
         ShaderValueVariant(const Texture& tex);
 #pragma endregion
     public:
-        template <class T> std::remove_cvref_t<T> as() const;
+        template <class T> RemQual<T> as() const {
+            if constexpr (requires (T maybeSpan) { { Span { maybeSpan } } -> SameAs<T>; }) {
+                using Item = typename RemQual<T>::Item;
+                return Spans::FromBuffer(Memory::Transmute<const float*>(data), size).Transmute<const Item>();
+            } else if constexpr (Numeric<T>) {
+                return Memory::Transmute<RemQual<T>>((u32)data);
+            } else if constexpr (IsPtr<T>) {
+                return Memory::Transmute<RemQual<T>>(data);
+            } else {
+                return Memory::Transmute<RemQual<T>>(*Memory::Transmute<const Array<byte, sizeof(T)>*>(data));
+            }
+        }
 
         template <class T>
-        [[nodiscard]] bool is() const {
+        bool is() const {
             using enum ShaderUniformType;
             const int typeId = (int)((type / (1 << 7)) * 2 + ((type & ARRAY_FLAG) / ARRAY_FLAG));
             constexpr int INT = 2, UINT = 4, FLOAT = 6, INTPTR = 3, UINTPTR = 5, FLOATPTR = 7;
@@ -395,24 +386,6 @@ namespace Quasi::Graphics {
         }
     };
 
-    namespace details {
-#define DEFINE_AS_IMPL(T, ...) struct as_impl<Q_REMOVE_SCOPE(T)> { static Q_REMOVE_SCOPE(T) as(const ShaderValueVariant& s) { return __VA_ARGS__; } };
-        template <> DEFINE_AS_IMPL((int),          std::bit_cast<int>  ((u32)std::bit_cast<usize>(s.data)))
-        template <> DEFINE_AS_IMPL((uint),         std::bit_cast<uint> ((u32)std::bit_cast<usize>(s.data)))
-        template <> DEFINE_AS_IMPL((float),        std::bit_cast<float>((u32)std::bit_cast<usize>(s.data)))
-        template <> DEFINE_AS_IMPL((const int*),   (const int*)  s.data)
-        template <> DEFINE_AS_IMPL((const uint*),  (const uint*) s.data)
-        template <> DEFINE_AS_IMPL((const float*), (const float*)s.data)
-        template <class T> DEFINE_AS_IMPL((Span<T>), { as_impl<T*>::as(s), s.size })
-        template <u32 N, class T> DEFINE_AS_IMPL((Math::VectorN<N, T>), Math::VectorN<N, T>::from_span(as_impl<Span<const T>>::as(s)))
-        template <u32 N, class T> DEFINE_AS_IMPL((Span<const Math::VectorN<N, T>>), CastSpan<const Math::VectorN<N, T>>(as_impl<Span<const T>>::as(s)))
-        template <u32 N, u32 M>   DEFINE_AS_IMPL((Span<const Math::Matrix<N, M>>),  CastSpan<const Math::Matrix<N, M>> (as_impl<Span<const float>>::as(s)))
-#undef DEFINE_AS_IMPL
-    }
-
-    template <class T> std::remove_cvref_t<T> ShaderValueVariant::as() const { return details::as_impl<std::remove_cvref_t<T>>::as(*this); }
-
-
     struct ShaderArgs {
         StringList args;
         Vec<ShaderValueVariant> params;
@@ -420,18 +393,18 @@ namespace Quasi::Graphics {
         ShaderArgs() {}
         ShaderArgs(IList<ShaderParameter> p);
 
-        [[nodiscard]] usize size() const { return params.size(); }
+        usize size() const { return params.Length(); }
 
         ShaderArgs& then(Str name, ShaderValueVariant val) {
             args.Push(name);
-            params.emplace_back(val);
+            params.Push(val);
             return *this;
         }
 
         using Iter = ShaderArgsIter;
 
-        [[nodiscard]] Iter begin() const;
-        [[nodiscard]] Iter end() const;
+        Iter begin() const;
+        IteratorEndMarker end() const { return IteratorEnd; }
     };
 
     struct ShaderParameter {
@@ -440,7 +413,7 @@ namespace Quasi::Graphics {
     };
 
     struct ShaderArgsIter {
-        IterOf<Vec<ShaderValueVariant>> valIt;
+        BufferIterator<const ShaderValueVariant&> valIt;
         StringListIter argIt;
 
         ShaderParameter operator*() const {
@@ -448,9 +421,9 @@ namespace Quasi::Graphics {
         }
 
         ShaderArgsIter& operator++() { ++valIt; ++argIt; return *this; }
-        bool operator==(ShaderArgsIter other) const { return valIt == other.valIt; }
+        bool operator==(const IteratorEndMarker& marker) const { return valIt == marker; }
+        bool operator!=(const IteratorEndMarker& marker) const { return valIt != marker; }
     };
 
     inline ShaderArgs::Iter ShaderArgs::begin() const { return { .valIt = params.begin(), .argIt = args.begin() }; }
-    inline ShaderArgs::Iter ShaderArgs::end()   const { return { .valIt = params.end(),   .argIt = args.end()   }; }
 }

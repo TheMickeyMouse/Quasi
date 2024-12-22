@@ -27,13 +27,13 @@ namespace Quasi::Graphics {
     void VertexArray::AddBuffer(const VertexBufferLayout& layout) {
         const Vec<VertexBufferComponent>& elements = layout.GetComponents();
         usize offset = 0;
-        for (u32 i = 0; i < elements.size(); i++) {
+        for (u32 i = 0; i < elements.Length(); i++) {
             const auto& elem = elements[i];
             QGLCall$(GL::EnableVertexAttribArray(i));
             if (elem.flags & VertexBufferComponent::INTEGER_FLAG)
-                QGLCall$(GL::VertexAttribIPointer(i, elem.count, elem.type->glID, layout.GetStride(), (const void*)offset));  // NOLINT(performance-no-int-to-ptr)
+                QGLCall$(GL::VertexAttribIPointer(i, elem.count, elem.type->glID, layout.GetStride(), (const void*)offset));
             else
-                QGLCall$(GL::VertexAttribPointer(i, elem.count, elem.type->glID, elem.flags & elem.NORMALIZED_FLAG, layout.GetStride(), (const void*)offset));  // NOLINT(performance-no-int-to-ptr)
+                QGLCall$(GL::VertexAttribPointer(i, elem.count, elem.type->glID, elem.flags & elem.NORMALIZED_FLAG, layout.GetStride(), (const void*)offset));
             offset += elem.count * elem.type->typeSize;
         }
     }

@@ -117,17 +117,17 @@ namespace Quasi::Graphics {
 
         static void SetPixelStore(PixelStoreParam param, int val);
 
-        [[nodiscard]] int Slot() const { return (int)((usize)textureSlot.get() - 1); }
+        int Slot() const { return (int)((usize)textureSlot.get() - 1); }
 
-        [[nodiscard]] TextureTarget Target() const { return target; }
-        [[nodiscard]] int TargetI() const { return (int)Target(); }
+        TextureTarget Target() const { return target; }
+        int TargetI() const { return (int)Target(); }
         void SetTarget(const TextureTarget t) { target = t; }
 
-        [[nodiscard]] const Math::uVector3& Size() const { return size; }
-        [[nodiscard]] Math::uVector2 Size2D() const { return size.xy(); }
-        [[nodiscard]] uint Size1D() const { return size.x; }
+        const Math::uVector3& Size() const { return size; }
+        Math::uVector2 Size2D() const { return size.xy(); }
+        uint Size1D() const { return size.x; }
 
-        [[nodiscard]] int Dimension() const;
+        int Dimension() const;
 
         friend class FrameBuffer;
     };

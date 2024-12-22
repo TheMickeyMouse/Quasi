@@ -7,9 +7,8 @@
 #include "Option.h"
 #include "Text.h"
 
-#include "Utils/Type.h"
+#include "Utils/Iterator.h"
 #include "Utils/Ref.h"
-#include "Utils/Func.h"
 
 namespace Quasi::Math {
 #pragma region Concepts and Decls
@@ -24,7 +23,7 @@ namespace Quasi::Math {
         template <class... R> VectorN(R... args)
         requires ((std::is_convertible_v<T, R> && ...) && sizeof...(R) == N) : elems { args... } {}
 
-        [[nodiscard]] auto tup() const {
+        auto tup() const {
             return [&]<uint... Is>(std::integer_sequence<uint, Is...>){
                 return std::make_tuple(elems[Is]...);
             }(std::make_integer_sequence<uint, N> {});
@@ -345,8 +344,8 @@ namespace Quasi::Math {
         vect& len_clamp() { return as_vec() = len_clamped(); }
         NODISC static vect max(const vect& a, const vect& b) { return details::operate(details::max {}, a, b); }
         NODISC static vect min(const vect& a, const vect& b) { return details::operate(details::min {}, a, b); }
-        NODISC static vect max(const CollectionOf<vect> auto& nums) { vect m = { std::numeric_limits<T>::lowest() }; for (const auto& v : nums) { m = max(m, v); } return m; }
-        NODISC static vect min(const CollectionOf<vect> auto& nums) { vect m = { std::numeric_limits<T>::max()    }; for (const auto& v : nums) { m = min(m, v); } return m; }
+        NODISC static vect max(const Collection<vect> auto& nums) { vect m = { std::numeric_limits<T>::lowest() }; for (const auto& v : nums) { m = max(m, v); } return m; }
+        NODISC static vect min(const Collection<vect> auto& nums) { vect m = { std::numeric_limits<T>::max()    }; for (const auto& v : nums) { m = min(m, v); } return m; }
         NODISC static vect clamp(const RectN<N, T>& r, const vect& x);
 
         NODISC vect map(const RectN<N, T>& input, const RectN<N, T>& output) const;

@@ -33,16 +33,16 @@ namespace Quasi::Graphics {
     }
 
     TextRenderer::CharQuad* TextRenderer::Begin() {
-        return (CharQuad*)textVertices.data();
+        return (CharQuad*)textVertices.Data();
     }
     const TextRenderer::CharQuad* TextRenderer::Begin() const {
-        return (const CharQuad*)textVertices.data();
+        return (const CharQuad*)textVertices.Data();
     }
     TextRenderer::CharQuad* TextRenderer::End() {
-        return (CharQuad*)(textVertices.data() + textVertices.size());
+        return (CharQuad*)(textVertices.Data() + textVertices.Length());
     }
     const TextRenderer::CharQuad* TextRenderer::End() const {
-        return (const CharQuad*)(textVertices.data() + textVertices.size());
+        return (const CharQuad*)(textVertices.Data() + textVertices.Length());
     }
     TextRenderer::CharQuad& TextRenderer::CharAt(u32 index) {
         return Begin()[index];
@@ -71,17 +71,17 @@ namespace Quasi::Graphics {
 
     void TextRenderer::JustifyAlignX() {
         const float restWidth = 2 * align.GetXOff(lineWidth - align.letterSpacing.pointsf());
-        if (lineWords.size() < 2) return; // no need to align
-        if (lastSpaceIndex == meshIndex) lineWords.pop_back(); // check if this 'word' is necessary (is not empty or whitespace)
-        const float space = restWidth / (float)(lineWords.size() - 1); // amt of space between each word (accounts for existing spaces)
-        for (u32 i = 1; i < lineWords.size(); ++i) {
-            const auto end = i == lineWords.size() - 1 ? End() : Begin() + lineWords[i+1].index; // span of word
+        if (lineWords.Length() < 2) return; // no need to align
+        if (lastSpaceIndex == meshIndex) lineWords.Pop(); // check if this 'word' is necessary (is not empty or whitespace)
+        const float space = restWidth / (float)(lineWords.Length() - 1); // amt of space between each word (accounts for existing spaces)
+        for (u32 i = 1; i < lineWords.Length(); ++i) {
+            const auto end = i == lineWords.Length() - 1 ? End() : Begin() + lineWords[i+1].index; // span of word
             const float xOff = space * (float)i;
             for (CharQuad* v = Begin() + lineWords[i].index; v != end; ++v) // get beginning of word
                 v->MoveX(xOff);
         }
-        lineWords.clear(); // prepare for new line
-        lineWords.emplace_back(meshIndex, 0.0f);
+        lineWords.Clear(); // prepare for new line
+        lineWords.Push({ meshIndex, 0.0f });
     }
 
     void TextRenderer::AlignX() {
@@ -115,8 +115,8 @@ namespace Quasi::Graphics {
             if (shallCrop && !isAllVisible) {
                 visibleStart ^= -(visibleStart < 0);
                 visibleEnd ^= -(visibleEnd < 0);
-                textVertices.resize(4 * (visibleEnd + 1));
-                textVertices.erase(textVertices.begin() + (int)lastLineIndex * 4, textVertices.begin() + visibleStart * 4);
+                textVertices.Resize(4 * (visibleEnd + 1));
+                textVertices.Erase((int)lastLineIndex * 4, (visibleStart - (int)lastLineIndex) * 4);
                 // m - (vs - l) - (m - ve) -> m - vs + l - m + ve -> ve - vs + l
                 const u32 removed = visibleStart - lastLineIndex + meshIndex - visibleEnd - 1;
                 meshIndex -= removed;
@@ -138,9 +138,9 @@ namespace Quasi::Graphics {
                 --backUntilSpace; // look back for spaces
             } while (*backUntilSpace != ' ');
             lineWidth -= spaceAdvance; // remember to remove the space as well
-            if (align.IsAlignJustified()) lineWords.pop_back(); // and delete this overflowed word 
+            if (align.IsAlignJustified()) lineWords.Pop(); // and delete this overflowed word
 
-            textVertices.resize(4 * lastSpaceIndex); // forget about mesh data; re-render the word
+            textVertices.Resize(4 * lastSpaceIndex); // forget about mesh data; re-render the word
             meshIndex = lastSpaceIndex; // reset everything back to before the overflowed word
             lastSpaceIndex = 0;
             TriggerNewLine(); // make new line
@@ -152,12 +152,12 @@ namespace Quasi::Graphics {
 
     void TextRenderer::FixAlignY() {
         if (align.IsVerticalJustified()) {
-            if (lineIndices.empty()) return; // no need to align lines NOLINT(cppcoreguidelines-avoid-goto, hicpp-avoid-goto)
-            const float yOff = -align.GetYOff(lineSpacing * ((float)lineIndices.size() * align.lineSpacing + 1))
-                                * 2 / (float)lineIndices.size(); // space between each line
+            if (!lineIndices) return; // no need to align lines NOLINT(cppcoreguidelines-avoid-goto, hicpp-avoid-goto)
+            const float yOff = -align.GetYOff(lineSpacing * ((float)lineIndices.Length() * align.lineSpacing + 1))
+                                * 2 / (float)lineIndices.Length(); // space between each line
             u32 lineNum = 0; // line number to keep track of offset
             for (u32 i = 0; i < meshIndex; ++i) {
-                if (i >= (lineNum >= lineIndices.size() ? UINT32_MAX : lineIndices[lineNum])) // last line doesnt exist, so index is at UINT32_MAX
+                if (i >= (lineNum >= lineIndices.Length() ? U32_MAX : lineIndices[lineNum])) // last line doesnt exist, so index is at UINT32_MAX
                     ++lineNum; // increments line number if index surpasses next line index
                 CharAt(i).MoveY(yOff * (float)lineNum); // offsets points accordingly
             }
@@ -181,10 +181,10 @@ namespace Quasi::Graphics {
     }
 
     void TextRenderer::PushCharQuad(const Math::fRect2D& pos, const Math::fRect2D& tex) {
-        textVertices.emplace_back(pos.corner(0), tex.corner(0), 1.0f, Vertex::RENDER_TEXT); // y flipped cuz opengl textures are flipped
-        textVertices.emplace_back(pos.corner(1), tex.corner(1), 1.0f, Vertex::RENDER_TEXT);
-        textVertices.emplace_back(pos.corner(2), tex.corner(2), 1.0f, Vertex::RENDER_TEXT); // NOLINT(clang-diagnostic-xor-used-as-pow)
-        textVertices.emplace_back(pos.corner(3), tex.corner(3), 1.0f, Vertex::RENDER_TEXT);
+        textVertices.Push({ pos.corner(0), tex.corner(0), 1.0f, Vertex::RENDER_TEXT }); // y flipped cuz opengl textures are flipped
+        textVertices.Push({ pos.corner(1), tex.corner(1), 1.0f, Vertex::RENDER_TEXT });
+        textVertices.Push({ pos.corner(2), tex.corner(2), 1.0f, Vertex::RENDER_TEXT }); // NOLINT(clang-diagnostic-xor-used-as-pow)
+        textVertices.Push({ pos.corner(3), tex.corner(3), 1.0f, Vertex::RENDER_TEXT });
     }
 
     void TextRenderer::AddChar(IterOf<Str>& it, IterOf<Str> begin) {
@@ -225,7 +225,7 @@ namespace Quasi::Graphics {
         ++meshIndex; // meshIndex is not always index, could encounter \n
         pen.x += advance; // move pen
         lineWidth += advance; // incr line width
-        if (align.IsAlignJustified()) lineWords.back().width += advance; // the current word also has to be updated}
+        if (align.IsAlignJustified()) lineWords.Last().width += advance; // the current word also has to be updated}
     }
 
     void TextRenderer::AddRichChar(const Text::RichString::Iter& it) {
@@ -271,7 +271,7 @@ namespace Quasi::Graphics {
         ++meshIndex; // meshIndex is not always index, could encounter \n
         pen.x += advance; // move pen
         lineWidth += advance; // incr line width
-        if (align.IsAlignJustified()) lineWords.back().width += advance; // the current word also has to be updated}
+        if (align.IsAlignJustified()) lineWords.Last().width += advance; // the current word also has to be updated}
     }
 
     void TextRenderer::TriggerNewLine() {
@@ -281,7 +281,7 @@ namespace Quasi::Graphics {
         FixAlignX(); // align the line
             
         if (align.IsVerticalJustified() && lineWidth > 0) // add current index to line indices
-            lineIndices.push_back(meshIndex);
+            lineIndices.Push(meshIndex);
             
         lastLineIndex = meshIndex; // same as above
         lineWidth = 0; // reset new line width 
@@ -289,7 +289,7 @@ namespace Quasi::Graphics {
 
     void TextRenderer::TriggerSpace() {
         if (align.IsAlignJustified() && lastSpaceIndex < meshIndex) // check if is justify and word is not empty
-            lineWords.emplace_back(meshIndex, 0.0f);
+            lineWords.Push({ meshIndex, 0.0f });
         pen.x += spaceAdvance; // moves pen
         lineWidth += spaceAdvance; // increments line's width
         lastSpaceIndex = meshIndex; // update index
@@ -300,7 +300,7 @@ namespace Quasi::Graphics {
         lineCount = (u32)(std::ranges::count(string, '\n') + 1); //line count for vertical alignment
         Prepare();
         
-        if (align.IsAlignJustified()) lineWords.emplace_back(0, 0.0f); // add new beginning 'word'
+        if (align.IsAlignJustified()) lineWords.Push({ 0, 0.0f }); // add new beginning 'word'
 
         for (auto it = string.begin(); it != string.end(); ++it) { // loop each char in string (keep in mind not ranged for loop)
             AddChar(it, string.begin());
@@ -314,25 +314,25 @@ namespace Quasi::Graphics {
         lineCount = string.Lines(); // line count for vertical alignment
         Prepare();
         
-        if (align.IsAlignJustified()) lineWords.emplace_back(0, 0.0f); // add new beginning 'word'
+        if (align.IsAlignJustified()) lineWords.Push({ 0, 0.0f }); // add new beginning 'word'
 
         Vec<fRange> monos;
         u32 monoNum = 0;
         const float monoPadding = fontSize.pointsf() * 0.33f;
         auto it = string.begin();
         for (; it != string.end(); ++it) { // loop each char in string (keep in mind not ranged for loop)
-            if (it.currentState.codeLang && monos.size() == monoNum) {
-                monos.emplace_back(pen.x, INFINITY);
+            if (it.currentState.codeLang && monos.Length() == monoNum) {
+                monos.Push({ pen.x, INF });
                 pen.x += monoPadding;
-            } else if (!it.currentState.codeLang && monos.size() != monoNum) {
+            } else if (!it.currentState.codeLang && monos.Length() != monoNum) {
                 pen.x += monoPadding;
-                monos.back().max = pen.x;
+                monos.Last().max = pen.x;
                 ++monoNum;
             }
             if (*it.iter == '\n') {
                 if (it.currentState.codeLang) {
                     pen.x += monoPadding;
-                    monos.back().max = pen.x;
+                    monos.Last().max = pen.x;
                 }
                 const float restWidth = align.GetXOff(lineWidth - align.letterSpacing.pointsf());
                 for (const fRange monoSpan : monos) {
@@ -343,7 +343,7 @@ namespace Quasi::Graphics {
                         fontSize.pointsf() * 0.3f, fColor::from_hex("27303d")
                     );
                 }
-                monos.clear();
+                monos.Clear();
                 monoNum = 0;
             }
             AddRichChar(it);
@@ -351,9 +351,9 @@ namespace Quasi::Graphics {
         FixAlignX(); // dont forget to fix the last line
         FixAlignY();
 
-        if (!it.currentState.codeLang && monos.size() != monoNum) {
+        if (!it.currentState.codeLang && monos.Length() != monoNum) {
             pen.x += monoPadding;
-            monos.back().max = pen.x;
+            monos.Last().max = pen.x;
         }
         const float restWidth = align.GetXOff(lineWidth - align.letterSpacing.pointsf());
         for (const fRange monoSpan : monos) {
@@ -371,47 +371,47 @@ namespace Quasi::Graphics {
         // rectangle
         const fVector2 y = fVector2::unit_y(roundRadius);
         constexpr int renderType = Vertex::RENDER_FILL;
-        const u32 off = (u32)bgVertices.size();
-        bgVertices.emplace_back(region.corner(0) + y, 0.0f, color, renderType);
-        bgVertices.emplace_back(region.corner(1) + y, 0.0f, color, renderType);
-        bgVertices.emplace_back(region.corner(2) - y, 0.0f, color, renderType);
-        bgVertices.emplace_back(region.corner(3) - y, 0.0f, color, renderType);
+        const u32 off = (u32)bgVertices.Length();
+        bgVertices.Push({ region.corner(0) + y, 0.0f, color, renderType });
+        bgVertices.Push({ region.corner(1) + y, 0.0f, color, renderType });
+        bgVertices.Push({ region.corner(2) - y, 0.0f, color, renderType });
+        bgVertices.Push({ region.corner(3) - y, 0.0f, color, renderType });
 
         const fVector2 x = fVector2::unit_x(roundRadius);
-        bgVertices.emplace_back(region.corner(2) + x,     0.0f, color, renderType);
-        bgVertices.emplace_back(region.corner(2) + x - y, 0.0f, color, renderType);
-        bgVertices.emplace_back(region.corner(3) - x,     0.0f, color, renderType);
-        bgVertices.emplace_back(region.corner(3) - x - y, 0.0f, color, renderType);
+        bgVertices.Push({ region.corner(2) + x,     0.0f, color, renderType });
+        bgVertices.Push({ region.corner(2) + x - y, 0.0f, color, renderType });
+        bgVertices.Push({ region.corner(3) - x,     0.0f, color, renderType });
+        bgVertices.Push({ region.corner(3) - x - y, 0.0f, color, renderType });
 
-        bgVertices.emplace_back(region.corner(0) + x,     0.0f, color, renderType);
-        bgVertices.emplace_back(region.corner(0) + x + y, 0.0f, color, renderType);
-        bgVertices.emplace_back(region.corner(1) - x,     0.0f, color, renderType);
-        bgVertices.emplace_back(region.corner(1) - x + y, 0.0f, color, renderType);
+        bgVertices.Push({ region.corner(0) + x,     0.0f, color, renderType });
+        bgVertices.Push({ region.corner(0) + x + y, 0.0f, color, renderType });
+        bgVertices.Push({ region.corner(1) - x,     0.0f, color, renderType });
+        bgVertices.Push({ region.corner(1) - x + y, 0.0f, color, renderType });
 
-        bgIndices.push_back(TriIndices { 0,  1,  2 } + off);
-        bgIndices.push_back(TriIndices { 1,  2,  3 } + off);
-        bgIndices.push_back(TriIndices { 4,  5,  6 } + off);
-        bgIndices.push_back(TriIndices { 5,  6,  7 } + off);
-        bgIndices.push_back(TriIndices { 8,  9, 10 } + off);
-        bgIndices.push_back(TriIndices { 9, 10, 11 } + off);
+        bgIndices.Push(TriIndices { 0,  1,  2 } + off);
+        bgIndices.Push(TriIndices { 1,  2,  3 } + off);
+        bgIndices.Push(TriIndices { 4,  5,  6 } + off);
+        bgIndices.Push(TriIndices { 5,  6,  7 } + off);
+        bgIndices.Push(TriIndices { 8,  9, 10 } + off);
+        bgIndices.Push(TriIndices { 9, 10, 11 } + off);
 
         constexpr int cuts = 3, map = 0x00'01'03'02; // just flips 3 with 2
         constexpr float angle = HALF_PI / (float)cuts;
         u32 ind = 12 + off;
         for (int corner = 0; corner < 4; ++corner) {
             fVector2 origin = region.inset(roundRadius).corner(corner);
-            bgVertices.emplace_back(origin, 0.0f, color, renderType);
+            bgVertices.Push({ origin, 0.0f, color, renderType });
             for (int i = 0; i < cuts; ++i) {
-                bgVertices.emplace_back(
+                bgVertices.Push({
                     fVector2::from_polar(roundRadius,
                         angle * (float)i + HALF_PI * (float)(map >> corner * 8 & 255))
-                    + origin, 0.0f, color, renderType);
-                bgIndices.emplace_back(ind, ind + 1 + i, ind + 2 + i);
+                    + origin, 0.0f, color, renderType });
+                bgIndices.Push({ ind, ind + 1 + i, ind + 2 + i });
             }
-            bgVertices.emplace_back(
+            bgVertices.Push({
                 fVector2::from_polar(roundRadius,
                     HALF_PI * (float)(1 + (map >> corner * 8 & 255)))
-                + origin, 0.0f, color, renderType);
+                + origin, 0.0f, color, renderType });
             ind += cuts + 2;
         }
     }

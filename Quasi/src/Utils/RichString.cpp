@@ -81,7 +81,7 @@ namespace Quasi::Text {
                 }
 
                 if (c == '`') {
-                    auto searchIt = Find(it + 1, end, "`");
+                    const auto searchIt = Find(it + 1, end, "`");
                     if (searchIt == markdown.end()) {
                         state = LITERAL;
                         goto rawChar;
@@ -99,7 +99,7 @@ namespace Quasi::Text {
                     if (boldOrItalic == 255) goto rawChar;
                     const bool isSet = styleFlags & 2 << (1 - boldOrItalic);
                     if (!isSet) {
-                        auto searchIt = Find(it + 1 + boldOrItalic, end, boldOrItalic ? "**" : "*");
+                        const auto searchIt = Find(it + 1 + boldOrItalic, end, boldOrItalic ? "**" : "*");
                         if (searchIt == markdown.end()) {
                             state = boldOrItalic ? SKIP : LITERAL;
                             goto rawChar;
@@ -114,7 +114,7 @@ namespace Quasi::Text {
                 if (Matches(it, end, "~~")) {
                     const bool isSet = styleFlags & STRIKE_FLAG;
                     if (!isSet) {
-                        auto searchIt = Find(it + 2, end, "~~");
+                        const auto searchIt = Find(it + 2, end, "~~");
                         if (searchIt == markdown.end()) {
                             state = LITERAL;
                             goto rawChar;
@@ -174,13 +174,13 @@ namespace Quasi::Text {
 
     void RichString::AddTag(Style s, IList<byte> data, int off) {
         rawString.insert(rawString.end() + off, DELIMITER);
-        stylings.push_back((byte)s.Ord());
-        for (byte byte : data) stylings.push_back(byte);
+        stylings.Push((byte)s.Ord());
+        for (byte byte : data) stylings.Push(byte);
     }
 
     void RichString::AddTag(Style s, bool state, int off) {
         rawString.insert(rawString.end() + off, DELIMITER);
-        stylings.push_back((byte)(s + !state).Ord()); // off is encoded as the next enum val
+        stylings.Push((byte)(s + !state).Ord()); // off is encoded as the next enum val
     }
 
     uint RichString::Lines() const {
@@ -190,7 +190,7 @@ namespace Quasi::Text {
     String RichString::DebugRawstr() const {
         String debug;
         debug.reserve(rawString.size());
-        const byte*    stylePtr = stylings.data();
+        const byte*    stylePtr = stylings.Data();
         IterOf<String> lastSpan = rawString.begin();
         for (auto it = rawString.begin(); it != rawString.end(); ++it) {
             if (*it == DELIMITER) {
@@ -250,7 +250,7 @@ namespace Quasi::Text {
     RichString::Iter& RichString::Iter::operator++() {
         ++iter;
         for (; *iter == DELIMITER; ++iter) {
-            const byte* begin = str->stylings.data() + styleOffset;
+            const byte* begin = str->stylings.Data() + styleOffset;
             const Style s = Style::FromOrd(*begin);
             currentState.AddState(s, begin + 1);
             styleOffset += s->byteEncodingSize + 1;

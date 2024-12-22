@@ -63,22 +63,22 @@ namespace Quasi::Graphics::MeshUtils {
         }
 
         template <class F>
-        [[nodiscard]] auto operator()(const Options& options, F&& f) const {
+        auto operator()(const Options& options, F&& f) const {
             return Create(options, f);
         }
 
         template <class F>
-        [[nodiscard]] auto operator()(F&& f) const {
+        auto operator()(F&& f) const {
             return Create(f);
         }
 
         template <class F>
-        [[nodiscard]] auto operator()(const Options& options, F&& f, const MTransformer<MData> auto& transform) const {
+        auto operator()(const Options& options, F&& f, const MTransformer<MData> auto& transform) const {
             return Create(options, f, transform);
         }
 
         template <class F>
-        [[nodiscard]] auto operator()(F&& f, const MTransformer<MData> auto& transform) const {
+        auto operator()(F&& f, const MTransformer<MData> auto& transform) const {
             return Create(f, transform);
         }
     };

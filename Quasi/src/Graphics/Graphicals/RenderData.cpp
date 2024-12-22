@@ -52,8 +52,8 @@ namespace Quasi::Graphics {
 	}
 
 	void RenderData::BufferLoad() {
-		vbo.AddDataBytes({ vertexData.get(), vertexOffset });
-		ibo.AddData({ indexData.get(), indexOffset });
+		vbo.AddDataBytes(Spans::FromBuffer(vertexData.get(), vertexOffset));
+		ibo.AddData(Spans::FromBuffer(indexData.get(), indexOffset));
 	}
 
 	void RenderData::Clear() {

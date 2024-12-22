@@ -18,7 +18,7 @@ namespace Quasi::IO {
         void Update();
         void SetTime(float time);
 
-        [[nodiscard]] float DeltaTime() const { return deltaTime[dtIndex]; }
-        [[nodiscard]] float Framerate() const;
+        float DeltaTime() const { return deltaTime[dtIndex]; }
+        float Framerate() const;
     };
 }

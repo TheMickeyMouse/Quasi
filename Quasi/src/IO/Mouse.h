@@ -39,36 +39,36 @@ namespace Quasi::IO {
         void Hide();
         void Show(); // will also unlock the cursor
 
-        [[nodiscard]] Math::dVector2 GetMousePosPx() const;
-        [[nodiscard]] Math::dVector2 GetMousePos() const;
-        [[nodiscard]] bool IsInWindow() const;
+        Math::dVector2 GetMousePosPx() const;
+        Math::dVector2 GetMousePos() const;
+        bool IsInWindow() const;
 
-        [[nodiscard]] Math::dVector2 GetMouseScroll() const;
-        [[nodiscard]] Math::dVector2 GetMouseScrollDelta() const;
+        Math::dVector2 GetMouseScroll() const;
+        Math::dVector2 GetMouseScrollDelta() const;
 
-        [[nodiscard]] int  PressedState()         const;
-        [[nodiscard]] bool LeftPressed()          const;
-        [[nodiscard]] bool RightPressed()         const;
-        [[nodiscard]] bool MiddlePressed()        const;
-        [[nodiscard]] bool ButtonPressed(int btn) const;
-        [[nodiscard]] bool AnyPressed()           const;
-        [[nodiscard]] bool NonePressed()          const;
+        int  PressedState()         const;
+        bool LeftPressed()          const;
+        bool RightPressed()         const;
+        bool MiddlePressed()        const;
+        bool ButtonPressed(int btn) const;
+        bool AnyPressed()           const;
+        bool NonePressed()          const;
 
-        [[nodiscard]] int  OnPressState()         const;
-        [[nodiscard]] bool LeftOnPress()          const;
-        [[nodiscard]] bool RightOnPress()         const;
-        [[nodiscard]] bool MiddleOnPress()        const;
-        [[nodiscard]] bool ButtonOnPress(int btn) const;
-        [[nodiscard]] bool AnyOnPress()           const;
-        [[nodiscard]] bool NoneOnPress()          const;
+        int  OnPressState()         const;
+        bool LeftOnPress()          const;
+        bool RightOnPress()         const;
+        bool MiddleOnPress()        const;
+        bool ButtonOnPress(int btn) const;
+        bool AnyOnPress()           const;
+        bool NoneOnPress()          const;
 
-        [[nodiscard]] int  OnReleaseState()         const;
-        [[nodiscard]] bool LeftOnRelease()          const;
-        [[nodiscard]] bool RightOnRelease()         const;
-        [[nodiscard]] bool MiddleOnRelease()        const;
-        [[nodiscard]] bool ButtonOnRelease(int btn) const;
-        [[nodiscard]] bool AnyOnRelease()           const;
-        [[nodiscard]] bool NoneOnRelease()          const;
+        int  OnReleaseState()         const;
+        bool LeftOnRelease()          const;
+        bool RightOnRelease()         const;
+        bool MiddleOnRelease()        const;
+        bool ButtonOnRelease(int btn) const;
+        bool AnyOnRelease()           const;
+        bool NoneOnRelease()          const;
 
         static bool IsStandardMouseButton(int btn);
         static bool IsValidMouseButton(int btn);
@@ -76,6 +76,6 @@ namespace Quasi::IO {
         
         private:
             GLFWwindow* inputWindow();
-            [[nodiscard]] const GLFWwindow* inputWindow() const;
+            const GLFWwindow* inputWindow() const;
     };
 }

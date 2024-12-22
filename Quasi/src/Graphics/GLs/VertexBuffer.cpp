@@ -29,7 +29,7 @@ namespace Quasi::Graphics {
 
     void VertexBuffer::SetDataBytes(Span<const byte> data) {
         Bind();
-        QGLCall$(GL::BufferSubData(GL::ARRAY_BUFFER, 0, (int)data.size_bytes(), data.data()));
+        QGLCall$(GL::BufferSubData(GL::ARRAY_BUFFER, 0, (int)data.ByteSize(), data.Data()));
     }
 
     void VertexBuffer::ClearData() {
@@ -38,7 +38,7 @@ namespace Quasi::Graphics {
 
     void VertexBuffer::AddDataBytes(Span<const byte> data) {
         Bind();
-        QGLCall$(GL::BufferSubData(GL::ARRAY_BUFFER, (int)dataOffset, (int)data.size_bytes(), data.data()));
-        dataOffset += data.size_bytes();
+        QGLCall$(GL::BufferSubData(GL::ARRAY_BUFFER, (int)dataOffset, (int)data.ByteSize(), data.Data()));
+        dataOffset += data.ByteSize();
     }
 }

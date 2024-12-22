@@ -15,8 +15,8 @@ namespace Quasi {
         void* userPtr = nullptr;
         FuncPtr<Result, void*, Args&&...> functionPtr = nullptr;
 
-        [[nodiscard]] Result Invoke(Args&&... args) const { return functionPtr(userPtr, std::forward<Args>(args)...); }
-        [[nodiscard]] Result operator()(Args&&... args) const { return Invoke(std::forward<Args>(args)...); }
+        Result Invoke(Args&&... args) const { return functionPtr(userPtr, std::forward<Args>(args)...); }
+        Result operator()(Args&&... args) const { return Invoke(std::forward<Args>(args)...); }
 
         FuncRef() = default;
         FuncRef(void* uptr, FuncPtr<Result, void*, Args&&...> fptr) : userPtr(uptr), functionPtr(fptr) {}
@@ -52,32 +52,65 @@ namespace Quasi {
         }
     };
 
+    template <class T> struct Vec;
+
     namespace Combinate {
+        struct Identity {
+            template <class T> T&& operator()(T&& in) { return std::forward<T>(in); }
+        };
+
         template <class F>
         struct Y {
             F func;
             auto operator()(auto&&... args) { return func(*this, std::forward<decltype(args)>(args)...); }
         };
 
+        template <class F>
+        struct Negate { F func; bool operator()(auto&&... args) { return !func(std::forward<decltype(args)>(args)...); } };
+
         template <class T>
         struct Collect {
             Vec<T> elements;
-            void operator()(const T& val) { elements.emplace_back(val); }
-            void operator()(T&& val) { elements.emplace_back(std::move(val)); }
+            void operator()(const T& val) { elements.Push(val); }
+            void operator()(T&& val) { elements.Push(std::move(val)); }
+        };
+
+        template <class T, class F>
+        struct Bind {
+            T first;
+            const F& func;
+            auto operator()(auto&&... rest) const { return func(first, (decltype(rest))rest...); }
+        };
+
+        template <class T>
+        struct Constructor {
+            T operator()(auto&&... args) const { return T { (decltype(args))args... }; }
         };
     }
 
+    namespace Operators {
+        template <auto Indirect>
+        struct Member      { auto& operator()(const auto& x) const { return x.*Indirect; } };
+        template <auto Indirect>
+        struct MemberArrow { auto& operator()(const auto& x) const { return x->*Indirect; } };
+    }
+
     template <class F, class O, class... I>
-    concept Fn = requires (F f, I&&... args) {
+    concept Fn = requires (F& f, I&&... args) {
         { f(std::forward<I>(args)...) } -> ConvTo<O>;
     };
 
     template <class F, class... I>
-    concept FnArgs = requires (F f, I&&... args) {
+    concept FnArgs = requires (F& f, I&&... args) {
         { f(std::forward<I>(args)...) } -> AlwaysTrue;
     };
+
+    template <class Fn, class... Ts> using FuncResult = decltype(std::declval<Fn>()(std::declval<Ts>()...));
 
     template <class Fn> struct ArgTypes {};
     template <class Res, class... Args> struct ArgTypes<Res(*)(Args...)> { using type = Tuple<Args...>; };
     template <class Fn> using ArgumentsOf = typename ArgTypes<Fn>::type;
+
+    template <class F, class T>
+    concept Predicate = Fn<F, bool, const T&>;
 } // Q

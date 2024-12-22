@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include "Text.h"
+#include "Vec.h"
 
 namespace Quasi {
     template <class T>
@@ -28,8 +29,8 @@ namespace Quasi::Text {
         StringOutput& operator++() { return Move(); }
         StringOutput& operator+=(usize n) { return Move(n); }
 
-        [[nodiscard]] char& Curr() const { return outref[position]; }
-        [[nodiscard]] char& operator*() const { return Curr(); }
+        char& Curr() const { return outref[position]; }
+        char& operator*() const { return Curr(); }
 
         void Put(const char c, const usize count = 1) {
             for (u32 i = 0; i < count; ++i) {
@@ -81,7 +82,7 @@ namespace Quasi::Text {
         void(*formatters[])(const void*, Str, StringOutput) = { &DynFormatFunc<Ts>... };
 
         u32 brackI = 0, subI = 0, lastPos = 0;
-        while (brackI < f.brackSkips.size() && subI < f.subs.size()) {
+        while (brackI < f.brackSkips.Length() && subI < f.subs.Length()) {
             const u32 brackSkip = f.brackSkips[brackI],
                       specPos   = f.subs[subI].position,
                     & until     = std::min(brackSkip, specPos);
@@ -98,12 +99,12 @@ namespace Quasi::Text {
                 lastPos = sub.skipPosition + 1;
             }
         }
-        for (; brackI < f.brackSkips.size(); ++brackI) {
+        for (; brackI < f.brackSkips.Length(); ++brackI) {
             const u32 b = f.brackSkips[brackI];
             out(fmt.substr(lastPos, b - lastPos + 1));
             lastPos = b + 2;
         }
-        for (; subI < f.subs.size(); ++subI) {
+        for (; subI < f.subs.Length(); ++subI) {
             const auto& s = f.subs[subI];
             out(fmt.substr(lastPos, s.position - lastPos));
             formatters[s.index](argAnys[s.index], s.specifier, out);
@@ -415,7 +416,7 @@ namespace Quasi::Text {
         }
     };
 
-    template <CollectionLike R>
+    template <CollectionAny R>
     struct Formatter<R> {
         char brack = '[';
         Str elemFormat = "$";
@@ -439,7 +440,7 @@ namespace Quasi::Text {
             elemFormat = args.substr(1, args.size() - 1);
             return true;
         }
-        void WriteElement(const ArrayElement<R>& x, usize i, StringOutput output) const {
+        void WriteElement(const CollectionItem<R>& x, usize i, StringOutput output) const {
             for (const char c : elemFormat) {
                 if (c == '#') {
                     FormatOnto(output, i);

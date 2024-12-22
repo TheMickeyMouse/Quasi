@@ -42,22 +42,22 @@ namespace Quasi::Graphics {
         TextAlign& Align(byte alignX, byte alignY, byte wrapping, bool cropX, bool cropY);
         TextAlign& ResetAlign();
 
-        [[nodiscard]] bool IsAlignCenter()       const { return !(alignOptions & ALIGN_JUSTIFY); }
-        [[nodiscard]] bool IsAlignLeft()         const { return  (alignOptions & ALIGN_LEFT) && !(alignOptions & ALIGN_RIGHT); }
-        [[nodiscard]] bool IsAlignRight()        const { return !(alignOptions & ALIGN_LEFT) &&  (alignOptions & ALIGN_RIGHT); }
-        [[nodiscard]] bool IsAlignJustified()    const { return  (alignOptions & ALIGN_JUSTIFY) == ALIGN_JUSTIFY; }
-        [[nodiscard]] bool IsVerticalCenter()    const { return !(alignOptions & VERTICAL_JUSTIFY); }
-        [[nodiscard]] bool IsVerticalTop()       const { return  (alignOptions & VERTICAL_TOP) && !(alignOptions & VERTICAL_BOTTOM); }
-        [[nodiscard]] bool IsVerticalBottom()    const { return !(alignOptions & VERTICAL_TOP) &&  (alignOptions & VERTICAL_BOTTOM); }
-        [[nodiscard]] bool IsVerticalJustified() const { return  (alignOptions & VERTICAL_JUSTIFY) == VERTICAL_JUSTIFY; }
-        [[nodiscard]] bool IsWordWrap()          const { return  (alignOptions & WORD_WRAP);   }
-        [[nodiscard]] bool IsLetterWrap()        const { return  (alignOptions & LETTER_WRAP); }
-        [[nodiscard]] bool IsCropX()             const { return   alignOptions & CROP_X; }
-        [[nodiscard]] bool IsCropY()             const { return   alignOptions & CROP_Y; }
+        bool IsAlignCenter()       const { return !(alignOptions & ALIGN_JUSTIFY); }
+        bool IsAlignLeft()         const { return  (alignOptions & ALIGN_LEFT) && !(alignOptions & ALIGN_RIGHT); }
+        bool IsAlignRight()        const { return !(alignOptions & ALIGN_LEFT) &&  (alignOptions & ALIGN_RIGHT); }
+        bool IsAlignJustified()    const { return  (alignOptions & ALIGN_JUSTIFY) == ALIGN_JUSTIFY; }
+        bool IsVerticalCenter()    const { return !(alignOptions & VERTICAL_JUSTIFY); }
+        bool IsVerticalTop()       const { return  (alignOptions & VERTICAL_TOP) && !(alignOptions & VERTICAL_BOTTOM); }
+        bool IsVerticalBottom()    const { return !(alignOptions & VERTICAL_TOP) &&  (alignOptions & VERTICAL_BOTTOM); }
+        bool IsVerticalJustified() const { return  (alignOptions & VERTICAL_JUSTIFY) == VERTICAL_JUSTIFY; }
+        bool IsWordWrap()          const { return  (alignOptions & WORD_WRAP);   }
+        bool IsLetterWrap()        const { return  (alignOptions & LETTER_WRAP); }
+        bool IsCropX()             const { return   alignOptions & CROP_X; }
+        bool IsCropY()             const { return   alignOptions & CROP_Y; }
         
-        [[nodiscard]] float GetXOff(float width) const;
-        [[nodiscard]] float GetYOff(float height) const;
+        float GetXOff(float width) const;
+        float GetYOff(float height) const;
 
-        [[nodiscard]] float GetAdvance(const Glyph& glyph, float scaleRatio) const;
+        float GetAdvance(const Glyph& glyph, float scaleRatio) const;
     };
 }

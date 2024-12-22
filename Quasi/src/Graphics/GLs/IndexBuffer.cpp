@@ -31,7 +31,7 @@ namespace Quasi::Graphics {
 
     void IndexBuffer::SetData(Span<const u32> data, u32 dOffset) {
         Bind();
-        QGLCall$(GL::BufferSubData(GL::ELEMENT_ARRAY_BUFFER, dOffset, data.size_bytes(), data.data()));
+        QGLCall$(GL::BufferSubData(GL::ELEMENT_ARRAY_BUFFER, dOffset, data.ByteSize(), data.Data()));
     }
 
     void IndexBuffer::ClearData() {
@@ -40,7 +40,7 @@ namespace Quasi::Graphics {
 
     void IndexBuffer::AddData(Span<const u32> data) {
         Bind();
-        QGLCall$(GL::BufferSubData(GL::ELEMENT_ARRAY_BUFFER, dataOffset * sizeof(uint), data.size() * sizeof(uint), data.data()));
-        dataOffset += (u32)data.size();
+        QGLCall$(GL::BufferSubData(GL::ELEMENT_ARRAY_BUFFER, dataOffset * sizeof(u32), data.ByteSize(), data.Data()));
+        dataOffset += (u32)data.Length();
     }
 }

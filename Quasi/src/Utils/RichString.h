@@ -1,11 +1,10 @@
 #pragma once
 #include <string>
-#include <vector>
-#include <unordered_map>
 #include "Macros.h"
 
 #include "Enum.h"
 #include "Ref.h"
+#include "Vec.h"
 
 namespace Quasi::Text {
 #define STYLE_SWITCH(N, S) (N, (0, "<" S ">", true, true))(N##_OFF, (0, "</" S ">", true, false))
@@ -45,23 +44,23 @@ namespace Quasi::Text {
         static RichString ParseHtml(Str html);
 
         String& RawString() { return rawString; }
-        [[nodiscard]] const String& RawString() const { return rawString; }
+        const String& RawString() const { return rawString; }
 
         void Append(const char c) { rawString += c; }
         template <class It> void Append(It begin, It end) { rawString += Str { begin, end }; }
         void AddTag(Style s, IList<byte> data, int off = 0);
         void AddTag(Style s, bool state, int off = 0);
 
-        [[nodiscard]] uint Lines() const;
+        uint Lines() const;
 
-        [[nodiscard]] String DebugRawstr() const;
+        String DebugRawstr() const;
 
         struct Iter;
         struct RichChar;
         struct StyleState;
         
-        [[nodiscard]] Iter begin() const;
-        [[nodiscard]] Iter end() const;
+        Iter begin() const;
+        Iter end() const;
 
         enum class CodeLang {
             C,

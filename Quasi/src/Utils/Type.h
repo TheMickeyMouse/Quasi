@@ -3,8 +3,6 @@
 #include <cstdint>
 #include <map>
 #include <memory>
-#include <span>
-#include <vector>
 #include <string>
 
 #include "Macros.h"
@@ -26,20 +24,33 @@ namespace Quasi {
     using usize  = std::size_t;
     using isize  = std::intptr_t;
 
-    using uchar = unsigned char;
-    using byte  = unsigned char;
-    using sbyte = signed char;
-    using uint  = unsigned int;
+	using uchar = unsigned char;
+	using byte  = unsigned char;
+	using sbyte = signed char;
+	using uint  = unsigned int;
+
+	static constexpr u8    U8_MAX    = ~0;
+	static constexpr u16   U16_MAX   = ~0;
+	static constexpr u32   U32_MAX   = ~0;
+	static constexpr u64   U64_MAX   = ~0;
+	static constexpr usize USIZE_MAX = ~0;
+	static constexpr i8    I8_MAX    = U8_MAX >> 1;
+	static constexpr i16   I16_MAX   = U16_MAX >> 1;
+	static constexpr i32   I32_MAX   = U32_MAX >> 1;
+	static constexpr i64   I64_MAX   = U64_MAX >> 1;
+	static constexpr isize ISIZE_MAX = USIZE_MAX >> 1;
+	static constexpr i8    I8_MIN    = ~I8_MAX;
+	static constexpr i16   I16_MIN   = ~I16_MAX;
+	static constexpr i32   I32_MIN   = ~I32_MAX;
+	static constexpr i64   I64_MIN   = ~I64_MAX;
+	static constexpr isize ISIZE_MIN = ~ISIZE_MAX;
+	static constexpr byte  BYTE_MAX  = U8_MAX;
 
     using String = std::string;
     using Str    = std::string_view;
 
-    template <class T> using Vec = std::vector<T>;
     template <class K, class V, class Cmp = std::less<K>, class Alc = std::allocator<std::pair<const K, V>>>
     using Map = std::map<K, V, Cmp, Alc>;
-
-    template <class T, usize N>
-    using Array = std::array<T, N>;
 
     template <class T>
     using IList = std::initializer_list<T>;
@@ -54,33 +65,7 @@ namespace Quasi {
     template <class... Ts> using Tuple = std::tuple<Ts...>;
 	template <class T, class U> using Pair = std::pair<T, U>;
 
-	template <class T> using Implicit = std::type_identity_t<T>;
-
-    template <class T, usize Ext = std::dynamic_extent> using Span = std::span<T, Ext>;
-#pragma region Spanlike Types
-    using Bytes    = Span<const byte>;
-    using MutBytes = Span<byte>;
-
-    template <class R> concept ArrayLike = std::ranges::contiguous_range<R> && std::ranges::sized_range<R>;
-    template <class R> using ArrayElement = std::ranges::range_value_t<R>;
-	template <class R, class T> concept ArrayOf = ArrayLike<R> && std::is_same_v<T, ArrayElement<R>>;
-
-    template <class R> concept CollectionLike = std::ranges::range<R>;
-    template <class R, class E> concept CollectionOf = CollectionLike<R> && std::is_same_v<ArrayElement<R>, E>;
-
-    template <ArrayLike R> // from https://stackoverflow.com/questions/77097857/conversion-of-stdvector-to-stdspant
-    Span<ArrayElement<R>> TakeSpan(R& r) { return Span<ArrayElement<R>>(r); }
-
-    template <ArrayLike R>
-    Span<const ArrayElement<R>> TakeSpan(const R& r) { return Span<const ArrayElement<R>>(r); }
-
-    template <class T, class U> concept DividesSize = sizeof(U) % sizeof(T) == 0;
-    template <class U, class T> requires DividesSize<T, U> || DividesSize<U, T>
-    Span<U> CastSpan(Span<T> span) { return { reinterpret_cast<U*>(span.data()), span.size_bytes() / sizeof(U) }; }
-
-	template <class T> Span<const byte> BytesOf(const T& value) { return { reinterpret_cast<const byte*>(&value), sizeof(T) }; }
-	template <class T> Span<const byte> BytesOf(Span<const T> value) { return { reinterpret_cast<const byte*>(value.data()), value.size_bytes() }; }
-#pragma endregion
+	template <class T> using NoInfer = std::type_identity_t<T>;
 
 	struct Empty {
 		Empty(auto&&...) {}
@@ -92,25 +77,6 @@ namespace Quasi {
 	}
 	template <auto P> using StructureT = decltype(details::decltype_structure(P));
 	template <auto P> using MemberT    = decltype(details::decltype_member(P));
-
-    // adapted from https://stackoverflow.com/a/59522794/19968422
-    namespace details {
-        template <class T>
-        [[nodiscard]] constexpr Str raw_typename() {
-			return Q_FUNC_NAME();
-        }
-
-        constexpr usize type_junk_prefix = raw_typename<int>().find("int");
-        constexpr usize type_junk_size = raw_typename<int>().size() - 3;
-        // ReSharper disable once CppStaticAssertFailure
-        static_assert(type_junk_prefix != Str::npos, "cannot determine type signature in this compiler");
-    }
-
-    template <typename T>
-    [[nodiscard]] constexpr Str TypeName() {
-        const Str fullname = details::raw_typename<T>();
-        return fullname.substr(details::type_junk_prefix, fullname.size() - details::type_junk_size);
-    }
 
 	template <class T> using Nullable = T;
 	template <class T> using NotNull = T;
@@ -142,7 +108,11 @@ namespace Quasi {
 	template <class T> using   ToConstRef  = const RemRef<T>&;
 	template <class T> using   ToMutRef    = RemConstRef<T>&;
 
-	template <class T> using RemQual = std::remove_cvref_t<T>;
+	template <class T> using   RemQual = std::remove_cvref_t<T>;
+
+	template <class R> concept IsRawArray   = std::is_array_v<R>;
+	template <class R> using   ArrayElement = decltype(R {} [0]);
+	template <class R> constexpr usize ArrayLength() { return sizeof(R) / sizeof(ArrayElement<R>); }
 
 	template <class T, class U>      concept SameAs      =  std::is_same_v<T, U>;
 	template <class T, class U>      concept DifferentTo = !std::is_same_v<T, U>;
@@ -152,4 +122,30 @@ namespace Quasi {
 	template <class Base, class Der> concept BaseOf      =  std::is_base_of_v<Base, Der>;
 	template <class From, class To>  concept ConvTo      =  std::is_convertible_v<From, To>;
 	template <class To, class From>  concept ConvFrom    =  std::is_convertible_v<From, To>;
+
+	template <class Super, template <class...> class Interface, class... Args>
+	concept Implements = Extends<RemQual<Super>, Interface<Args..., RemQual<Super>>>;
+
+	namespace details {
+		template <bool>
+		struct IfElseBranch        { template <class WhenTrue, class WhenFalse> using Result = WhenTrue; };
+		template <>
+		struct IfElseBranch<false> { template <class WhenTrue, class WhenFalse> using Result = WhenFalse; };
+	}
+
+	template <bool Cond, class WhenTrue, class WhenFalse>
+	using IfElse = typename details::IfElseBranch<Cond>::template Result<WhenTrue, WhenFalse>;
+
+	template <class T, class ConstIf>   using AddConstIf = IfElse<IsConst<ConstIf>,   const T, T>;
+	template <class T, class NoConstIf> using RemConstIf = IfElse<IsConst<NoConstIf>, T, RemConst<T>>;
+
+	template <class T> concept Integer  = std::is_integral_v<T>;
+	template <class T> concept Signed   = std::is_signed_v<T>;
+	template <class T> concept Unsigned = std::is_unsigned_v<T>;
+	template <class T> concept Floating = std::is_floating_point_v<T>;
+	template <class T> concept Numeric  = std::is_arithmetic_v<T>;
+
+	template <class T, class U> using Common = decltype(false ? std::declval<T>() : std::declval<U>());
+
+	template <class T> concept TrivialCopy = std::is_trivially_copyable_v<T>;
 }

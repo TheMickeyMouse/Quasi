@@ -176,19 +176,14 @@ namespace Quasi::Graphics {
         return program;
     }
 
-    ShaderArgs::ShaderArgs(IList<ShaderParameter> p) {
-        params.reserve(p.size());
+    ShaderArgs::ShaderArgs(IList<ShaderParameter> p) : params(Vec<ShaderValueVariant>::WithCap(p.size())) {
         for (const auto param : p) {
             args.Push(param.name);
-            params.emplace_back(param.value);
+            params.Push(param.value);
         }
     }
 
-    ShaderValueVariant::ShaderValueVariant(const Texture& tex) {
-        type = ShaderUniformType::UNIF_1I;
-        data = std::bit_cast<const void*>((usize)tex.Slot());
-        size = 1;
-    }
+    ShaderValueVariant::ShaderValueVariant(const Texture& tex) : ShaderValueVariant(tex.Slot()) {}
 
 #define DEFINE_UNIF_FN(IN, S, ...) \
     template <>\
@@ -199,26 +194,26 @@ namespace Quasi::Graphics {
     DEFINE_UNIF_FN(1I,  1i,  val) DEFINE_UNIF_FN(2I,  2i,  val.x, val.y) DEFINE_UNIF_FN(3I,  3i,  val.x, val.y, val.z) DEFINE_UNIF_FN(4I,  4i,  val.x, val.y, val.z, val.w)
     DEFINE_UNIF_FN(1UI, 1ui, val) DEFINE_UNIF_FN(2UI, 2ui, val.x, val.y) DEFINE_UNIF_FN(3UI, 3ui, val.x, val.y, val.z) DEFINE_UNIF_FN(4UI, 4ui, val.x, val.y, val.z, val.w)
     DEFINE_UNIF_FN(1F,  1f,  val) DEFINE_UNIF_FN(2F,  2f,  val.x, val.y) DEFINE_UNIF_FN(3F,  3f,  val.x, val.y, val.z) DEFINE_UNIF_FN(4F,  4f,  val.x, val.y, val.z, val.w)
-    DEFINE_UNIF_FN(1I_ARR,  1iv,  (int)val.size(), val.data())
-    DEFINE_UNIF_FN(2I_ARR,  2iv,  (int)val.size(), (const int*)  val.data())
-    DEFINE_UNIF_FN(3I_ARR,  3iv,  (int)val.size(), (const int*)  val.data())
-    DEFINE_UNIF_FN(4I_ARR,  4iv,  (int)val.size(), (const int*)  val.data())
-    DEFINE_UNIF_FN(1UI_ARR, 1uiv, (int)val.size(), val.data())
-    DEFINE_UNIF_FN(2UI_ARR, 2uiv, (int)val.size(), (const uint*) val.data())
-    DEFINE_UNIF_FN(3UI_ARR, 3uiv, (int)val.size(), (const uint*) val.data())
-    DEFINE_UNIF_FN(4UI_ARR, 4uiv, (int)val.size(), (const uint*) val.data())
-    DEFINE_UNIF_FN(1F_ARR,  1fv,  (int)val.size(), val.data())
-    DEFINE_UNIF_FN(2F_ARR,  2fv,  (int)val.size(), (const float*)val.data())
-    DEFINE_UNIF_FN(3F_ARR,  3fv,  (int)val.size(), (const float*)val.data())
-    DEFINE_UNIF_FN(4F_ARR,  4fv,  (int)val.size(), (const float*)val.data())
+    DEFINE_UNIF_FN(1I_ARR,  1iv,  (int)val.Length(), val.Data())
+    DEFINE_UNIF_FN(2I_ARR,  2iv,  (int)val.Length(), Memory::TransmutePtr<const int>(val.Data()))
+    DEFINE_UNIF_FN(3I_ARR,  3iv,  (int)val.Length(), Memory::TransmutePtr<const int>(val.Data()))
+    DEFINE_UNIF_FN(4I_ARR,  4iv,  (int)val.Length(), Memory::TransmutePtr<const int>(val.Data()))
+    DEFINE_UNIF_FN(1UI_ARR, 1uiv, (int)val.Length(), val.Data())
+    DEFINE_UNIF_FN(2UI_ARR, 2uiv, (int)val.Length(), Memory::TransmutePtr<const uint> (val.Data()))
+    DEFINE_UNIF_FN(3UI_ARR, 3uiv, (int)val.Length(), Memory::TransmutePtr<const uint> (val.Data()))
+    DEFINE_UNIF_FN(4UI_ARR, 4uiv, (int)val.Length(), Memory::TransmutePtr<const uint> (val.Data()))
+    DEFINE_UNIF_FN(1F_ARR,  1fv,  (int)val.Length(), val.Data())
+    DEFINE_UNIF_FN(2F_ARR,  2fv,  (int)val.Length(), Memory::TransmutePtr<const float>(val.Data()))
+    DEFINE_UNIF_FN(3F_ARR,  3fv,  (int)val.Length(), Memory::TransmutePtr<const float>(val.Data()))
+    DEFINE_UNIF_FN(4F_ARR,  4fv,  (int)val.Length(), Memory::TransmutePtr<const float>(val.Data()))
 
-    DEFINE_UNIF_FN(MAT2x2, Matrix2fv,   (int)val.size(), false, (const float*)val.data())
-    DEFINE_UNIF_FN(MAT2x3, Matrix2x3fv, (int)val.size(), false, (const float*)val.data())
-    DEFINE_UNIF_FN(MAT2x4, Matrix2x4fv, (int)val.size(), false, (const float*)val.data())
-    DEFINE_UNIF_FN(MAT3x2, Matrix3x2fv, (int)val.size(), false, (const float*)val.data())
-    DEFINE_UNIF_FN(MAT3x3, Matrix3fv,   (int)val.size(), false, (const float*)val.data())
-    DEFINE_UNIF_FN(MAT3x4, Matrix3x4fv, (int)val.size(), false, (const float*)val.data())
-    DEFINE_UNIF_FN(MAT4x2, Matrix4x2fv, (int)val.size(), false, (const float*)val.data())
-    DEFINE_UNIF_FN(MAT4x3, Matrix4x3fv, (int)val.size(), false, (const float*)val.data())
-    DEFINE_UNIF_FN(MAT4x4, Matrix4fv,   (int)val.size(), false, (const float*)val.data())
+    DEFINE_UNIF_FN(MAT2x2, Matrix2fv,   (int)val.Length(), false, (const float*)val.Data())
+    DEFINE_UNIF_FN(MAT2x3, Matrix2x3fv, (int)val.Length(), false, (const float*)val.Data())
+    DEFINE_UNIF_FN(MAT2x4, Matrix2x4fv, (int)val.Length(), false, (const float*)val.Data())
+    DEFINE_UNIF_FN(MAT3x2, Matrix3x2fv, (int)val.Length(), false, (const float*)val.Data())
+    DEFINE_UNIF_FN(MAT3x3, Matrix3fv,   (int)val.Length(), false, (const float*)val.Data())
+    DEFINE_UNIF_FN(MAT3x4, Matrix3x4fv, (int)val.Length(), false, (const float*)val.Data())
+    DEFINE_UNIF_FN(MAT4x2, Matrix4x2fv, (int)val.Length(), false, (const float*)val.Data())
+    DEFINE_UNIF_FN(MAT4x3, Matrix4x3fv, (int)val.Length(), false, (const float*)val.Data())
+    DEFINE_UNIF_FN(MAT4x4, Matrix4fv,   (int)val.Length(), false, (const float*)val.Data())
 }

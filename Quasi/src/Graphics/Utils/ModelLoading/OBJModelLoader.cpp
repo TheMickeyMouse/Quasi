@@ -1,6 +1,8 @@
 #include "OBJModelLoader.h"
+#include "Algorithm.h"
+#include "Comparison.h"
 
-#include <ranges>
+#include "Iter/MapIter.h"
 
 namespace Quasi::Graphics {
     void OBJModelLoader::LoadFile(Str filepath) {
@@ -28,112 +30,83 @@ namespace Quasi::Graphics {
         const Str prefix = line.substr(0, spaceIdx),
                   data   = line.substr(spaceIdx + 1);
 
+        OBJProperty prop;
         Qmatch$ (prefix, (
-            case ("v")      properties.emplace_back(CreateProperty<Vertex>      (data));,
-            case ("vt")     properties.emplace_back(CreateProperty<VertexTex>   (data));,
-            case ("vn")     properties.emplace_back(CreateProperty<VertexNormal>(data));,
-            case ("vp")     properties.emplace_back(CreateProperty<VertexParam> (data));,
-            case ("f")      properties.emplace_back(CreateProperty<Face>        (data));,
-            case ("l")      properties.emplace_back(CreateProperty<Line>        (data));,
-            case ("o")      properties.emplace_back(CreateProperty<Object>      (data));,
-            case ("g")      properties.emplace_back(CreateProperty<Group>       (data));,
-            case ("s")      properties.emplace_back(CreateProperty<SmoothShade> (data));,
-            case ("usemtl") properties.emplace_back(CreateProperty<UseMaterial> (data));,
-            case ("mtllib") properties.emplace_back(CreateProperty<MaterialLib> (data));
-        ))
-    }
-
-    void OBJModelLoader::ParseProperties(Str string) {
-        using namespace std::literals;
-        for (const auto line : std::views::split(string, "\r\n"sv)) {
-            ParseProperty(Str { line.begin(), line.end() });
-        }
-    }
-
-    template <class OBJ>
-    OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty(Str data) {
-        using namespace std::literals;
-        Qmatch$ ((typename)OBJ, (
-            in (MaterialLib, UseMaterial, Object, Group) { return { OBJ { String { data } } }; },
-            in (Vertex, VertexNormal, VertexParam) {
-                return { OBJ { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 { NAN }) } };
-            },
-            case (VertexTex) {
-                return { OBJ { Math::fVector2::parse(data, " ", "", "").UnwrapOr(Math::fVector2 { NAN }) } };
-            },
-            case (Line) {
-                Vec<int> indices;
-                for (const auto idx : std::views::split(data, ' ')) {
-                    indices.push_back(Text::Parse<int>({ idx.begin(), idx.end() }).UnwrapOr(-1));
-                }
-                return { Line { std::move(indices) } };
-            },
-            case (Face) ({
+            case ("v")      prop.Set(Vertex       { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 { NAN }) });,
+            case ("vt")     prop.Set(VertexTex    { Math::fVector2::parse(data, " ", "", "").UnwrapOr(Math::fVector2 { NAN }) });,
+            case ("vn")     prop.Set(VertexNormal { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 { NAN }) });,
+            case ("vp")     prop.Set(VertexParam  { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 { NAN }) });,
+            case ("f") ({
                 Face face;
                 u32 i = 0;
                 for (const auto idx : std::views::split(data, ' ')) {
-                    if (i >= 3) return {};
+                    if (i >= 3) break;
                     const auto [v, t, n] = Math::iVector3::parse(Str { idx.begin(), idx.end() }, "/", "", "",
                         [](Str x) -> Option<int> { return Text::Parse<int>(x).UnwrapOr(-1); }).UnwrapOr({ -1 });
                     face.indices[i][0] = v; face.indices[i][1] = t; face.indices[i][2] = n;
                     ++i;
                 }
-                if (i != 3) return {};
-                return { face };
+                if (i == 3) prop.Set(face);
             });,
-            case (SmoothShade) { return { SmoothShade { data != "0" } }; },
-            else return {};
+            case ("l") {
+                Vec<int> indices;
+                for (const auto idx : std::views::split(data, ' ')) {
+                    indices.Push(Text::Parse<int>({ idx.begin(), idx.end() }).UnwrapOr(-1));
+                }
+                prop.Set<Line>({ indices });
+            },
+            case ("o")      prop.Set(Object { String(data) });,
+            case ("g")      prop.Set(Group  { String(data) });,
+            case ("s")      prop.Set(SmoothShade { data != "0" });,
+            case ("usemtl") prop.Set(UseMaterial { String(data) });,
+            case ("mtllib") prop.Set(MaterialLib { String(data) });
         ))
+        if (!prop.Is<Empty>())
+            properties.Push(std::move(prop));
     }
-    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::MaterialLib> (Str data);
-    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::UseMaterial> (Str data);
-    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::Object>      (Str data);
-    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::Group>       (Str data);
-    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::Vertex>      (Str data);
-    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::VertexNormal>(Str data);
-    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::VertexParam> (Str data);
-    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::VertexTex>   (Str data);
-    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::Line>        (Str data);
-    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::Face>        (Str data);
-    template OBJModelLoader::OBJProperty OBJModelLoader::CreateProperty<OBJModelLoader::SmoothShade> (Str data);
+
+    void OBJModelLoader::ParseProperties(Str string) {
+        using namespace std::literals;
+        for (const auto line : std::views::split(string, "\n"sv)) {
+            ParseProperty(Str { line.begin(), line.end() });
+        }
+    }
 
     void OBJModelLoader::CreateModel() {
         u32 lastObj = 0;
-        for (u32 i = 0; i < properties.size(); ++i) {
+        for (u32 i = 0; i < properties.Length(); ++i) {
             if (const auto matfile = properties[i].As<MaterialLib>()) {
                 LoadMaterialFile(matfile->dir);
                 continue;
             }
             if (!properties[i].Is<Object>()) continue;
 
-            const auto objprop = Span { properties }.subspan(lastObj, i - lastObj);
+            const auto objprop = properties.Subspan(lastObj, i - lastObj);
             lastObj = i;
             CreateObject(objprop);
         }
-        CreateObject(Span { properties }.subspan(lastObj));
+        CreateObject(properties.Skip(lastObj));
     }
 
     void OBJModelLoader::CreateObject(Span<const OBJProperty> objprop) {
-        if (objprop.empty() || !objprop.front().Is<Object>()) return;
+        if (objprop.IsEmpty() || !objprop[0].Is<Object>()) return;
 
-        model.objects.emplace_back();
-        OBJObject& object = model.objects.back();
+        model.objects.Push({});
+        OBJObject& object = model.objects.Last();
         object.model = &model;
-        object.name = objprop.front().As<Object>()->name;
+        object.name = objprop[0].As<Object>()->name;
 
-        for (const OBJProperty& prop : objprop.subspan(1)) {
+        for (const OBJProperty& prop : objprop.Skip(1)) {
             prop.Visit(
                 [&] (const UseMaterial& usemat) {
-                    object.materialIndex = (int)(
-                        std::ranges::find_if(model.materials,
-                            [&](const MTLMaterial& m) { return m.name == usemat.name; })
-                        - model.materials.begin()
+                    object.materialIndex = (u32)model.materials.FindIf(
+                        [&](const MTLMaterial& m) { return m.name == usemat.name; }
                     );
                 },
-                [&] (const Vertex&       v) { vertex       .push_back(v.pos); },
-                [&] (const VertexTex&    t) { vertexTexture.push_back(t.tex); },
-                [&] (const VertexNormal& n) { vertexNormal .push_back(n.nrm); },
-                [&] (const Face&         f) { faces.push_back(f); },
+                [&] (const Vertex&       v) { vertex       .Push(v.pos); },
+                [&] (const VertexTex&    t) { vertexTexture.Push(t.tex); },
+                [&] (const VertexNormal& n) { vertexNormal .Push(n.nrm); },
+                [&] (const Face&         f) { faces.Push(f); },
                 [&] (SmoothShade        ss) { object.smoothShading = ss.enabled; },
                 [] (const auto&) {}
             );
@@ -143,43 +116,45 @@ namespace Quasi::Graphics {
 
     void OBJModelLoader::ResolveObjectIndices(OBJObject& obj) {
         struct Cmp3 {
-            bool operator()(Math::iVector3 tripleA, Math::iVector3 tripleB) const {
+            Comparison operator()(Math::iVector3 tripleA, Math::iVector3 tripleB) const {
                 const auto [ax, ay, az] = tripleA;
                 const auto [bx, by, bz] = tripleB;
-                return ax != bx ? ax < bx : ay != by ? ay < by : az < bz;
+                return ax != bx ? Cmp::Between(ax, bx) : ay != by ? Cmp::Between(ay, by) : Cmp::Between(az, bz);
             }
         };
 
         // a hashset is actually worse than a vector lol, cuz i need indices
         Vec<Math::iVector3> indices;
         for (const Face& f : faces) {
-            indices.emplace_back(f.indices[0][0], f.indices[0][1], f.indices[0][2]);
-            indices.emplace_back(f.indices[1][0], f.indices[1][1], f.indices[1][2]);
-            indices.emplace_back(f.indices[2][0], f.indices[2][1], f.indices[2][2]);
+            indices.Push({ f.indices[0][0], f.indices[0][1], f.indices[0][2] });
+            indices.Push({ f.indices[1][0], f.indices[1][1], f.indices[1][2] });
+            indices.Push({ f.indices[2][0], f.indices[2][1], f.indices[2][2] });
         }
-        std::ranges::sort(indices, Cmp3 {});
-        const auto end = std::ranges::unique(indices).begin();
-        const auto beg = indices.begin();
-        obj.mesh.vertices.resize(end - beg);
-        std::transform(beg, end, obj.mesh.vertices.begin(),
+        indices.SortBy(Cmp3 {});
+        indices.RemoveDups();
+        obj.mesh.vertices = indices.MapVec(
             [&](Math::uVector3 triple) {
                 return OBJVertex {
                     triple.x == -1 ? Math::fVector3 {} : vertex[triple.x - 1],
                     triple.y == -1 ? Math::fVector2 {} : vertexTexture[triple.y - 1],
                     triple.z == -1 ? Math::fVector3 {} : vertexNormal[triple.z - 1]
                 };
-            });
+            }
+        );
 
         Vec<TriIndices>& ind = obj.mesh.indices;
-        ind.reserve(faces.size() * 3);
+        ind.Reserve(faces.Length() * 3);
         for (const Face& f : faces) {
-            const auto i1 = std::lower_bound(beg, end, Math::iVector3 { f.indices[0][0], f.indices[0][1], f.indices[0][2] }, Cmp3 {}),
-                       i2 = std::lower_bound(beg, end, Math::iVector3 { f.indices[1][0], f.indices[1][1], f.indices[1][2] }, Cmp3 {}),
-                       i3 = std::lower_bound(beg, end, Math::iVector3 { f.indices[2][0], f.indices[2][1], f.indices[2][2] }, Cmp3 {});
-            ind.emplace_back((u32)(i1 - beg), (u32)(i2 - beg), (u32)(i3 - beg));
+            Math::iVector3 v1 { f.indices[0][0], f.indices[0][1], f.indices[0][2] };
+            Math::iVector3 v2 { f.indices[1][0], f.indices[1][1], f.indices[1][2] };
+            Math::iVector3 v3 { f.indices[2][0], f.indices[2][1], f.indices[2][2] };
+            const usize i1 = indices.LowerBoundBy([&] (const Math::iVector3& x) { return Cmp3 {}(x, v1); }),
+                        i2 = indices.LowerBoundBy([&] (const Math::iVector3& x) { return Cmp3 {}(x, v2); }),
+                        i3 = indices.LowerBoundBy([&] (const Math::iVector3& x) { return Cmp3 {}(x, v3); });
+            ind.Push({ (u32)i1, (u32)i2, (u32)i3 });
         }
 
-        faces.clear();
+        faces.Clear();
     }
 
     OBJModel&& OBJModelLoader::RetrieveModel() {

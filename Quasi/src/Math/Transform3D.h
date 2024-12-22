@@ -6,8 +6,8 @@ namespace Quasi::Math {
     struct MatrixTransform3D {
         Matrix3D transform, normalMatrix;
 
-        [[nodiscard]] fVector3 Transform(const fVector3& p) const { return transform * p; }
-        [[nodiscard]] fVector3 TransformNormal(const fVector3& n) const { return (normalMatrix * n).norm(); }
+        fVector3 Transform(const fVector3& p) const { return transform * p; }
+        fVector3 TransformNormal(const fVector3& n) const { return (normalMatrix * n).norm(); }
     };
 
     template <class T> concept ITransformer3D = requires (const T& t, fVector3 vec) {
@@ -19,13 +19,13 @@ namespace Quasi::Math {
     struct InverseTransform3D {
         static_assert(ITransformer3D<T>, "T should be a transformer3d"); // delayed constraint
         const T& tformer;
-        [[nodiscard]] fVector3 Transform (const fVector3& point) const { return tformer.TransformInverse(point); }
+        fVector3 Transform (const fVector3& point) const { return tformer.TransformInverse(point); }
                       void     TransformInplace(fVector3& point) const { tformer.TransformInverseInplace(point); }
-        [[nodiscard]] fVector3 TransformInverse (const fVector3& point) const { return tformer.Transform(point); }
+        fVector3 TransformInverse (const fVector3& point) const { return tformer.Transform(point); }
                       void     TransformInverseInplace(fVector3& point) const { tformer.TransformInplace(point); }
-        [[nodiscard]] fVector3 TransformNormal (const fVector3& normal) const { return tformer.TransformInverseNormal(normal); }
+        fVector3 TransformNormal (const fVector3& normal) const { return tformer.TransformInverseNormal(normal); }
                       void     TransformNormalInplace(fVector3& normal) const { tformer.TransformInverseNormalInplace(normal); }
-        [[nodiscard]] fVector3 TransformInverseNormal (const fVector3& normal) const { return tformer.TransformNormal(normal); }
+        fVector3 TransformInverseNormal (const fVector3& normal) const { return tformer.TransformNormal(normal); }
                       void     TransformInverseNormalInplace(fVector3& normal) const { tformer.TransformNormalInplace(normal); }
     };
 
@@ -47,14 +47,14 @@ namespace Quasi::Math {
             RotationAngleProxy& operator=(const fVector3& angle) requires (!std::is_const_v<Quat>)
             { r = Quaternion::from_euler(angle); return *this; }
 
-            [[nodiscard]] fVector3 Radians() const { return r.to_euler(); }
-            [[nodiscard]] fVector3 Degrees() const { return Radians() * RAD2DEG; }
+            fVector3 Radians() const { return r.to_euler(); }
+            fVector3 Degrees() const { return Radians() * RAD2DEG; }
 
-            [[nodiscard]] const Quat& AsComplex() const { return r; }
+            const Quat& AsComplex() const { return r; }
             Quat& AsComplex() { return r; }
         };
 
-        [[nodiscard]] RotationAngleProxy<const Quaternion> RotationAngle() const { return { rotation }; }
+        RotationAngleProxy<const Quaternion> RotationAngle() const { return { rotation }; }
         RotationAngleProxy<Quaternion> RotationAngle() { return { rotation }; }
 
         void Translate(const fVector3& p);
@@ -65,46 +65,46 @@ namespace Quasi::Math {
         void RotateY(float r);
         void RotateZ(float r);
 
-        [[nodiscard]] Transform3D Translated(const fVector3& p) const;
-        [[nodiscard]] Transform3D Scaled(const fVector3& s) const;
-        [[nodiscard]] Transform3D Rotated(const fVector3& r) const;
-        [[nodiscard]] Transform3D Rotated(const Quaternion& q) const;
-        [[nodiscard]] Transform3D RotatedX(float r) const;
-        [[nodiscard]] Transform3D RotatedY(float r) const;
-        [[nodiscard]] Transform3D RotatedZ(float r) const;
+        Transform3D Translated(const fVector3& p) const;
+        Transform3D Scaled(const fVector3& s) const;
+        Transform3D Rotated(const fVector3& r) const;
+        Transform3D Rotated(const Quaternion& q) const;
+        Transform3D RotatedX(float r) const;
+        Transform3D RotatedY(float r) const;
+        Transform3D RotatedZ(float r) const;
 
         static Transform3D Translation(const fVector3& p);
         static Transform3D Scaling(const fVector3& s);
         static Transform3D Rotation(const fVector3& r);
         static Transform3D Rotation(const Quaternion& q);
 
-        [[nodiscard]] Transform3D NormalTransform() const;
+        Transform3D NormalTransform() const;
 
-        [[nodiscard]] fVector3 Transform (const fVector3& point) const;
+        fVector3 Transform (const fVector3& point) const;
                       void     TransformInplace(fVector3& point) const;
-        [[nodiscard]] fVector3 TransformInverse (const fVector3& point) const;
+        fVector3 TransformInverse (const fVector3& point) const;
                       void     TransformInverseInplace(fVector3& point) const;
-        [[nodiscard]] fVector3 TransformNormal (const fVector3& normal) const;
+        fVector3 TransformNormal (const fVector3& normal) const;
                       void     TransformNormalInplace(fVector3& normal) const;
-        [[nodiscard]] fVector3 TransformInverseNormal (const fVector3& normal) const;
+        fVector3 TransformInverseNormal (const fVector3& normal) const;
                       void     TransformInverseNormalInplace(fVector3& normal) const;
 
-        [[nodiscard]] InverseTransform3D<Transform3D> Inverse() const { return { *this }; }
+        InverseTransform3D<Transform3D> Inverse() const { return { *this }; }
 
-        [[nodiscard]] Transform3D Applied(const Transform3D& transformer) const; // apply transform onto self
-        [[nodiscard]] Transform3D AppliedTo(const Transform3D& transformed) const { return transformed.Applied(*this); }
+        Transform3D Applied(const Transform3D& transformer) const; // apply transform onto self
+        Transform3D AppliedTo(const Transform3D& transformed) const { return transformed.Applied(*this); }
         Transform3D& Apply(const Transform3D& transformer); // apply transform onto self
         void ApplyTo(Transform3D& transformed) const { transformed.Apply(*this); }
 
-        [[nodiscard]] Transform3D Then(const Transform3D& t) const { return AppliedTo(t); }
+        Transform3D Then(const Transform3D& t) const { return AppliedTo(t); }
 
         void Reset();
 
-        [[nodiscard]] Matrix3x3 LinearMatrix() const;
-        [[nodiscard]] Matrix3D  TransformMatrix() const;
+        Matrix3x3 LinearMatrix() const;
+        Matrix3D  TransformMatrix() const;
 
-        [[nodiscard]] fVector3 operator*(const fVector3& p) const { return Transform(p); }
-        [[nodiscard]] Transform3D operator*(const Transform3D& t) const { return Applied(t); }
+        fVector3 operator*(const fVector3& p) const { return Transform(p); }
+        Transform3D operator*(const Transform3D& t) const { return Applied(t); }
         Transform3D& operator*=(const Transform3D& t) { return Apply(t); }
     };
 

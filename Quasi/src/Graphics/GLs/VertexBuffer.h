@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "GLObject.h"
+#include "Span.h"
 
 namespace Quasi::Graphics {
     class VertexBuffer : public GLObject<VertexBuffer> {
@@ -15,17 +16,17 @@ namespace Quasi::Graphics {
         static void BindObject(GraphicsID id);
         static void UnbindObject();
 
-        [[nodiscard]] u32 GetLength() const { return bufferSize; }
+        u32 GetLength() const { return bufferSize; }
 
         void SetDataBytes(Span<const byte> data);
-        template <class T> void SetData(Span<const T> data) { SetDataBytes(BytesOf(data)); }
-        template <ArrayLike T> void SetData(const T& data) { SetData(TakeSpan(data)); }
+        template <class T> void SetData(Span<const T> data) { SetDataBytes(data.AsBytes()); }
+        template <ContinuousCollectionAny T> void SetData(const T& data) { SetData(data.AsSpan()); }
 
         void ClearData();
 
         void AddDataBytes(Span<const byte> data);
-        template <class T> void AddData(Span<const T> data) { AddDataBytes(BytesOf(data)); }
-        template <ArrayLike T> void AddData(const T& data) { AddData(TakeSpan(data)); }
+        template <class T> void AddData(Span<const T> data) { AddDataBytes(data.AsBytes()); }
+        template <ContinuousCollectionAny T> void AddData(const T& data) { AddData(data.AsSpan()); }
 
         friend class GraphicsDevice;
     };

@@ -65,7 +65,7 @@ namespace Quasi::Graphics {
 
 		void Clear();
 		template <class T> void Add(const Mesh<T>& mesh) { mesh.AddTo(*this); }
-		template <CollectionLike T> void Add(const T& arr) { for (const auto& m : arr) Add(m); }
+		void Add(const CollectionAny auto& arr) { for (const auto& m : arr) Add(m); }
 
 		void Destroy();
 

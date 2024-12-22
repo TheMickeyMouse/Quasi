@@ -1,6 +1,7 @@
 #include "ImGuiExt.h"
 
 #include <imgui_internal.h>
+#include "Array.h"
 
 #include "Constants.h"
 #include "Complex.h"
@@ -89,7 +90,7 @@ namespace ImGui {
     }
 
     template <class T> requires std::is_arithmetic_v<T>
-    Q_IMGUI_EDITOR(EditScalar, T& value, float speed, Q Implicit<Q Option<Q Math::Range<T>>> range) {
+    Q_IMGUI_EDITOR(EditScalar, T& value, float speed, Q NoInfer<Q Option<Q Math::Range<T>>> range) {
         width = GetRemWidth(width);
 
         DisplayTextCropped(title, GetItemRemainingWidth(width) - GetSpacingWidth());
@@ -104,7 +105,7 @@ namespace ImGui {
     }
 
     template <Q u32 N, class T>
-    Q_IMGUI_EDITOR(EditVector, Q Math::VectorN<N, T>& vector, float speed, Q Implicit<const Q Option<Q Math::RectN<N, T>>&> range) {
+    Q_IMGUI_EDITOR(EditVector, Q Math::VectorN<N, T>& vector, float speed, Q NoInfer<const Q Option<Q Math::RectN<N, T>>&> range) {
         width = GetRemWidth(width);
 
         DisplayTextCropped(title, GetItemRemainingWidth(width) - GetSpacingWidth());
@@ -118,10 +119,10 @@ namespace ImGui {
             PushID(title.data());
             EditScalarWithIcon(
                 &"X:\0Y:\0Z:\0W:"[i * 3],
-                Q Array<Q Math::Color, 4> { COLOR_X_AXIS, COLOR_Y_AXIS, COLOR_Z_AXIS, COLOR_W_AXIS }[i], // amazing hack
+                Q Array { COLOR_X_AXIS, COLOR_Y_AXIS, COLOR_Z_AXIS, COLOR_W_AXIS }[i], // amazing hack
                 vector[i],
                 speed,
-                range ? Q Some(Q Math::Range<T> { range->min[i], range->max[i] }) : nullptr,
+                range ? Q Options::Some(Q Math::Range<T> { range->min[i], range->max[i] }) : nullptr,
                 {},
                 unitWidth
             );
@@ -131,7 +132,7 @@ namespace ImGui {
     }
 
     template <class T>
-    Q_IMGUI_EDITOR(EditRange, Q Math::Range<T>& range, float speed, Q Implicit<const Q Option<Q Math::Range<T>>&> constraint) {
+    Q_IMGUI_EDITOR(EditRange, Q Math::Range<T>& range, float speed, Q NoInfer<const Q Option<Q Math::Range<T>>&> constraint) {
         width = GetRemWidth(width);
 
         DisplayTextCropped(title, GetItemRemainingWidth(width) - GetSpacingWidth());
@@ -146,7 +147,7 @@ namespace ImGui {
     }
 
     template <Q u32 N, class T>
-    Q_IMGUI_EDITOR(EditRect, Q Math::RectN<N, T>& range, float speed, Q Implicit<const Q Option<Q Math::RectN<N, T>>&> constraint) {
+    Q_IMGUI_EDITOR(EditRect, Q Math::RectN<N, T>& range, float speed, Q NoInfer<const Q Option<Q Math::RectN<N, T>>&> constraint) {
         width = GetRemWidth(width);
 
         DisplayTextCropped(title, GetItemRemainingWidth(width) - GetSpacingWidth());
@@ -460,54 +461,54 @@ namespace ImGui {
     template ImGuiDataType ImGuiDataEnum<Q u64> ();
     template ImGuiDataType ImGuiDataEnum<Q i64> ();
 
-    template void EditScalar<float> (Q Str, float&,  float, Q Implicit<Q Option<Q Math::Range<float>>>,  float);
-    template void EditScalar<double>(Q Str, double&, float, Q Implicit<Q Option<Q Math::Range<double>>>, float);
-    template void EditScalar<Q u8 > (Q Str, Q u8 &,  float, Q Implicit<Q Option<Q Math::Range<Q u8 >>>,  float);
-    template void EditScalar<Q i8 > (Q Str, Q i8 &,  float, Q Implicit<Q Option<Q Math::Range<Q i8 >>>,  float);
-    template void EditScalar<Q u16> (Q Str, Q u16&,  float, Q Implicit<Q Option<Q Math::Range<Q u16>>>,  float);
-    template void EditScalar<Q i16> (Q Str, Q i16&,  float, Q Implicit<Q Option<Q Math::Range<Q i16>>>,  float);
-    template void EditScalar<Q u32> (Q Str, Q u32&,  float, Q Implicit<Q Option<Q Math::Range<Q u32>>>,  float);
-    template void EditScalar<Q i32> (Q Str, Q i32&,  float, Q Implicit<Q Option<Q Math::Range<Q i32>>>,  float);
-    template void EditScalar<Q u64> (Q Str, Q u64&,  float, Q Implicit<Q Option<Q Math::Range<Q u64>>>,  float);
-    template void EditScalar<Q i64> (Q Str, Q i64&,  float, Q Implicit<Q Option<Q Math::Range<Q i64>>>,  float);
+    template void EditScalar<float> (Q Str, float&,  float, Q NoInfer<Q Option<Q Math::Range<float>>>,  float);
+    template void EditScalar<double>(Q Str, double&, float, Q NoInfer<Q Option<Q Math::Range<double>>>, float);
+    template void EditScalar<Q u8 > (Q Str, Q u8 &,  float, Q NoInfer<Q Option<Q Math::Range<Q u8 >>>,  float);
+    template void EditScalar<Q i8 > (Q Str, Q i8 &,  float, Q NoInfer<Q Option<Q Math::Range<Q i8 >>>,  float);
+    template void EditScalar<Q u16> (Q Str, Q u16&,  float, Q NoInfer<Q Option<Q Math::Range<Q u16>>>,  float);
+    template void EditScalar<Q i16> (Q Str, Q i16&,  float, Q NoInfer<Q Option<Q Math::Range<Q i16>>>,  float);
+    template void EditScalar<Q u32> (Q Str, Q u32&,  float, Q NoInfer<Q Option<Q Math::Range<Q u32>>>,  float);
+    template void EditScalar<Q i32> (Q Str, Q i32&,  float, Q NoInfer<Q Option<Q Math::Range<Q i32>>>,  float);
+    template void EditScalar<Q u64> (Q Str, Q u64&,  float, Q NoInfer<Q Option<Q Math::Range<Q u64>>>,  float);
+    template void EditScalar<Q i64> (Q Str, Q i64&,  float, Q NoInfer<Q Option<Q Math::Range<Q i64>>>,  float);
 
-    template void EditVector<2, float>  (Q Str, Q Math::VectorN<2, float>&,   float, Q Implicit<const Q Option<Q Math::RectN<2, float>>&>,  float);
-    template void EditVector<3, float>  (Q Str, Q Math::VectorN<3, float>&,   float, Q Implicit<const Q Option<Q Math::RectN<3, float>>&>,  float);
-    template void EditVector<4, float>  (Q Str, Q Math::VectorN<4, float>&,   float, Q Implicit<const Q Option<Q Math::RectN<4, float>>&>,  float);
-    template void EditVector<2, double> (Q Str, Q Math::VectorN<2, double>&,  float, Q Implicit<const Q Option<Q Math::RectN<2, double>>&>, float);
-    template void EditVector<3, double> (Q Str, Q Math::VectorN<3, double>&,  float, Q Implicit<const Q Option<Q Math::RectN<3, double>>&>, float);
-    template void EditVector<4, double> (Q Str, Q Math::VectorN<4, double>&,  float, Q Implicit<const Q Option<Q Math::RectN<4, double>>&>, float);
-    template void EditVector<2, Q i32>  (Q Str, Q Math::VectorN<2, Q i32>&,   float, Q Implicit<const Q Option<Q Math::RectN<2, Q i32>>&>,  float);
-    template void EditVector<3, Q i32>  (Q Str, Q Math::VectorN<3, Q i32>&,   float, Q Implicit<const Q Option<Q Math::RectN<3, Q i32>>&>,  float);
-    template void EditVector<4, Q i32>  (Q Str, Q Math::VectorN<4, Q i32>&,   float, Q Implicit<const Q Option<Q Math::RectN<4, Q i32>>&>,  float);
-    template void EditVector<2, Q u32>  (Q Str, Q Math::VectorN<2, Q u32>&,   float, Q Implicit<const Q Option<Q Math::RectN<2, Q u32>>&>,  float);
-    template void EditVector<3, Q u32>  (Q Str, Q Math::VectorN<3, Q u32>&,   float, Q Implicit<const Q Option<Q Math::RectN<3, Q u32>>&>,  float);
-    template void EditVector<4, Q u32>  (Q Str, Q Math::VectorN<4, Q u32>&,   float, Q Implicit<const Q Option<Q Math::RectN<4, Q u32>>&>,  float);
-    template void EditVector<2, Q byte> (Q Str, Q Math::VectorN<2, Q byte>&,  float, Q Implicit<const Q Option<Q Math::RectN<2, Q byte>>&>, float);
-    template void EditVector<3, Q byte> (Q Str, Q Math::VectorN<3, Q byte>&,  float, Q Implicit<const Q Option<Q Math::RectN<3, Q byte>>&>, float);
-    template void EditVector<4, Q byte> (Q Str, Q Math::VectorN<4, Q byte>&,  float, Q Implicit<const Q Option<Q Math::RectN<4, Q byte>>&>, float);
+    template void EditVector<2, float>  (Q Str, Q Math::VectorN<2, float>&,   float, Q NoInfer<const Q Option<Q Math::RectN<2, float>>&>,  float);
+    template void EditVector<3, float>  (Q Str, Q Math::VectorN<3, float>&,   float, Q NoInfer<const Q Option<Q Math::RectN<3, float>>&>,  float);
+    template void EditVector<4, float>  (Q Str, Q Math::VectorN<4, float>&,   float, Q NoInfer<const Q Option<Q Math::RectN<4, float>>&>,  float);
+    template void EditVector<2, double> (Q Str, Q Math::VectorN<2, double>&,  float, Q NoInfer<const Q Option<Q Math::RectN<2, double>>&>, float);
+    template void EditVector<3, double> (Q Str, Q Math::VectorN<3, double>&,  float, Q NoInfer<const Q Option<Q Math::RectN<3, double>>&>, float);
+    template void EditVector<4, double> (Q Str, Q Math::VectorN<4, double>&,  float, Q NoInfer<const Q Option<Q Math::RectN<4, double>>&>, float);
+    template void EditVector<2, Q i32>  (Q Str, Q Math::VectorN<2, Q i32>&,   float, Q NoInfer<const Q Option<Q Math::RectN<2, Q i32>>&>,  float);
+    template void EditVector<3, Q i32>  (Q Str, Q Math::VectorN<3, Q i32>&,   float, Q NoInfer<const Q Option<Q Math::RectN<3, Q i32>>&>,  float);
+    template void EditVector<4, Q i32>  (Q Str, Q Math::VectorN<4, Q i32>&,   float, Q NoInfer<const Q Option<Q Math::RectN<4, Q i32>>&>,  float);
+    template void EditVector<2, Q u32>  (Q Str, Q Math::VectorN<2, Q u32>&,   float, Q NoInfer<const Q Option<Q Math::RectN<2, Q u32>>&>,  float);
+    template void EditVector<3, Q u32>  (Q Str, Q Math::VectorN<3, Q u32>&,   float, Q NoInfer<const Q Option<Q Math::RectN<3, Q u32>>&>,  float);
+    template void EditVector<4, Q u32>  (Q Str, Q Math::VectorN<4, Q u32>&,   float, Q NoInfer<const Q Option<Q Math::RectN<4, Q u32>>&>,  float);
+    template void EditVector<2, Q byte> (Q Str, Q Math::VectorN<2, Q byte>&,  float, Q NoInfer<const Q Option<Q Math::RectN<2, Q byte>>&>, float);
+    template void EditVector<3, Q byte> (Q Str, Q Math::VectorN<3, Q byte>&,  float, Q NoInfer<const Q Option<Q Math::RectN<3, Q byte>>&>, float);
+    template void EditVector<4, Q byte> (Q Str, Q Math::VectorN<4, Q byte>&,  float, Q NoInfer<const Q Option<Q Math::RectN<4, Q byte>>&>, float);
 
-    template void EditRange<float>  (Q Str, Q Math::Range<float>&,  float, Q Implicit<const Q Option<Q Math::Range<float>>&>,  float);
-    template void EditRange<double> (Q Str, Q Math::Range<double>&, float, Q Implicit<const Q Option<Q Math::Range<double>>&>, float);
-    template void EditRange<Q i32>  (Q Str, Q Math::Range<Q i32>&,  float, Q Implicit<const Q Option<Q Math::Range<Q i32>>&>,  float);
-    template void EditRange<Q u32>  (Q Str, Q Math::Range<Q u32>&,  float, Q Implicit<const Q Option<Q Math::Range<Q u32>>&>,  float);
-    template void EditRange<Q byte> (Q Str, Q Math::Range<Q byte>&, float, Q Implicit<const Q Option<Q Math::Range<Q byte>>&>, float);
+    template void EditRange<float>  (Q Str, Q Math::Range<float>&,  float, Q NoInfer<const Q Option<Q Math::Range<float>>&>,  float);
+    template void EditRange<double> (Q Str, Q Math::Range<double>&, float, Q NoInfer<const Q Option<Q Math::Range<double>>&>, float);
+    template void EditRange<Q i32>  (Q Str, Q Math::Range<Q i32>&,  float, Q NoInfer<const Q Option<Q Math::Range<Q i32>>&>,  float);
+    template void EditRange<Q u32>  (Q Str, Q Math::Range<Q u32>&,  float, Q NoInfer<const Q Option<Q Math::Range<Q u32>>&>,  float);
+    template void EditRange<Q byte> (Q Str, Q Math::Range<Q byte>&, float, Q NoInfer<const Q Option<Q Math::Range<Q byte>>&>, float);
 
-    template void EditRect<2, float>  (Q Str, Q Math::RectN<2, float>&,  float, Q Implicit<const Q Option<Q Math::RectN<2, float>>&>,  float);
-    template void EditRect<3, float>  (Q Str, Q Math::RectN<3, float>&,  float, Q Implicit<const Q Option<Q Math::RectN<3, float>>&>,  float);
-    template void EditRect<4, float>  (Q Str, Q Math::RectN<4, float>&,  float, Q Implicit<const Q Option<Q Math::RectN<4, float>>&>,  float);
-    template void EditRect<2, double> (Q Str, Q Math::RectN<2, double>&, float, Q Implicit<const Q Option<Q Math::RectN<2, double>>&>, float);
-    template void EditRect<3, double> (Q Str, Q Math::RectN<3, double>&, float, Q Implicit<const Q Option<Q Math::RectN<3, double>>&>, float);
-    template void EditRect<4, double> (Q Str, Q Math::RectN<4, double>&, float, Q Implicit<const Q Option<Q Math::RectN<4, double>>&>, float);
-    template void EditRect<2, Q i32>  (Q Str, Q Math::RectN<2, Q i32>&,  float, Q Implicit<const Q Option<Q Math::RectN<2, Q i32>>&>,  float);
-    template void EditRect<3, Q i32>  (Q Str, Q Math::RectN<3, Q i32>&,  float, Q Implicit<const Q Option<Q Math::RectN<3, Q i32>>&>,  float);
-    template void EditRect<4, Q i32>  (Q Str, Q Math::RectN<4, Q i32>&,  float, Q Implicit<const Q Option<Q Math::RectN<4, Q i32>>&>,  float);
-    template void EditRect<2, Q u32>  (Q Str, Q Math::RectN<2, Q u32>&,  float, Q Implicit<const Q Option<Q Math::RectN<2, Q u32>>&>,  float);
-    template void EditRect<3, Q u32>  (Q Str, Q Math::RectN<3, Q u32>&,  float, Q Implicit<const Q Option<Q Math::RectN<3, Q u32>>&>,  float);
-    template void EditRect<4, Q u32>  (Q Str, Q Math::RectN<4, Q u32>&,  float, Q Implicit<const Q Option<Q Math::RectN<4, Q u32>>&>,  float);
-    template void EditRect<2, Q byte> (Q Str, Q Math::RectN<2, Q byte>&, float, Q Implicit<const Q Option<Q Math::RectN<2, Q byte>>&>, float);
-    template void EditRect<3, Q byte> (Q Str, Q Math::RectN<3, Q byte>&, float, Q Implicit<const Q Option<Q Math::RectN<3, Q byte>>&>, float);
-    template void EditRect<4, Q byte> (Q Str, Q Math::RectN<4, Q byte>&, float, Q Implicit<const Q Option<Q Math::RectN<4, Q byte>>&>, float);
+    template void EditRect<2, float>  (Q Str, Q Math::RectN<2, float>&,  float, Q NoInfer<const Q Option<Q Math::RectN<2, float>>&>,  float);
+    template void EditRect<3, float>  (Q Str, Q Math::RectN<3, float>&,  float, Q NoInfer<const Q Option<Q Math::RectN<3, float>>&>,  float);
+    template void EditRect<4, float>  (Q Str, Q Math::RectN<4, float>&,  float, Q NoInfer<const Q Option<Q Math::RectN<4, float>>&>,  float);
+    template void EditRect<2, double> (Q Str, Q Math::RectN<2, double>&, float, Q NoInfer<const Q Option<Q Math::RectN<2, double>>&>, float);
+    template void EditRect<3, double> (Q Str, Q Math::RectN<3, double>&, float, Q NoInfer<const Q Option<Q Math::RectN<3, double>>&>, float);
+    template void EditRect<4, double> (Q Str, Q Math::RectN<4, double>&, float, Q NoInfer<const Q Option<Q Math::RectN<4, double>>&>, float);
+    template void EditRect<2, Q i32>  (Q Str, Q Math::RectN<2, Q i32>&,  float, Q NoInfer<const Q Option<Q Math::RectN<2, Q i32>>&>,  float);
+    template void EditRect<3, Q i32>  (Q Str, Q Math::RectN<3, Q i32>&,  float, Q NoInfer<const Q Option<Q Math::RectN<3, Q i32>>&>,  float);
+    template void EditRect<4, Q i32>  (Q Str, Q Math::RectN<4, Q i32>&,  float, Q NoInfer<const Q Option<Q Math::RectN<4, Q i32>>&>,  float);
+    template void EditRect<2, Q u32>  (Q Str, Q Math::RectN<2, Q u32>&,  float, Q NoInfer<const Q Option<Q Math::RectN<2, Q u32>>&>,  float);
+    template void EditRect<3, Q u32>  (Q Str, Q Math::RectN<3, Q u32>&,  float, Q NoInfer<const Q Option<Q Math::RectN<3, Q u32>>&>,  float);
+    template void EditRect<4, Q u32>  (Q Str, Q Math::RectN<4, Q u32>&,  float, Q NoInfer<const Q Option<Q Math::RectN<4, Q u32>>&>,  float);
+    template void EditRect<2, Q byte> (Q Str, Q Math::RectN<2, Q byte>&, float, Q NoInfer<const Q Option<Q Math::RectN<2, Q byte>>&>, float);
+    template void EditRect<3, Q byte> (Q Str, Q Math::RectN<3, Q byte>&, float, Q NoInfer<const Q Option<Q Math::RectN<3, Q byte>>&>, float);
+    template void EditRect<4, Q byte> (Q Str, Q Math::RectN<4, Q byte>&, float, Q NoInfer<const Q Option<Q Math::RectN<4, Q byte>>&>, float);
 
     template void EditColor<Q Math::Color  >(Q Str, Q Math::Color&,   float);
     template void EditColor<Q Math::Color3 >(Q Str, Q Math::Color3&,  float);

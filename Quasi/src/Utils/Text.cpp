@@ -7,15 +7,15 @@
 
 namespace Quasi::Text {
     Option<String> ReadFile(Str fname) {
+        if (std::ifstream in { fname.data() }) {
+            return String(std::istreambuf_iterator { in }, std::istreambuf_iterator<char> {});
+        }
+        return nullptr;
+    }
+
+    Option<String> ReadFileBinary(Str fname) {
         if (std::ifstream in { fname.data(), std::ios::in | std::ios::binary }) {
-            String contents;
-            in.seekg(0, std::ios::end);
-            contents.resize((uint)in.tellg());
-            // ill be honest idk what the compiler wants from me
-            in.seekg(0, std::ios::beg);
-            in.read(contents.data(), (long long)contents.size());
-            in.close();
-            return contents;
+            return String(std::istreambuf_iterator { in }, std::istreambuf_iterator<char> {});
         }
         return nullptr;
     }

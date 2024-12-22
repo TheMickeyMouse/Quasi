@@ -47,7 +47,7 @@ namespace Quasi::Graphics {
         void CreateMaterial(Span<const MTLProperty> matprop);
         void CreateMaterials();
 
-        [[nodiscard]] String DebugStr() const;
+        String DebugStr() const;
 
         friend class OBJModelLoader;
     };

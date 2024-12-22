@@ -5,6 +5,8 @@ namespace Quasi {
     template <class T> struct OptRef;
     template <class T> struct Option;
 
+    template <class T> struct Span;
+
     /*
      * An interface that describes nullability.
      * Must implement:
@@ -16,35 +18,38 @@ namespace Quasi {
      * static Super Some(T&&);
      */
     template <class T, class Super>
-    struct NullableProxy {
+    struct INullable {
+        using SomeType = T;
         using V = RemQual<T>;
         static constexpr bool USE_RREF = DifferentTo<const T&, T&&>;
+        friend Super;
 
+    protected:
         Super& super() { return *static_cast<Super*>(this); }
         const Super& super() const { return *static_cast<const Super*>(this); }
 
         T&       UnwrapImpl() = delete;
         const T& UnwrapImpl() const = delete;
-        [[nodiscard]] bool HasValueImpl() const = delete;
+        bool HasValueImpl() const = delete;
         void SetNullImpl() = delete;
         void SetImpl(const T& value) = delete;
         void SetImpl(T&& value) requires USE_RREF = delete;
         static Super NoneImpl() = delete;
         static Super SomeImpl(const T&) = delete;
         static Super SomeImpl(T&&) requires USE_RREF = delete;
-
-        [[nodiscard]] bool HasValue() const { return super().HasValueImpl(); }
-        [[nodiscard]] bool IsNull() const { return !HasValue(); }
-        [[nodiscard]] operator bool() const { return HasValue(); }
+    public:
+        bool HasValue() const { return super().HasValueImpl(); }
+        bool IsNull() const { return !HasValue(); }
+        operator bool() const { return HasValue(); }
 
         void SetNull() { super().SetNull(); }
         void Set(const T& value)              { super().SetImpl(value); }
         void Set(T&& value) requires USE_RREF { super().SetImpl(std::move(value)); }
 
         // checks if self has value AND the inner value satisfies pred
-        [[nodiscard]] bool HasValueAnd(Fn<bool, const T&> auto&& pred) const { return HasValue() && pred(Unwrap()); }
+        bool HasValueAnd(Fn<bool, const T&> auto&& pred) const { return HasValue() && pred(Unwrap()); }
         // checks if self is null OR the inner value satisfies pred
-        [[nodiscard]] bool IsNullOr   (Fn<bool, const T&> auto&& pred) const { return IsNull() || pred(Unwrap()); }
+        bool IsNullOr   (Fn<bool, const T&> auto&& pred) const { return IsNull() || pred(Unwrap()); }
 
         T& Unwrap() { return super().UnwrapImpl(); }
         T& operator*() { return Unwrap(); }
@@ -54,10 +59,10 @@ namespace Quasi {
         const V* operator->() const { return &Unwrap(); }
 
         OptRef<T>       AsRef()          { return HasValue() ? Unwrap() : OptRef<T>::None(); }
-        Span<T>         AsSpan()         { return HasValue() ? Span { &Unwrap(), 1 } : Span<T> {}; }
+        Span<T>         AsSpan()         { return HasValue() ? Span<T>::Single(Unwrap()) : Span<T>::Empty(); }
         Option<T>       AsOption() const { return HasValue() ? Option<T>::Some(Unwrap()) : nullptr; }
         OptRef<const T> AsRef()    const { return HasValue() ? SomeRef(Unwrap()) : nullptr; }
-        Span<const T>   AsSpan()   const { return HasValue() ? Span { &Unwrap(), 1 } : Span<T> {}; }
+        Span<const T>   AsSpan()   const { return HasValue() ? Span<const T>::Single(Unwrap()) : Span<const T>::Empty(); }
 
         T UnwrapOr(const T& otherwise) const              { return HasValue() ? Unwrap() : otherwise; }
         T UnwrapOr(T&& otherwise) const requires USE_RREF { return HasValue() ? Unwrap() : std::move(otherwise); }
@@ -79,7 +84,7 @@ namespace Quasi {
         auto MapOrElse(auto&& map, auto&& otherwise) const { return HasValue() ? map(Unwrap()) : otherwise(); }
 
         Super& Inspect(Fn<void, T&> auto&& inspect) { if (HasValue()) inspect(Unwrap()); return *this; }
-        [[nodiscard]] const Super& Inspect(Fn<void, const T&> auto&& inspect) const { if (HasValue()) inspect(Unwrap()); return *this; }
+        const Super& Inspect(Fn<void, const T&> auto&& inspect) const { if (HasValue()) inspect(Unwrap()); return *this; }
 
         Super Filter(Fn<bool, T> auto&& pred) const { return this->HasValue() && pred(this->Unwrap()) ? *this : NoneImpl(); }
 
@@ -105,9 +110,9 @@ namespace Quasi {
         T& Assert();
         T& Assert(Str msg);
         T& Assert(auto&& assertfn);
-        [[nodiscard]] const T& Assert() const;
-        [[nodiscard]] const T& Assert(Str msg) const;
-        [[nodiscard]] const T& Assert(auto&& assertfn) const;
+        const T& Assert() const;
+        const T& Assert(Str msg) const;
+        const T& Assert(auto&& assertfn) const;
 
         static Super None() { return Super::NoneImpl(); }
         static Super Some(const T& t) { return Super::SomeImpl(t); }
@@ -115,7 +120,9 @@ namespace Quasi {
     };
 
     template <class T>
-    struct Option : NullableProxy<T, Option<T>> {
+    struct Option : INullable<T, Option<T>> {
+        friend INullable<T, Option>;
+
         T value;
         bool isSome = true;
 
@@ -124,21 +131,24 @@ namespace Quasi {
         Option(const T& value) : value(value) {}
         Option(T&& value) : value(std::move(value)) {}
 
+    protected:
         static Option SomeImpl(const T& value) { return { value }; }
         static Option SomeImpl(T&& value) { return { std::move(value) }; }
         static Option NoneImpl() { return { nullptr }; }
 
-        [[nodiscard]] bool HasValueImpl() const { return isSome; }
+        bool HasValueImpl() const { return isSome; }
         T& UnwrapImpl() { return value; }
-        [[nodiscard]] const T& UnwrapImpl() const { return value; }
+        const T& UnwrapImpl() const { return value; }
 
         void SetNullImpl() { isSome = false; }
         void SetImpl(const T& v) { isSome = true; value = v; }
         void SetImpl(T&& v)      { isSome = true; value = std::move(v); }
     };
 
-    template <class T>
-    Option<RemQual<T>> Some(T&& value) {
-        return Option<RemQual<T>> { std::forward<T>(value) };
+    namespace Options {
+        template <class T>
+        Option<RemQual<T>> Some(T&& value) {
+            return Option<RemQual<T>> { std::forward<T>(value) };
+        }
     }
 }

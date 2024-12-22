@@ -6,10 +6,7 @@
 #include "ConsoleColor.h"
 #include "Text.h"
 #include "Timer.h"
-#include "Type.h"
 #include "Utils/Enum.h"
-#include "Utils/Option.h"
-#include "Memory.h"
 
 namespace Quasi::Debug {
     void DebugBreak();
@@ -18,7 +15,7 @@ namespace Quasi::Debug {
         Str name;
         ConsoleColor color;
 
-        [[nodiscard]] ColoredText ColoredName() const { return { color, name }; }
+        ColoredText ColoredName() const { return { color, name }; }
 
         QDefineEnum$(Severity,
             (OFF,      ("OFF",      ConsoleColor::RESET))
@@ -71,7 +68,7 @@ namespace Quasi::Debug {
         explicit Logger(OutStream& out = std::cout) : logOut(out) {}
 
         static bool Overrides(Severity filter, Severity log) { return log >= filter; }
-        [[nodiscard]] bool Overrides(Severity s) const { return Overrides(filterLevel, s); }
+        bool Overrides(Severity s) const { return Overrides(filterLevel, s); }
         void SetFilter(Severity s) { filterLevel = s; }
         void SetBreakLevel(Severity s) { breakLevel = s; }
 
@@ -83,10 +80,10 @@ namespace Quasi::Debug {
         void SetRecordLogs(const bool flag) { recordLogs = flag; }
         void SetLocPad(const int pad) { lPad = pad; }
 
-        [[nodiscard]] String FmtLog(const LogEntry& log) const;
-        [[nodiscard]] String FmtLog(Str log, Severity severity, DateTime time, const SourceLoc& fileLoc) const;
-        [[nodiscard]] Str FmtFile(Str fullname) const;
-        [[nodiscard]] String FmtSourceLoc(const SourceLoc& loc) const;
+        String FmtLog(const LogEntry& log) const;
+        String FmtLog(Str log, Severity severity, DateTime time, const SourceLoc& fileLoc) const;
+        Str FmtFile(Str fullname) const;
+        String FmtSourceLoc(const SourceLoc& loc) const;
         void LogNoOut  (Severity sv, Str s, const SourceLoc& loc = SourceLoc::current());
         void ConsoleLog(Severity sv, Str s, const SourceLoc& loc = SourceLoc::current());
         void Log       (Severity sv, Str s, const SourceLoc& loc = SourceLoc::current());
@@ -108,7 +105,7 @@ namespace Quasi::Debug {
         void AssertEq(const T& val, const T& cmp, const SourceLoc& loc = SourceLoc::current()) {
             this->Assert(val == cmp,
                 { "Left operand {0}({1}) is not equal to Right Operand {0}({2})", loc },
-                TypeName<T>(), val, cmp
+                Text::TypeName<T>(), val, cmp
             );
         }
 
@@ -116,7 +113,7 @@ namespace Quasi::Debug {
         void AssertNeq(const T& val, const T& cmp, const SourceLoc& loc = SourceLoc::current()) {
             this->Assert(val != cmp,
                 { "Left operand {0}({1}) is equal to Right Operand {0}({2})", loc },
-                TypeName<T>(), val, cmp
+                Text::TypeName<T>(), val, cmp
             );
         }
 
@@ -190,20 +187,20 @@ namespace Quasi::Debug {
 }
 
 namespace Quasi {
-    template <class T, class Super> T& NullableProxy<T, Super>::Assert() { return QGetterMut$(Assert); }
-    template <class T, class Super> const T& NullableProxy<T, Super>::Assert() const {
+    template <class T, class Super> T& INullable<T, Super>::Assert() { return QGetterMut$(Assert); }
+    template <class T, class Super> const T& INullable<T, Super>::Assert() const {
         Debug::Assert(HasValue(), "{} doesn't have a value", Text::TypeName<Super>());
         return Unwrap();
     }
 
-    template <class T, class Super> T& NullableProxy<T, Super>::Assert(Str msg) { return QGetterMut$(Assert, msg); }
-    template <class T, class Super> const T& NullableProxy<T, Super>::Assert(Str msg) const {
+    template <class T, class Super> T& INullable<T, Super>::Assert(Str msg) { return QGetterMut$(Assert, msg); }
+    template <class T, class Super> const T& INullable<T, Super>::Assert(Str msg) const {
         Debug::Assert(HasValue(), msg);
         return Unwrap();
     }
 
-    template <class T, class Super> T& NullableProxy<T, Super>::Assert(auto&& assertfn) { return QGetterMut$(Assert, assertfn); }
-    template <class T, class Super> const T& NullableProxy<T, Super>::Assert(auto&& assertfn) const {
+    template <class T, class Super> T& INullable<T, Super>::Assert(auto&& assertfn) { return QGetterMut$(Assert, assertfn); }
+    template <class T, class Super> const T& INullable<T, Super>::Assert(auto&& assertfn) const {
         if (IsNull()) assertfn();
         return Unwrap();
     }

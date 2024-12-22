@@ -69,16 +69,16 @@ namespace Quasi::Graphics {
 
         void ClearColor(const Math::fColor& color);
 
-        [[nodiscard]] bool IsClosed() const { return !mainWindow; }
-        [[nodiscard]] bool WindowIsOpen() const;
+        bool IsClosed() const { return !mainWindow; }
+        bool WindowIsOpen() const;
     
-        [[nodiscard]] Math::iVector2 GetWindowSize() const { return windowSize; }
-        [[nodiscard]] float GetAspectRatio() const { return (float)windowSize.x / (float)windowSize.y; }
+        Math::iVector2 GetWindowSize() const { return windowSize; }
+        float GetAspectRatio() const { return (float)windowSize.x / (float)windowSize.y; }
         GLFWwindow* GetWindow() { return mainWindow; }
-        [[nodiscard]] const GLFWwindow* GetWindow() const { return mainWindow; }
+        const GLFWwindow* GetWindow() const { return mainWindow; }
 
         FontDevice& GetFontDevice() { return fontDevice; }
-        [[nodiscard]] const FontDevice& GetFontDevice() const { return fontDevice; }
+        const FontDevice& GetFontDevice() const { return fontDevice; }
 
         void SetDrawMode(RenderMode mode);
         static void RenderInMode(RenderMode mode);
@@ -92,9 +92,9 @@ namespace Quasi::Graphics {
         static GLFWwindow* GetMainWindow() { return Instance->mainWindow; }
 
         IO::IO& GetIO() { return ioDevice; }
-        [[nodiscard]] const IO::IO& GetIO() const { return ioDevice; }
+        const IO::IO& GetIO() const { return ioDevice; }
         Math::RandomGenerator& GetRand() { return randDevice; }
-        [[nodiscard]] const Math::RandomGenerator& GetRand() const { return randDevice; }
+        const Math::RandomGenerator& GetRand() const { return randDevice; }
 
         static GraphicsDevice Initialize(Math::iVector2 winSize = { 640, 480 });
 
@@ -103,8 +103,8 @@ namespace Quasi::Graphics {
 
     template <class T>
     RenderObject<T> GraphicsDevice::CreateNewRender(u32 vsize, u32 isize) {
-        renders.push_back(NewUnique<RenderData>(*this, vsize, 3 * isize, sizeof(T), VertexLayoutOf<T>()));
-        BindRender(*renders.back());
-        return *renders.back();
+        renders.Push(NewUnique<RenderData>(*this, vsize, 3 * isize, sizeof(T), VertexLayoutOf<T>()));
+        BindRender(*renders[-1 % Wrap]);
+        return *renders[-1 % Wrap];
     }
 }

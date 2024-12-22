@@ -38,22 +38,22 @@ namespace Quasi::Graphics {
 		void Bind() const { rd->Bind(); }
 		void Unbind() const { rd->Unbind(); }
 
-                            RenderData& GetRenderData()       { return *rd; }
-        [[nodiscard]] const RenderData& GetRenderData() const { return *rd; }
+              RenderData& GetRenderData()       { return *rd; }
+        const RenderData& GetRenderData() const { return *rd; }
 
-        [[nodiscard]] const RenderData* operator->() const { return &GetRenderData(); }
+        const RenderData* operator->() const { return &GetRenderData(); }
     	RenderData* operator->() { return &GetRenderData(); }
 
 		void Draw(IList<const Mesh<T>*> meshes, const DrawOptions& options = {});
 		void Draw(const Mesh<T>& mesh, const DrawOptions& options = {}) { Draw({ &mesh }, options); }
-		template <CollectionOf<Mesh<T>> R> void Draw(R&& meshes, const DrawOptions& options = {});
+		void Draw(const CollectionAny auto& meshes, const DrawOptions& options = {});
 		void DrawInstanced(IList<const Mesh<T>*> meshes, int instances, const DrawOptions& options = {});
     	void DrawInstanced(const Mesh<T>& mesh, int instances, const DrawOptions& options = {}) { DrawInstanced({ &mesh }, instances, options); }
-    	template <CollectionOf<Mesh<T>> R> void DrawInstanced(R&& meshes, int instances, const DrawOptions& options = {});
+    	void DrawInstanced(const CollectionAny auto& meshes, int instances, const DrawOptions& options = {});
 
     	void BeginContext() { rd->BufferUnload(); rd->Clear(); }
     	void AddMesh(const Mesh<T>& mesh) { rd->Add(mesh); }
-    	template <CollectionOf<Mesh<T>> R> void AddMeshes(R&& meshes) { rd->Add(meshes); }
+    	void AddMeshes(const CollectionAny auto& meshes) { rd->Add(meshes); }
     	void AddMeshes(IList<const Mesh<T>*> meshes) { for (auto* m : meshes) rd->Add(*m); }
     	void EndContext() { rd->BufferLoad(); }
 
@@ -83,8 +83,8 @@ namespace Quasi::Graphics {
     	DrawContext(options);
     }
 
-    template <class T> template <CollectionOf<Mesh<T>> R>
-	void RenderObject<T>::Draw(R&& meshes, const DrawOptions& options) {
+    template <class T>
+	void RenderObject<T>::Draw(const CollectionAny auto& meshes, const DrawOptions& options) {
 	    BeginContext();
     	AddMeshes(meshes);
     	EndContext();
@@ -99,8 +99,8 @@ namespace Quasi::Graphics {
     	DrawContextInstanced(instances, options);
     }
 
-	template <class T> template <CollectionOf<Mesh<T>> R>
-	void RenderObject<T>::DrawInstanced(R&& meshes, int instances, const DrawOptions& options) {
+	template <class T>
+	void RenderObject<T>::DrawInstanced(const CollectionAny auto& meshes, int instances, const DrawOptions& options) {
     	BeginContext();
     	AddMeshes(meshes);
     	EndContext();

@@ -48,35 +48,35 @@ namespace Quasi::Physics2D {
 
         void Stop() { velocity = 0; angularVelocity = 0; }
 
-        [[nodiscard]] Manifold CollideWith(const Body& target) const;
-        [[nodiscard]] Manifold CollideWith(const Shape& target, const PhysicsTransform& xf) const;
-        [[nodiscard]] bool OverlapsWith(const Body& target) const;
-        [[nodiscard]] bool OverlapsWith(const Shape& target, const PhysicsTransform& xf) const;
-        [[nodiscard]] PhysicsTransform GetTransform() const;
+        Manifold CollideWith(const Body& target) const;
+        Manifold CollideWith(const Shape& target, const PhysicsTransform& xf) const;
+        bool OverlapsWith(const Body& target) const;
+        bool OverlapsWith(const Shape& target, const PhysicsTransform& xf) const;
+        PhysicsTransform GetTransform() const;
 
         void Update(float dt);
         void TryUpdateTransforms();
         void SetShapeHasChanged();
 
-        [[nodiscard]] bool IsStatic()  const { return type == BodyType::STATIC; }
-        [[nodiscard]] bool IsDynamic() const { return type == BodyType::DYNAMIC; }
+        bool IsStatic()  const { return type == BodyType::STATIC; }
+        bool IsDynamic() const { return type == BodyType::DYNAMIC; }
 
         void Enable()  { enabled = true; }
         void Disable() { enabled = false; }
 
-        [[nodiscard]] fRect2D BoundingBox() const;
+        fRect2D BoundingBox() const;
 
         friend class World;
         friend void StaticResolve (Body&, Body&, const Manifold&);
         friend void DynamicResolve(Body&, Body&, const Manifold&);
     };
 
-    struct BodyHandle : NullableProxy<Body&, BodyHandle>, RefProxy<Body, BodyHandle> {
+    struct BodyHandle : INullable<Body&, BodyHandle>, IReference<Body, BodyHandle> {
         u32 index;
         OptRef<World> world;
 
-        using RefProxy::operator->;
-        using RefProxy::operator*;
+        using IReference::operator->;
+        using IReference::operator*;
 
     private:
         BodyHandle(u32 i, OptRef<World> w) : index(i), world(w) {}
@@ -89,11 +89,11 @@ namespace Quasi::Physics2D {
         static BodyHandle At(World& w, u32 i) { return { i, w }; }
 
         Body& ValueImpl();
-        [[nodiscard]] const Body& ValueImpl() const;
+        const Body& ValueImpl() const;
         Body& UnwrapImpl() { return Value(); }
-        [[nodiscard]] const Body& UnwrapImpl() const { return Value(); }
+        const Body& UnwrapImpl() const { return Value(); }
 
-        [[nodiscard]] bool HasValueImpl() const;
+        bool HasValueImpl() const;
 
         static BodyHandle NoneImpl() { return {}; }
         static BodyHandle SomeImpl(const Body& b) { return { b }; }

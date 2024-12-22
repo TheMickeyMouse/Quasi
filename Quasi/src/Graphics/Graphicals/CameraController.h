@@ -23,15 +23,15 @@ namespace Quasi::Graphics {
         bool enabled = false;
         float smoothZoom = -1.0f;
 
-        [[nodiscard]] Math::fVector3 Right() const;
+        Math::fVector3 Right() const;
 
         void Update(GraphicsDevice& gd, float dt);
         void Toggle(GraphicsDevice& gd);
 
-        [[nodiscard]] Math::Matrix3D GetViewMat() const;
-        [[nodiscard]] Math::Transform3D GetViewTransform() const;
-        [[nodiscard]] Math::Matrix3D GetProjMat() const;
+        Math::Matrix3D GetViewMat() const;
+        Math::Transform3D GetViewTransform() const;
+        Math::Matrix3D GetProjMat() const;
 
-        [[nodiscard]] bool UsesSmoothZoom() const { return !std::signbit(smoothZoom); }
+        bool UsesSmoothZoom() const { return !std::signbit(smoothZoom); }
     };
 }

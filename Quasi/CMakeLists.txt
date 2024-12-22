@@ -90,6 +90,8 @@ set(HEADER_FILES
     src/Utils/Match.h
     src/Utils/Format.h
     src/Utils/Memory.h
+    src/Utils/Iterator.h
+    src/Utils/Vec.h
 
     src/vendor/imgui/imconfig.h
     src/vendor/imgui/imgui.h
@@ -102,7 +104,7 @@ set(HEADER_FILES
     src/vendor/imgui/imgui_stdlib.h
 
     src/vendor/stb_image/stb_image.h
-        src/Utils/Interface.h
+        src/Utils/Span.h
 )
 source_group("Header Files" FILES ${HEADER_FILES})
 
@@ -182,6 +184,10 @@ source_group("Source Files" FILES ${SOURCE_FILES})
 set(ALL_FILES
     ${HEADER_FILES}
     ${SOURCE_FILES}
+        src/Utils/Algorithm.h
+        src/Utils/Array.h
+        src/Utils/Iter/MapIter.h
+        src/Utils/Comparison.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

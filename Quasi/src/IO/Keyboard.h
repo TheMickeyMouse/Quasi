@@ -108,11 +108,11 @@ namespace Quasi::IO {
 
         void Update();
 
-        [[nodiscard]] bool KeyPressed(Key key) const;
-        [[nodiscard]] bool KeyOnPress(Key key) const;
-        [[nodiscard]] bool KeyOnRelease(Key key) const;
-        [[nodiscard]] bool AnyPressed() const;
-        [[nodiscard]] bool NonePressed() const;
+        bool KeyPressed(Key key) const;
+        bool KeyOnPress(Key key) const;
+        bool KeyOnRelease(Key key) const;
+        bool AnyPressed() const;
+        bool NonePressed() const;
         void VisitKeysPressed(FuncRef<void(Key k)> callback) const;
 
         static Str KeyToStr(Key key);
@@ -125,12 +125,12 @@ namespace Quasi::IO {
         std::queue<KeyIndex> queuedKeys = {};
 
         GLFWwindow* inputWindow();
-        [[nodiscard]] const GLFWwindow* inputWindow() const;
+        const GLFWwindow* inputWindow() const;
 
-        [[nodiscard]] bool getCurrKeyStatus(KeyIndex i) const { return currKeySet[i]; }
-        [[nodiscard]] bool getPrevKeyStatus(KeyIndex i) const { return prevKeySet[i]; }
-        [[nodiscard]] bool getCurrKeyStatus(Key k) const { return currKeySet[ToKeyIndex(k)]; }
-        [[nodiscard]] bool getPrevKeyStatus(Key k) const { return prevKeySet[ToKeyIndex(k)]; }
+        bool getCurrKeyStatus(KeyIndex i) const { return currKeySet[i]; }
+        bool getPrevKeyStatus(KeyIndex i) const { return prevKeySet[i]; }
+        bool getCurrKeyStatus(Key k) const { return currKeySet[ToKeyIndex(k)]; }
+        bool getPrevKeyStatus(Key k) const { return prevKeySet[ToKeyIndex(k)]; }
 
         void OnGlfwKeyCallback(GLFWwindow* window, int key, int positionCode, int action, int modifierBits);
     };

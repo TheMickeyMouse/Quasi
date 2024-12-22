@@ -11,7 +11,7 @@ namespace Quasi::Math {
             static constexpr u32 dimension = V::dimension;
             using rect_t = RectN<dimension, scalar>;
             V pos;
-            [[nodiscard]] rect_t rect(const V& size) const;
+            rect_t rect(const V& size) const;
         };
 
         template <class V> struct rect_size_t { V pos; };
@@ -65,8 +65,7 @@ namespace Quasi::Math {
         static RectN whole() { return { std::numeric_limits<T>::lowest(), std::numeric_limits<T>::max() }; }
         static RectN unrange() { return { std::numeric_limits<T>::max(), std::numeric_limits<T>::lowest() }; }
         static RectN at(const vec& point) { return { point, point }; }
-        static RectN over(const CollectionOf<vec> auto& nums);
-        static RectN over(const CollectionOf<scalar> auto& nums) requires is1D;
+        static RectN over(const Collection<vec> auto& nums);
 
         NODISC bool operator==(const RectN& other) const { return min == other.min && max == other.max; }
         NODISC vec operator[](const usize i) const { return corner(i); }
@@ -172,15 +171,9 @@ namespace Quasi::Math {
         return { (V)(pos + size / 2), (V)(pos - size / 2) };
     }
 
-    template <u32 N, class T> RectN<N, T> RectN<N, T>::over(const CollectionOf<VectorN<N, T>> auto& nums) {
+    template <u32 N, class T> RectN<N, T> RectN<N, T>::over(const Collection<VectorN<N, T>> auto& nums) {
         RectN r = unrange();
         for (const auto& v : nums) r = r.expand_until(v);
-        return r;
-    }
-
-    template <u32 N, class T> RectN<N, T> RectN<N, T>::over(const CollectionOf<T> auto& nums) requires is1D {
-        RectN r = unrange();
-        for (const auto v : nums) r = r.expand_until({ v });
         return r;
     }
 

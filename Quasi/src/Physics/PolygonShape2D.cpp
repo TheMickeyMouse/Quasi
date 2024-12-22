@@ -151,7 +151,7 @@ namespace Quasi::Physics2D {
     template class BasicPolygonShape<StaticPolygonShape<4>>;
     template class BasicPolygonShape<DynPolygonShape>;
 
-    template <u32 N> StaticPolygonShape<N>::StaticPolygonShape(Span<const fVector2, N> ps) {
+    template <u32 N> StaticPolygonShape<N>::StaticPolygonShape(Span<const fVector2> ps) {
         for (u32 i = 0; i < N; ++i) {
             points[i]   = ps[i];
             invDists[i] = 1 / ps[(i + 1) % N].dist(ps[i]);
@@ -160,39 +160,38 @@ namespace Quasi::Physics2D {
     }
 
 
-    DynPolygonShape::DynPolygonShape(Span<const fVector2> points) {
-        data.reserve(points.size());
+    DynPolygonShape::DynPolygonShape(Span<const fVector2> points) : data(Vec<PointWithInvDist>::WithCap(points.Length())) {
         u32 i = 0;
-        for (; i < points.size() - 1; ++i) {
-            data.emplace_back(points[i], 1 / points[i + 1].dist(points[i]));
+        for (; i < points.Length() - 1; ++i) {
+            data.Push({ points[i], 1 / points[i + 1].dist(points[i]) });
         }
-        data.emplace_back(points[i], 1 / points[0].dist(points[i]));
+        data.Push({ points[i], 1 / points[0].dist(points[i]) });
         FixCenterOfMass();
     }
 
     u32 DynPolygonShape::Size() const {
-        return data.size();
+        return data.Length();
     }
 
     void DynPolygonShape::AddPoint(const fVector2& p) {
         // needs to update last and first distances
-        data.emplace_back(p, 1 / p.dist(PointAt(0)));
-        UpdateLenBtwn((i32)(data.size() - 2));
+        data.Push({ p, 1 / p.dist(PointAt(0)) });
+        UpdateLenBtwn((i32)(data.Length() - 2));
     }
 
     void DynPolygonShape::AddPoint(const fVector2& p, u32 i) {
         // doesnt need i + 1 because length is not updated
-        data.insert(data.begin() + i, { p, 1 / p.dist(PointAtWrap((i32)i)) });
+        data.Insert({ p, 1 / p.dist(PointAtWrap((i32)i)) }, i);
         UpdateLenBtwnWrap((i32)i - 1);
     }
 
     void DynPolygonShape::RemovePoint(u32 i) {
-        data.erase(data.begin() + i);
+        data.Pop(i);
         UpdateLenBtwnWrap((i32)i);
     }
 
     void DynPolygonShape::PopPoint() {
-        data.pop_back();
+        data.Pop();
         UpdateLenBtwn(0);
     }
 

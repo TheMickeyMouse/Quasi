@@ -14,9 +14,9 @@ namespace Quasi::Physics2D {
     bool     IMPLEMENT_SHAPE_FN(Shape, AddSeperatingAxes,  (SeperatingAxisSolver& sat),        (sat))
 
     Shape MakePolygon(Span<const fVector2> points) {
-        switch (points.size()) {
-            case 3:  return TriangleShape { points.first<3>() };
-            case 4:  return QuadShape     { points.first<4>() };
+        switch (points.Length()) {
+            case 3:  return TriangleShape   { points };
+            case 4:  return QuadShape       { points };
             default: return DynPolygonShape { points };
         }
     }

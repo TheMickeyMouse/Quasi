@@ -21,7 +21,7 @@ namespace Quasi::Graphics {
         GL::GetIntegerv(GL::MAX_TEXTURE_IMAGE_UNITS, &SlotCount);
         GLLogger().QInfo$("Texture count: {}", SlotCount);
 
-        Slots.resize(SlotCount, nullptr);
+        Slots.Resize(SlotCount, nullptr);
     }
 
     Texture::Texture(GraphicsID id, const Math::uVector3& size) : GLObject(id), size(size) {}
@@ -98,7 +98,7 @@ namespace Quasi::Graphics {
         Math::iVector2 size;
         int BPPixel;
         stbi_set_flip_vertically_on_load(1);
-        const STBIImage localTexture { stbi_load_from_memory(datapng.data(), (int)datapng.size(), &size.x, &size.y, &BPPixel, 4) };
+        const STBIImage localTexture { stbi_load_from_memory(datapng.Data(), (int)datapng.Length(), &size.x, &size.y, &BPPixel, 4) };
         Texture tex = New((const byte*)localTexture.get(), { size.x, size.y }, init);
         
         return tex;

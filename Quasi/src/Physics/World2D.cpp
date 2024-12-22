@@ -6,12 +6,12 @@
 
 namespace Quasi::Physics2D {
     World::~World() {
-        Span<Body> bodiesTemp = Memory::ReleaseData(std::move(bodies));
-        for (u32 i = 0; i < bodiesTemp.size(); ++i) {
+        Span<Body> bodiesTemp = bodies.LeakSpan();
+        for (u32 i = 0; i < bodiesTemp.Length(); ++i) {
             if (!BodyIsValid(i)) continue;
             Memory::DestructAt(&bodiesTemp[i]);
         }
-        Memory::FreeNoDestruct(bodiesTemp.data());
+        Memory::FreeNoDestruct(bodiesTemp.Data());
     }
 
     World::World(World&& w) noexcept {
@@ -33,16 +33,16 @@ namespace Quasi::Physics2D {
 
     World World::Clone() const {
         World w;
-        w.bodies            = bodies;
-        w.bodySparseEnabled = bodySparseEnabled;
-        w.bodyIndicesSorted = bodyIndicesSorted;
+        w.bodies            = bodies.Clone();
+        w.bodySparseEnabled = bodySparseEnabled.Clone();
+        w.bodyIndicesSorted = bodyIndicesSorted.Clone();
         w.bodyCount         = bodyCount;
         w.gravity           = gravity;
         return w;
     }
 
     void World::SortBodyIndices() {
-        for (int i = 1; i < bodyIndicesSorted.size(); ++i) {
+        for (int i = 1; i < bodyIndicesSorted.Length(); ++i) {
             for (int j = i - 1; j >= 0; --j) {
                 // filters out (~0) to the back
                 const u32 iCurr = bodyIndicesSorted[j], iNext = bodyIndicesSorted[j + 1];
@@ -55,30 +55,30 @@ namespace Quasi::Physics2D {
             }
         }
 
-        while (bodyIndicesSorted.back() == ~0)
-            bodyIndicesSorted.pop_back();
+        while (bodyIndicesSorted.Last() == ~0)
+            bodyIndicesSorted.Pop();
     }
 
     void World::Reserve(usize size) {
-        bodies.reserve(size);
-        bodySparseEnabled.reserve((size + BITS_IN_USIZE - 1) / BITS_IN_USIZE);
-        bodyIndicesSorted.reserve(size);
+        bodies.Reserve(size);
+        bodySparseEnabled.Reserve((size + BITS_IN_USIZE - 1) / BITS_IN_USIZE);
+        bodyIndicesSorted.Reserve(size);
     }
 
     void World::Clear() {
-        bodies.clear();
+        bodies.Clear();
         bodyCount = 0;
-        bodySparseEnabled.clear();
-        bodyIndicesSorted.clear();
+        bodySparseEnabled.Clear();
+        bodyIndicesSorted.Clear();
     }
 
     u32 World::FindVacantIndex() const {
-        if (bodySparseEnabled.empty()) return 0;
-        for (u32 i = 0; i < bodySparseEnabled.size(); ++i) {
-            if (bodySparseEnabled[i] == ~(usize)0) continue;
+        if (!bodySparseEnabled) return 0;
+        for (u32 i = 0; i < bodySparseEnabled.Length(); ++i) {
+            if (bodySparseEnabled[i] == USIZE_MAX) continue;
             return i * BITS_IN_USIZE + std::countr_one(bodySparseEnabled[i]);
         }
-        return bodySparseEnabled.size() * BITS_IN_USIZE;
+        return bodySparseEnabled.Length() * BITS_IN_USIZE;
     }
 
     BodyHandle World::CreateBody(const BodyCreateOptions& options, Shape shape) {
@@ -93,19 +93,19 @@ namespace Quasi::Physics2D {
             *this,
             std::move(shape)
         };
-        if (i >= bodySparseEnabled.size() * BITS_IN_USIZE) {
-            bodySparseEnabled.push_back(1);
-            bodies.emplace_back(std::move(b));
-            bodies.back().sortedIndex = bodyIndicesSorted.size();
-            bodyIndicesSorted.push_back(bodies.size() - 1);
+        if (i >= bodySparseEnabled.Length() * BITS_IN_USIZE) {
+            bodySparseEnabled.Push(1);
+            bodies.Push(std::move(b));
+            bodies.Last().sortedIndex = bodyIndicesSorted.Length();
+            bodyIndicesSorted.Push(bodies.Length() - 1);
         } else {
             bodySparseEnabled[i / BITS_IN_USIZE] |= (usize)1 << (i % BITS_IN_USIZE);
-            if (i >= bodies.size()) {
-                bodies.emplace_back(std::move(b));
+            if (i >= bodies.Length()) {
+                bodies.Push(std::move(b));
             } else
                 Memory::ConstructAt(&bodies[i], std::move(b));
-            bodies[i].sortedIndex = bodyIndicesSorted.size();
-            bodyIndicesSorted.push_back(i);
+            bodies[i].sortedIndex = bodyIndicesSorted.Length();
+            bodyIndicesSorted.Push(i);
         }
         ++bodyCount;
         return BodyHandle::At(*this, i);
@@ -121,7 +121,7 @@ namespace Quasi::Physics2D {
     }
 
     void World::Update(float dt) {
-        for (u32 i = 0; i < bodies.size(); ++i) {
+        for (u32 i = 0; i < bodies.Length(); ++i) {
             if (!BodyIsValid(i)) continue;
             Body& b = bodies[i];
             if (!b.enabled) continue;
@@ -141,7 +141,7 @@ namespace Quasi::Physics2D {
             Body& b = BodyDirectAt(i);
             if (!b.enabled) continue;
             const float min = b.boundingBox.min.x;
-            for (u32 j = 0; j < active.size();) {
+            for (u32 j = 0; j < active.Length();) {
                 Body& c = BodyDirectAt(active[j]);
                 if (c.boundingBox.max.x > min) {
                     const bool bDyn = b.IsDynamic(), cDyn = c.IsDynamic();
@@ -156,11 +156,10 @@ namespace Quasi::Physics2D {
                     }
                     ++j;
                 } else {
-                    std::swap(active[j], active.back());
-                    active.pop_back();
+                    active.PopUnordered(j);
                 }
             }
-            active.emplace_back(i);
+            active.Push(i);
         }
 
         // for (const auto& [base, target, event] : collisionPairs) {
@@ -195,7 +194,7 @@ namespace Quasi::Physics2D {
     }
 
     OptRef<const Body> World::BodyAt(usize i) const {
-        return BodyIsValid(i) ? Refer(bodies[i]) : OptRef<const Body>::None();
+        return BodyIsValid(i) ? OptRefs::SomeRef(bodies[i]) : nullptr;
     }
 
     bool World::BodyIsValid(usize i) const {

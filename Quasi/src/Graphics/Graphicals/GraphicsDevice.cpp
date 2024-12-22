@@ -102,19 +102,20 @@ namespace Quasi::Graphics {
     
     void GraphicsDevice::BindRender(RenderData& render) {
         render.device = *this;
-        render.deviceIndex = (uint)(renders.size() - 1);
+        render.deviceIndex = (u32)(renders.Length() - 1);
     }
 
-    void GraphicsDevice::DeleteRender(uint index) {
+    void GraphicsDevice::DeleteRender(u32 index) {
         renders[index]->device = nullptr;
-        renders.erase(renders.begin() + (int)index);
-        for (uint i = index; i < renders.size(); ++i)
+        renders.Pop(index);
+        for (u32 i = index; i < renders.Length(); ++i)
             renders[i]->deviceIndex = i;
     }
 
     void GraphicsDevice::DeleteAllRenders() {
-        std::ranges::for_each(renders, [](const RenderHandle& r){ r->device = nullptr; });
-        renders.clear();
+        for (const auto& r : renders)
+            r->device = nullptr;
+        renders.Clear();
     }
 
     RenderData& GraphicsDevice::GetRender(u32 index) {
@@ -255,8 +256,8 @@ namespace Quasi::Graphics {
         }
 
         if (ImGui::BeginTabItem("Data")) {
-            uint vCount = 0, tCount = 0;
-            for (uint i = 0; i < renders.size(); ++i) {
+            u32 vCount = 0, tCount = 0;
+            for (u32 i = 0; i < renders.Length(); ++i) {
                 const RenderHandle& data = renders[i];
                 vCount += data->vbo.dataOffset;
                 tCount += data->ibo.dataOffset / 3;

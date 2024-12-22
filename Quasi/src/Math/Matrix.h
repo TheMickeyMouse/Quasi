@@ -7,7 +7,7 @@ namespace Quasi::Math {
     // column major mat
     namespace details {
         template <u32 D>
-        using rotation_scalar = std::conditional_t<D == 2, float, std::conditional_t<D == 3, fVector3, Empty>>;
+        using rotation_scalar = IfElse<(D == 2), float, IfElse<(D == 3), fVector3, Empty>>;
     }
 
     template <u32 N, u32 M> // N is the dimension of each vector, M is the number of vectors
@@ -25,14 +25,14 @@ namespace Quasi::Math {
     public:
         Matrix() requires is_square { construct_identity(); }
         template <class... Vs>
-        Matrix(const Vs&... cols) requires (std::is_convertible_v<Vs, col> && ...) : mat { cols... } {}
+        Matrix(const Vs&... cols) requires (ConvTo<Vs, col> && ...) : mat { cols... } {}
         Matrix(const VectorN<M, col>& mat) : mat(mat) {}
 
         static Matrix identity() requires is_square { return Matrix {}; }
         static Matrix from_span(Span<const float> data); // column major
 
-        NODISC Span<const float, N * M> data() const;
-        NODISC Span<const col, M> get_cols() const;
+        NODISC Span<const float> data() const;
+        NODISC Span<const col> get_cols() const;
 
         NODISC vec translation() const { return (vec)mat.last(); }
         NODISC Matrix<N - 1, M - 1> linear_matrix() const;

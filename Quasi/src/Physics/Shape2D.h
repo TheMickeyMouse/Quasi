@@ -28,22 +28,22 @@ namespace Quasi::Physics2D {
     public:
         Shape() : Variant(CircleShape { 0.0f }) {}
         Shape(Variant v) : Variant(std::move(v)) {}
-        Shape(const std::derived_from<IShape> auto& s) : Variant(s) {}
-        Shape(std::derived_from<IShape> auto&& s) : Variant(std::forward<decltype(s)>(s)) {}
+        Shape(const Extends<IShape> auto& s) : Variant(s) {}
+        Shape(Extends<IShape> auto&& s) : Variant(std::forward<decltype(s)>(s)) {}
 
-        [[nodiscard]] float ComputeArea() const;
-        [[nodiscard]] fRect2D ComputeBoundingBox() const;
-        [[nodiscard]] float Inertia() const;
+        float ComputeArea() const;
+        fRect2D ComputeBoundingBox() const;
+        float Inertia() const;
 
-        [[nodiscard]] fVector2 NearestPointTo(const fVector2& point) const;
-        [[nodiscard]] fVector2 FurthestAlong(const fVector2& normal) const;
-        [[nodiscard]] fLine2D BestEdgeFor(const fVector2& normal) const;
-        [[nodiscard]] fRange ProjectOntoAxis(const fVector2& axis) const;
-        [[nodiscard]] fRange ProjectOntoOwnAxis(u32 axisID, const fVector2& axis) const;
+        fVector2 NearestPointTo(const fVector2& point) const;
+        fVector2 FurthestAlong(const fVector2& normal) const;
+        fLine2D BestEdgeFor(const fVector2& normal) const;
+        fRange ProjectOntoAxis(const fVector2& axis) const;
+        fRange ProjectOntoOwnAxis(u32 axisID, const fVector2& axis) const;
         bool AddSeperatingAxes(SeperatingAxisSolver& sat) const;
 
-        [[nodiscard]] Type TypeIndex() const { return (Type)ID(); }
-        [[nodiscard]] ClipPrimitive PreferedPrimitive() const { return PrimitiveOfType(TypeIndex()); }
+        Type TypeIndex() const { return (Type)ID(); }
+        ClipPrimitive PreferedPrimitive() const { return PrimitiveOfType(TypeIndex()); }
     };
 
     Shape MakePolygon(Span<const fVector2> points);

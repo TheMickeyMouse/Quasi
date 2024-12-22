@@ -39,8 +39,8 @@ namespace Quasi::Debug {
         void Resume() { return Start(); }
         void Reset();
 
-        [[nodiscard]] TimeDuration TotalElapsed() const;
-        template <class Unit> [[nodiscard]] u64 TotalElapsedUnits() const {
+        TimeDuration TotalElapsed() const;
+        template <class Unit> u64 TotalElapsedUnits() const {
             return UnitConvert<Unit>(TotalElapsed());
         }
 

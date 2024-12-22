@@ -2,12 +2,12 @@
 
 namespace Quasi::Graphics {
     VertexBufferLayout::VertexBufferLayout(IList<VertexBufferComponent> comps) {
-        components.reserve(comps.size());
+        components.Reserve(comps.size());
         for (const auto& component : comps) Push(component);
     }
 
     void VertexBufferLayout::Push(VertexBufferComponent comp) {
-        components.push_back(comp);
+        components.Push(comp);
         stride += comp.count * comp.type->typeSize;
     }
 

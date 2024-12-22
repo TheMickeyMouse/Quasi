@@ -72,14 +72,14 @@ namespace Quasi::Graphics {
 
 #undef VBE
 
-        [[nodiscard]] const Vec<VertexBufferComponent>& GetComponents() const { return components; }
-        [[nodiscard]] u32 GetStride() const { return stride; }
+        const Vec<VertexBufferComponent>& GetComponents() const { return components; }
+        u32 GetStride() const { return stride; }
     };
 
     template <class T>
     void VertexBufferLayout::Push(u32 count, bool normalized, bool integral) {
         GLTypeID type = GLGetTypeID<T>();
-        components.emplace_back(type, count, normalized, integral);
+        components.Push({ type, count, normalized, integral });
         stride += count * type->typeSize;
     }
 }

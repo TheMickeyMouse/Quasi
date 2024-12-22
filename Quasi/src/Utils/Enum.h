@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include "Macros.h"
-#include "Type.h"
-#include "Ref.h"
+#include "Array.h"
 #include <algorithm>
 
 namespace Quasi {
@@ -33,17 +32,17 @@ namespace Quasi {
             else value = Min();
         }
 
-        [[nodiscard]] u32 Ord() const {
+        u32 Ord() const {
             if constexpr (IS_FLAG) return value;
-            else return value - E::VALUES.data();
+            else return value - E::VALUES.Data();
         }
 
         static Enum FromOrd(u32 i) requires (!IS_FLAG) { return E::VALUES[i]; }
         static Enum FromBitflag(u32 i) requires IS_FLAG { Enum e; e.value = i; return e; }
         template <class T> static Enum Find(T E::* property, const T& searcher) {
             if constexpr (IS_NULLABLE) if ((*Null()).*property == searcher) return Null();
-            auto it = std::find_if(Values().begin(), Values().end(), [=](const E& e) { return e.*property == searcher; });
-            return it == Values().end() ? Null() : *it;
+            const usize i = Values().FindIf([=](const E& e) { return e.*property == searcher; });
+            return i == USIZE_MAX ? Null() : Values()[i];
         }
 
         void AddFlag(const E& e) requires IS_FLAG { value |= e._VALUE; }
@@ -57,8 +56,8 @@ namespace Quasi {
         static constexpr Enum Max() { return E::VALUES.back(); }
         static constexpr Enum Null() { return E::NONE; }
 
-        [[nodiscard]] const E* operator->() const requires (!IS_FLAG) { return value; }
-        [[nodiscard]] const E& operator*()  const requires (!IS_FLAG) { return *value; }
+        const E* operator->() const requires (!IS_FLAG) { return value; }
+        const E& operator*()  const requires (!IS_FLAG) { return *value; }
 
         operator bool() const requires IS_NULLABLE { return value != Null().value; }
         explicit operator u32() const { return Ord(); }
@@ -137,6 +136,8 @@ namespace Quasi {
 #define Q_ENUM_ARRAYVAL(NX) , Q_CAT(Make, Q_ARGS_FIRST NX)()
 
 namespace Quasi {
+    template <class T, usize N> struct Array;
+
     template <IEnum E, class T>
     struct EnumMap {
         Array<T, E::Num()> arr;
@@ -146,7 +147,7 @@ namespace Quasi {
             for (const auto& [e, t] : pairs) arr[e.Ord()] = t;
         }
 
-        [[nodiscard]] const T& operator[](E e) const { return arr[e.Ord()]; }
+        const T& operator[](E e) const { return arr[e.Ord()]; }
         T& operator[](E e) { return arr[e.Ord()]; }
     };
 }

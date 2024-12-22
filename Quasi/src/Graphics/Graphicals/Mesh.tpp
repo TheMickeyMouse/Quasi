@@ -23,17 +23,17 @@ namespace Quasi::Graphics {
     template <IVertex Vtx>
     Mesh<Vtx>& Mesh<Vtx>::Add(const Mesh& m) {
         auto batch = NewBatch();
-        batch.PushSpan(m.vertices | std::views::transform([&] (const Vtx& v) {
+        batch.PushSpan(m.vertices.Iter().Map([&] (const Vtx& v) {
             return VertexMul(VertexMul(v, m.modelTransform), modelTransform.Inverse());
         }), m.indices);
         return *this;
     }
 
     template <IVertex Vtx>
-    Mesh<Vtx> Mesh<Vtx>::Combine(IList<Mesh> meshes) {
-        Mesh combined = std::move(meshes.begin()[0]);
-        for (usize i = 0; i < meshes.size(); ++i)
-            combined.Add(meshes.begin()[i]);
+    Mesh<Vtx> Mesh<Vtx>::Combine(Span<Mesh> meshes) {
+        Mesh combined = std::move(meshes.FirstMut());
+        for (Mesh& m : meshes.SkipMut(1))
+            combined.Add(std::move(m));
         return combined;
     }
 
@@ -74,8 +74,8 @@ namespace Quasi::Graphics {
     template <IVertex U, Fn<U, Ref<const Vtx>> G>
     Mesh<U> Mesh<Vtx>::GeometryMap(G&& g) const {
         Mesh<U> newGeometry;
-        newGeometry.vertices.reserve(vertices.size());
-        newGeometry.indices = indices;
+        newGeometry.vertices.Reserve(vertices.Length());
+        newGeometry.indices = indices.Clone();
         for (const auto& v : vertices) {
             newGeometry.PushVertex(g(v));
         }
@@ -84,7 +84,7 @@ namespace Quasi::Graphics {
 
     template <IVertex Vtx>
     void Mesh<Vtx>::Clear() {
-        vertices.clear();
-        indices.clear();
+        vertices.Clear();
+        indices.Clear();
     }
 }

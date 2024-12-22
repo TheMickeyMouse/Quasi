@@ -39,11 +39,11 @@ namespace Quasi::Graphics {
         PointPer64(float points) : pp64((int)(points * 64.0f)) {}
         static PointPer64 inP64(int pointsPer64) { return { pointsPer64, 0 }; }
         operator int() const { return pp64; }
-        [[nodiscard]] int points() const { return pp64 >> 6; }
-        [[nodiscard]] float pointsf() const { return (float)pp64 / 64.0f; }
-        [[nodiscard]] int pointsPer64() const { return pp64; }
-        [[nodiscard]] int px() const { return pp64 * (int)FontDevice::DPI() / (72 * 64); }
-        [[nodiscard]] float pxf() const { return (float)(pp64 * FontDevice::DPI()) / (72.0f * 64.0f); }
+        int points() const { return pp64 >> 6; }
+        float pointsf() const { return (float)pp64 / 64.0f; }
+        int pointsPer64() const { return pp64; }
+        int px() const { return pp64 * (int)FontDevice::DPI() / (72 * 64); }
+        float pxf() const { return (float)(pp64 * FontDevice::DPI()) / (72.0f * 64.0f); }
 
         float operator/(PointPer64 other) const { return (float)pp64 / (float)other.pp64; }
     };

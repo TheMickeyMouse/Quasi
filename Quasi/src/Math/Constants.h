@@ -75,7 +75,7 @@ namespace Quasi::Math {
         return { deg / 180.0 * PI80 };
     }
 
-    struct IPow { i64 pow; [[nodiscard]] IPow operator-() const { return { -pow }; } };
+    struct IPow { i64 pow; IPow operator-() const { return { -pow }; } };
     inline IPow operator ""_p(u64 p) { return { (i64)p }; }
 
     inline float operator^(float flt, IPow p) {

@@ -27,11 +27,11 @@ namespace ImGui {
     void DisplayTextCropped(Q Str text, float width);
 
     template <class T> requires std::is_arithmetic_v<T>
-    Q_IMGUI_EDITOR(EditScalar, T& value, float speed = 1, Q Implicit<Q Option<Q Math::Range<T>>> range = nullptr);
+    Q_IMGUI_EDITOR(EditScalar, T& value, float speed = 1, Q NoInfer<Q Option<Q Math::Range<T>>> range = nullptr);
 
     template <class T> requires std::is_arithmetic_v<T>
     Q_IMGUI_EDITOR(EditScalarWithIcon, const Q Math::Color& color,
-        T& value, float speed = 1, Q Implicit<Q Option<Q Math::Range<T>>> range = nullptr, Q Str fmt = {}) {
+        T& value, float speed = 1, Q NoInfer<Q Option<Q Math::Range<T>>> range = nullptr, Q Str fmt = {}) {
         PushID(title.data());
         DisplaySimpleIcon(title.data(), color);
 
@@ -42,13 +42,13 @@ namespace ImGui {
     }
 
     template <Q u32 N, class T>
-    Q_IMGUI_EDITOR(EditVector, Q Math::VectorN<N, T>& vector, float speed = 1, Q Implicit<const Q Option<Q Math::RectN<N, T>>&> range = nullptr);
+    Q_IMGUI_EDITOR(EditVector, Q Math::VectorN<N, T>& vector, float speed = 1, Q NoInfer<const Q Option<Q Math::RectN<N, T>>&> range = nullptr);
 
     template <class T>
-    Q_IMGUI_EDITOR(EditRange, Q Math::Range<T>& range, float speed = 1, Q Implicit<const Q Option<Q Math::Range<T>>&> constraint = nullptr);
+    Q_IMGUI_EDITOR(EditRange, Q Math::Range<T>& range, float speed = 1, Q NoInfer<const Q Option<Q Math::Range<T>>&> constraint = nullptr);
 
     template <Q u32 N, class T>
-    Q_IMGUI_EDITOR(EditRect, Q Math::RectN<N, T>& range, float speed = 1, Q Implicit<const Q Option<Q Math::RectN<N, T>>&> constraint = nullptr);
+    Q_IMGUI_EDITOR(EditRect, Q Math::RectN<N, T>& range, float speed = 1, Q NoInfer<const Q Option<Q Math::RectN<N, T>>&> constraint = nullptr);
 
     Q_IMGUI_EDITOR(EditComplexRotation, Q Math::Complex<float>& complex);
     Q_IMGUI_EDITOR(EditQuatRotation, Q Math::Quaternion& quaternion);

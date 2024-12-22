@@ -22,17 +22,17 @@ namespace Quasi::Physics2D {
         World(World&& w) noexcept;
         World& operator=(World&& w) noexcept;
 
-        [[nodiscard]] World Clone() const;
+        World Clone() const;
 
     private:
-        [[nodiscard]] const Body& BodyDirectAt(u32 i) const { return bodies[i]; }
+        const Body& BodyDirectAt(u32 i) const { return bodies[i]; }
         Body& BodyDirectAt(u32 i) { return bodies[i]; }
         void SortBodyIndices();
     public:
-        [[nodiscard]] usize BodyCount() const { return bodyCount; }
+        usize BodyCount() const { return bodyCount; }
         void Reserve(usize size);
         void Clear();
-        [[nodiscard]] u32 FindVacantIndex() const;
+        u32 FindVacantIndex() const;
 
         BodyHandle CreateBody(const BodyCreateOptions& options, Shape shape);
         template <class S, class... Rs> BodyHandle CreateBody(const BodyCreateOptions& options, Rs&&... args) {
@@ -44,8 +44,8 @@ namespace Quasi::Physics2D {
         void Update(float dt, int simUpdates);
 
         OptRef<Body> BodyAt(usize i);
-        [[nodiscard]] OptRef<const Body> BodyAt(usize i) const;
-        [[nodiscard]] bool BodyIsValid(usize i) const;
+        OptRef<const Body> BodyAt(usize i) const;
+        bool BodyIsValid(usize i) const;
 
         friend struct BodyHandle;
     };

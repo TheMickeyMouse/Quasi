@@ -7,14 +7,14 @@ namespace Quasi::Physics2D {
         float radius = 1.0f;
 
         CircleShape(float r) : radius(r) {}
-        [[nodiscard]] float ComputeArea() const;
-        [[nodiscard]] fRect2D ComputeBoundingBox() const;
-        [[nodiscard]] float Inertia() const;
+        float ComputeArea() const;
+        fRect2D ComputeBoundingBox() const;
+        float Inertia() const;
 
-        [[nodiscard]] fVector2 NearestPointTo(const fVector2& point) const;
-        [[nodiscard]] fVector2 FurthestAlong(const fVector2& normal) const;
-        [[nodiscard]] fRange ProjectOntoAxis(const fVector2& axis) const;
-        [[nodiscard]] fRange ProjectOntoOwnAxis(u32 axisID, const fVector2& axis) const;
+        fVector2 NearestPointTo(const fVector2& point) const;
+        fVector2 FurthestAlong(const fVector2& normal) const;
+        fRange ProjectOntoAxis(const fVector2& axis) const;
+        fRange ProjectOntoOwnAxis(u32 axisID, const fVector2& axis) const;
         bool AddSeperatingAxes(SeperatingAxisSolver& sat) const { return false; }
     };
 } // Quasi

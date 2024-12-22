@@ -3,6 +3,7 @@
 #include "Constants.h"
 #include "Mesh.h"
 #include "MeshConstructor.h"
+#include "Algorithm.h"
 
 namespace Quasi::Graphics::MeshUtils {
     struct IcosphereCreator;
@@ -39,6 +40,7 @@ namespace Quasi::Graphics::MeshUtils {
         struct BytePair {
             byte data;
             BytePair(u32 top, u32 bottom) : data((byte)((top << 4) | bottom)) {}
+            Comparison operator<=>(const BytePair& pair) const { return Cmp::Between(data, pair.data); }
         };
 
         inline static const Array<BytePair, EDGE_COUNT> ICO_EDGES {
@@ -53,7 +55,7 @@ namespace Quasi::Graphics::MeshUtils {
         };
 
         static u32 FindEdge(BytePair p) {
-            return (u32)(std::ranges::lower_bound(ICO_EDGES, p.data, std::less {}, &BytePair::data) - ICO_EDGES.begin());
+            return ICO_EDGES.LowerBound(p);
         };
 
         static constexpr Array<TriIndices, CENTER_COUNT> ICO_FACES { {
@@ -63,19 +65,19 @@ namespace Quasi::Graphics::MeshUtils {
             { 0, 5, 10 }, { 1, 7, 10 }, { 2, 5,  11 },  { 3, 7,  11 },
             { 0, 4, 5 },  { 2, 4, 5 },  { 1, 6,  7 },   { 3, 6,  7 },
         } };
-        [[nodiscard]] const TriIndices& Face() const { return ICO_FACES[faceIdx]; }
+        const TriIndices& Face() const { return ICO_FACES[faceIdx]; }
 
         u32 faceIdx = 0;
         u32 divisions = 0;
-        [[nodiscard]] u32 EDGE_V_COUNT() const { return divisions - 1; }
-        [[nodiscard]] u32 CENTER_V_COUNT() const { return (divisions - 2) * (divisions - 1) / 2; }
+        u32 EDGE_V_COUNT() const { return divisions - 1; }
+        u32 CENTER_V_COUNT() const { return (divisions - 2) * (divisions - 1) / 2; }
 
-        [[nodiscard]] u32 EdgeIdx(u32 e, u32 d) const { return CORNER_COUNT + e * EDGE_V_COUNT() + d; }
-        [[nodiscard]] u32 FaceIdx(u32 f, u32 p, u32 q) const {
+        u32 EdgeIdx(u32 e, u32 d) const { return CORNER_COUNT + e * EDGE_V_COUNT() + d; }
+        u32 FaceIdx(u32 f, u32 p, u32 q) const {
             return CORNER_COUNT + EDGE_COUNT * EDGE_V_COUNT() + f * CENTER_V_COUNT() + (p - 2) * (p - 1) / 2 + (q - 1);
         }
 
-        [[nodiscard]] u32 IndexOf(u32 p, u32 q) const {
+        u32 IndexOf(u32 p, u32 q) const {
             if (p == 0 && q == 0) return Face().i;
             if (p == divisions && q == 0) return Face().j;
             if (p == divisions && q == divisions) return Face().k;
