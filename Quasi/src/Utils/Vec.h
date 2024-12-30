@@ -23,7 +23,7 @@ namespace Quasi {
         Vec(T* dat, usize s, usize cap) : data(dat), size(s), capacity(cap) {}
     public:
         Vec() = default;
-        ~Vec() { Memory::RangeDestruct(data, size); Memory::FreeRaw(data); }
+        ~Vec() { Memory::RangeDestruct(data, size); /* dont destruct after size, capacity is uninit'ed */ }
         Vec(Vec&& v) noexcept : data(v.data), size(v.size), capacity(v.capacity) { v.PretendClear(); }
         Vec& operator=(Vec&& v) noexcept { this->~Vec(); data = v.data; size = v.size; capacity = v.capacity; v.PretendClear(); return *this; }
         Vec(const Vec& x) : Vec(x.Clone()) {}
@@ -46,6 +46,8 @@ namespace Quasi {
             return v;
         }
 
+        static Vec FromBox(ArrayBox<T>& box) { return { box.Release(), box.Length(), box.Length() }; }
+
         static Vec WithCap (usize cap)  { return { cap  ? AllocateBuffer(cap)  : nullptr, 0, cap }; }
         static Vec WithSize(usize size) { return { size ? AllocateBuffer(size) : nullptr, size, size }; }
         static Vec Compose(T* data, usize size, usize cap) { return { data, size, cap }; }
@@ -56,7 +58,6 @@ namespace Quasi {
         usize LengthImpl() const { return size; }
         T* DataImpl() { return data; }
         const T* DataImpl() const { return data; }
-
     private:
         void PretendClear() { data = nullptr; size = 0; capacity = 0; }
 
@@ -79,7 +80,7 @@ namespace Quasi {
         }
         void AllocToNew(usize buffSize) { MoveBuffer(AllocateBuffer(buffSize)); capacity = buffSize; }
     public:
-        static T* AllocateBuffer(usize size) { return (T*)Memory::AllocateRaw(sizeof(T) * size); }
+        static T* AllocateBuffer(usize size) { return Memory::AllocateArrayUninit<T>(size); }
 
         bool CanFit(usize amount) const { return size + amount <= capacity; }
         void TryGrow(usize amount) { if (!CanFit(amount)) Reserve(amount); }
@@ -105,8 +106,9 @@ namespace Quasi {
         void ShrinkToFit() { AllocToNew(size); }
         void ShrinkTo(usize minimum) { AllocToNew(std::max(size, minimum)); }
 
-        // TODO: ArrayBox<T> IntoBox(); // releases
-        // TODO: ArrayBox<T> CloneToBox(); // copies without extra cap
+        ArrayBox<T> IntoBox()      { return ArrayBox<T>::Own(Release(), size); } // releases
+        ArrayBox<T> IntoBoxWhole() { return ArrayBox<T>::Own(Release(), capacity); } // releases
+        ArrayBox<T> CloneToBox()   { return AsSpan().CollectToBox(); } // copies without extra cap
 
         T& First() const { return data[0]; }
         T& Last() const { return data[size - 1]; }
@@ -236,8 +238,8 @@ namespace Quasi {
         // } IntoIterImpl() { return { data, data + size }; }
     };
 
-    template <class T> Vec<RemConst<T>> Span<T>::IntoVec() const { return Vec<RemConst<T>>::New(*this); }
-    template <class T> Vec<RemConst<T>> Span<T>::MoveIntoVec() requires IsMut<T> { return Vec<RemConst<T>>::MoveNew(*this); }
+    template <class T> Vec<RemConst<T>> Span<T>::CollectToVec() const { return Vec<RemConst<T>>::New(*this); }
+    template <class T> Vec<RemConst<T>> Span<T>::MoveToVec() requires IsMut<T> { return Vec<RemConst<T>>::MoveNew(*this); }
     template <class T> Vec<RemConst<T>> Span<T>::Repeat(usize num) const {
         Vec rep = Vec<RemConst<T>>::WithCap(size * num);
         for (usize i = 0; i < num; ++i) rep.Extend(*this);

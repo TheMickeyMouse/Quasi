@@ -74,10 +74,10 @@ namespace Quasi {
         template <Extends<T> Base> requires DifferentTo<T, Base> operator OptRef<const Base>() const { return obj; }
         template <Extends<T> Base> requires DifferentTo<T, Base> && IsMut<Base> operator OptRef<Base>() { return obj; }
 
-        template <Extends<T> Derived>
-        OptRef<const Derived> As() const { return dynamic_cast<const Derived*>(obj); }
-        template <Extends<T> Derived> requires IsMut<T>
-        OptRef<Derived> As() { return dynamic_cast<Derived*>(obj); }
+        template <Extends<T> U>
+        OptRef<const U> As() const { return dynamic_cast<const U*>(obj); }
+        template <Extends<T> U> requires IsMut<T>
+        OptRef<U> As() { return dynamic_cast<U*>(obj); }
 
         template <class Re> Ref<Re> TransmuteAs() { return Memory::TransmutePtr<Re>(obj); }
         template <class Re> Ref<const Re> TransmuteAs() const { return Memory::TransmutePtr<const Re>(obj); }
@@ -136,10 +136,10 @@ namespace Quasi {
         template <Extends<T> Base> requires DifferentTo<T, Base> operator OptRef<const Base>() const { return obj; }
         template <Extends<T> Base> requires DifferentTo<T, Base> && IsMut<Base> operator OptRef<Base>() { return obj; }
 
-        template <Extends<T> Derived>
-        OptRef<const Derived> As() const { return dynamic_cast<const Derived*>(obj); }
-        template <Extends<T> Derived> requires IsMut<T>
-        OptRef<Derived> As() { return dynamic_cast<Derived*>(obj); }
+        template <Extends<T> U>
+        OptRef<const U> As() const { return dynamic_cast<const U*>(obj); }
+        template <Extends<T> U> requires IsMut<T>
+        OptRef<U> As() { return dynamic_cast<U*>(obj); }
 
         template <class Re> OptRef<Re> TransmuteAs() { return Memory::TransmutePtr<Re>(obj); }
         template <class Re> OptRef<const Re> TransmuteAs() const { return Memory::TransmutePtr<const Re>(obj); }

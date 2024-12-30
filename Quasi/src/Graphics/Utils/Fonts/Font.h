@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <freetype/freetype.h>
 
 #include "Mesh.h"
 #include "TextAlign.h"
@@ -14,12 +15,8 @@ struct FT_FaceRec_;
 namespace Quasi::Text { struct RichString; }
 
 namespace Quasi::Graphics {
-    struct FontDeleter {
-        FontDeleter() = default;
-        void operator()(FT_FaceRec_* ptr) const;
-    };
-
-    using FaceHandle = UniqueRef<FT_FaceRec_, FontDeleter>;
+    struct FontDeleter { void operator()(FT_FaceRec_* ptr) const; };
+    using FaceHandle = Box<FT_FaceRec_, FontDeleter>;
 
     struct Glyph {
         // internal coords
@@ -45,7 +42,7 @@ namespace Quasi::Graphics {
             int RenderType;
             static constexpr int RENDER_TEXT = 1, RENDER_FILL = 0;
 
-            QGLDefineVertex$(Vertex, 2D, (Position, PosTf)(TextureCoord)(Color)(RenderType));
+            QuasiDefineVertex$(Vertex, 2D, (Position, PosTf)(TextureCoord)(Color)(RenderType));
         };
     private:
         static constexpr u32 NUM_GLYPHS = 127 - 32;
@@ -54,8 +51,8 @@ namespace Quasi::Graphics {
         Math::uVector2 textureSize;
         Texture atlas;
     public:
-        Font() { faceHandles.Push(nullptr); }
-        Font(FT_FaceRec_* fHand) { faceHandles.Push(FaceHandle(fHand)); }
+        Font() { faceHandles.Push({ nullptr }); }
+        Font(FT_FaceRec_* fHand) { faceHandles.Push(FaceHandle::Own(fHand)); }
         ~Font() = default;
 
         Font(const Font&) = delete;
@@ -84,10 +81,10 @@ namespace Quasi::Graphics {
         static Font LoadFile (Str filename);
         static Font LoadBytes(const byte* data, u32 len);
 
-        FT_FaceRec_* DefaultFontUnchecked(FontStyle style = FontStyle::NONE) const { return faceHandles[(u32)style].get(); }
-        FT_FaceRec_* GetFontUnchecked(u32 id = 0, FontStyle style = FontStyle::NONE) const { return faceHandles[(id << 2) | (u32)style].get(); }
-        FT_FaceRec_* DefaultFont(FontStyle style = FontStyle::NONE) const { return DefaultFontUnchecked(style) ? DefaultFontUnchecked(style) : DefaultFontUnchecked(); }
-        FT_FaceRec_* GetFont(u32 id = 0, FontStyle style = FontStyle::NONE) const { return GetFontUnchecked(id, style) ? GetFontUnchecked(id, style) : DefaultFont(style); }
+        FT_FaceRec_* DefaultFontUnchecked(FontStyle style = FontStyle::NONE) { return &*faceHandles[(u32)style]; }
+        FT_FaceRec_* GetFontUnchecked(u32 id = 0, FontStyle style = FontStyle::NONE) { return &*faceHandles[(id << 2) | (u32)style]; }
+        FT_FaceRec_* DefaultFont(FontStyle style = FontStyle::NONE) { return DefaultFontUnchecked(style) ? DefaultFontUnchecked(style) : DefaultFontUnchecked(); }
+        FT_FaceRec_* GetFont(u32 id = 0, FontStyle style = FontStyle::NONE) { return GetFontUnchecked(id, style) ? GetFontUnchecked(id, style) : DefaultFont(style); }
 
         void ReserveFont();
         void AddDefaultFontStyle(Str filePath, FontStyle style = FontStyle::NONE) { AddFontStyle(DEFAULT_FONT_ID, filePath, style); }

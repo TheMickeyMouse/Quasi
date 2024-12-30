@@ -56,8 +56,6 @@ namespace Quasi {
     using IList = std::initializer_list<T>;
 
     using OutStream = std::ostream;
-	template <class T, class Alc = std::default_delete<T>> using UniqueRef = std::unique_ptr<T, Alc>;
-	template <class T> UniqueRef<T> NewUnique(auto&&... args) { return std::make_unique<T>((decltype(args))args...); }
 
     template <class T> using IterOf = typename T::const_iterator;
     template <class T> using IterMutOf = typename T::iterator;
@@ -70,13 +68,6 @@ namespace Quasi {
 	struct Empty {
 		Empty(auto&&...) {}
 	};
-
-	namespace details {
-		template <class T, class M> M decltype_member(M T::*) { return M {}; }
-		template <class T, class M> T decltype_structure(M T::*) { return T {}; }
-	}
-	template <auto P> using StructureT = decltype(details::decltype_structure(P));
-	template <auto P> using MemberT    = decltype(details::decltype_member(P));
 
 	template <class T> using Nullable = T;
 	template <class T> using NotNull = T;

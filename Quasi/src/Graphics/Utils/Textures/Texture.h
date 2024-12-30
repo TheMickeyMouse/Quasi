@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <vector>
 
+#include "Box.h"
 #include "GLObject.h"
 
 #include "GLTypeID.h"
@@ -9,10 +10,6 @@
 #include "Utils/Variant.h"
 
 namespace Quasi::Graphics {
-    struct TextureSlotHandler {
-        void operator()(void* slot) const;
-    };
-
     struct TextureParamPair {
         TextureParamName pname;
         Variant<int, float, const int*, const float*> val;
@@ -44,10 +41,8 @@ namespace Quasi::Graphics {
         TextureParameters params;
     };
 
-    struct STBIImageHandler {
-        void operator()(void* dat) const;
-    };
-    using STBIImage = UniqueRef<void, STBIImageHandler>;
+    struct STBIImageHandler { void operator()(byte* dat) const; };
+    using STBIImage = Box<byte, STBIImageHandler>;
 
     class Texture : public GLObject<Texture> {
     public:
@@ -55,7 +50,28 @@ namespace Quasi::Graphics {
         inline static Vec<OptRef<Texture>> Slots {};
         static void Init();
     private:
-        using TextureSlot = UniqueRef<void, TextureSlotHandler>;
+        struct TextureSlot : IResource<u32, TextureSlot> {
+        private:
+            u32 index;
+            TextureSlot(u32 slot) : index(slot) {}
+        public:
+            TextureSlot() : index(0) {}
+            TextureSlot(Nullptr) : index(0) {}
+            TextureSlot(TextureSlot&& ts) noexcept { MoveConstructOp(ts); }
+            TextureSlot& operator=(TextureSlot&& ts) noexcept { MoveAssignOp(ts); return *this; }
+
+            static TextureSlot AtSlot(u32 slot) { return { slot }; }
+            static TextureSlot Unset() { return {}; }
+
+            void CloseImpl();
+            const u32& GetImpl() const { return index; }
+            u32& GetMutImpl() { return index; }
+            void TransferImpl(TextureSlot& dst) { dst.index = index; index = 0; }
+
+            void Replace(u32 slot) { CloseImpl(); index = slot; }
+
+            operator bool() const { return index != 0; }
+        };
 
         Math::uVector3 size;
         TextureSlot textureSlot;
@@ -117,7 +133,7 @@ namespace Quasi::Graphics {
 
         static void SetPixelStore(PixelStoreParam param, int val);
 
-        int Slot() const { return (int)((usize)textureSlot.get() - 1); }
+        int Slot() const { return (int)(*textureSlot - 1); }
 
         TextureTarget Target() const { return target; }
         int TargetI() const { return (int)Target(); }

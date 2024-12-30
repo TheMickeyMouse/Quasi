@@ -18,11 +18,15 @@ namespace Quasi::Memory {
     template <class T> T&        AsMut     (const T& val) { return const_cast<T&>(val); }
     template <class T> T*        AsMutPtr  (const T* ptr) { return const_cast<T*>(ptr); }
 
+    template <class Der, BaseOf<Der> Base> AddConstIf<Der, Base>* DynCastPtr(Base* base) {
+        return dynamic_cast<AddConstIf<Der, Base>*>(base);
+    }
+
     inline void* AllocateRaw(usize size) { return ::operator new (size); }
     template <class T> T* Allocate(auto&&... args) { return new T { args... }; }
     template <class T> T* AllocateArray(usize size, auto&&... args) { return new T[size] { args... }; }
-    template <class T> T* AllocateUninit() { return ::operator new (sizeof(T)); }
-    template <class T> T* AllocateArrayUninit(usize size) { return ::operator new (size * sizeof(T)); }
+    template <class T> T* AllocateUninit() { return (T*) ::operator new (sizeof(T)); }
+    template <class T> T* AllocateArrayUninit(usize size) { return (T*) ::operator new (size * sizeof(T)); }
     inline void FreeRaw(void* mem) { return ::operator delete(mem); }
     template <class T> void Free(T* mem) { delete mem; }
     template <class T> void FreeArray(T* mem) { delete[] mem; }

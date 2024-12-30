@@ -108,11 +108,11 @@ namespace Quasi {
         const RemRef<T>* DataImpl() const = delete;
         usize LengthImpl() const = delete;
 
-        T& GetImpl(usize i) { return Data()[i]; }
-        const T& GetImpl(usize i) const { return Data()[i]; }
+        T& AtImpl(usize i) { return Data()[i]; }
+        const T& AtImpl(usize i) const { return Data()[i]; }
 
-        T& GetWrapImpl(WrappingIndex i) { return Data()[i(Length())]; }
-        const T& GetWrapImpl(WrappingIndex i) const { return Data()[i(Length())]; }
+        T& AtWrapImpl(WrappingIndex i) { return Data()[i(Length())]; }
+        const T& AtWrapImpl(WrappingIndex i) const { return Data()[i(Length())]; }
     public:
         BufferIterator<T&>       IterMut()      { return super().AsSpan().IterMut(); }
         BufferIterator<const T&> Iter()   const { return super().AsSpan().Iter(); }
@@ -271,8 +271,8 @@ namespace Quasi {
         // void CopyFromSelf(IntegerRange, usize dest)
         void SwapWith (Span<MutT> span)      mut { return super().AsSpanMut().SwapWith(span); }
 
-        MutT& GetMut(usize i) mut   { return super().GetImpl(i); }
-        const T& Get(usize i) const { return super().GetImpl(i); }
+        MutT& GetMut(usize i) mut   { return super().AtImpl(i); }
+        const T& Get(usize i) const { return super().AtImpl(i); }
 
         MutT& GetWrapMut(WrappingIndex i) mut   { return Data()[i(Length())]; }
         const T& GetWrap(WrappingIndex i) const { return Data()[i(Length())]; }

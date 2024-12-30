@@ -126,6 +126,34 @@ class QuasiOptRefPrinter:
         return
 
 
+class QuasiBoxPrinter:
+    def __init__(self, typename, val):
+        self.typename = typename
+        self.val = val
+
+    def to_string(self):
+        return f'Box({self.val["data"]})' if self.val['data'] else 'nullptr'
+
+    def children(self):
+        if self.val['data']:
+            yield '*', self.val['data']
+        return
+
+
+class QuasiArrayBoxPrinter:
+    def __init__(self, typename, val):
+        self.typename = typename
+        self.val = val
+
+    def to_string(self):
+        return f'ArrayBox({self.val["data"]}, len={self.val["size"]})' if self.val['data'] else 'nullptr'
+
+    def children(self):
+        if self.val['data']:
+            yield '*', self.val['data']
+        return
+
+
 def quasi_lookup(val):
     lookup: str = val.type.tag
     if lookup is None:
@@ -136,12 +164,14 @@ def quasi_lookup(val):
     last = lookup.find('<')
     last = len(lookup) if last == -1 else last
     match lookup[:last]:
-        case 'Vec':    return QuasiVecPrinter    (lookup, val)
-        case 'Span':   return QuasiSpanPrinter   (lookup, val)
-        case 'Array':  return QuasiArrayPrinter  (lookup, val)
-        case 'Option': return QuasiOptionPrinter (lookup, val)
-        case 'Ref':    return QuasiRefPrinter    (lookup, val)
-        case 'OptRef': return QuasiOptRefPrinter (lookup, val)
+        case 'Vec':      return QuasiVecPrinter      (lookup, val)
+        case 'Span':     return QuasiSpanPrinter     (lookup, val)
+        case 'Array':    return QuasiArrayPrinter    (lookup, val)
+        case 'Option':   return QuasiOptionPrinter   (lookup, val)
+        case 'Ref':      return QuasiRefPrinter      (lookup, val)
+        case 'OptRef':   return QuasiOptRefPrinter   (lookup, val)
+        case 'Box':      return QuasiBoxPrinter      (lookup, val)
+        case 'ArrayBox': return QuasiArrayBoxPrinter (lookup, val)
     return None
 
 

@@ -22,9 +22,9 @@ namespace Quasi::Graphics {
 
     void Font::SetSize(PointPer64 charWidth, PointPer64 charHeight, uint dpi) {
         fontSize = charWidth;
-        for (const FaceHandle& faceHandle : faceHandles) {
+        for (FaceHandle& faceHandle : faceHandles) {
             if (!faceHandle) continue;
-            const int error = FT_Set_Char_Size(faceHandle.get(), charWidth, charHeight == 0 ? charWidth : charHeight, dpi, dpi);
+            const int error = FT_Set_Char_Size(faceHandle.DataMut(), charWidth, charHeight == 0 ? charWidth : charHeight, dpi, dpi);
             GLLogger().Assert(!error, "Font Char size set with err code {}", error);
         }
     }
@@ -39,14 +39,14 @@ namespace Quasi::Graphics {
         textureSize = 0;
         Vec<u32> heights;
         heights.Reserve(faceHandles.Length());
-        for (const FaceHandle& faceHandle : faceHandles) {
+        for (FaceHandle& faceHandle : faceHandles) {
             const FT_GlyphSlot glyphHandle = faceHandle->glyph;
             u32 y = 0;
             u32 x = 0;
             for (char charCode = 32; charCode < 127; ++charCode) { // loop through each character
                 // new method: SDFs extrude 8 pixels in all directions, so you can load normally and then add 16
                 // (no need to load twice!)
-                if (const int error = FT_Load_Char(faceHandle.get(), charCode, FT_LOAD_DEFAULT)) { 
+                if (const int error = FT_Load_Char(faceHandle.DataMut(), charCode, FT_LOAD_DEFAULT)) {
                     GLLogger().Error("Loading char with err code {}", error);
                     continue;  /* ignore errors */
                 }
@@ -72,7 +72,7 @@ namespace Quasi::Graphics {
         glyphs.Resize(NUM_GLYPHS * faceHandles.Length()); // amt of glyphs-
         metrics.Reserve(faceHandles.Length());
         for (uint i = 0; i < faceHandles.Length(); ++i) {
-            const FaceHandle& faceHandle = faceHandles[i];
+            FaceHandle& faceHandle = faceHandles[i];
             const FT_GlyphSlot glyphHandle = faceHandle->glyph;
             metrics.Push({
                 PointPer64::inP64(faceHandle->size->metrics.ascender - faceHandle->size->metrics.descender),
@@ -80,7 +80,7 @@ namespace Quasi::Graphics {
                 PointPer64::inP64(faceHandle->size->metrics.descender)
             });
             for (char charCode = 32; charCode < 127; ++charCode) { // loop through again, this time drawing textures
-                if (const int error = FT_Load_Char(faceHandle.get(), charCode, loadSDF)) { // loads again
+                if (const int error = FT_Load_Char(faceHandle.DataMut(), charCode, loadSDF)) { // loads again
                     GLLogger().Error("Loading char with err code {}", error);
                     continue;
                 }
@@ -111,7 +111,7 @@ namespace Quasi::Graphics {
         text.RenderText(string);
 
         Vec ind = Vec<TriIndices>::WithCap(text.textVertices.Length() / 2);
-        for (u32 i = 0; i < ind.Length(); i += 2) {
+        for (u32 i = 0; i < ind.Capacity(); i += 2) {
             ind.Push(TriIndices { 0, 1, 2 } + i * 2);
             ind.Push(TriIndices { 1, 2, 3 } + i * 2);
         }
@@ -184,6 +184,6 @@ namespace Quasi::Graphics {
     }
 
     void Font::SetFontStyle(u32 id, FT_Face face, FontStyle style) {
-        faceHandles[id << 2 | (u32)style].reset(face);
+        faceHandles[id << 2 | (u32)style].Replace(face);
     }
 }

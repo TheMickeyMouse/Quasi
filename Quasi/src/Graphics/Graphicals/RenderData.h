@@ -3,11 +3,8 @@
 #include "VertexArray.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
-#include "GLDebug.h"
 #include "Shader.h"
 #include "VertexElement.h"
-
-#include <cstring>
 
 namespace Quasi::Graphics {
 	class GraphicsDevice;
@@ -27,19 +24,19 @@ namespace Quasi::Graphics {
 	    Math::Matrix3D camera {};
 	    Shader shader = {}; // shader can be null if renderId is 0
 	private:
-		UniqueRef<byte[]> vertexData;
-		u32 vertexOffset = 0;
-		UniqueRef<u32[]> indexData;
-		u32 indexOffset = 0;
+		ArrayBox<byte> vertexData;
+		usize vertexOffset = 0;
+		ArrayBox<u32> indexData;
+		usize indexOffset = 0;
 
 		OptRef<GraphicsDevice> device;
-		u32 deviceIndex = 0;
+		usize deviceIndex = 0;
 
 		friend class GraphicsDevice;
 	public:
-		explicit RenderData(GraphicsDevice& gd, u32 vsize, u32 isize, u32 vertSize, const VertexBufferLayout& layout) :
+		explicit RenderData(GraphicsDevice& gd, usize vsize, usize isize, usize vertSize, const VertexBufferLayout& layout) :
 			varray(VertexArray::New()), vbo(VertexBuffer::New(vsize * vertSize)), ibo(IndexBuffer::New(isize)),
-			vertexData(new byte[vertSize * vsize]), indexData(new u32[isize]), device(gd) {
+			vertexData(ArrayBox<byte>::AllocateUninit(vsize * vertSize)), indexData(ArrayBox<u32>::AllocateUninit(isize)), device(gd) {
 			varray.Bind();
 			varray.AddBuffer(layout);
 		}
@@ -88,7 +85,7 @@ namespace Quasi::Graphics {
 
 	template <class T> void RenderData::PushVertex(const T& vertex) {
 		const byte* rawbytes = Memory::TransmutePtr<const byte>(&vertex);
-		std::memcpy(vertexData.get() + vertexOffset, rawbytes, sizeof(T));
+		Memory::MemCopyNoOverlap(&vertexData[vertexOffset], rawbytes, sizeof(T));
 		vertexOffset += sizeof(T);
 	}
 }

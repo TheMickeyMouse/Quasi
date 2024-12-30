@@ -20,9 +20,9 @@
 
 #define Q_GL_VERTTRANS_IT(MX) , .Q_ARGS_FIRST MX = Q_GL_VERTTRANS_WHEN_T MX
 #define Q_GL_VERTTRANS_WHEN_T(M, ...) __VA_OPT__(__VA_ARGS__::transform Q_LPAREN() ) M __VA_OPT__(, _tr Q_RPAREN())
-#define Q_GL_VERTLAYOUT_IT(X_) , Quasi::MemberT<&Self:: Q_ARGS_FIRST X_>
+#define Q_GL_VERTLAYOUT_IT(X_) , decltype(Self:: Q_ARGS_FIRST X_)
 
-#define QGLDefineVertex$(...) Q_GL_DEFINE_VERTEX(__VA_ARGS__)
+#define QuasiDefineVertex$(...) Q_GL_DEFINE_VERTEX(__VA_ARGS__)
 
 namespace Quasi::Graphics {
     template <class T> concept IVertex = requires { T::IS_GL_VERTEX; };
@@ -54,41 +54,41 @@ namespace Quasi::Graphics {
     struct Vertex2D {
         Math::fVector2 Position;
 
-        QGLDefineVertex$(Vertex2D, 2D, (Position, PosTf));
+        QuasiDefineVertex$(Vertex2D, 2D, (Position, PosTf));
     };
 
     struct VertexColor2D {
         Math::fVector2 Position;
         Math::fColor   Color;
 
-        QGLDefineVertex$(VertexColor2D, 2D, (Position, PosTf)(Color));
+        QuasiDefineVertex$(VertexColor2D, 2D, (Position, PosTf)(Color));
     };
 
     struct VertexTexture2D {
         Math::fVector2 Position;
         Math::fVector2 TextureCoordinate;
 
-        QGLDefineVertex$(VertexTexture2D, 2D, (Position, PosTf)(TextureCoordinate));
+        QuasiDefineVertex$(VertexTexture2D, 2D, (Position, PosTf)(TextureCoordinate));
     };
 
     struct Vertex3D {
         Math::fVector3 Position;
 
-        QGLDefineVertex$(Vertex3D, 3D, (Position, PosTf));
+        QuasiDefineVertex$(Vertex3D, 3D, (Position, PosTf));
     };
 
     struct VertexNormal3D {
         Math::fVector3 Position;
         Math::fVector3 Normal;
 
-        QGLDefineVertex$(VertexNormal3D, 3D, (Position, PosTf)(Normal, NormTf));
+        QuasiDefineVertex$(VertexNormal3D, 3D, (Position, PosTf)(Normal, NormTf));
     };
 
     struct VertexColor3D {
         Math::fVector3 Position;
         Math::fColor   Color;
 
-        QGLDefineVertex$(VertexColor3D, 3D, (Position, PosTf)(Color));
+        QuasiDefineVertex$(VertexColor3D, 3D, (Position, PosTf)(Color));
     };
 
     struct VertexColorTexture3D {
@@ -96,7 +96,7 @@ namespace Quasi::Graphics {
         Math::fColor   Color;
         Math::fVector2 TextureCoordinate;
 
-        QGLDefineVertex$(VertexColorTexture3D, 3D, (Position, PosTf)(Color)(TextureCoordinate));
+        QuasiDefineVertex$(VertexColorTexture3D, 3D, (Position, PosTf)(Color)(TextureCoordinate));
     };
 
     struct VertexColorNormal3D {
@@ -104,7 +104,7 @@ namespace Quasi::Graphics {
         Math::fColor   Color;
         Math::fVector3 Normal;
 
-        QGLDefineVertex$(VertexColorNormal3D, 3D, (Position, PosTf)(Color)(Normal, NormTf));
+        QuasiDefineVertex$(VertexColorNormal3D, 3D, (Position, PosTf)(Color)(Normal, NormTf));
     };
 
     struct VertexTextureNormal3D {
@@ -112,7 +112,7 @@ namespace Quasi::Graphics {
         Math::fVector2 TextureCoordinate;
         Math::fVector3 Normal;
 
-        QGLDefineVertex$(VertexTextureNormal3D, 3D, (Position, PosTf)(TextureCoordinate)(Normal, NormTf));
+        QuasiDefineVertex$(VertexTextureNormal3D, 3D, (Position, PosTf)(TextureCoordinate)(Normal, NormTf));
     };
 
     template <IVertex T>

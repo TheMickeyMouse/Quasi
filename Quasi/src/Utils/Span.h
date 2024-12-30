@@ -1,6 +1,6 @@
 #pragma once
+#include "ArrayBox.h"
 #include "Memory.h"
-#include "Type.h"
 #include "Iterator.h"
 #include "Option.h"
 #include "Ref.h"
@@ -290,8 +290,18 @@ namespace Quasi {
             return Span { (AddConstIf<ArrayElement<T>, T>*)data, size * ArrayLength<T>() };
         }
 
-        Vec<MutT> IntoVec() const;
-        Vec<MutT> MoveIntoVec() mut;
+        ArrayBox<MutT> CollectToBox() const {
+            T* arr = Memory::AllocateArrayUninit<T>(size);
+            for (usize i = 0; i < size; ++i) Memory::ConstructCopyAt(&arr[i], data[i]);
+            return ArrayBox<MutT>::Own(arr, size);
+        }
+        ArrayBox<MutT> MoveToBox() {
+            T* arr = Memory::AllocateArrayUninit<T>(size);
+            for (usize i = 0; i < size; ++i) Memory::ConstructMoveAt(&arr[i], std::move(data[i]));
+            return ArrayBox<MutT>::Own(arr, size);
+        }
+        Vec<MutT> CollectToVec() const;
+        Vec<MutT> MoveToVec() mut;
         Vec<MutT> Repeat(usize num) const;
         // Vec<ConcatResult<T>> Concat() const requires CanConcat<T>;
         // Vec<ConcatResult<T>> Join(const auto& sep) const requires CanConcat<T> && CanConcat<T, decltype(sep)>;
@@ -358,4 +368,7 @@ namespace Quasi {
     Span<const byte> IContinuousCollection<T, Super>::AsBytes()  const { return AsSpan().AsBytes(); }
     template <class T, class Super>
     Span<byte>       IContinuousCollection<T, Super>::AsBytesMut() mut { return AsSpan().AsBytesMut(); }
+
+    template <class T, class A> Span<const T> Box<T, A>::AsSpan() const { return data ? Span<const T>::Single(*data) : nullptr; }
+    template <class T, class A> Span<T>       Box<T, A>::AsSpanMut()    { return data ? Span<T>::Single(*data)       : nullptr; }
 }

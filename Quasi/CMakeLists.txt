@@ -188,6 +188,8 @@ set(ALL_FILES
         src/Utils/Array.h
         src/Utils/Iter/MapIter.h
         src/Utils/Comparison.h
+        src/Utils/Box.h
+        src/Utils/ArrayBox.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

@@ -297,7 +297,7 @@ namespace Quasi::Graphics {
 
     void TextRenderer::RenderText(Str string) {
         using namespace Math;
-        lineCount = (u32)(std::ranges::count(string, '\n') + 1); //line count for vertical alignment
+        lineCount = (u32)(std::ranges::count(string, '\n') + 1); // line count for vertical alignment
         Prepare();
         
         if (align.IsAlignJustified()) lineWords.Push({ 0, 0.0f }); // add new beginning 'word'

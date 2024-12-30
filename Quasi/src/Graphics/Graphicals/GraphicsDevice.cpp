@@ -49,7 +49,7 @@ namespace Quasi::Graphics {
 
     void GraphicsDevice::Transfer(GraphicsDevice& dest, GraphicsDevice&& from) {
         dest.renders = std::move(from.renders);
-        for (const RenderHandle& h : dest.renders)
+        for (RenderHandle& h : dest.renders)
             h->device = dest;
 
         dest.windowSize = from.windowSize;
@@ -113,7 +113,7 @@ namespace Quasi::Graphics {
     }
 
     void GraphicsDevice::DeleteAllRenders() {
-        for (const auto& r : renders)
+        for (auto& r : renders)
             r->device = nullptr;
         renders.Clear();
     }

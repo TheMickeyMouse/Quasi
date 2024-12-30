@@ -3,15 +3,16 @@
 #include "Render.h"
 
 #include "IO.h"
+#include "Timer.h"
 #include "Math/Random.h"
 #include "Fonts/FontDevice.h"
 
 namespace Quasi::Graphics {
     class GraphicsDevice {
-        static constexpr u32 MAX_VERTEX_COUNT = 1024;
-        static constexpr u32 MAX_INDEX_COUNT = 1024;
+        static constexpr usize MAX_VERTEX_COUNT = 1024;
+        static constexpr usize MAX_INDEX_COUNT = 1024;
 
-        using RenderHandle = UniqueRef<RenderData>;
+        using RenderHandle = Box<RenderData>;
     private:
         Vec<RenderHandle> renders;
 
@@ -50,7 +51,7 @@ namespace Quasi::Graphics {
         void Begin();
         void End();
 
-        template <class T> RenderObject<T> CreateNewRender(u32 vsize = MAX_VERTEX_COUNT, u32 isize = MAX_INDEX_COUNT);
+        template <class T> RenderObject<T> CreateNewRender(usize vsize = MAX_VERTEX_COUNT, usize isize = MAX_INDEX_COUNT);
         void BindRender(RenderData& render);
         void DeleteRender(u32 index);
         void DeleteAllRenders();
@@ -102,9 +103,9 @@ namespace Quasi::Graphics {
     };
 
     template <class T>
-    RenderObject<T> GraphicsDevice::CreateNewRender(u32 vsize, u32 isize) {
-        renders.Push(NewUnique<RenderData>(*this, vsize, 3 * isize, sizeof(T), VertexLayoutOf<T>()));
-        BindRender(*renders[-1 % Wrap]);
-        return *renders[-1 % Wrap];
+    RenderObject<T> GraphicsDevice::CreateNewRender(usize vsize, usize isize) {
+        renders.Push(Box<RenderData>::Build(*this, vsize, 3 * isize, sizeof(T), VertexLayoutOf<T>()));
+        BindRender(*renders.LastMut());
+        return *renders.LastMut();
     }
 }

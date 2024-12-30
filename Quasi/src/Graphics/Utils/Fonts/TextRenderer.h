@@ -52,11 +52,11 @@ namespace Quasi::Graphics {
         void SetFontSize(PointPer64 fSize) { fontSize = fSize; }
         void Prepare();
 
-                            CharQuad* Begin();
+              CharQuad* Begin();
         const CharQuad* Begin() const;
-                            CharQuad* End();
+              CharQuad* End();
         const CharQuad* End() const;
-                            CharQuad& CharAt(u32 index);
+              CharQuad& CharAt(u32 index);
         const CharQuad& CharAt(u32 index) const;
 
 

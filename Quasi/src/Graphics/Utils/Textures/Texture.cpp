@@ -8,13 +8,13 @@
 #include "stb_image/stb_image.h"
 
 namespace Quasi::Graphics {
-    void TextureSlotHandler::operator()(void* slot) const {
-        if (!slot) return;
-        Texture::Slots[(usize)slot - 1] = nullptr;
+    void STBIImageHandler::operator()(byte* dat) const {
+        stbi_image_free(dat);
     }
 
-    void STBIImageHandler::operator()(void* dat) const {
-        stbi_image_free(dat);
+    void Texture::TextureSlot::CloseImpl() {
+        if (!index) return;
+        Texture::Slots[(usize)index - 1] = nullptr;
     }
 
     void Texture::Init() {
@@ -24,7 +24,7 @@ namespace Quasi::Graphics {
         Slots.Resize(SlotCount, nullptr);
     }
 
-    Texture::Texture(GraphicsID id, const Math::uVector3& size) : GLObject(id), size(size) {}
+    Texture::Texture(GraphicsID id, const Math::uVector3& size) : GLObject(id), size(size), textureSlot(TextureSlot::Unset()) {}
 
     Texture Texture::New(const byte* raw, const Math::uVector3& size, const TextureInitParams& init) {
         GraphicsID rendererID;
@@ -98,8 +98,8 @@ namespace Quasi::Graphics {
         Math::iVector2 size;
         int BPPixel;
         stbi_set_flip_vertically_on_load(1);
-        const STBIImage localTexture { stbi_load_from_memory(datapng.Data(), (int)datapng.Length(), &size.x, &size.y, &BPPixel, 4) };
-        Texture tex = New((const byte*)localTexture.get(), { size.x, size.y }, init);
+        const auto localTexture = STBIImage::Own(stbi_load_from_memory(datapng.Data(), (int)datapng.Length(), &size.x, &size.y, &BPPixel, 4));
+        Texture tex = New(localTexture, { size.x, size.y }, init);
         
         return tex;
     }
@@ -109,8 +109,8 @@ namespace Quasi::Graphics {
         int BPPixel;
         stbi_set_flip_vertically_on_load(1);
         Debug::AssertMsg(!*fname.end(), "filename doesn't have null terminator");
-        const STBIImage localTexture { stbi_load(fname.data(), &size.x, &size.y, &BPPixel, 4) };
-        Texture tex = New((const byte*)localTexture.get(), { size.x, size.y }, init);
+        const auto localTexture = STBIImage::Own(stbi_load(fname.data(), &size.x, &size.y, &BPPixel, 4));
+        Texture tex = New(localTexture, { size.x, size.y }, init);
 
         return tex;
     }
@@ -126,10 +126,10 @@ namespace Quasi::Graphics {
         for (Str face : faces) {
             Debug::AssertMsg(!*face.end(), "filename of cubemap doesn't have null terminator");
             int sx, sy, bpx;
-            const STBIImage localTexture { stbi_load(face.data(), &sx, &sy, &bpx, 4) };
+            const auto localTexture = STBIImage::Own(stbi_load(face.data(), &sx, &sy, &bpx, 4));
             Texture dummy {};
             dummy.SetTarget((TextureTarget)faceTarget);
-            dummy.TexImage((const byte*)localTexture.get(), { sx, sy }, init.load);
+            dummy.TexImage(localTexture, { sx, sy }, init.load);
             ++faceTarget;
         }
         cubemap.DefaultParams();
@@ -147,13 +147,13 @@ namespace Quasi::Graphics {
         QGLCall$(GL::ActiveTexture(GL::TEXTURE0 + slot));
         Bind();
         Slots[slot] = *this;
-        textureSlot.reset((void*)(usize)(slot + 1));
+        textureSlot.Replace(slot + 1);
     }
 
     void Texture::Deactivate() {
         QGLCall$(GL::ActiveTexture(GL::TEXTURE0 + Slot()));
         Unbind();
-        textureSlot.reset(nullptr);
+        textureSlot.Close();
     }
 
     void Texture::DeactivateAll() {
