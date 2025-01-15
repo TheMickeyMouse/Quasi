@@ -1,8 +1,9 @@
 #pragma once
 
+#include "Macros.h"
 #include "Type.h"
 #include "Option.h"
-#include "Macros.h"
+#include "String.h"
 
 namespace Quasi::Text {
     Option<String> ReadFile(Str fname);

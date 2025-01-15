@@ -1,61 +1,16 @@
 #pragma once
 
-#include <cstdint>
 #include <map>
-#include <memory>
-#include <string>
 
+#include "Numeric.h"
 #include "Macros.h"
 
 namespace Quasi {
-    using i8   = std::int8_t;
-    using i16  = std::int16_t;
-    using i32  = std::int32_t;
-    using i64  = std::int64_t;
-    using u8   = std::uint8_t;
-    using u16  = std::uint16_t;
-    using u32  = std::uint32_t;
-    using u64  = std::uint64_t;
-    using f32  = float;
-    using f64  = double;
-    using f80  = long double;
-    using ushort = u16;
-    using ulong  = u64;
-    using usize  = std::size_t;
-    using isize  = std::intptr_t;
-
-	using uchar = unsigned char;
-	using byte  = unsigned char;
-	using sbyte = signed char;
-	using uint  = unsigned int;
-
-	static constexpr u8    U8_MAX    = ~0;
-	static constexpr u16   U16_MAX   = ~0;
-	static constexpr u32   U32_MAX   = ~0;
-	static constexpr u64   U64_MAX   = ~0;
-	static constexpr usize USIZE_MAX = ~0;
-	static constexpr i8    I8_MAX    = U8_MAX >> 1;
-	static constexpr i16   I16_MAX   = U16_MAX >> 1;
-	static constexpr i32   I32_MAX   = U32_MAX >> 1;
-	static constexpr i64   I64_MAX   = U64_MAX >> 1;
-	static constexpr isize ISIZE_MAX = USIZE_MAX >> 1;
-	static constexpr i8    I8_MIN    = ~I8_MAX;
-	static constexpr i16   I16_MIN   = ~I16_MAX;
-	static constexpr i32   I32_MIN   = ~I32_MAX;
-	static constexpr i64   I64_MIN   = ~I64_MAX;
-	static constexpr isize ISIZE_MIN = ~ISIZE_MAX;
-	static constexpr byte  BYTE_MAX  = U8_MAX;
-
-    using String = std::string;
-    using Str    = std::string_view;
-
     template <class K, class V, class Cmp = std::less<K>, class Alc = std::allocator<std::pair<const K, V>>>
     using Map = std::map<K, V, Cmp, Alc>;
 
     template <class T>
     using IList = std::initializer_list<T>;
-
-    using OutStream = std::ostream;
 
     template <class T> using IterOf = typename T::const_iterator;
     template <class T> using IterMutOf = typename T::iterator;

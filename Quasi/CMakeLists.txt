@@ -190,6 +190,14 @@ set(ALL_FILES
         src/Utils/Comparison.h
         src/Utils/Box.h
         src/Utils/ArrayBox.h
+        src/Utils/String.cpp
+        src/Utils/String.h
+        src/Utils/Str.cpp
+        src/Utils/Str.h
+        src/Utils/Memory.cpp
+        src/Utils/Parsing.cpp
+        src/Utils/Parsing.h
+        src/Utils/Numeric.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

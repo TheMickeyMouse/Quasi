@@ -6,6 +6,7 @@ namespace Quasi {
     template <class T> struct Option;
 
     template <class T> struct Span;
+    struct Str;
 
     /*
      * An interface that describes nullability.

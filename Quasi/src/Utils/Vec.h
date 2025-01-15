@@ -51,7 +51,7 @@ namespace Quasi {
         static Vec WithCap (usize cap)  { return { cap  ? AllocateBuffer(cap)  : nullptr, 0, cap }; }
         static Vec WithSize(usize size) { return { size ? AllocateBuffer(size) : nullptr, size, size }; }
         static Vec Compose(T* data, usize size, usize cap) { return { data, size, cap }; }
-        Tuple<T*, usize, usize> Decompose() { const usize prsize = size, prcap = capacity; return { Release(), prsize, prcap }; }
+        [[nodiscard]] Tuple<T*, usize, usize> Decompose() { const usize prsize = size, prcap = capacity; return { Release(), prsize, prcap }; }
 
         Vec Clone() const { return New(AsSpan()); }
     protected:
@@ -63,7 +63,7 @@ namespace Quasi {
 
     public:
         void Clear() { Memory::RangeDestruct(data, size); size = 0; }
-        T* Release() { T* const d = data; PretendClear(); return d; }
+        [[nodiscard]] T* Release() { T* const d = data; PretendClear(); return d; }
 
         usize Capacity()   const { return capacity; }
         bool IsEmpty()     const { return size == 0; }
@@ -85,11 +85,17 @@ namespace Quasi {
         bool CanFit(usize amount) const { return size + amount <= capacity; }
         void TryGrow(usize amount) { if (!CanFit(amount)) Reserve(amount); }
 
-        void Reserve(usize add) { if (capacity + add < Vecs::GrowCap(capacity)) ReserveNext(); else ReserveExact(add); }
-        void ReserveExact(usize add) { AllocToNew(capacity + add); }
+        void Reserve(usize add) {
+            if (size + add <= capacity) return;
+            if (size + add < Vecs::GrowCap(capacity))
+                ReserveNext();
+            else
+                ReserveExact(add);
+        }
+        void ReserveExact(usize add) { if (size + add > capacity) AllocToNew(size + add); }
         void Resize(usize len, const T& value = {}) {
             if (len <= size) Truncate(len);
-            else { Reserve(len); Memory::MemSet(&data[size], value, len - size); size = len; }
+            else { Reserve(len); Memory::RangeSet(&data[size], value, len - size); size = len; }
         }
         void ResizeWith(usize len, Fn<T> auto&& factory) {
             if (len <= size) Truncate(len);
@@ -106,8 +112,8 @@ namespace Quasi {
         void ShrinkToFit() { AllocToNew(size); }
         void ShrinkTo(usize minimum) { AllocToNew(std::max(size, minimum)); }
 
-        ArrayBox<T> IntoBox()      { return ArrayBox<T>::Own(Release(), size); } // releases
-        ArrayBox<T> IntoBoxWhole() { return ArrayBox<T>::Own(Release(), capacity); } // releases
+        [[nodiscard]] ArrayBox<T> IntoBox()      { return ArrayBox<T>::Own(Release(), size); } // releases
+        [[nodiscard]] ArrayBox<T> IntoBoxWhole() { return ArrayBox<T>::Own(Release(), capacity); } // releases
         ArrayBox<T> CloneToBox()   { return AsSpan().CollectToBox(); } // copies without extra cap
 
         T& First() const { return data[0]; }
@@ -141,8 +147,6 @@ namespace Quasi {
         bool      TryPop(usize index)           { if (IsEmpty()) return false;          Pop(index);           return true; }
         Option<T> TryTake(usize index)          { if (IsEmpty()) return nullptr; return Take(index);                       }
 
-
-
         bool      PopIf (Predicate<T> auto&& pred) { if (IsEmpty() || !pred(data[size - 1])) return false; Pop(); return true; }
         Option<T> TakeIf(Predicate<T> auto&& pred) { if (IsEmpty() || !pred(data[size - 1])) return nullptr; else return Take(); }
 
@@ -158,6 +162,14 @@ namespace Quasi {
         void Insert(T&& obj, usize idx) {
             TryGrow(1); Memory::RangeMoveRev(&data[idx + 1], &data[idx], size - idx);
             Memory::ConstructMoveAt(&data[idx], std::move(obj)); ++size;
+        }
+        void InsertSpan(Span<const T> vals, usize idx) {
+            TryGrow(vals.Length()); Memory::RangeMoveRev(&data[idx + vals.Length()], &data[idx], size - idx);
+            Memory::RangeCopy(&data[idx], vals.Data(), vals.Length());
+        }
+        void MoveInsertSpan(Span<T> vals, usize idx) {
+            TryGrow(vals.Length()); Memory::RangeMoveRev(&data[idx + vals.Length()], &data[idx], size - idx);
+            Memory::RangeMove(&data[idx], vals.Data(), vals.Length());
         }
 
         void Attach(Vec& v) { ExtendMove(v.AsSpan()); v.PretendClear(); }
@@ -177,7 +189,7 @@ namespace Quasi {
         // void ExtendFromSelf(IntegerRange inds);
 
         void Keep(Predicate<T> auto&& pred) {
-            usize slow = USIZE_MAX; // this will wrap to 0 when added
+            usize slow = -1; // this will wrap to 0 when added
             for (usize i = 0; i < size; ++i) {
                 if (pred(data[i])) {
                     if (++slow == i) continue;

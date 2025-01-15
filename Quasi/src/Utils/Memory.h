@@ -22,12 +22,12 @@ namespace Quasi::Memory {
         return dynamic_cast<AddConstIf<Der, Base>*>(base);
     }
 
-    inline void* AllocateRaw(usize size) { return ::operator new (size); }
+    void* AllocateRaw(usize size);
     template <class T> T* Allocate(auto&&... args) { return new T { args... }; }
     template <class T> T* AllocateArray(usize size, auto&&... args) { return new T[size] { args... }; }
     template <class T> T* AllocateUninit() { return (T*) ::operator new (sizeof(T)); }
     template <class T> T* AllocateArrayUninit(usize size) { return (T*) ::operator new (size * sizeof(T)); }
-    inline void FreeRaw(void* mem) { return ::operator delete(mem); }
+    void FreeRaw(void* mem);
     template <class T> void Free(T* mem) { delete mem; }
     template <class T> void FreeArray(T* mem) { delete[] mem; }
     template <class T> void FreeNoDestruct(T* mem) { ::operator delete(mem); }
@@ -51,24 +51,27 @@ namespace Quasi::Memory {
         new (temp) T(std::move(*value));
     }
 
-    template <class T> constexpr void MemSet(T* out, const T& fill, usize count) {
+    u16 ReadU16(const void* bytes);
+    i16 ReadI16(const void* bytes);
+    u32 ReadU32(const void* bytes);
+    i32 ReadI32(const void* bytes);
+    u64 ReadU64(const void* bytes);
+    i64 ReadI64(const void* bytes);
+    u16 ReadU16Little(const void* bytes);
+    i16 ReadI16Little(const void* bytes);
+    u32 ReadU32Little(const void* bytes);
+    i32 ReadI32Little(const void* bytes);
+    u64 ReadU64Little(const void* bytes);
+    i64 ReadI64Little(const void* bytes);
+
+    void MemCopy(void* out, const void* in, usize bytes);
+    // WARNING: undefined behavior on overlapping pointer ranges
+    void MemCopyNoOverlap(void* __restrict__ out, const void* __restrict__ in, usize bytes);
+    void MemCopyRev(void* out, const void* in, usize bytes);
+
+    template <class T> constexpr void RangeSet(T* out, const T& fill, usize count) {
         for (usize i = 0; i < count; ++i)
             out[i] = fill;
-    }
-
-    constexpr void MemCopy(byte* out, const byte* in, usize bytes) {
-        for (usize i = 0; i < bytes; ++i)
-            out[i] = in[i];
-    }
-
-    // WARNING: undefined behavior on overlapping pointer ranges
-    constexpr void MemCopyNoOverlap(byte* __restrict__ out, const byte* __restrict__ in, usize bytes) {
-        MemCopy(out, in, bytes);
-    }
-
-    constexpr void MemCopyRev(byte* out, const byte* in, usize bytes) {
-        for (usize i = bytes; i --> 0; ) // no overflow :)
-            out[i] = in[i];
     }
 
     template <class T> constexpr void RangeCopy(T* out, const T* in, usize count) {

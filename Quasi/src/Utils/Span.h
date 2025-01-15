@@ -41,7 +41,8 @@ namespace Quasi {
         template <class U> requires SameAs<T, const byte>
         static Span BytesOf(const U& memRead) { return { Memory::DowncastPtr(&memRead), sizeof(U) }; }
 
-        Str              AsStr()   const requires SameAs<const T, const char> { return { data, size }; }
+        Str              AsStr() const requires SameAs<const T, const char>;
+        StrMut           AsStrMut() requires SameAs<T, char>;
         Span<byte>       AsBytes() mut   { return { Memory::AsBytePtr(data), size * sizeof(T) }; }
         Span<const byte> AsBytes() const { return { Memory::AsBytePtr(data), size * sizeof(T) }; }
         Span<const T>    AsSpan()  const { return *this; }
@@ -71,41 +72,41 @@ namespace Quasi {
         Span<MutT> SubspanMut(usize start, usize count) mut { return { data + start, count }; }
         Span<MutT> FirstMut(usize num)                  mut { return { data, num }; }
         Span<MutT> SkipMut(usize len)                   mut { return { data + len, size - len }; }
-        Span<MutT> HeadMut()                            mut { return { data + 1, size - 1 }; }
+        Span<MutT> TailMut()                            mut { return { data + 1, size - 1 }; }
         Span<MutT> LastMut(usize num)                   mut { return { data + size - num, num }; }
         Span<MutT> TruncMut(usize len)                  mut { return { data, size - len }; }
         Span<MutT> InitMut()                            mut { return { data, size - 1 }; }
-        Tuple<Ref<MutT>,  Span<MutT>> SplitFirstMut()       mut { return { data[0], HeadMut() }; }
-        Tuple<Span<MutT>, Ref<MutT>>  SplitLastMut()        mut { return { InitMut(), data[size - 1] }; }
+        Tuple<MutT&,      Span<MutT>> SplitFirstMut()       mut { return { data[0], TailMut() }; }
+        Tuple<Span<MutT>, MutT&>      SplitLastMut()        mut { return { InitMut(), data[size - 1] }; }
         Tuple<Span<MutT>, Span<MutT>> SplitAtMut(usize at)  mut { return { FirstMut(at), SkipMut(at) }; }
-        Tuple<Span<MutT>, Ref<MutT>, Span<MutT>> PartitionAtMut(usize at) mut { return { FirstMut(at), data[at], SkipMut(at + 1) }; }
+        Tuple<Span<MutT>, MutT&, Span<MutT>> PartitionAtMut(usize at) mut { return { FirstMut(at), data[at], SkipMut(at + 1) }; }
         Tuple<Span<MutT>, Span<MutT>> SplitOnMut(Predicate<T> auto&& pred) mut {
             const usize i = FindIf(pred);
-            return i == USIZE_MAX ? Tuple { *this, Span<MutT>::Empty() } : SplitAtMut(i);
+            return i == -1 ? Tuple { *this, Span<MutT>::Empty() } : SplitAtMut(i);
         }
         Tuple<Span<MutT>, Span<MutT>> RevSplitOnMut(Predicate<T> auto&& pred) mut {
             const usize i = RevFindIf(pred);
-            return i == USIZE_MAX ? Tuple { Span<MutT>::Empty(), *this } : SplitAtMut(i);
+            return i == -1 ? Tuple { Span<MutT>::Empty(), *this } : SplitAtMut(i);
         }
         Span<const T> Subspan(usize start)              const { return { data + start, size - start }; }
         Span<const T> Subspan(usize start, usize count) const { return { data + start, count }; }
         Span<const T> First(usize num)                  const { return { data, num }; }
         Span<const T> Skip(usize len)                   const { return { data + len, size - len }; }
-        Span<const T> Head()                            const { return { data + 1, size - 1 }; }
+        Span<const T> Tail()                            const { return { data + 1, size - 1 }; }
         Span<const T> Last(usize num)                   const { return { data + size - num, num }; }
         Span<const T> Trunc(usize len)                  const { return { data, size - len }; }
         Span<const T> Init()                            const { return { data, size - 1 }; }
-        Tuple<Ref<const T>,  Span<const T>> SplitFirst()       const { return { data[0], Head() }; }
-        Tuple<Span<const T>, Ref<const T>>  SplitLast()        const { return { Init(), data[size - 1] }; }
+        Tuple<const T&,      Span<const T>> SplitFirst()       const { return { data[0], Tail() }; }
+        Tuple<Span<const T>, const T&>      SplitLast()        const { return { Init(), data[size - 1] }; }
         Tuple<Span<const T>, Span<const T>> SplitAt(usize at)  const { return { First(at), Skip(at) }; }
-        Tuple<Span<const T>, Ref<const T>, Span<const T>> PartitionAt(usize at) const { return { First(at), data[at], Skip(at + 1) }; }
+        Tuple<Span<const T>, const T&, Span<const T>> PartitionAt(usize at) const { return { First(at), data[at], Skip(at + 1) }; }
         Tuple<Span<const T>, Span<const T>> SplitOn(Predicate<T> auto&& pred) const {
             const usize i = FindIf(pred);
-            return i == USIZE_MAX ? Tuple { *this, Empty() } : SplitAt(i);
+            return i == -1 ? Tuple { *this, Empty() } : SplitAt(i);
         }
         Tuple<Span<const T>, Span<const T>> RevSplitOn(Predicate<T> auto&& pred) const {
             const usize i = RevFindIf(pred);
-            return i == USIZE_MAX ? Tuple { Empty(), *this } : SplitAt(i);
+            return i == -1 ? Tuple { Empty(), *this } : SplitAt(i);
         }
 
         // Option<FixedSpan<T, N>> FirstChunk<usize N>()
@@ -158,7 +159,7 @@ namespace Quasi {
         }
 
         bool RefEquals(Span other) const { return data == other.data && size == other.size; }
-        bool ContainsBuffer(Span buf) const { return buf.data >= data && data + size >= buf.data + size; }
+        bool ContainsBuffer(Span buf) const { return buf.data >= data && data + size >= buf.data + buf.size; }
         bool OverlapsBuffer(Span buf) const {
             const T* end = data + size, * bufEnd = buf.data + buf.size;
             return end >= buf.data && bufEnd >= data;
@@ -202,20 +203,58 @@ namespace Quasi {
         usize Find   (const T& target) const { return FindIf   (Cmp::Equals { target }); }
         usize RevFind(const T& target) const { return RevFindIf(Cmp::Equals { target }); }
         usize FindIf(Predicate<T> auto&& pred) const {
-            for (usize i = 0; i < size; ++i) if (pred(data[i])) return i; return USIZE_MAX;
+            for (usize i = 0; i < size; ++i) if (pred(data[i])) return i; return -1;
         }
         usize RevFindIf(Predicate<T> auto&& pred) const {
-            for (usize i = size; i --> 0; )  if (pred(data[i])) return i; return USIZE_MAX;
+            for (usize i = size; i --> 0; )  if (pred(data[i])) return i; return -1;
         }
-        bool Contains     (const T& target) const { return Find(target)    != USIZE_MAX; }
-        bool RevContains  (const T& target) const { return RevFind(target) != USIZE_MAX; }
-        bool ContainsIf   (Predicate<T> auto&& pred) const { return FindIf(pred)    != USIZE_MAX; }
-        bool RevContainsIf(Predicate<T> auto&& pred) const { return RevFindIf(pred) != USIZE_MAX; }
+        bool Contains     (const T& target) const { return Find(target)    != -1; }
+        bool RevContains  (const T& target) const { return RevFind(target) != -1; }
+        bool ContainsIf   (Predicate<T> auto&& pred) const { return FindIf(pred)    != -1; }
+        bool RevContainsIf(Predicate<T> auto&& pred) const { return RevFindIf(pred) != -1; }
+        usize Find   (Span<const T> target) const {
+            for (usize i = 0; i <= size - target.size; ++i)
+                if (Subspan(i, target.size) == target) return i;
+            return -1;
+        }
+        usize RevFind(Span<const T> target) const {
+            for (usize i = size - target.size; i --> 0; )
+                if (Subspan(i, target.size) == target) return i;
+            return -1;
+        }
+        bool  Contains   (Span<const T> target) const { return Find   (target) != -1; }
+        bool  RevContains(Span<const T> target) const { return RevFind(target) != -1; }
+        Tuple<usize, usize> FindOneOf   (Span<const T> anytarget) const {
+            for (usize i = 0; i < size; ++i)
+                if (usize j = anytarget.Find(data[i]); j != -1) return { i, j };
+            return { -1, -1 };
+        }
+        Tuple<usize, usize> RevFindOneOf(Span<const T> anytarget) const {
+            for (usize i = size; i --> 0; )
+                if (usize j = anytarget.Find(data[i]); j != -1) return { i, j };
+            return { -1, -1 };
+        }
+        usize ContainsOneOf   (Span<const T> anytarget) const { const auto [i, j] = FindOneOf   (anytarget); return i == -1 ? -1 : j; }
+        usize RevContainsOneOf(Span<const T> anytarget) const { const auto [i, j] = RevFindOneOf(anytarget); return i == -1 ? -1 : j; }
+        Tuple<usize, usize> FindOneOf   (Span<const Span<const T>> anytarget) const {
+            for (usize i = 0; i < size; ++i)
+                for (usize j = 0; j < anytarget.Length(); ++j)
+                    if (Subspan(i).StartsWith(anytarget[j])) return { i, j };
+            return { -1, -1 };
+        }
+        Tuple<usize, usize> RevFindOneOf(Span<const Span<const T>> anytarget) const {
+            for (usize i = size; i --> 0; )
+                for (usize j = 0; j < anytarget.Length(); ++j)
+                    if (Subspan(i).EndsWith(anytarget[j])) return { i, j };
+            return { -1, -1 };
+        }
+        usize ContainsOneOf   (Span<const Span<const T>> anytarget) const { const auto [i, j] = FindOneOf   (anytarget); return i == -1 ? -1 : j; }
+        usize RevContainsOneOf(Span<const Span<const T>> anytarget) const { const auto [i, j] = RevFindOneOf(anytarget); return i == -1 ? -1 : j; }
 
         usize Unaddress      (const T* addr) const { return addr - data; }
         bool  ContainsAddress(const T* addr) const { return data <= addr && addr < data + size; }
-        // usize UnaddressSpan      (Span addr) const { return ; }
-        // bool  ContainsAddressSpan(const T* addr) const { return ; }
+        // IntegerRange UnaddressSpan      (Span addr) const { return ; }
+        // bool         ContainsAddressSpan(Span addr) const { return ; }
 
         // assumes ascending order
         Tuple<bool, usize> BinarySearch(const T& target) const { return BinarySearchWith(Cmp::ComparedTo { target }); }
@@ -255,8 +294,8 @@ namespace Quasi {
         usize SortedPartitionPointBy(usize idx, Comparator<T> auto&& cmp) mut;
         usize SortedPartitionPointByKey(usize idx, FnArgs<const T&> auto&& keyf) mut;
 
-        Tuple<Span, Ref<T>, Span> SortedPartition(usize idx) mut { return SortedPartitionBy(idx, Cmp::LessThan {}); }
-        Tuple<Span, Ref<T>, Span> SortedPartitionBy(usize idx, Comparator<T> auto&& cmp) mut {
+        Tuple<Span, T&, Span> SortedPartition(usize idx) mut { return SortedPartitionBy(idx, Cmp::LessThan {}); }
+        Tuple<Span, T&, Span> SortedPartitionBy(usize idx, Comparator<T> auto&& cmp) mut {
             const usize i = SortedPartitionPointBy(idx, cmp);
             return PartitionAt(i);
         }
@@ -371,4 +410,6 @@ namespace Quasi {
 
     template <class T, class A> Span<const T> Box<T, A>::AsSpan() const { return data ? Span<const T>::Single(*data) : nullptr; }
     template <class T, class A> Span<T>       Box<T, A>::AsSpanMut()    { return data ? Span<T>::Single(*data)       : nullptr; }
+
+#undef mut
 }
