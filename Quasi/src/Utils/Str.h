@@ -2,6 +2,10 @@
 #include "Iterator.h"
 
 namespace Quasi {
+    namespace Text {
+        struct StringWriter;
+    }
+
     struct Str;
     struct StrMut;
     struct String;
@@ -20,7 +24,11 @@ namespace Quasi {
 
         bool IsDigit(char digit), IsHexDigit(char digit), IsDigitRadix(char digit, u32 radix);
 
-        bool ShouldEscape(char c); char EscapedRepr(char c); bool IsAscii(char c), IsNonAscii(char c);
+        Option<char> EscapeRepr(char c);
+        usize WriteEscape(char c, char* out);
+        Option<char> UnescapeRepr(char c);
+
+        bool IsAscii(char c), IsNonAscii(char c);
 
         char ToLower(char c), ToUpper(char c);
         bool IsLower(char c), IsUpper(char c);
@@ -96,12 +104,12 @@ namespace Quasi {
         Tuple<StrMut, StrMut>        SplitAtMut(usize at) requires mut;
         Tuple<StrMut, char&, StrMut> PartitionAtMut(usize at) requires mut;
         Tuple<StrMut, StrMut>        SplitOnMut(Predicate<char> auto&& pred) requires mut {
-            const usize i = FindIf(pred);
-            return SplitAtMut(i == -1 ? Length() : i);
+            const OptionUsize i = FindIf(pred);
+            return SplitAtMut(i.UnwrapOr(Length()));
         }
         Tuple<StrMut, StrMut>        RevSplitOnMut(Predicate<char> auto&& pred) requires mut {
-            const usize i = RevFindIf(pred);
-            return SplitAtMut(i == -1 ? 0 : i + 1);
+            const OptionUsize i = RevFindIf(pred);
+            return SplitAtMut(i ? 0 : i + 1);
         }
         Str First(usize num) const;
         Str Skip(usize len)  const;
@@ -125,8 +133,10 @@ namespace Quasi {
         bool RefEquals     (Str other) const;
         bool ContainsBuffer(Str buf)   const;
         bool OverlapsBuffer(Str buf)   const;
-        bool Equals        (Str other) const;
-        bool operator==    (Str other) const;
+
+        bool Equals          (Str other) const;
+        bool EqualsIgnoreCase(Str other) const;
+        bool operator==      (Str other) const;
 
         Comparison Cmp(Str other) const;
         Comparison CmpSized(Str other) const;
@@ -137,43 +147,43 @@ namespace Quasi {
 
         void Reverse() requires mut;
 
-        usize FindIf(Predicate<Str> auto&& pred) const {
+        OptionUsize FindIf(Predicate<Str> auto&& pred) const {
             for (usize i = 0; i < Length(); ++i)
                 if (pred(Skip(i))) return i;
-            return -1;
+            return nullptr;
         }
-        usize RevFindIf(Predicate<Str> auto&& pred) const {
+        OptionUsize RevFindIf(Predicate<Str> auto&& pred) const {
             for (usize i = Length(); i --> 0; )
                 if (pred(Skip(i))) return i;
-            return -1;
+            return nullptr;
         }
-        bool  ContainsIf   (Predicate<Str> auto&& pred) const { return FindIf(pred)    != -1; }
-        bool  RevContainsIf(Predicate<Str> auto&& pred) const { return RevFindIf(pred) != -1; }
-        usize Find       (char c) const;
-        usize RevFind    (char c) const;
-        bool  Contains   (char c) const;
-        bool  RevContains(char c) const;
-        usize Find       (Str str) const;
-        usize RevFind    (Str str) const;
-        bool  Contains   (Str str) const;
-        bool  RevContains(Str str) const;
-        Tuple<usize, usize> FindOneOf       (Span<const char> anyc) const;
-        Tuple<usize, usize> RevFindOneOf    (Span<const char> anyc) const;
-        usize               ContainsOneOf   (Span<const char> anyc) const;
-        usize               RevContainsOneOf(Span<const char> anyc) const;
-        Tuple<usize, usize> FindOneOf       (Span<const Str> anystr) const;
-        Tuple<usize, usize> RevFindOneOf    (Span<const Str> anystr) const;
-        usize               ContainsOneOf   (Span<const Str> anystr) const;
-        usize               RevContainsOneOf(Span<const Str> anystr) const;
+        bool ContainsIf   (Predicate<Str> auto&& pred) const { return FindIf(pred); }
+        bool RevContainsIf(Predicate<Str> auto&& pred) const { return RevFindIf(pred); }
+        OptionUsize Find       (char c) const;
+        OptionUsize RevFind    (char c) const;
+        bool        Contains   (char c) const;
+        bool        RevContains(char c) const;
+        OptionUsize Find       (Str str) const;
+        OptionUsize RevFind    (Str str) const;
+        bool        Contains   (Str str) const;
+        bool        RevContains(Str str) const;
+        Tuple<OptionUsize, OptionUsize> FindOneOf       (Span<const char> anyc) const;
+        Tuple<OptionUsize, OptionUsize> RevFindOneOf    (Span<const char> anyc) const;
+        OptionUsize                     ContainsOneOf   (Span<const char> anyc) const;
+        OptionUsize                     RevContainsOneOf(Span<const char> anyc) const;
+        Tuple<OptionUsize, OptionUsize> FindOneOf       (Span<const Str> anystr) const;
+        Tuple<OptionUsize, OptionUsize> RevFindOneOf    (Span<const Str> anystr) const;
+        OptionUsize                     ContainsOneOf   (Span<const Str> anystr) const;
+        OptionUsize                     RevContainsOneOf(Span<const Str> anystr) const;
 
         bool  StartsWith(char prefix) const;
         bool  EndsWith  (char suffix) const;
         bool  StartsWith(Str prefix) const;
         bool  EndsWith  (Str suffix) const;
-        usize StartsWithOneOf(Span<const char> anyprefix) const;
-        usize EndsWithOneOf  (Span<const char> anysuffix) const;
-        usize StartsWithOneOf(Span<const Str> anyprefix) const;
-        usize EndsWithOneOf  (Span<const Str> anysuffix) const;
+        OptionUsize StartsWithOneOf(Span<const char> anyprefix) const;
+        OptionUsize EndsWithOneOf  (Span<const char> anysuffix) const;
+        OptionUsize StartsWithOneOf(Span<const Str> anyprefix) const;
+        OptionUsize EndsWithOneOf  (Span<const Str> anysuffix) const;
 
         Str TrimIf     (Predicate<char> auto&& pred) const;
         Str TrimStartIf(Predicate<char> auto&& pred) const;
@@ -271,6 +281,10 @@ namespace Quasi {
         const char& TakeFirst();
         const char& TakeLast();
         Str         TakeAfter(usize i);
+
+        String Escape() const;
+        usize WriteEscape(Text::StringWriter output) const;
+        Option<String> Unescape() const;
 
         StrMut AsMut();
     };

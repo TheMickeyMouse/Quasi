@@ -2,6 +2,7 @@
 #include <utility>
 
 #include "Memory.h"
+#include "Macros.h"
 
 namespace Quasi {
     template <class Res, class... Args>
@@ -12,17 +13,21 @@ namespace Quasi {
 
     template <class Result, class... Args>
     struct FuncRef<Result(Args...)> {
+    private:
         void* userPtr = nullptr;
-        FuncPtr<Result, void*, Args&&...> functionPtr = nullptr;
+        FuncPtr<Result, void*, Args...> functionPtr = nullptr;
 
-        Result Invoke(Args&&... args) const { return functionPtr(userPtr, std::forward<Args>(args)...); }
-        Result operator()(Args&&... args) const { return Invoke(std::forward<Args>(args)...); }
+        FuncRef(void* uptr, FuncPtr<Result, void*, Args...> fptr) : userPtr(uptr), functionPtr(fptr) {}
+    public:
+        Result Invoke(Args... args) const { return functionPtr(userPtr, (Args&&)args...); }
+        Result operator()(Args... args) const { return Invoke((Args&&)args...); }
 
         FuncRef() = default;
-        FuncRef(void* uptr, FuncPtr<Result, void*, Args&&...> fptr) : userPtr(uptr), functionPtr(fptr) {}
-        FuncRef(FuncPtr<Result, Args&&...> fptr) : userPtr(fptr), functionPtr(+[] (void* f, Args&&... args) {
-            return (*Memory::UpcastPtr<FuncPtr<Result, Args&&...>>(f))(std::forward<Args>(args)...);
+        FuncRef(FuncPtr<Result, Args...> fptr) : userPtr(fptr), functionPtr(+[] (void* f, Args... args) {
+            return (*Memory::UpcastPtr<FuncPtr<Result, Args...>>(f))((Args&&)args...);
         }) {}
+
+        static FuncRef FromRaw(void* uptr, FuncPtr<Result, void*, Args...> fptr) { return { uptr, fptr }; }
 
         FuncRef(const FuncRef& f) = default;
         FuncRef(FuncRef&& f) noexcept = default;
@@ -30,8 +35,8 @@ namespace Quasi {
         template <class Lamb>
         FuncRef(Lamb&& lamb)
             : userPtr(&lamb),
-            functionPtr(+[] (void* functionObj, Args&&... args) {
-                return (*Memory::UpcastPtr<std::decay_t<Lamb>>(functionObj))(std::forward<Args>(args)...);
+            functionPtr(+[] (void* functionObj, Args... args) {
+                return (*Memory::UpcastPtr<std::decay_t<Lamb>>(functionObj))((Args&&)args...);
             })
         {}
 
@@ -39,9 +44,9 @@ namespace Quasi {
         static FuncRef Recursive(Lamb&& lamb) {
             return {
                 &lamb,
-                [] (void* functionObj, Args&&... args) {
+                [] (void* functionObj, Args... args) {
                     auto* f = Memory::UpcastPtr<std::decay_t<Lamb>>(functionObj);
-                    return (*f)(f, std::forward<Args>(args)...);
+                    return (*f)(f, (Args&&)args...);
                 }
             };
         }
@@ -51,6 +56,11 @@ namespace Quasi {
             return Memory::Transmute<FuncRef<OtherFn>>(*this);
         }
     };
+
+    namespace FuncRefs {
+        template <class O, class... Is>
+        FuncRef<O(Is...)> FromRaw(void* user, O(*fptr)(Is...)) { return FuncRef<O(Is...)>::FromRaw(user, fptr); }
+    }
 
     template <class T> struct Vec;
 
@@ -113,4 +123,13 @@ namespace Quasi {
 
     template <class F, class T>
     concept Predicate = Fn<F, bool, const T&>;
+
+
+#define Q_LMB_TAKES_ARGS(...) , Q_TINY_LAMBDA_SIMPLE,
+#define Q_TINY_LAMBDA_ARGS(...) [&] (__VA_ARGS__) { return
+#define Q_TINY_LAMBDA_SIMPLE(...) Q_TINY_LAMBDA_ARGS __VA_ARGS__ ; }
+#define Q_TINY_LAMBDA_FORWARD_TO(M) [&] (auto&&... args) { return M((decltype(args))args...); }
+#define Q_TINY_LAMBDA(...) Q_INVOKE(Q_ARGS_SECOND, Q_LMB_TAKES_ARGS __VA_ARGS__, Q_TINY_LAMBDA_FORWARD_TO) (__VA_ARGS__)
+
+#define Qfn$(...) Q_TINY_LAMBDA(__VA_ARGS__)
 } // Q

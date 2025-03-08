@@ -3,9 +3,9 @@
 #include <iostream>
 #include <source_location>
 
-#include "ConsoleColor.h"
-#include "Text.h"
 #include "Timer.h"
+#include "Utils/Text.h"
+#include "Utils/Text/Num.h"
 #include "Utils/Enum.h"
 
 namespace Quasi::Debug {
@@ -13,19 +13,19 @@ namespace Quasi::Debug {
 
     struct SeverityData {
         Str name;
-        ConsoleColor color;
+        Text::ConsoleColor color;
 
-        ColoredText ColoredName() const { return { color, name }; }
+        Text::ColoredStr ColoredName() const { return { color, name }; }
 
         QDefineEnum$(Severity,
-            (OFF,      ("OFF",      ConsoleColor::RESET))
-            (TRACE,    ("TRACE",    FgColor(ConsoleColor::GREEN)))
-            (DEBUG,    ("DEBUG",    FgColor(ConsoleColor::CYAN)))
-            (INFO,     ("INFO",     ConsoleColor::RESET))
-            (WARN,     ("WARN",     FgColor(ConsoleColor::YELLOW)))
-            (ERROR,    ("ERROR",    FgColor(ConsoleColor::RED)))
-            (CRITICAL, ("CRITICAL", Bold(ConsoleColor::FG_RED))),
-        COMPARABLE, ("NEVER", ConsoleColor::GRAY))
+            (OFF,      ("OFF",      Text::RESET))
+            (TRACE,    ("TRACE",    FgColor(Text::GREEN)))
+            (DEBUG,    ("DEBUG",    FgColor(Text::CYAN)))
+            (INFO,     ("INFO",     Text::RESET))
+            (WARN,     ("WARN",     FgColor(Text::YELLOW)))
+            (ERROR,    ("ERROR",    FgColor(Text::RED)))
+            (CRITICAL, ("CRITICAL", Bold(Text::FG_RED))),
+        COMPARABLE, ("NEVER", Text::GRAY))
     };
 
     using SourceLoc = std::source_location;
@@ -47,8 +47,8 @@ namespace Quasi::Debug {
     };
 
     class Logger {
-        Ref<OutStream> logOut;
-        ColoredText name = { RESET, "LOG" };
+        Text::StringWriter logOut;
+        Text::ColoredStr name = { Text::RESET, "LOG" };
         Severity filterLevel = Severity::OFF, breakLevel = Severity::ERROR;
         Vec<LogEntry> logs;
 
@@ -56,7 +56,7 @@ namespace Quasi::Debug {
         bool includeFunction : 1 = true;
         bool alwaysFlush : 1 = false;
         bool recordLogs : 1 = false;
-        int lPad = 50;
+        u32 lPad = 50;
 
     public:
         static Logger InternalLog;
@@ -65,20 +65,20 @@ namespace Quasi::Debug {
 #else
         static constexpr bool DEBUG = true;
 #endif
-        explicit Logger(OutStream& out = std::cout) : logOut(out) {}
+        explicit Logger(Text::StringWriter out = Text::StringWriter::WriteToConsole()) : logOut(out) {}
 
         static bool Overrides(Severity filter, Severity log) { return log >= filter; }
         bool Overrides(Severity s) const { return Overrides(filterLevel, s); }
         void SetFilter(Severity s) { filterLevel = s; }
         void SetBreakLevel(Severity s) { breakLevel = s; }
 
-        void SetName(Str newName) { name.string = newName; }
-        void SetNameColor(const ConsoleColor col) { name.color = col; }
+        void SetName(Str newName) { name.text = newName; }
+        void SetNameColor(const Text::ConsoleColor col) { name.color = col; }
         void SetShortenFile(const bool flag) { shortenFileNames = flag; }
         void SetIncludeFunc(const bool flag) { includeFunction = flag; }
         void SetAlwaysFlush(const bool flag) { alwaysFlush = flag; }
         void SetRecordLogs(const bool flag) { recordLogs = flag; }
-        void SetLocPad(const int pad) { lPad = pad; }
+        void SetLocPad(const u32 pad) { lPad = pad; }
 
         String FmtLog(const LogEntry& log) const;
         String FmtLog(Str log, Severity severity, DateTime time, const SourceLoc& fileLoc) const;
@@ -90,7 +90,7 @@ namespace Quasi::Debug {
 
         void AssertMsg(bool assert, Str msg, const SourceLoc& loc = SourceLoc::current());
 
-        void Write(OutStream& out, Severity filter = Severity::NONE);
+        void WriteAllLogs(Text::StringWriter out, Severity filter = Severity::NONE);
 
         template <class ...Ts> void LogFmt(Severity s, const FmtStr& fmt, Ts&&... args) {
             this->Log(s, Text::Format(fmt.fmt, std::forward<Ts>(args)...), fmt.loc);
@@ -124,7 +124,6 @@ namespace Quasi::Debug {
         template <class ...Ts> void Error   (const FmtStr& fmt, Ts&&... args) { this->LogFmt(Severity::ERROR,    fmt, std::forward<Ts>(args)...); }
         template <class ...Ts> void Critical(const FmtStr& fmt, Ts&&... args) { this->LogFmt(Severity::CRITICAL, fmt, std::forward<Ts>(args)...); }
 
-        void Flush();
         void NoOp() const {}
 
         static Logger& GetInternalLog();
@@ -133,8 +132,8 @@ namespace Quasi::Debug {
     inline void SetFilter(Severity s) { Logger::GetInternalLog().SetFilter(s); }
     inline void SetBreakLevel(Severity s) { Logger::GetInternalLog().SetBreakLevel(s); }
 
-    inline void SetName(std::string newName) { Logger::GetInternalLog().SetName(std::move(newName)); }
-    inline void SetNameColor(const ConsoleColor col) { Logger::GetInternalLog().SetNameColor(col); }
+    inline void SetName(Str newName) { Logger::GetInternalLog().SetName(newName); }
+    inline void SetNameColor(const Text::ConsoleColor col) { Logger::GetInternalLog().SetNameColor(col); }
     inline void SetShortenFile(const bool flag) { Logger::GetInternalLog().SetShortenFile(flag); }
     inline void SetIncludeFunc(const bool flag) { Logger::GetInternalLog().SetIncludeFunc(flag); }
     inline void SetLocPad(const int pad) { Logger::GetInternalLog().SetLocPad(pad); }
@@ -143,7 +142,7 @@ namespace Quasi::Debug {
 
     inline void AssertMsg(bool assert, Str msg, const SourceLoc& loc = SourceLoc::current()) { Logger::GetInternalLog().AssertMsg(assert, msg, loc); }
 
-    inline void Write(OutStream& out, Severity filter = Severity::NONE) { Logger::GetInternalLog().Write(out, filter); }
+    inline void Write(Text::StringWriter out, Severity filter = Severity::NONE) { Logger::GetInternalLog().WriteAllLogs(out, filter); }
 
     template <class ...Ts> void LogFmt(Severity s, const FmtStr& fmt, Ts&&... args) {
         Logger::GetInternalLog().LogFmt(s, fmt, std::forward<Ts>(args)...);
@@ -168,12 +167,16 @@ namespace Quasi::Debug {
     inline void NoOp() {}
 
 #ifdef NDEBUG
-    #define QTrace$    NoOp() Q_EAT
-    #define QDebug$    NoOp() Q_EAT
-    #define QInfo$     NoOp() Q_EAT
-    #define QWarn$     NoOp() Q_EAT
-    #define QError$    NoOp() Q_EAT
-    #define QCritical$ NoOp() Q_EAT
+    #define QTrace$     NoOp() Q_EAT
+    #define QDebug$     NoOp() Q_EAT
+    #define QInfo$      NoOp() Q_EAT
+    #define QWarn$      NoOp() Q_EAT
+    #define QError$     NoOp() Q_EAT
+    #define QCritical$  NoOp() Q_EAT
+    #define QAssert$    NoOp() Q_EAT
+    #define QAssertEq$  NoOp() Q_EAT
+    #define QAssertNeq$ NoOp() Q_EAT
+    #define QAssertMsg$ NoOp() Q_EAT
 #else
     #define QTrace$    Trace
     #define QDebug$    Debug
@@ -181,6 +184,10 @@ namespace Quasi::Debug {
     #define QWarn$     Warn
     #define QError$    Error
     #define QCritical$ Critical
+    #define QAssert$    Assert
+    #define QAssertEq$  AssertEq
+    #define QAssertNeq$ AssertNeq
+    #define QAssertMsg$ AssertMsg
 #endif
 
     void Flush();
@@ -209,75 +216,8 @@ namespace Quasi {
 namespace Quasi::Text {
     template <>
     struct Formatter<Debug::DateTime> {
-        Str fmt;
-        bool AddOption(Str args) {
-            for (u32 i = 0; i < args.size(); ++i) {
-                if (args[i] == '%' && args[i + 1] != '%') {
-                    switch (args[i + 1]) {
-                        case 'y':
-                        case 'M': case 'N': case 'n':
-                        case 'd': case 'a':
-                        case 'h': case 'H': case 'g':
-                        case 'm':
-                        case 's': case 'u': break;
-                        default: return false;
-                    }
-                }
-            }
-            fmt = args;
-            return true;
-        }
-        void FormatTo(const Debug::DateTime& time, StringOutput output) {
-            const auto d = floor<std::chrono::days>(time);
-            const std::chrono::year_month_day ymd = d;
-            const std::chrono::hh_mm_ss       hms { floor<std::chrono::milliseconds>(time - d) };
-            constexpr Str MONTH_NAMES[] = {
-                "January",
-                "Febuary",
-                "March",
-                "April",
-                "May",
-                "June",
-                "July",
-                "August",
-                "September",
-                "October",
-                "November",
-                "December",
-            };
-            constexpr Str WEEKDAY_NAMES[] = {
-                "Monday",
-                "Tuesday",
-                "Wednesday",
-                "Thurday",
-                "Friday",
-                "Satarday",
-                "Sunday",
-            };
-            using std::chrono::operator ""h;
-            for (u32 i = 0; i < fmt.size(); ++i) {
-                if (fmt[i] != '%') {
-                    output(fmt[i]);
-                    continue;
-                }
-                switch (fmt[i + 1]) {
-                    case '%': output('%'); ++i; continue;
-                    case 'y': FormatOnto(output, (i32)ymd.year());                   ++i; continue;
-                    case 'M': FormatOnto(output, "{:02}", (u32)ymd.month());         ++i; continue;
-                    case 'N': output(MONTH_NAMES[(u32)ymd.month()]);                 ++i; continue;
-                    case 'n': output(MONTH_NAMES[(u32)ymd.month()].substr(0, 3));    ++i; continue;
-                    case 'd': FormatOnto(output, "{:02}", (u32)ymd.day());           ++i; continue;
-                    case 'A': output(WEEKDAY_NAMES[(u32)ymd.day()]);                 ++i; continue;
-                    case 'a': output(WEEKDAY_NAMES[(u32)ymd.day()].substr(0, 3));    ++i; continue;
-                    case 'h': FormatOnto(output, "{:02}", hms.hours().count() % 12); ++i; continue;
-                    case 'H': FormatOnto(output, "{:02}", hms.hours().count());      ++i; continue;
-                    case 'g': output(hms.hours() >= 12h ? "PM" : "AM");              ++i; continue;
-                    case 'm': FormatOnto(output, "{:02}", hms.minutes().count());    ++i; continue;
-                    case 's': FormatOnto(output, "{:02}", hms.seconds().count());    ++i; continue;
-                    case 'u': FormatOnto(output, "{:03}", hms.subseconds().count()); ++i; continue;
-                    default:;
-                }
-            }
-        }
+        using FormatOptions = Str;
+        static FormatOptions ConfigureOptions(Str x) { return x; }
+        static usize FormatTo(StringWriter out, const Debug::DateTime& time, Str fmt);
     };
 }

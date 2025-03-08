@@ -1,5 +1,7 @@
 #include "String.h"
 
+#include "Text/StringWriter.h"
+
 namespace Quasi {
     String String::WithCap(usize cap) {
         if (cap <= Small::MAXLEN) {
@@ -355,6 +357,27 @@ namespace Quasi {
         } else {
             large.size = len;
         }
+    }
+
+    String String::Escape() const {
+        return AsStr().Escape();
+    }
+
+    usize String::WriteEscape(Text::StringWriter output) const {
+        return AsStr().WriteEscape(output);
+    }
+
+    Option<String> String::Unescape() const {
+        return AsStr().Unescape();
+    }
+
+    String String::operator+(char rhs) const {
+        return operator+(Str::Slice(&rhs, 1));
+    }
+
+    String& String::operator+=(char rhs) {
+        Append(rhs);
+        return *this;
     }
 
     String String::operator+(Str rhs) const {

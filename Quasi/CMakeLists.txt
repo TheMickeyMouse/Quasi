@@ -1,7 +1,6 @@
 set(PROJECT_NAME Quasi)
 
 set(HEADER_FILES
-    src/Debug/ConsoleColor.h
     src/Debug/internal_debug_break.h
     src/Debug/Logger.h
     src/Debug/Timer.h
@@ -92,6 +91,24 @@ set(HEADER_FILES
     src/Utils/Memory.h
     src/Utils/Iterator.h
     src/Utils/Vec.h
+    src/Utils/Span.h
+    src/Utils/Algorithm.h
+    src/Utils/Array.h
+    src/Utils/Comparison.h
+    src/Utils/Box.h
+    src/Utils/ArrayBox.h
+    src/Utils/Str.h
+    src/Utils/String.h
+    src/Utils/CStr.h
+    src/Utils/CString.h
+    src/Utils/Numeric.h
+    src/Utils/MacroIteration.h
+    src/Utils/Text/Parsing.h
+    src/Utils/Text/Num.h
+    src/Utils/Text/StringWriter.h
+    src/Utils/Text/Formatting.h
+    src/Utils/Iter/MapIter.h
+    src/Utils/Iter/EnumerateIter.h
 
     src/vendor/imgui/imconfig.h
     src/vendor/imgui/imgui.h
@@ -104,7 +121,6 @@ set(HEADER_FILES
     src/vendor/imgui/imgui_stdlib.h
 
     src/vendor/stb_image/stb_image.h
-        src/Utils/Span.h
 )
 source_group("Header Files" FILES ${HEADER_FILES})
 
@@ -167,6 +183,15 @@ set(SOURCE_FILES
     src/Utils/Text.cpp
     src/Utils/ArenaAllocator.cpp
     src/Utils/Format.cpp
+    src/Utils/Str.cpp
+    src/Utils/String.cpp
+    src/Utils/CStr.cpp
+    src/Utils/CString.cpp
+    src/Utils/Memory.cpp
+    src/Utils/Text/Parsing.cpp
+    src/Utils/Text/Num.cpp
+    src/Utils/Text/StringWriter.cpp
+    src/Utils/Text/Formatting.cpp
 
     src/vendor/imgui/imgui.cpp
     src/vendor/imgui/imgui_demo.cpp
@@ -184,20 +209,6 @@ source_group("Source Files" FILES ${SOURCE_FILES})
 set(ALL_FILES
     ${HEADER_FILES}
     ${SOURCE_FILES}
-        src/Utils/Algorithm.h
-        src/Utils/Array.h
-        src/Utils/Iter/MapIter.h
-        src/Utils/Comparison.h
-        src/Utils/Box.h
-        src/Utils/ArrayBox.h
-        src/Utils/String.cpp
-        src/Utils/String.h
-        src/Utils/Str.cpp
-        src/Utils/Str.h
-        src/Utils/Memory.cpp
-        src/Utils/Parsing.cpp
-        src/Utils/Parsing.h
-        src/Utils/Numeric.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})
@@ -208,13 +219,7 @@ target_include_directories(${PROJECT_NAME}
     # /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/System/Library/Frameworks/
         PUBLIC
     src/
-    src/Debug/
-    src/Graphics/GLs/
-    src/Graphics/Graphicals/
-    src/Graphics/Utils/
-    src/Math/
-    src/IO/
-    src/Utils/
+    src/Graphics/
     src/vendor/imgui/
     src/vendor/
     src/vendor/freetype/

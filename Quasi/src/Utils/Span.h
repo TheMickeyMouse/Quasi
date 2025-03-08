@@ -2,7 +2,6 @@
 #include "ArrayBox.h"
 #include "Memory.h"
 #include "Iterator.h"
-#include "Option.h"
 #include "Ref.h"
 
 namespace Quasi {
@@ -32,7 +31,7 @@ namespace Quasi {
         Span(Coll& collection) mut : data(collection.Data()), size(collection.Length()) {}
 
         template <usize N> static Span FromArray(T (&arr) [N]) { return { arr, N }; }
-        static Span FromBuffer(T* dat, usize len) { return { dat, len }; }
+        static Span Slice(T* dat, usize len) { return { dat, len }; }
         static Span Single(T& obj) { return { &obj, 1 }; }
         static Span Empty() { return {}; }
 
@@ -200,56 +199,56 @@ namespace Quasi {
         Option<Span> RemoveSuffix(Span suffix) const { return EndsWith(suffix)   ? Options::Some(Trunc(suffix.size)) : nullptr; }
 
 
-        usize Find   (const T& target) const { return FindIf   (Cmp::Equals { target }); }
-        usize RevFind(const T& target) const { return RevFindIf(Cmp::Equals { target }); }
-        usize FindIf(Predicate<T> auto&& pred) const {
-            for (usize i = 0; i < size; ++i) if (pred(data[i])) return i; return -1;
+        OptionUsize Find   (const T& target) const { return FindIf   (Cmp::Equals { target }); }
+        OptionUsize RevFind(const T& target) const { return RevFindIf(Cmp::Equals { target }); }
+        OptionUsize FindIf(Predicate<T> auto&& pred) const {
+            for (usize i = 0; i < size; ++i) if (pred(data[i])) return i; return nullptr;
         }
-        usize RevFindIf(Predicate<T> auto&& pred) const {
-            for (usize i = size; i --> 0; )  if (pred(data[i])) return i; return -1;
+        OptionUsize RevFindIf(Predicate<T> auto&& pred) const {
+            for (usize i = size; i --> 0; )  if (pred(data[i])) return i; return nullptr;
         }
-        bool Contains     (const T& target) const { return Find(target)    != -1; }
-        bool RevContains  (const T& target) const { return RevFind(target) != -1; }
-        bool ContainsIf   (Predicate<T> auto&& pred) const { return FindIf(pred)    != -1; }
-        bool RevContainsIf(Predicate<T> auto&& pred) const { return RevFindIf(pred) != -1; }
-        usize Find   (Span<const T> target) const {
+        bool Contains     (const T& target) const { return Find(target); }
+        bool RevContains  (const T& target) const { return RevFind(target); }
+        bool ContainsIf   (Predicate<T> auto&& pred) const { return FindIf(pred); }
+        bool RevContainsIf(Predicate<T> auto&& pred) const { return RevFindIf(pred); }
+        OptionUsize Find   (Span<const T> target) const {
             for (usize i = 0; i <= size - target.size; ++i)
                 if (Subspan(i, target.size) == target) return i;
-            return -1;
+            return nullptr;
         }
-        usize RevFind(Span<const T> target) const {
+        OptionUsize RevFind(Span<const T> target) const {
             for (usize i = size - target.size; i --> 0; )
                 if (Subspan(i, target.size) == target) return i;
-            return -1;
+            return nullptr;
         }
-        bool  Contains   (Span<const T> target) const { return Find   (target) != -1; }
-        bool  RevContains(Span<const T> target) const { return RevFind(target) != -1; }
-        Tuple<usize, usize> FindOneOf   (Span<const T> anytarget) const {
+        bool  Contains   (Span<const T> target) const { return Find   (target); }
+        bool  RevContains(Span<const T> target) const { return RevFind(target); }
+        Tuple<OptionUsize, OptionUsize> FindOneOf   (Span<const T> anytarget) const {
             for (usize i = 0; i < size; ++i)
-                if (usize j = anytarget.Find(data[i]); j != -1) return { i, j };
-            return { -1, -1 };
+                if (OptionUsize j = anytarget.Find(data[i])) return { i, j };
+            return { nullptr, nullptr };
         }
-        Tuple<usize, usize> RevFindOneOf(Span<const T> anytarget) const {
+        Tuple<OptionUsize, OptionUsize> RevFindOneOf(Span<const T> anytarget) const {
             for (usize i = size; i --> 0; )
-                if (usize j = anytarget.Find(data[i]); j != -1) return { i, j };
-            return { -1, -1 };
+                if (OptionUsize j = anytarget.Find(data[i])) return { i, j };
+            return { nullptr, nullptr };
         }
-        usize ContainsOneOf   (Span<const T> anytarget) const { const auto [i, j] = FindOneOf   (anytarget); return i == -1 ? -1 : j; }
-        usize RevContainsOneOf(Span<const T> anytarget) const { const auto [i, j] = RevFindOneOf(anytarget); return i == -1 ? -1 : j; }
-        Tuple<usize, usize> FindOneOf   (Span<const Span<const T>> anytarget) const {
+        OptionUsize ContainsOneOf   (Span<const T> anytarget) const { const auto [i, j] = FindOneOf   (anytarget); return i.And(j); }
+        OptionUsize RevContainsOneOf(Span<const T> anytarget) const { const auto [i, j] = RevFindOneOf(anytarget); return i.And(j); }
+        Tuple<OptionUsize, OptionUsize> FindOneOf   (Span<const Span<const T>> anytarget) const {
             for (usize i = 0; i < size; ++i)
                 for (usize j = 0; j < anytarget.Length(); ++j)
                     if (Subspan(i).StartsWith(anytarget[j])) return { i, j };
-            return { -1, -1 };
+            return { nullptr, nullptr };
         }
-        Tuple<usize, usize> RevFindOneOf(Span<const Span<const T>> anytarget) const {
+        Tuple<OptionUsize, OptionUsize> RevFindOneOf(Span<const Span<const T>> anytarget) const {
             for (usize i = size; i --> 0; )
                 for (usize j = 0; j < anytarget.Length(); ++j)
                     if (Subspan(i).EndsWith(anytarget[j])) return { i, j };
-            return { -1, -1 };
+            return { nullptr, nullptr };
         }
-        usize ContainsOneOf   (Span<const Span<const T>> anytarget) const { const auto [i, j] = FindOneOf   (anytarget); return i == -1 ? -1 : j; }
-        usize RevContainsOneOf(Span<const Span<const T>> anytarget) const { const auto [i, j] = RevFindOneOf(anytarget); return i == -1 ? -1 : j; }
+        OptionUsize ContainsOneOf   (Span<const Span<const T>> anytarget) const { const auto [i, j] = FindOneOf   (anytarget); return i.And(j); }
+        OptionUsize RevContainsOneOf(Span<const Span<const T>> anytarget) const { const auto [i, j] = RevFindOneOf(anytarget); return i.And(j); }
 
         usize Unaddress      (const T* addr) const { return addr - data; }
         bool  ContainsAddress(const T* addr) const { return data <= addr && addr < data + size; }
@@ -373,9 +372,9 @@ namespace Quasi {
 
     namespace Spans {
         template <class T>
-        Span<T> FromBuffer(T* data, usize size) { return Span<T>::FromBuffer(data, size); }
+        Span<T> Slice(T* data, usize size) { return Span<T>::Slice(data, size); }
         template <class T>
-        Span<const T> FromIList(IList<T> ilist) { return Span<const T>::FromBuffer(ilist.begin(), ilist.size()); }
+        Span<const T> FromIList(IList<T> ilist) { return Span<const T>::Slice(ilist.begin(), ilist.size()); }
         template <class T, usize N>
         Span<T> Vals(T (&arr)[N])  { return Span<T>::FromArray(arr); }
         template <class T, usize N>

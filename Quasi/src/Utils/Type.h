@@ -3,7 +3,6 @@
 #include <map>
 
 #include "Numeric.h"
-#include "Macros.h"
 
 namespace Quasi {
     template <class K, class V, class Cmp = std::less<K>, class Alc = std::allocator<std::pair<const K, V>>>
@@ -26,6 +25,7 @@ namespace Quasi {
 
 	template <class T> using Nullable = T;
 	template <class T> using NotNull = T;
+	template <class T> using InOut = T;
 	template <class T> using Out = T;
 	using Nullptr = std::nullptr_t;
     inline struct UncheckedMarker {} Unchecked;
@@ -84,12 +84,6 @@ namespace Quasi {
 
 	template <class T, class ConstIf>   using AddConstIf = IfElse<IsConst<ConstIf>,   const T, T>;
 	template <class T, class NoConstIf> using RemConstIf = IfElse<IsConst<NoConstIf>, T, RemConst<T>>;
-
-	template <class T> concept Integer  = std::is_integral_v<T>;
-	template <class T> concept Signed   = std::is_signed_v<T>;
-	template <class T> concept Unsigned = std::is_unsigned_v<T>;
-	template <class T> concept Floating = std::is_floating_point_v<T>;
-	template <class T> concept Numeric  = std::is_arithmetic_v<T>;
 
 	template <class T, class U> using Common = decltype(false ? std::declval<T>() : std::declval<U>());
 

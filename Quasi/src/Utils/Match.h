@@ -1,5 +1,6 @@
 #pragma once
 #include "Macros.h"
+#include "MacroIteration.h"
 #include "Type.h"
 #include "Variant.h"
 

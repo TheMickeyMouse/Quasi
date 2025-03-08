@@ -158,7 +158,7 @@ namespace Quasi::Algorithm {
             template <class T>
             void SmallSortGeneral(Span<T> span, Comparator<T> auto&& cmp) {
                 T* stackArray = (T*)_alloca(sizeof(T) * SMALL_SORT_GENERAL_SCRATCH_LEN);
-                return SmallSortGeneralScratched(span, Spans::FromBuffer(stackArray, SMALL_SORT_GENERAL_SCRATCH_LEN), cmp);
+                return SmallSortGeneralScratched(span, Spans::Slice(stackArray, SMALL_SORT_GENERAL_SCRATCH_LEN), cmp);
             }
 
             template <class T>
@@ -198,7 +198,7 @@ namespace Quasi::Algorithm {
                     }
                 }
 
-                SmallSortBidirMerge(Spans::FromBuffer(scratchBegin, len), begin, cmp);
+                SmallSortBidirMerge(Spans::Slice(scratchBegin, len), begin, cmp);
             }
 
             template <class T>
@@ -248,7 +248,7 @@ namespace Quasi::Algorithm {
 
                 // SAFETY: scratch_base[0..8] is now initialized, allowing us to merge back
                 // into dst.
-                SmallSortBidirMerge(Spans::FromBuffer(scratchBegin, 8), dest, cmp);
+                SmallSortBidirMerge(Spans::Slice(scratchBegin, 8), dest, cmp);
             }
 
 
@@ -364,7 +364,7 @@ namespace Quasi::Algorithm {
                 T* begin = span.Data();
                 const usize initRegionLen = noMerge ? len : halfLen;
                 // SAFETY: Both possible values of `initial_region_len` are in-bounds.
-                Span<T> region = Spans::FromBuffer(begin, initRegionLen);
+                Span<T> region = Spans::Slice(begin, initRegionLen);
                 // Avoid compiler unrolling, we *really* don't want that to happen here for binary-size reasons.
                 while (true) {
                     usize sortedLen = 1;
@@ -380,13 +380,13 @@ namespace Quasi::Algorithm {
                     if (noMerge) return;
                     if (region.Data() != begin) break;
 
-                    region = Spans::FromBuffer(begin + halfLen, len - halfLen);
+                    region = Spans::Slice(begin + halfLen, len - halfLen);
                 }
 
                 // SAFETY: We checked that T is Freeze and thus observation safe.
                 // Should is_less panic v was not modified in parity_merge and retains it's original input.
                 // scratch and v must not alias and scratch has v.len() space.
-                SmallSortBidirMerge(Spans::FromBuffer(begin, len), stackArray, cmp);
+                SmallSortBidirMerge(Spans::Slice(begin, len), stackArray, cmp);
                 Memory::RangeMoveNoOverlap(begin, stackArray, len);
             }
 

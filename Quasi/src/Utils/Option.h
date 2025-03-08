@@ -8,6 +8,10 @@ namespace Quasi {
     template <class T> struct Span;
     struct Str;
 
+    namespace Options {
+        template <class T> Option<RemQual<T>> Some(T&&);
+    }
+
     /*
      * An interface that describes nullability.
      * Must implement:
@@ -75,12 +79,12 @@ namespace Quasi {
         // behaves like pythonic and
         Super And(const Super& onlyif) const { return HasValue() ? onlyif            : None(); }
         Super And(Super&& onlyif)      const { return HasValue() ? std::move(onlyif) : None(); }
-        Super AndThen(Fn<Super> auto&& onlyif)  const { return HasValue() ? onlyif() : None(); }
+        auto  AndThen(FnArgs<Super> auto&& onlyif) const { return HasValue() ? onlyif(Unwrap()) : nullptr; }
 
         Super Xor(const Super& extra) const { return HasValue() ^ extra.HasValue() ? (HasValue() ? *this : extra) : None(); }
         Super Xor(Super&& extra)      const { return HasValue() ^ extra.HasValue() ? (HasValue() ? *this : std::move(extra)) : None(); }
 
-        auto Map(auto&& map) const { return HasValue() ? Some(map(Unwrap())) : None(); }
+        auto Map(auto&& map) const { return HasValue() ? Options::Some(map(Unwrap())) : nullptr; }
         auto MapOr(auto&& map, auto&& otherwise) const { return HasValue() ? map(Unwrap()) : std::forward<decltype(otherwise)>(otherwise); }
         auto MapOrElse(auto&& map, auto&& otherwise) const { return HasValue() ? map(Unwrap()) : otherwise(); }
 
@@ -123,10 +127,10 @@ namespace Quasi {
     template <class T>
     struct Option : INullable<T, Option<T>> {
         friend INullable<T, Option>;
-
+    private:
         T value;
         bool isSome = true;
-
+    public:
         Option() : Option(nullptr) {}
         Option(Nullptr) : isSome(false) {}
         Option(const T& value) : value(value) {}
@@ -144,6 +148,33 @@ namespace Quasi {
         void SetNullImpl() { isSome = false; }
         void SetImpl(const T& v) { isSome = true; value = v; }
         void SetImpl(T&& v)      { isSome = true; value = std::move(v); }
+    public:
+        bool operator==(const Option&) const = default;
+        bool operator==(const T& other) const { return isSome && value == other; }
+    };
+
+    struct OptionUsize : INullable<usize, OptionUsize> {
+    private:
+        usize value = -1;
+    public:
+        OptionUsize() = default;
+        OptionUsize(Nullptr) : OptionUsize() {}
+        OptionUsize(usize value) : value(value) {}
+        OptionUsize(ConvTo<usize> auto value) : value(value) {}
+        OptionUsize(Option<usize> optval) : value(optval.UnwrapOr(-1)) {}
+    protected:
+        static OptionUsize SomeImpl(usize value) { return { value }; }
+        static OptionUsize NoneImpl() { return { nullptr }; }
+
+        bool HasValueImpl() const { return value != -1; }
+        usize& UnwrapImpl() { return value; }
+        const usize& UnwrapImpl() const { return value; }
+
+        void SetNullImpl()    { value = -1; }
+        void SetImpl(usize v) { value = v; }
+    public:
+        bool operator==(const OptionUsize&) const = default;
+        bool operator==(usize v) const { return value == v; }
     };
 
     namespace Options {

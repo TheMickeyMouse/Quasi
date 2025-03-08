@@ -1,10 +1,9 @@
 ﻿#include "Shader.h"
 
-#include <numeric>
-
 #include <glp.h>
+#include "Graphics/Utils/Textures/Texture.h"
+#include "Utils/Text.h"
 #include "GLDebug.h"
-#include "Textures/Texture.h"
 
 namespace Quasi::Graphics {
     Shader::Shader(GraphicsID id) : GLObject(id) {}
@@ -41,7 +40,7 @@ namespace Quasi::Graphics {
         if (it != uniformCache.end())
             return it->second;
 
-        const int location = QGLCall$(GL::GetUniformLocation(rendererID, name.data()));
+        const int location = QGLCall$(GL::GetUniformLocation(rendererID, name.Data()));
         GLLogger().Assert(location != -1, "invalid uniform location for '{}'", name);
         uniformCache[String { name }] = location;
         return location;
@@ -74,30 +73,32 @@ namespace Quasi::Graphics {
     ShaderProgramSource Shader::ParseShader(Str program) {
         usize lastLine = 0;
         Math::zRange ssv, ssf, ssg, *ss = nullptr;
-        for (usize i = 0; i < program.size(); ++i) {
+        for (usize i = 0; i < program.Length(); ++i) {
             if (program[i] != '\n') continue;
-            Str line = program.substr(lastLine, i - lastLine);
+            Str line = program.Substr(lastLine, i - lastLine);
             lastLine = i + 1;
 
-            if (line.find("#shader") != String::npos) {
-                if (ss) ss->max = line.data() - program.data();
-                if (line.find("vertex") != String::npos) {
+            if (line.StartsWith("#shader")) {
+                if (ss) ss->max = program.Unaddress(line.Data());
+
+                line.Advance(8);
+
+                if (line.StartsWith("vertex"))
                     ss = &ssv;
-                } else if (line.find("fragment") != String::npos) {
+                else if (line.StartsWith("fragment"))
                     ss = &ssf;
-                } else if (line.find("geometry") != String::npos) {
+                else if (line.StartsWith("geometry"))
                     ss = &ssg;
-                }
+
                 if (ss) ss->min = i + 1;
             }
         }
-        if (ss) ss->max = program.size();
+        if (ss) ss->max = program.Length();
 
-        String concatedProgram;
-        concatedProgram.resize(ssv.width() + ssf.width() + ssg.width());
-        std::copy(program.data() + ssv.min, program.data() + ssv.max, concatedProgram.data());
-        std::copy(program.data() + ssf.min, program.data() + ssf.max, concatedProgram.data() + ssv.width());
-        std::copy(program.data() + ssg.min, program.data() + ssg.max, concatedProgram.data() + ssv.width() + ssf.width());
+        String concatedProgram = String::WithCap(ssv.width() + ssf.width() + ssg.width());
+        concatedProgram += program.Substr(ssv.min, ssv.width());
+        concatedProgram += program.Substr(ssv.min, ssv.width());
+        concatedProgram += program.Substr(ssv.min, ssv.width());
 
         return {
             concatedProgram,
@@ -106,7 +107,7 @@ namespace Quasi::Graphics {
     }
 
 
-    ShaderProgramSource Shader::ParseFromFile(Str filepath) {
+    ShaderProgramSource Shader::ParseFromFile(CStr filepath) {
         return ParseShader(Text::ReadFile(filepath).Assert());
     }
 
@@ -114,27 +115,27 @@ namespace Quasi::Graphics {
         SetUniformInt(name, texture.Slot());
     }
 
-    Shader Shader::FromFile(Str filepath) {
+    Shader Shader::FromFile(CStr filepath) {
         Shader s {};
         const ShaderProgramSource shadersrc = ParseFromFile(filepath);
         s.rendererID = CreateShader(shadersrc.GetShader(ShaderType::VERTEX), shadersrc.GetShader(ShaderType::FRAGMENT), shadersrc.GetShader(ShaderType::GEOMETRY));
         return s;
     }
 
-    Shader Shader::FromFile(Str vert, Str frag, Str geom) {
+    Shader Shader::FromFile(CStr vert, CStr frag, CStr geom) {
         Shader s {};
         s.rendererID = CreateShader(
             Text::ReadFile(vert).Assert(),
             Text::ReadFile(frag).Assert(),
-            geom.empty() ? "" : Text::ReadFile(geom).Assert()
+            geom.IsEmpty() ? "" : Text::ReadFile(geom).Assert()
         );
         return s;
     }
 
     GraphicsID Shader::CompileShader(Str source, ShaderType type) {
         const GraphicsID id = GL::CreateShader(type->glID);
-        const char* src = source.data();
-        const int length = (int)source.size();
+        const char* src = source.Data();
+        const int length = (int)source.Length();
         GL::ShaderSource(id, 1, &src, &length);
         GL::CompileShader(id);
 
@@ -144,10 +145,9 @@ namespace Quasi::Graphics {
         if (result == 0) {
             int len;
             GL::GetShaderiv(id, GL::INFO_LOG_LENGTH, &len);
-            String msg;
-            msg.resize(len - 1);
-            GL::GetShaderInfoLog(id, len, &len, msg.data());
-            GLLogger().Error("Compiling {} shader yielded compiler errors:\n{}", type->shaderName, msg);
+            char* errbuf = Memory::QAlloca$(char, len);
+            GL::GetShaderInfoLog(id, len, &len, errbuf);
+            GLLogger().Error("Compiling {} shader yielded compiler errors:\n{}", type->shaderName, errbuf);
 
             GL::DeleteShader(id);
             return 0;
@@ -160,7 +160,7 @@ namespace Quasi::Graphics {
         const GraphicsID program = GL::CreateProgram();
         const GraphicsID vs = CompileShaderVert(vtx);
         const GraphicsID fs = CompileShaderFrag(frg);
-        const GraphicsID gm = geo.empty() ? 0 : CompileShaderGeom(geo);
+        const GraphicsID gm = geo.IsEmpty() ? 0 : CompileShaderGeom(geo);
 
                 QGLCall$(GL::AttachShader(program, vs));
                 QGLCall$(GL::AttachShader(program, fs));

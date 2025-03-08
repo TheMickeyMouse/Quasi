@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Macros.h"
+#include "MacroIteration.h"
 #include "Array.h"
 #include <algorithm>
 
@@ -41,8 +42,8 @@ namespace Quasi {
         static Enum FromBitflag(u32 i) requires IS_FLAG { Enum e; e.value = i; return e; }
         template <class T> static Enum Find(T E::* property, const T& searcher) {
             if constexpr (IS_NULLABLE) if ((*Null()).*property == searcher) return Null();
-            const usize i = Values().FindIf([=](const E& e) { return e.*property == searcher; });
-            return i == USIZE_MAX ? Null() : Values()[i];
+            const OptionUsize i = Values().FindIf([=](const E& e) { return e.*property == searcher; });
+            return i ? Values()[i] : Null();
         }
 
         void AddFlag(const E& e) requires IS_FLAG { value |= e._VALUE; }

@@ -1,5 +1,5 @@
 #pragma once
-#include "Vec.h"
+#include "Utils/Vec.h"
 
 namespace Quasi::Iter {
     template <class It, class F>
@@ -35,14 +35,5 @@ namespace Quasi {
     template <class T, class Super>
     template <FnArgs<T> F> Iter::MapIter<Super, F> IIterator<T, Super>::Map(F&& fn) && {
         return Iter::Maps::Iter(std::move(super()), std::forward<F>(fn));
-    }
-
-    template <class T> auto Vec<T>::MapVec(FnArgs<const T&> auto&& transform) const {
-        using Mapped = FuncResult<decltype(transform), const T&>;
-        Vec<Mapped> mapped = Vec<Mapped>::WithCap(size);
-        for (const T& x : *this) {
-            mapped.Push(transform(x));
-        }
-        return mapped;
     }
 }

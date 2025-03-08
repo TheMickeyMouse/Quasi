@@ -3,109 +3,46 @@
 #include "Macros.h"
 #include "Type.h"
 #include "Option.h"
-#include "String.h"
+#include "Text/Formatting.h"
+
+namespace Quasi {
+    struct CStr;
+}
 
 namespace Quasi::Text {
-    Option<String> ReadFile(Str fname);
-    Option<String> ReadFileBinary(Str fname);
-    bool WriteFile(Str fname, Str contents);
-    bool ExistsFile(Str fname);
+    Option<String> ReadFile(CStr fname);
+    Option<String> ReadFileBinary(CStr fname);
+    bool WriteFile(CStr fname, Str contents);
+    bool ExistsFile(CStr fname);
 
     Tuple<Str, Str> SplitDirectory(Str fname);
-
-    String ToLower(Str string), ToUpper(Str string);
-    String Escape(Str string);
-    Option<String> Unescape(Str string);
-
-    template <class T>
-    struct Parser {
-        static Option<T> Parse(Str) { return nullptr; }
-    };
-
-    template <class T>
-    Option<T> Parse(Str str) {
-        return Parser<T>::Parse(str);
-    }
-
-    template <Numeric N>
-    struct Parser<N> {
-        static Option<N> Parse(Str str) {
-            if (str.empty()) return nullptr;
-            N number = 0;
-            bool negate = false;
-            if constexpr (!Unsigned<N>) {
-                if (str[0] == '-') {
-                    negate = true;
-                    str = str.substr(1);
-                } else if (str[0] == '+')
-                    str = str.substr(1);
-            } else if (str[0] == '+') {
-                str = str.substr(1);
-            }
-            if (str.empty()) return nullptr;
-
-            for (u32 i = 0; i < str.size(); ++i) {
-                if (std::isdigit(str[i])) {
-                    number *= (N)10;
-                    number += (N)(str[i] - '0');
-                    continue;
-                }
-                if constexpr (Floating<N>) {
-                    if (str[i] == '.') {
-                        N sub = 0, pwOfTen = (N)0.1;
-                        for (u32 j = i + 1; j < str.size(); ++j) {
-                            if (!std::isdigit(str[j])) return nullptr;
-                            sub += pwOfTen * (N)(str[j] - '0');
-                            pwOfTen *= (N)0.1;
-                        }
-                        return (negate ? (N)-1 : (N)1) * (number + sub);
-                    }
-                }
-                return nullptr;
-            }
-            return negate ? -number : number;
-        }
-    };
-
-    template <>
-    struct Parser<String> {
-        static Option<String> Parse(Str str) {
-            if (str.starts_with('"') && str.ends_with('"')) {
-                return Unescape(str.substr(1, str.length() - 2));
-            }
-            return String { str };
-        }
-    };
-
-    template <class R, class F = std::identity>
-    String ArrStr(R&& vect, Str sep = ", ", F&& t = {});
 
     String AutoIndent(Str text);
     String Quote(Str txt);
 
     // adapted from https://stackoverflow.com/a/59522794/19968422
     namespace details {
-        template <class T> constexpr Str t() { return Q_FUNC_NAME(); }
-        constexpr usize T_START_IDX = t<int>().find("int");
-        constexpr usize T_TOTAL_SIZE = t<int>().length() - Q_STRLIT_LEN("int");
+        template <class T> constexpr const char* t() { return Q_FUNC_NAME(); }
+        static constexpr usize T_START_IDX = [] {
+            const char* templateString = t<int>();
+            for (usize i = 0; templateString[i]; ++i) if (templateString[i] == 'i') return i;
+            return 0;
+        } ();
+        static constexpr usize T_TOTAL_SIZE = [] {
+            const char* templateString = t<int>();
+            usize i = 0;
+            for (; templateString[i]; ++i) {}
+            return i - Q_STRLIT_LEN("int");
+        } ();
+
         // ReSharper disable once CppStaticAssertFailure
-        static_assert(T_START_IDX != Str::npos, "nameof type couldn't be found");
-
-        template <auto V> constexpr Str v() { return Q_FUNC_NAME(); }
-        constexpr usize V_START_IDX = v<0>().find('0');
-        constexpr usize V_TOTAL_SIZE = v<0>().length() - 1;
-        // ReSharper disable once CppStaticAssertFailure
-        static_assert(V_START_IDX != Str::npos, "nameof value couldn't be found");
+        static_assert(T_START_IDX, "nameof type couldn't be found");
     }
 
-    template <class T> constexpr Str TypeName() {
-        return details::t<T>().substr(details::T_START_IDX, details::t<T>().length() - details::T_TOTAL_SIZE);
+    template <class T> Str TypeName() {
+        const Str fullname = details::t<T>();
+        return fullname.Substr(details::T_START_IDX, fullname.Length() - details::T_TOTAL_SIZE);
     }
-
-    template <auto V> constexpr Str ValueName() {
-        return details::v<V>().substr(details::V_START_IDX, details::v<V>().length() - details::V_TOTAL_SIZE);
-    }
-
     template <usize N>
     struct FixedString  {
         char buf[N + 1]{};
@@ -116,18 +53,67 @@ namespace Quasi::Text {
         static constexpr usize SIZE = N;
     };
     template <usize N> FixedString(const char (&)[N]) -> FixedString<N - 1>;
-}
 
-template <class R, class F>
-Quasi::String Quasi::Text::ArrStr(R&& vect, Str sep, F&& t) {
-    auto it = std::begin(vect);
-    if (it == std::end(vect)) return "";
-    String ss;
-    ss += t(*it);
-    ++it;
-    for (; it != std::end(vect); ++it) {
-        ss += sep;
-        ss += t(*it);
-    }
-    return ss;
+    enum ConsoleColor {
+        RESET = 0,
+
+        BLACK   = 0, H_BLACK   = 60,
+        RED     = 1, H_RED     = 61,
+        GREEN   = 2, H_GREEN   = 62,
+        YELLOW  = 3, H_YELLOW  = 63,
+        BLUE    = 4, H_BLUE    = 64,
+        MAGENTA = 5, H_MAGENTA = 65,
+        CYAN    = 6, H_CYAN    = 66,
+        GRAY    = 7, H_GRAY    = 67,
+
+        FG_BLACK    = 30, BG_BLACK    = 40,
+        FG_RED      = 31, BG_RED      = 41,
+        FG_GREEN    = 32, BG_GREEN    = 42,
+        FG_YELLOW   = 33, BG_YELLOW   = 43,
+        FG_BLUE     = 34, BG_BLUE     = 44,
+        FG_MAGENTA  = 35, BG_MAGENTA  = 45,
+        FG_CYAN     = 36, BG_CYAN     = 46,
+        FG_GRAY     = 37, BG_GRAY     = 47,
+        HFG_BLACK   = 90, HBG_BLACK   = 100,
+        HFG_RED     = 91, HBG_RED     = 101,
+        HFG_GREEN   = 92, HBG_GREEN   = 102,
+        HFG_YELLOW  = 93, HBG_YELLOW  = 103,
+        HFG_BLUE    = 94, HBG_BLUE    = 104,
+        HFG_MAGENTA = 95, HBG_MAGENTA = 105,
+        HFG_CYAN    = 96, HBG_CYAN    = 106,
+        HFG_GRAY    = 97, HBG_GRAY    = 107,
+
+        HIGHLIGHT = 60,
+        BACKGROUND = 40,
+        FOREGROUND = 30,
+
+        BOLD_FLAG = 128,
+        REGULAR_MASK = 127
+    };
+
+    constexpr char ANSI_ESCAPE_CHAR = '\x1B';
+
+    constexpr ConsoleColor Highlight(ConsoleColor color) { return (ConsoleColor)(color + HIGHLIGHT); }
+    constexpr ConsoleColor BgColor(ConsoleColor color)   { return (ConsoleColor)(color + BACKGROUND); }
+    constexpr ConsoleColor FgColor(ConsoleColor color)   { return (ConsoleColor)(color + FOREGROUND); }
+    constexpr ConsoleColor HBgColor(ConsoleColor color)  { return BgColor(Highlight(color)); }
+    constexpr ConsoleColor HFgColor(ConsoleColor color)  { return FgColor(Highlight(color)); }
+
+    constexpr bool IsBold(ConsoleColor color) { return (color & BOLD_FLAG) != 0; }
+    constexpr ConsoleColor Bold(ConsoleColor color) { return (ConsoleColor)(color | BOLD_FLAG); }
+    constexpr ConsoleColor Regular(ConsoleColor color) { return (ConsoleColor)(color & REGULAR_MASK); }
+
+    struct ColoredStr { ConsoleColor color; Str text; };
+    ColoredStr Dye(ConsoleColor col, Str txt);
+
+    template <>
+    struct Formatter<ConsoleColor> {
+        using FormatOptions = Empty;
+        static usize FormatTo(StringWriter output, ConsoleColor c, Empty);
+    };
+
+    template <>
+    struct Formatter<ColoredStr> : Formatter<Str> {
+        static usize FormatTo(StringWriter output, const ColoredStr& cstr, const FormatOptions& options);
+    };
 }

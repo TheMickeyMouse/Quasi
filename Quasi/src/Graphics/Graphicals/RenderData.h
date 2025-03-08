@@ -1,10 +1,10 @@
 #pragma once
 
-#include "VertexArray.h"
-#include "VertexBuffer.h"
-#include "IndexBuffer.h"
-#include "Shader.h"
-#include "VertexElement.h"
+#include "Graphics/GLs/VertexArray.h"
+#include "Graphics/GLs/VertexBuffer.h"
+#include "Graphics/GLs/IndexBuffer.h"
+#include "Graphics/GLs/Shader.h"
+#include "Graphics/GLs/VertexElement.h"
 
 namespace Quasi::Graphics {
 	class GraphicsDevice;
@@ -76,8 +76,8 @@ namespace Quasi::Graphics {
 	    void SetProjection(const Math::Matrix3D& proj) { projection = proj; }
 	    
 	    void UseShader(Str code) { shader = Shader::New(code); }
-	    void UseShaderFromFile(Str file) { shader = Shader::FromFile(file); }
-	    void UseShaderFromFile(Str vert, Str frag, Str geom = {}) { shader = Shader::FromFile(vert, frag, geom); }
+	    void UseShaderFromFile(CStr file) { shader = Shader::FromFile(file); }
+	    void UseShaderFromFile(CStr vert, CStr frag, CStr geom = {}) { shader = Shader::FromFile(vert, frag, geom); }
 
 		friend class GraphicsDevice;
 		template <IVertex T> friend class Mesh;

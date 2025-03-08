@@ -1,126 +1,74 @@
 #include "Text.h"
 
-#include <algorithm>
 #include <fstream>
 
-#include "Logger.h"
+#include "CStr.h"
+#include "Debug/Logger.h"
+#include "Text/Num.h"
 
 namespace Quasi::Text {
-    Option<String> ReadFile(Str fname) {
-        if (std::ifstream in { fname.data() }) {
-            return String(std::istreambuf_iterator { in }, std::istreambuf_iterator<char> {});
+    Option<String> ReadFile(CStr fname) {
+        // standard C implementation
+        std::FILE *fp = std::fopen(fname.Data(), "r");
+        if (fp) {
+            std::fseek(fp, 0, SEEK_END);
+            const usize length = std::ftell(fp);
+            // ownership is transfered at return
+            char* const contentsRaw = (char*)Memory::AllocateRaw(length * sizeof(char));
+
+            std::rewind(fp);
+            std::fread(contentsRaw, 1, length, fp);
+            std::fclose(fp);
+            return String::Compose(contentsRaw, length, length);
         }
         return nullptr;
     }
 
-    Option<String> ReadFileBinary(Str fname) {
-        if (std::ifstream in { fname.data(), std::ios::in | std::ios::binary }) {
-            return String(std::istreambuf_iterator { in }, std::istreambuf_iterator<char> {});
+    Option<String> ReadFileBinary(CStr fname) {
+        std::FILE *fp = std::fopen(fname.Data(), "rb");
+        if (fp) {
+            std::fseek(fp, 0, SEEK_END);
+            const usize length = std::ftell(fp);
+            // ownership is transfered at return
+            char* const contentsRaw = (char*)Memory::AllocateRaw(length * sizeof(char));
+
+            std::rewind(fp);
+            std::fread(contentsRaw, 1, length, fp);
+            std::fclose(fp);
+            return String::Compose(contentsRaw, length, length);
         }
         return nullptr;
     }
 
-    bool WriteFile(Str fname, Str contents) {
-        if (std::ofstream out { fname.data() }) {
-            out << contents;
+    bool WriteFile(CStr fname, Str contents) {
+        if (std::ofstream out { fname.Data() }) {
+            out.write(contents.Data(), (isize)contents.Length());
             return true;
         }
         return false;
     }
 
-    bool ExistsFile(Str fname) {
-        return std::ifstream { fname.data() }.good();
+    bool ExistsFile(CStr fname) {
+        return std::ifstream { fname.Data() }.good();
     }
 
     Tuple<Str, Str> SplitDirectory(Str fname) {
-        const usize pos = fname.find_last_of("\\/");
-        return String::npos == pos ?
-            Tuple { Str {}, fname } :
-            Tuple { fname.substr(0, pos),
-                    fname.substr(pos + 1) };
-    }
-
-    String ToLower(Str string) {
-        String lower;
-        lower.resize(string.size());
-        std::ranges::transform(string, lower.begin(), [](const char c) { return std::tolower(c); });
-        return lower;
-    }
-
-    String ToUpper(Str string) {
-        String upper;
-        upper.resize(string.size());
-        std::ranges::transform(string, upper.begin(), [](const char c) { return std::toupper(c); });
-        return upper;
-    }
-
-    String Escape(Str string) {
-        String ss;
-        ss.reserve(string.size() + 2);
-        ss += '"';
-        for (const char c : string) {
-            if (c == '"') {
-                ss += "\\\"";
-            } else if (isprint(c)) {
-                ss += c;
-            } else {
-                // filter \\, \n, \r, \t, \", \b
-                ss += '\\';
-                switch(c) {
-                    case '\\': ss += '\\'; break;
-                    case '\t': ss += 't';  break;
-                    case '\r': ss += 'r';  break;
-                    case '\n': ss += 'n';  break;
-                    case '\b': ss += 'b';  break;
-                    default:
-                        constexpr char hexdig[17] = "0123456789ABCDEF";
-                    ss += 'x';
-                    ss += hexdig[c >> 4];
-                    ss += hexdig[c & 0xF];
-                }
-            }
-        }
-        ss += '"';
-        return ss;
-    }
-
-    Option<String> Unescape(Str string) {
-        String ss;
-        ss.reserve(string.size());
-
-        for (size_t i = 0; i < string.length(); ++i) {
-            if (string[i] == '\\') {
-                if (i + 1 >= string.length()) return nullptr;
-                switch (string[i + 1]) {
-                    case 'n':  ss += '\n'; break;
-                    case 't':  ss += '\t'; break;
-                    case 'r':  ss += '\r'; break;
-                    case '\\': ss += '\\'; break;
-                    case 'b':  ss += '\b'; break;
-                    // Add more cases as needed
-                    default: return nullptr;
-                }
-                ++i;
-            } else {
-                ss += string[i];
-            }
-        }
-
-        return ss;
+        const auto [pos, _] = fname.RevFindOneOf("\\/");
+        return pos ?
+            Tuple { Str::Empty(), fname } :
+            Tuple { fname.Substr(0, pos),
+                    fname.Substr(pos + 1) };
     }
 
     String AutoIndent(Str text) {
-        static constexpr Str INDENT_INCR = "{[", INDENT_DECR = "}]";
-        static constexpr auto NOT_FOUND = Str::npos;
-
         String ss;
         u32 indent = 0;
-        for (usize i = 0; i < text.size() - 1; ++i) {
+        for (usize i = 0; i < text.Length() - 1; ++i) {
             const char c = text[i];
-            if (INDENT_INCR.find(text[i]) != NOT_FOUND) {
+            if (text[i] == '{' || text[i] == '[') {
                 ++indent;
             }
-            if (INDENT_DECR.find(text[i + 1]) != NOT_FOUND) {
+            if (text[i + 1] == '}' || text[i + 1] == ']') {
                 Debug::AssertMsg(indent > 0, "unindenting past level 0");
                 --indent;
             }
@@ -131,11 +79,40 @@ namespace Quasi::Text {
             }
             ss += c;
         }
-        ss += text.back();
+        ss += text.Last();
         return ss;
     }
 
-    String Quote(Str txt) {
-        return std::format("\"{}\"", txt);
+    ColoredStr Dye(ConsoleColor col, Str txt) {
+        return { col, txt };
     }
+
+    usize Formatter<ConsoleColor>::FormatTo(StringWriter output, ConsoleColor c, Empty) {
+        output.Write("\x1B["_str);
+        if (IsBold(c))
+            output.Write("1;"_str);
+
+        char regbuf[3] = { '\0', '\0', 'm' };
+        u16 byte2 = Regular(c);
+        byte2 += (byte2 * 103 >> 9) * (256 - 10);
+        Memory::WriteU16(byte2, regbuf);
+
+        output.Write(Str::Slice(regbuf, 3));
+        return 2 + (IsBold(c) ? 2 : 0) + 3;
+    }
+
+    usize Formatter<ColoredStr>::FormatTo(StringWriter output, const ColoredStr& cstr, const FormatOptions& options) {
+        usize padLen = options.targetLength - cstr.text.Length();
+        padLen &= -(padLen <= options.targetLength); // fun bithacks that turn negative numbers into 0
+        const usize left = padLen * (usize)options.alignment / 2;
+
+        return output.WriteRepeat(options.pad, left) +
+               FormatObjectTo(output, cstr.color) +
+               output.Write(cstr.text) +
+               output.Write("\x1B[0m"_str) +
+               output.WriteRepeat(options.pad, padLen - left);
+    }
+
+    template struct Formatter<ConsoleColor>;
+    template struct Formatter<ColoredStr>;
 }

@@ -17,11 +17,11 @@ namespace Quasi::Math {
     }
 
     template <u32 N, u32 M> Span<const float> Matrix<N, M>::data() const {
-        return Spans::FromBuffer(mat.first().begin(), N * M);
+        return Spans::Slice(mat.first().begin(), N * M);
     }
 
     template <u32 N, u32 M> auto Matrix<N, M>::get_cols() const -> Span<const col> {
-        return Spans::FromBuffer(mat.begin(), M);
+        return Spans::Slice(mat.begin(), M);
     }
 
     template <u32 N, u32 M> Matrix<N - 1, M - 1> Matrix<N, M>::linear_matrix() const {

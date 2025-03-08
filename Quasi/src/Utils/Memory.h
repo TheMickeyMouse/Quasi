@@ -64,6 +64,23 @@ namespace Quasi::Memory {
     u64 ReadU64Little(const void* bytes);
     i64 ReadI64Little(const void* bytes);
 
+    void WriteU16(u16 x, void* out);
+    void WriteI16(i16 x, void* out);
+    void WriteU32(u32 x, void* out);
+    void WriteI32(i32 x, void* out);
+    void WriteU64(u64 x, void* out);
+    void WriteI64(i64 x, void* out);
+    void WriteU16Little(u16 x, void* out);
+    void WriteI16Little(i16 x, void* out);
+    void WriteU32Little(u32 x, void* out);
+    void WriteI32Little(i32 x, void* out);
+    void WriteU64Little(u64 x, void* out);
+    void WriteI64Little(i64 x, void* out);
+
+    u16 ByteSwap16(u16 x);
+    u32 ByteSwap32(u32 x);
+    u64 ByteSwap64(u64 x);
+
     void MemCopy(void* out, const void* in, usize bytes);
     // WARNING: undefined behavior on overlapping pointer ranges
     void MemCopyNoOverlap(void* __restrict__ out, const void* __restrict__ in, usize bytes);
@@ -119,4 +136,14 @@ namespace Quasi::Memory {
 
 #define Q_GETTER_MUT(FN, ...) (decltype(this->FN(__VA_ARGS__)))(Memory::AsConstPtr(this))->FN(__VA_ARGS__)
 #define QGetterMut$ Q_GETTER_MUT
+
+    // usage: just do Memory::QAlloca$(T, 32) or something like that
+#define Q_ALLOCA(T, SIZE) UpcastPtr<T>(_alloca(sizeof(T) * (SIZE)))
+#define QAlloca$(...) Q_ALLOCA(__VA_ARGS__)
+}
+
+namespace Quasi {
+    u16 operator ""_u16(const char* s, usize n);
+    u32 operator ""_u32(const char* s, usize n);
+    u64 operator ""_u64(const char* s, usize n);
 }

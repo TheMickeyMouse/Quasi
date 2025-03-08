@@ -2,12 +2,14 @@
 
 #include <Utils/Macros.h>
 
-#include "Enum.h"
-#include "Array.h"
+#include "Utils/Enum.h"
+#include "Utils/Array.h"
+#include "Utils/String.h"
+#include "Utils/StringList.h"
+#include "Utils/CStr.h"
 #include "GLObject.h"
 #include "Math/Matrix.h"
 #include "Math/Color.h"
-#include "Utils/StringList.h"
 
 namespace Quasi::Graphics {
     struct ShaderTypeData {
@@ -129,12 +131,12 @@ namespace Quasi::Graphics {
 
     public:
         usize GetSepPoint(int idx) const {
-            return idx < 0 ? 0 : idx >= 2 ? fullSource.size() : sepPoints[idx];
+            return idx < 0 ? 0 : idx >= 2 ? fullSource.Length() : sepPoints[idx];
         }
 
         Str GetShader(ShaderType type) const {
             const usize beg = GetSepPoint(type.Ord() - 1);
-            return Str { fullSource }.substr(beg, GetSepPoint(type.Ord()) - beg);
+            return fullSource.Substr(beg, GetSepPoint(type.Ord()) - beg);
         }
     };
 
@@ -279,13 +281,13 @@ namespace Quasi::Graphics {
             );
 #pragma endregion // Shader Sources
 
-        static Shader FromFile(Str filepath);
-        static Shader FromFile(Str vert, Str frag, Str geom = {});
+        static Shader FromFile(CStr filepath);
+        static Shader FromFile(CStr vert, CStr frag, CStr geom = {});
 
     private:
         int GetUniformLocation(Str name);
         static ShaderProgramSource ParseShader  (Str program);
-        static ShaderProgramSource ParseFromFile(Str filepath);
+        static ShaderProgramSource ParseFromFile(CStr filepath);
         static GraphicsID CompileShader    (Str source, ShaderType type);
         static GraphicsID CompileShaderVert(Str source) { return CompileShader(source, ShaderType::VERTEX); }
         static GraphicsID CompileShaderFrag(Str source) { return CompileShader(source, ShaderType::FRAGMENT); }
@@ -359,7 +361,7 @@ namespace Quasi::Graphics {
         template <class T> RemQual<T> as() const {
             if constexpr (requires (T maybeSpan) { { Span { maybeSpan } } -> SameAs<T>; }) {
                 using Item = typename RemQual<T>::Item;
-                return Spans::FromBuffer(Memory::Transmute<const float*>(data), size).Transmute<const Item>();
+                return Spans::Slice(Memory::Transmute<const float*>(data), size).Transmute<const Item>();
             } else if constexpr (Numeric<T>) {
                 return Memory::Transmute<RemQual<T>>((u32)data);
             } else if constexpr (IsPtr<T>) {

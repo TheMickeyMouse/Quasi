@@ -3,9 +3,12 @@
 #include <ranges>
 
 #include <glp.h>
-#include "GLDebug.h"
-#include "GraphicsDevice.h"
+#include "Utils/Str.h"
+#include "Graphics/GLs/GLDebug.h"
+#include "Graphics/Graphicals/GraphicsDevice.h"
 #include "stb_image/stb_image.h"
+#include "Utils/CStr.h"
+#include "Utils/Vec.h"
 
 namespace Quasi::Graphics {
     void STBIImageHandler::operator()(byte* dat) const {
@@ -104,18 +107,17 @@ namespace Quasi::Graphics {
         return tex;
     }
 
-    Texture Texture::LoadPNG(Str fname, const TextureInitParams& init) {
+    Texture Texture::LoadPNG(CStr fname, const TextureInitParams& init) {
         Math::iVector2 size;
         int BPPixel;
         stbi_set_flip_vertically_on_load(1);
-        Debug::AssertMsg(!*fname.end(), "filename doesn't have null terminator");
-        const auto localTexture = STBIImage::Own(stbi_load(fname.data(), &size.x, &size.y, &BPPixel, 4));
+        const auto localTexture = STBIImage::Own(stbi_load(fname.Data(), &size.x, &size.y, &BPPixel, 4));
         Texture tex = New(localTexture, { size.x, size.y }, init);
 
         return tex;
     }
 
-    Texture Texture::LoadCubemapPNG(IList<Str> faces, const TextureInitParams& init) {
+    Texture Texture::LoadCubemapPNG(IList<CStr> faces, const TextureInitParams& init) {
         if (faces.size() != 6) return {};
 
         stbi_set_flip_vertically_on_load(0);
@@ -123,10 +125,9 @@ namespace Quasi::Graphics {
         cubemap.SetTarget(TextureTarget::CUBEMAP);
         cubemap.Bind();
         int faceTarget = (int)TextureTarget::CUBEMAP_RIGHT;
-        for (Str face : faces) {
-            Debug::AssertMsg(!*face.end(), "filename of cubemap doesn't have null terminator");
+        for (CStr face : faces) {
             int sx, sy, bpx;
-            const auto localTexture = STBIImage::Own(stbi_load(face.data(), &sx, &sy, &bpx, 4));
+            const auto localTexture = STBIImage::Own(stbi_load(face.Data(), &sx, &sy, &bpx, 4));
             Texture dummy {};
             dummy.SetTarget((TextureTarget)faceTarget);
             dummy.TexImage(localTexture, { sx, sy }, init.load);

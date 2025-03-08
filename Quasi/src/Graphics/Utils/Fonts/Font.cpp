@@ -4,7 +4,7 @@
 #include "ft2build.h"
 #include FT_FREETYPE_H
 
-#include "GLDebug.h"
+#include "Graphics/GLs/GLDebug.h"
 
 namespace Quasi::Graphics {
     void FontDeleter::operator()(FT_FaceRec_* ptr) const {
@@ -139,9 +139,9 @@ namespace Quasi::Graphics {
         return Mesh { std::move(text.bgVertices), std::move(text.bgIndices) }; // return the text mesh
     }
 
-    Font Font::LoadFile(Str filename) {
+    Font Font::LoadFile(CStr filename) {
         FT_Face face = nullptr;
-        const int error = FT_New_Face(FontDevice::Library(), filename.data(), 0, &face);
+        const int error = FT_New_Face(FontDevice::Library(), filename.Data(), 0, &face);
         if (!error) {
             Font font;
             font.SetDefaultFontStyle(face);
@@ -172,9 +172,9 @@ namespace Quasi::Graphics {
         faceHandles.ResizeExtraDefault(4);
     }
 
-    void Font::AddFontStyle(u32 id, Str filePath, FontStyle style) {
+    void Font::AddFontStyle(u32 id, CStr filePath, FontStyle style) {
         FT_Face face;
-        const int error = FT_New_Face(FontDevice::Library(), filePath.data(), 0, &face);
+        const int error = FT_New_Face(FontDevice::Library(), filePath.Data(), 0, &face);
         if (!error) {
             if (faceHandles.Length() <= (u32)id * 4 + (u32)style) faceHandles.ResizeDefault(id * 4 + (u32)style + 1);
             SetFontStyle(id, face, style);

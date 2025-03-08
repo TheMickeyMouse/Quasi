@@ -2,6 +2,7 @@
 
 #include "Span.h"
 #include "String.h"
+#include "Text/StringWriter.h"
 
 namespace Quasi {
     namespace Chr {
@@ -18,19 +19,57 @@ namespace Quasi {
         Option<u32> TryToDigitRadix(char digit, u32 radix) { return IsDigitRadix(digit, radix) ? Options::Some(ToHexDigit(digit)) : nullptr; }
 
         bool IsDigit   (char digit) { return '0' <= digit && digit <= '9'; }
-        bool IsHexDigit(char digit) { return IsDigit(digit) || ('a' <= ToLower(digit) && ToLower(digit) <= 'f') ; }
+        bool IsHexDigit(char digit) { return IsDigit(digit) || ('A' <= digit && digit <= 'F') || ('a' <= digit && digit <= 'f') ; }
         bool IsDigitRadix(char digit, u32 radix) {
             if (radix <= 10) return '0' <= digit && digit < '0' + radix;
-            return IsDigit(digit) || ('a' <= ToLower(digit) && ToLower(digit) < 'a' + digit - 10);
+            return IsDigit(digit) || ('A' <= digit && digit < 'A' + radix - 10) || ('a' <= digit && digit < 'a' + radix - 10);
         }
 
-        bool ShouldEscape(char c) { return c == '\t' || c == '\n' || c == '\r' || c == '\'' || c == '\"' || c == '\\'; }
-        char EscapedRepr(char c) {
+        Option<char> EscapeRepr(char c) {
             switch (c) {
-                case '\t': return 't';
+                case '\'': return '\'';
+                case '\"': return '"';
+                case '\?': return '?';
+                case '\\': return '\\';
+                case '\a': return 'a';
+                case '\b': return 'b';
+                case '\f': return 'f';
                 case '\n': return 'n';
                 case '\r': return 'r';
-                default: return c;
+                case '\t': return 't';
+                case '\v': return 'v';
+                default:   return nullptr;
+            }
+        }
+
+        usize WriteEscape(char c, char* out) {
+            if (const auto escVer = EscapeRepr(c)) {
+                Memory::WriteU16('\\' << 8 | *escVer, out);
+                return 2;
+            } else if (!IsPrintable(c)) {
+                static constexpr char hexdig[17] = "0123456789ABCDEF";
+                Memory::WriteU32(R"(\x)"_u32 << 16 | hexdig[c >> 4] << 8 | hexdig[c & 0xF], out);
+                return 4;
+            } else {
+                out[0] = c;
+                return 1;
+            }
+        }
+
+        Option<char> UnescapeRepr(char c) {
+            switch (c) {
+                case '\'': return '\'';
+                case '"':  return '\"';
+                case '?':  return '\?';
+                case '\\': return '\\';
+                case 'a':  return '\a';
+                case 'b':  return '\b';
+                case 'f':  return '\f';
+                case 'n':  return '\n';
+                case 'r':  return '\r';
+                case 't':  return '\t';
+                case 'v':  return '\v';
+                default:   return nullptr;
             }
         }
 
@@ -74,20 +113,20 @@ namespace Quasi {
 
     strdef Str              strcls::AsStr()      const        { return Str   ::Slice(Data(),    Length()); }
     strdef StrMut           strcls::AsStrMut()   requires mut { return StrMut::Slice(DataMut(), Length()); }
-    strdef Span<const char> strcls::AsSpan()     const        { return Span<const char>::FromBuffer(Data(),    Length()); }
-    strdef Span<char>       strcls::AsSpanMut()  requires mut { return Span<char>      ::FromBuffer(DataMut(), Length()); }
-    strdef Span<const byte> strcls::AsBytes()    const        { return Span<const byte>::FromBuffer((const byte*)Data(), Length()); }
-    strdef Span<byte>       strcls::AsBytesMut() requires mut { return Span<byte>      ::FromBuffer((byte*)DataMut(),    Length()); }
+    strdef Span<const char> strcls::AsSpan()     const        { return Span<const char>::Slice(Data(),    Length()); }
+    strdef Span<char>       strcls::AsSpanMut()  requires mut { return Span<char>      ::Slice(DataMut(), Length()); }
+    strdef Span<const byte> strcls::AsBytes()    const        { return Span<const byte>::Slice((const byte*)Data(), Length()); }
+    strdef Span<byte>       strcls::AsBytesMut() requires mut { return Span<byte>      ::Slice((byte*)DataMut(),    Length()); }
     strdef strcls::operator Str()    const        { return AsStr(); }
     strdef strcls::operator StrMut() requires mut { return AsStrMut(); }
 
     strdef Span<const char> strcls::Subspan   (usize start) const              { return Subspan(start, Length() - start); }
     strdef Str              strcls::Substr    (usize start) const              { return Substr (start, Length() - start); }
-    strdef Span<const char> strcls::Subspan   (usize start, usize count) const { return Span<const char>::FromBuffer(Data() + start, count); }
+    strdef Span<const char> strcls::Subspan   (usize start, usize count) const { return Span<const char>::Slice(Data() + start, count); }
     strdef Str              strcls::Substr    (usize start, usize count) const { return Str             ::Slice     (Data() + start, count); }
     strdef Span<char>       strcls::SubspanMut(usize start) requires mut { return SubspanMut(start, Length() - start); }
     strdef StrMut           strcls::SubstrMut (usize start) requires mut { return SubstrMut (start, Length() - start); }
-    strdef Span<char>       strcls::SubspanMut(usize start, usize count) requires mut { return Span<char>::FromBuffer(DataMut() + start, count); }
+    strdef Span<char>       strcls::SubspanMut(usize start, usize count) requires mut { return Span<char>::Slice(DataMut() + start, count); }
     strdef StrMut           strcls::SubstrMut (usize start, usize count) requires mut { return StrMut    ::Slice     (DataMut() + start, count); }
 
     strdef StrMut strcls::FirstMut(usize num) requires mut { return SubstrMut(0, num); }
@@ -117,16 +156,25 @@ namespace Quasi {
         const char* end = Data() + Length(), *bufEnd = buf.Data() + buf.Length();
         return end >= buf.Data() && bufEnd >= Data();
     }
+
     strdef bool strcls::Equals(Str other) const {
         if (Length() != other.Length()) return false;
         usize i = 0;
-        for (; i < Length(); i += 8)
+        for (; i < Length() - 7; i += 8)
             if (Memory::ReadU64(Data() + i) != Memory::ReadU64(other.Data() + i)) return false;
 
         for (usize j = 0; j < Length() & 7; ++j)
             if (At(i - 8 + j) != other.At(i - 8 + j)) return false;
         return true;
     }
+
+    strdef bool strcls::EqualsIgnoreCase(Str other) const {
+        if (Length() != other.Length()) return false;
+        for (usize i = 0; i < Length(); ++i)
+            if (Chr::ToUpper(At(i)) != Chr::ToUpper(other.At(i))) return false;
+        return true;
+    }
+
     strdef bool strcls::operator==(Str other) const { return Equals(other); }
 
     strdef Comparison strcls::Cmp(Str other) const {
@@ -158,57 +206,57 @@ namespace Quasi {
 
     strdef void  strcls::Reverse() requires mut { AsSpanMut().Reverse(); }
 
-    strdef usize strcls::Find       (char c)  const { for (usize i = 0; i < Length(); ++i) if (At(i) == c) return i; return USIZE_MAX; }
-    strdef usize strcls::RevFind    (char c)  const { for (usize i = Length(); i --> 0; )  if (At(i) == c) return i; return USIZE_MAX; }
-    strdef bool  strcls::Contains   (char c)  const { return Find   (c) != USIZE_MAX; }
-    strdef bool  strcls::RevContains(char c)  const { return RevFind(c) != USIZE_MAX; }
-    strdef usize strcls::Find       (Str str) const {
+    strdef OptionUsize strcls::Find   (char c)  const { for (usize i = 0; i < Length(); ++i) if (At(i) == c) return i; return nullptr; }
+    strdef OptionUsize strcls::RevFind(char c)  const { for (usize i = Length(); i --> 0; )  if (At(i) == c) return i; return nullptr; }
+    strdef bool    strcls::Contains   (char c)  const { return Find   (c); }
+    strdef bool    strcls::RevContains(char c)  const { return RevFind(c); }
+    strdef OptionUsize strcls::Find   (Str str) const {
         for (usize i = 0; i < Length() - str.Length(); ++i)
             if (Substr(i, str.Length()) == str) return i;
-        return USIZE_MAX;
+        return nullptr;
     }
-    strdef usize strcls::RevFind    (Str str) const {
+    strdef OptionUsize strcls::RevFind(Str str) const {
         for (usize i = Length() - str.Length(); i --> 0; )
             if (Substr(i, str.Length()) == str) return i;
-        return USIZE_MAX;
+        return nullptr;
     }
-    strdef bool  strcls::Contains   (Str str) const { return Find   (str) != USIZE_MAX; }
-    strdef bool  strcls::RevContains(Str str) const { return RevFind(str) != USIZE_MAX; }
-    strdef Tuple<usize, usize> strcls::FindOneOf(Span<const char> anyc) const {
-        const usize i = FindIf(Chr::Set { anyc });
-        return { i, i == USIZE_MAX ? USIZE_MAX : anyc.Find(At(i)) };
+    strdef bool  strcls::Contains   (Str str) const { return Find   (str) != -1; }
+    strdef bool  strcls::RevContains(Str str) const { return RevFind(str) != -1; }
+    strdef Tuple<OptionUsize, OptionUsize> strcls::FindOneOf(Span<const char> anyc) const {
+        const OptionUsize i = FindIf(Chr::Set { anyc });
+        return { i, i.And(anyc.Find(At(i))) };
     }
-    strdef Tuple<usize, usize> strcls::RevFindOneOf(Span<const char> anyc) const {
-        const usize i = RevFindIf(Chr::Set { anyc });
-        return { i, i == USIZE_MAX ? USIZE_MAX : anyc.Find(At(i)) };
+    strdef Tuple<OptionUsize, OptionUsize> strcls::RevFindOneOf(Span<const char> anyc) const {
+        const OptionUsize i = RevFindIf(Chr::Set { anyc });
+        return { i, i.And(anyc.Find(At(i))) };
     }
-    strdef usize strcls::ContainsOneOf   (Span<const char> anyc) const { const usize [i, m] = FindOneOf(anyc);    return i == USIZE_MAX ? USIZE_MAX : m; }
-    strdef usize strcls::RevContainsOneOf(Span<const char> anyc) const { const usize [i, m] = RevFindOneOf(anyc); return i == USIZE_MAX ? USIZE_MAX : m; }
-    strdef Tuple<usize, usize> strcls::FindOneOf       (Span<const Str> anystr) const {
+    strdef OptionUsize strcls::ContainsOneOf   (Span<const char> anyc) const { const auto [i, m] = FindOneOf(anyc);    return i.And(m); }
+    strdef OptionUsize strcls::RevContainsOneOf(Span<const char> anyc) const { const auto [i, m] = RevFindOneOf(anyc); return i.And(m); }
+    strdef Tuple<OptionUsize, OptionUsize> strcls::FindOneOf(Span<const Str> anystr) const {
         for (usize i = 0; i < Length(); ++i) {
             for (usize j = 0; j < anystr.Length(); ++j)
                 if (Skip(i).StartsWith(anystr)) return { i, j };
         }
-        return { USIZE_MAX, USIZE_MAX };
+        return { nullptr, nullptr };
     }
-    strdef Tuple<usize, usize> strcls::RevFindOneOf    (Span<const Str> anystr) const {
+    strdef Tuple<OptionUsize, OptionUsize> strcls::RevFindOneOf(Span<const Str> anystr) const {
         for (usize i = Length(); i --> 0; ) {
             for (usize j = 0; j < anystr.Length(); ++j)
                 if (Skip(i).StartsWith(anystr)) return { i, j };
         }
-        return { USIZE_MAX, USIZE_MAX };
+        return { nullptr, nullptr };
     }
-    strdef usize strcls::ContainsOneOf   (Span<const Str> anystr) const { const usize [i, m] = FindOneOf(anystr);    return i == USIZE_MAX ? USIZE_MAX : m; }
-    strdef usize strcls::RevContainsOneOf(Span<const Str> anystr) const { const usize [i, m] = RevFindOneOf(anystr); return i == USIZE_MAX ? USIZE_MAX : m; }
+    strdef OptionUsize strcls::ContainsOneOf   (Span<const Str> anystr) const { const auto [i, m] = FindOneOf(anystr);    return i.And(m); }
+    strdef OptionUsize strcls::RevContainsOneOf(Span<const Str> anystr) const { const auto [i, m] = RevFindOneOf(anystr); return i.And(m); }
 
     strdef bool  strcls::StartsWith(char prefix) const { return Length() >= 1 && First() == prefix; }
     strdef bool  strcls::EndsWith  (char suffix) const { return Length() >= 1 && Last()  == suffix; }
     strdef bool  strcls::StartsWith(Str prefix)  const { return Length() >= prefix.Length() && First(prefix.Length()) == prefix; }
     strdef bool  strcls::EndsWith  (Str suffix)  const { return Length() >= suffix.Length() && Last (suffix.Length()) == suffix; }
-    strdef usize strcls::StartsWithOneOf(Span<const char> anyprefix) const { return Length() >= 1 ? anyprefix.Find(First()) : USIZE_MAX; }
-    strdef usize strcls::EndsWithOneOf  (Span<const char> anysuffix) const { return Length() >= 1 ? anysuffix.Find(Last())  : USIZE_MAX; }
-    strdef usize strcls::StartsWithOneOf(Span<const Str> anyprefix)  const { for (usize i = 0; i < anyprefix.Length(); ++i) if (StartsWith(anyprefix[i])) return i; return USIZE_MAX; }
-    strdef usize strcls::EndsWithOneOf  (Span<const Str> anysuffix)  const { for (usize i = 0; i < anysuffix.Length(); ++i) if (StartsWith(anysuffix[i])) return i; return USIZE_MAX; }
+    strdef OptionUsize strcls::StartsWithOneOf(Span<const char> anyprefix) const { return Length() >= 1 ? anyprefix.Find(First()) : -1; }
+    strdef OptionUsize strcls::EndsWithOneOf  (Span<const char> anysuffix) const { return Length() >= 1 ? anysuffix.Find(Last())  : -1; }
+    strdef OptionUsize strcls::StartsWithOneOf(Span<const Str> anyprefix)  const { for (usize i = 0; i < anyprefix.Length(); ++i) if (StartsWith(anyprefix[i])) return i; return nullptr; }
+    strdef OptionUsize strcls::EndsWithOneOf  (Span<const Str> anysuffix)  const { for (usize i = 0; i < anysuffix.Length(); ++i) if (StartsWith(anysuffix[i])) return i; return nullptr; }
 
 
     strdef Str strcls::Trim     () const { return TrimIf     (Chr::IsWhitespace); }
@@ -234,18 +282,18 @@ namespace Quasi {
     strdef Str strcls::RemoveSuffix(char suffix) const { return Trunc(EndsWith(suffix));   }
     strdef Str strcls::RemovePrefix(Str prefix)  const { return Skip (StartsWith(prefix) ? prefix.Length() : 0); }
     strdef Str strcls::RemoveSuffix(Str suffix)  const { return Trunc(EndsWith(suffix)   ? suffix.Length() : 0); }
-    strdef Str strcls::RemovePrefixOneOf(Span<const char> prefix) const { const usize i = StartsWithOneOf(prefix); return Skip (i != USIZE_MAX); }
-    strdef Str strcls::RemoveSuffixOneOf(Span<const char> suffix) const { const usize i = EndsWithOneOf  (suffix); return Trunc(i != USIZE_MAX); }
-    strdef Str strcls::RemovePrefixOneOf(Span<const Str> prefix)  const { const usize i = StartsWithOneOf(prefix); return Skip (i == USIZE_MAX ? 0 : prefix.Length()); }
-    strdef Str strcls::RemoveSuffixOneOf(Span<const Str> suffix)  const { const usize i = EndsWithOneOf  (suffix); return Trunc(i == USIZE_MAX ? 0 : suffix.Length()); }
+    strdef Str strcls::RemovePrefixOneOf(Span<const char> prefix) const { const usize i = StartsWithOneOf(prefix); return Skip (i != -1); }
+    strdef Str strcls::RemoveSuffixOneOf(Span<const char> suffix) const { const usize i = EndsWithOneOf  (suffix); return Trunc(i != -1); }
+    strdef Str strcls::RemovePrefixOneOf(Span<const Str> prefix)  const { const usize i = StartsWithOneOf(prefix); return Skip (i == -1 ? 0 : prefix.Length()); }
+    strdef Str strcls::RemoveSuffixOneOf(Span<const Str> suffix)  const { const usize i = EndsWithOneOf  (suffix); return Trunc(i == -1 ? 0 : suffix.Length()); }
     strdef StrMut strcls::RemovePrefixMut(char prefix) requires mut { return SkipMut (StartsWith(prefix)); }
     strdef StrMut strcls::RemoveSuffixMut(char suffix) requires mut { return TruncMut(EndsWith(suffix));   }
     strdef StrMut strcls::RemovePrefixMut(Str prefix)  requires mut { return SkipMut (StartsWith(prefix) ? prefix.Length() : 0); }
     strdef StrMut strcls::RemoveSuffixMut(Str suffix)  requires mut { return TruncMut(EndsWith(suffix)   ? suffix.Length() : 0); }
-    strdef StrMut strcls::RemovePrefixOneOfMut(Span<const char> prefix) requires mut { const usize i = StartsWithOneOf(prefix); return SkipMut (i != USIZE_MAX); }
-    strdef StrMut strcls::RemoveSuffixOneOfMut(Span<const char> suffix) requires mut { const usize i = EndsWithOneOf  (suffix); return TruncMut(i != USIZE_MAX); }
-    strdef StrMut strcls::RemovePrefixOneOfMut(Span<const Str> prefix)  requires mut { const usize i = StartsWithOneOf(prefix); return SkipMut (i == USIZE_MAX ? 0 : prefix.Length()); }
-    strdef StrMut strcls::RemoveSuffixOneOfMut(Span<const Str> suffix)  requires mut { const usize i = EndsWithOneOf  (suffix); return TruncMut(i == USIZE_MAX ? 0 : suffix.Length()); }
+    strdef StrMut strcls::RemovePrefixOneOfMut(Span<const char> prefix) requires mut { const usize i = StartsWithOneOf(prefix); return SkipMut (i != -1); }
+    strdef StrMut strcls::RemoveSuffixOneOfMut(Span<const char> suffix) requires mut { const usize i = EndsWithOneOf  (suffix); return TruncMut(i != -1); }
+    strdef StrMut strcls::RemovePrefixOneOfMut(Span<const Str> prefix)  requires mut { const usize i = StartsWithOneOf(prefix); return SkipMut (i == -1 ? 0 : prefix.Length()); }
+    strdef StrMut strcls::RemoveSuffixOneOfMut(Span<const Str> suffix)  requires mut { const usize i = EndsWithOneOf  (suffix); return TruncMut(i == -1 ? 0 : suffix.Length()); }
 
     strdef String strcls::ToString() const {
         return String::FromStr(*this);
@@ -347,6 +395,44 @@ namespace Quasi {
         const Str after = Skip(i);
         size = i;
         return after;
+    }
+
+    String Str::Escape() const {
+        String ss = String::WithCap(Length() + 2);
+        ss += '"';
+        for (const char c : *this) {
+            char buf[4];
+            ss += Str::Slice(buf, Chr::WriteEscape(c, buf));
+        }
+        ss += '"';
+        return ss;
+    }
+
+    usize Str::WriteEscape(Text::StringWriter output) const {
+        usize len = 2;
+        output.Write('"');
+        for (const char c : *this) {
+            char buf[4];
+            len += output.Write(Str::Slice(buf, Chr::WriteEscape(c, buf)));
+        }
+        output.Write('"');
+        return len;
+    }
+
+    Option<String> Str::Unescape() const {
+        // early check, so that we never have to check again
+        if (Last() == '\\') return nullptr;
+
+        String ss = String::WithCap(Length());
+        for (usize i = 0; i < Length(); ++i) {
+            if (At(i) == '\\') {
+                ss += Chr::UnescapeRepr(At(i + 1)).UnwrapOr(At(i + 1));
+                ++i;
+            } else {
+                ss += At(i);
+            }
+        }
+        return ss;
     }
 
     StrMut Str::AsMut() { return StrMut::Slice(Memory::AsMutPtr(data), size); }

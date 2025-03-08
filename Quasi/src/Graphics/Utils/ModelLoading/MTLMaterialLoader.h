@@ -3,6 +3,7 @@
 
 #include "Math/Vector.h"
 #include "Math/Color.h"
+#include "Utils/CStr.h"
 #include "Utils/Text.h"
 #include "Utils/Variant.h"
 
@@ -35,7 +36,7 @@ namespace Quasi::Graphics {
     public:
         MTLMaterialLoader() = default;
 
-        void LoadFile(Str filename) { Load(Text::ReadFile(filename).Assert()); }
+        void LoadFile(CStr filename) { Load(Text::ReadFile(filename).Assert()); }
         void Load(Str string);
 
         void ParseProperty(Str line);

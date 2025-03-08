@@ -14,9 +14,9 @@ namespace Quasi {
         // when long, it becomes a Vec<char>
 
         struct Large {
-            char* data;
-            usize cap;
-            usize size : 63;
+            char* data = nullptr;
+            usize cap = 0;
+            usize size : 63 = 0;
             bool isLarge : 1 = true;
         };
         struct Small {
@@ -37,6 +37,7 @@ namespace Quasi {
         String() = default;
         String(Nullptr) : String() {}
         String(Str str) : String(FromStr(str)) {}
+        String(const char* cstr) : String(FromStr({ cstr })) {}
 
         // TODO: complete utf8 support
 
@@ -139,6 +140,13 @@ namespace Quasi {
         // usize FloorUtfBoundary(usize index) const;
         // usize CeilUtfBoundary(usize index) const;
 
+        String Escape() const;
+        usize WriteEscape(Text::StringWriter output) const;
+        Option<String> Unescape() const;
+
+        operator Str() const { return AsStr(); }
+        String  operator+(char rhs) const;
+        String& operator+=(char rhs);
         String  operator+(Str rhs) const;
         String& operator+=(Str rhs);
     };

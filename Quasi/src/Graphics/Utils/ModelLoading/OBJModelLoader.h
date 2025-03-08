@@ -1,10 +1,9 @@
 #pragma once
-#include <vector>
 
 #include "MTLMaterialLoader.h"
 #include "OBJModel.h"
 
-#include "Vector.h"
+#include "Math/Vector.h"
 
 namespace Quasi::Graphics {
     class OBJModelLoader {
@@ -45,9 +44,9 @@ namespace Quasi::Graphics {
     public:
         OBJModelLoader() = default;
 
-        void LoadFile(Str filepath);
+        void LoadFile(CStr filepath);
         void Load(Str string);
-        void LoadMaterialFile(Str filepath);
+        void LoadMaterialFile(CStr filepath);
         void LoadMaterial(Str string);
 
         void ParseProperty(Str line);

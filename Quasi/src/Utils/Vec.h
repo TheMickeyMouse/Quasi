@@ -6,7 +6,7 @@
 
 namespace Quasi {
     namespace Vecs {
-        inline usize GrowCap(usize cap) { return std::max<usize>(cap * 3 / 2, 2); }
+        inline usize GrowCap(usize cap) { return std::max<usize>(cap * 2, 2); }
         template <class T> Vec<T> FromIList(IList<T> list) { return Vec<T>::FromIList(list); }
         template <class T, usize N> Vec<T> New(const T (&arr)[N]) { return Vec<T>::New(arr); }
         template <class T, usize N> Vec<T> New(T (&&arr)[N])      { return Vec<T>::New(std::move(arr)); }
@@ -119,8 +119,8 @@ namespace Quasi {
         T& First() const { return data[0]; }
         T& Last() const { return data[size - 1]; }
 
-        Span<T> AsSpan()             { return Span<T>      ::FromBuffer(data, size); }
-        Span<const T> AsSpan() const { return Span<const T>::FromBuffer(data, size); }
+        Span<T> AsSpan()             { return Span<T>      ::Slice(data, size); }
+        Span<const T> AsSpan() const { return Span<const T>::Slice(data, size); }
 
         Span<T> LeakSpan() { Span<T> leaked = AsSpan(); PretendClear(); return leaked; }
 
@@ -242,7 +242,6 @@ namespace Quasi {
             return flattened;
         }
 
-        auto MapVec(FnArgs<const T&> auto&& transform) const;
         // + see span iterators
     protected:
         // struct IntoIter : IIterator<T, IntoIter> {

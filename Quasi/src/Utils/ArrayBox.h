@@ -39,8 +39,8 @@ namespace Quasi {
 
         void TransferImpl(ArrayBox& dst) { dst.buf = buf; buf = nullptr; dst.size = size; size = 0; }
     public:
-        Span<const T> AsSpan() const { return Span<const T>::FromBuffer(buf, size); }
-        Span<T> AsSpanMut() { return Span<T>::FromBuffer(buf, size); }
+        Span<const T> AsSpan() const { return Span<const T>::Slice(buf, size); }
+        Span<T> AsSpanMut() { return Span<T>::Slice(buf, size); }
         Span<const T> Get() const { return AsSpan(); }
         Span<T> GetMut() { return AsSpanMut(); }
 

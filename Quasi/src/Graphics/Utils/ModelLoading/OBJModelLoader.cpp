@@ -3,9 +3,10 @@
 #include "Comparison.h"
 
 #include "Iter/MapIter.h"
+#include "Utils/Match.h"
 
 namespace Quasi::Graphics {
-    void OBJModelLoader::LoadFile(Str filepath) {
+    void OBJModelLoader::LoadFile(CStr filepath) {
         std::tie(folder, filename) = Text::SplitDirectory(filepath);
         Load(Text::ReadFile(filepath).Assert());
     }
@@ -15,8 +16,8 @@ namespace Quasi::Graphics {
         CreateModel();
     }
 
-    void OBJModelLoader::LoadMaterialFile(Str filepath) {
-        mats.LoadFile(folder + '\\' + String { filepath });
+    void OBJModelLoader::LoadMaterialFile(CStr filepath) {
+        mats.LoadFile(folder + '\\' + String { filepath } + '\0');
         model.materials = std::move(mats.materials);
     }
 
@@ -26,16 +27,15 @@ namespace Quasi::Graphics {
     }
 
     void OBJModelLoader::ParseProperty(const Str line) {
-        const usize spaceIdx = line.find_first_of(' ');
-        const Str prefix = line.substr(0, spaceIdx),
-                  data   = line.substr(spaceIdx + 1);
+        const usize spaceIdx = line.Find(' ');
+        const auto [prefix, data] = line.SplitAt(spaceIdx);
 
         OBJProperty prop;
         Qmatch$ (prefix, (
-            case ("v")      prop.Set(Vertex       { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 { NAN }) });,
-            case ("vt")     prop.Set(VertexTex    { Math::fVector2::parse(data, " ", "", "").UnwrapOr(Math::fVector2 { NAN }) });,
-            case ("vn")     prop.Set(VertexNormal { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 { NAN }) });,
-            case ("vp")     prop.Set(VertexParam  { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 { NAN }) });,
+            case ("v")      prop.Set(Vertex       { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 { Math::NaN }) });,
+            case ("vt")     prop.Set(VertexTex    { Math::fVector2::parse(data, " ", "", "").UnwrapOr(Math::fVector2 { Math::NaN }) });,
+            case ("vn")     prop.Set(VertexNormal { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 { Math::NaN }) });,
+            case ("vp")     prop.Set(VertexParam  { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 { Math::NaN }) });,
             case ("f") ({
                 Face face;
                 u32 i = 0;

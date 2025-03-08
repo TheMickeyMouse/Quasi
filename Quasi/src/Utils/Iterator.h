@@ -1,7 +1,7 @@
 #pragma once
 #include "Comparison.h"
 #include "Type.h"
-#include "Func.h"
+#include "Option.h"
 
 namespace Quasi {
     template <class T, class Super> struct IIterator;
@@ -14,6 +14,7 @@ namespace Quasi {
 
 #pragma region Iter Declarations
     namespace Iter {
+        template <class It>          struct EnumerateIter;
         template <class It, class F> struct MapIter;
     }
 #pragma endregion
@@ -79,6 +80,8 @@ namespace Quasi {
             return collection;
         }
 
+        Iter::EnumerateIter<Super> Enumerate() const&;
+        Iter::EnumerateIter<Super> Enumerate() &&;
         template <FnArgs<T> F> Iter::MapIter<Super, F> Map(F&& fn) const&;
         template <FnArgs<T> F> Iter::MapIter<Super, F> Map(F&& fn) &&;
     };
@@ -92,7 +95,6 @@ namespace Quasi {
 #pragma region Continuous
     template <class T> struct Span;
     template <class T> struct Ref;
-    template <class T> struct Option;
     template <class T> struct BufferIterator;
     struct Str;
     struct StrMut;
@@ -127,9 +129,9 @@ namespace Quasi {
         const RemRef<T>* Data() const { return super().DataImpl(); }
         usize Length() const { return super().LengthImpl(); }
 
-        Span<const T> AsSpan()  const { return Span<const T>::FromBuffer(Data(), Length()); }
-        Span<T>       AsSpan()    mut { return Span<MutT>   ::FromBuffer(Data(), Length()); }
-        Span<MutT>    AsSpanMut() mut { return Span<MutT>   ::FromBuffer(Data(), Length()); }
+        Span<const T> AsSpan()  const { return Span<const T>::Slice(Data(), Length()); }
+        Span<T>       AsSpan()    mut { return Span<MutT>   ::Slice(Data(), Length()); }
+        Span<MutT>    AsSpanMut() mut { return Span<MutT>   ::Slice(Data(), Length()); }
 
         Str                       AsStr()      const requires SameAs<const char, const T>;
         StrMut                    AsStrMut()   requires SameAs<char, T>;
@@ -182,7 +184,7 @@ namespace Quasi {
         bool ContainsBuffer(Span<const T> buf)   const { return super().AsSpan().ContainsBuffer(buf); }
         bool OverlapsBuffer(Span<const T> buf)   const { return super().AsSpan().OverlapsBuffer(buf); }
         bool Equals        (Span<const T> other) const { return super().AsSpan().Equals(other); }
-        bool EqualsBy      (Span<const T> other, EqualPred<T> auto&& eq)      const { return super().AsSpan().EqualsByKey(other, eq); }
+        bool EqualsBy      (Span<const T> other, EqualPred<T> auto&& eq)       const { return super().AsSpan().EqualsByKey(other, eq); }
         bool EqualsByKey   (Span<const T> other, FnArgs<const T&> auto&& keyf) const { return super().AsSpan().EqualsByKey(other, keyf); }
         bool operator==    (Span<const T> other) const { return super().AsSpan() == other; }
 
@@ -203,26 +205,26 @@ namespace Quasi {
         Option<Span<const T>> RemovePrefix(Span<const T> prefix) const { return super().AsSpan().RemovePrefix(prefix); }
         Option<Span<const T>> RemoveSuffix(Span<const T> suffix) const { return super().AsSpan().RemoveSuffix(suffix); }
 
-        usize Find        (const T& target)          const { return super().AsSpan().Find     (target); }
-        usize RevFind     (const T& target)          const { return super().AsSpan().RevFind  (target); }
-        usize FindIf      (Predicate<T> auto&& pred) const { return super().AsSpan().FindIf   (pred); }
-        usize RevFindIf   (Predicate<T> auto&& pred) const { return super().AsSpan().RevFindIf(pred); }
-        bool Contains     (const T& target)          const { return super().AsSpan().Contains     (target); }
-        bool RevContains  (const T& target)          const { return super().AsSpan().RevContains  (target); }
-        bool ContainsIf   (Predicate<T> auto&& pred) const { return super().AsSpan().ContainsIf   (pred); }
-        bool RevContainsIf(Predicate<T> auto&& pred) const { return super().AsSpan().RevContainsIf(pred); }
-        usize Find        (Span<const T> target)     const { return super().AsSpan().Find       (target); }
-        usize RevFind     (Span<const T> target)     const { return super().AsSpan().RevFind    (target); }
-        bool  Contains    (Span<const T> target)     const { return super().AsSpan().Contains   (target); }
-        bool  RevContains (Span<const T> target)     const { return super().AsSpan().RevContains(target); }
-        Tuple<usize, usize> FindOneOf   (Span<const T> anytarget) const { return super().AsSpan().FindOneOf       (anytarget); }
-        Tuple<usize, usize> RevFindOneOf(Span<const T> anytarget) const { return super().AsSpan().RevFindOneOf    (anytarget); }
-        usize ContainsOneOf             (Span<const T> anytarget) const { return super().AsSpan().ContainsOneOf   (anytarget); }
-        usize RevContainsOneOf          (Span<const T> anytarget) const { return super().AsSpan().RevContainsOneOf(anytarget); }
-        Tuple<usize, usize> FindOneOf   (Span<const Span<const T>> anytarget) const { return super().AsSpan().FindOneOf       (anytarget); }
-        Tuple<usize, usize> RevFindOneOf(Span<const Span<const T>> anytarget) const { return super().AsSpan().RevFindOneOf    (anytarget); }
-        usize ContainsOneOf             (Span<const Span<const T>> anytarget) const { return super().AsSpan().ContainsOneOf   (anytarget); }
-        usize RevContainsOneOf          (Span<const Span<const T>> anytarget) const { return super().AsSpan().RevContainsOneOf(anytarget); }
+        OptionUsize Find     (const T& target)          const { return super().AsSpan().Find     (target); }
+        OptionUsize RevFind  (const T& target)          const { return super().AsSpan().RevFind  (target); }
+        OptionUsize FindIf   (Predicate<T> auto&& pred) const { return super().AsSpan().FindIf   (pred); }
+        OptionUsize RevFindIf(Predicate<T> auto&& pred) const { return super().AsSpan().RevFindIf(pred); }
+        bool    Contains     (const T& target)          const { return super().AsSpan().Contains     (target); }
+        bool    RevContains  (const T& target)          const { return super().AsSpan().RevContains  (target); }
+        bool    ContainsIf   (Predicate<T> auto&& pred) const { return super().AsSpan().ContainsIf   (pred); }
+        bool    RevContainsIf(Predicate<T> auto&& pred) const { return super().AsSpan().RevContainsIf(pred); }
+        OptionUsize   Find   (Span<const T> target)     const { return super().AsSpan().Find       (target); }
+        OptionUsize   RevFind(Span<const T> target)     const { return super().AsSpan().RevFind    (target); }
+        bool      Contains   (Span<const T> target)     const { return super().AsSpan().Contains   (target); }
+        bool      RevContains(Span<const T> target)     const { return super().AsSpan().RevContains(target); }
+        Tuple<OptionUsize, OptionUsize> FindOneOf   (Span<const T> anytarget) const { return super().AsSpan().FindOneOf       (anytarget); }
+        Tuple<OptionUsize, OptionUsize> RevFindOneOf(Span<const T> anytarget) const { return super().AsSpan().RevFindOneOf    (anytarget); }
+        OptionUsize                 ContainsOneOf   (Span<const T> anytarget) const { return super().AsSpan().ContainsOneOf   (anytarget); }
+        OptionUsize                 RevContainsOneOf(Span<const T> anytarget) const { return super().AsSpan().RevContainsOneOf(anytarget); }
+        Tuple<OptionUsize, OptionUsize> FindOneOf   (Span<const Span<const T>> anytarget) const { return super().AsSpan().FindOneOf       (anytarget); }
+        Tuple<OptionUsize, OptionUsize> RevFindOneOf(Span<const Span<const T>> anytarget) const { return super().AsSpan().RevFindOneOf    (anytarget); }
+        OptionUsize                 ContainsOneOf   (Span<const Span<const T>> anytarget) const { return super().AsSpan().ContainsOneOf   (anytarget); }
+        OptionUsize                 RevContainsOneOf(Span<const Span<const T>> anytarget) const { return super().AsSpan().RevContainsOneOf(anytarget); }
 
         usize Unaddress      (const T* addr) const { return super().AsSpan().Unaddress(addr); }
         bool  ContainsAddress(const T* addr) const { return super().AsSpan().ContainsAddress(addr); }

@@ -2,10 +2,10 @@
 #include <string>
 #include <freetype/freetype.h>
 
-#include "Mesh.h"
+#include "Graphics/Graphicals/Mesh.h"
 #include "TextAlign.h"
 #include "TextStyle.h"
-#include "Textures/Texture.h"
+#include "Graphics/Utils/Textures/Texture.h"
 
 #define Q_USER_FONTS R"(C:\Users\User\AppData\Local\Microsoft\Windows\Fonts\)"
 #define Q_WIN_FONTS R"(C:\Windows\Fonts\)"
@@ -67,18 +67,18 @@ namespace Quasi::Graphics {
         const Glyph& GetGlyphRect(char c, FontStyle style = FontStyle::NONE, u32 id = 0) const;
         Mesh<Vertex> RenderText(
             Str string, PointPer64 size,
-            const TextAlign& align = { { 0, INFINITY } }
+            const TextAlign& align = { { 0, f32s::INFINITY } }
         ) const;
 
         Mesh<Vertex> RenderRichText(
             const Text::RichString& string, PointPer64 size,
-            const TextAlign& align = { { 0, INFINITY } }
+            const TextAlign& align = { { 0, f32s::INFINITY } }
         ) const;
         
         Texture& GetTexture() { return atlas; }
         const Texture& GetTexture() const { return atlas; }
         
-        static Font LoadFile (Str filename);
+        static Font LoadFile (CStr filename);
         static Font LoadBytes(const byte* data, u32 len);
 
         FT_FaceRec_* DefaultFontUnchecked(FontStyle style = FontStyle::NONE) { return &*faceHandles[(u32)style]; }
@@ -87,9 +87,9 @@ namespace Quasi::Graphics {
         FT_FaceRec_* GetFont(u32 id = 0, FontStyle style = FontStyle::NONE) { return GetFontUnchecked(id, style) ? GetFontUnchecked(id, style) : DefaultFont(style); }
 
         void ReserveFont();
-        void AddDefaultFontStyle(Str filePath, FontStyle style = FontStyle::NONE) { AddFontStyle(DEFAULT_FONT_ID, filePath, style); }
-        void AddMonoFontStyle(Str filePath, FontStyle style = FontStyle::NONE) { AddFontStyle(MONOSPACE_FONT_ID, filePath, style); }
-        void AddFontStyle(u32 id, Str filePath, FontStyle style = FontStyle::NONE);
+        void AddDefaultFontStyle(CStr filePath, FontStyle style = FontStyle::NONE) { AddFontStyle(DEFAULT_FONT_ID, filePath, style); }
+        void AddMonoFontStyle(CStr filePath, FontStyle style = FontStyle::NONE) { AddFontStyle(MONOSPACE_FONT_ID, filePath, style); }
+        void AddFontStyle(u32 id, CStr filePath, FontStyle style = FontStyle::NONE);
         void SetDefaultFontStyle(FT_FaceRec_* face, FontStyle style = FontStyle::NONE) { SetFontStyle(DEFAULT_FONT_ID, face, style); }
         void SetMonoFontStyle(FT_FaceRec_* face, FontStyle style = FontStyle::NONE) { SetFontStyle(MONOSPACE_FONT_ID, face, style); }
         void SetFontStyle(u32 id, FT_FaceRec_* face, FontStyle style = FontStyle::NONE);

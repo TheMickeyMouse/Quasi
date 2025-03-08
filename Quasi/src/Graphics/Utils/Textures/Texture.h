@@ -1,13 +1,17 @@
 ﻿#pragma once
 #include <vector>
 
-#include "Box.h"
-#include "GLObject.h"
+#include "Utils/Box.h"
+#include "Graphics/GLs/GLObject.h"
 
-#include "GLTypeID.h"
+#include "Graphics/GLs/GLTypeID.h"
 #include "TextureConstants.h"
 #include "Math/Rect.h"
 #include "Utils/Variant.h"
+
+namespace Quasi {
+    struct CStr;
+}
 
 namespace Quasi::Graphics {
     struct TextureParamPair {
@@ -94,9 +98,9 @@ namespace Quasi::Graphics {
         void Unbind() const { UnbindObject(target); }
 
         static Texture LoadPNGBytes(Span<const byte> datapng, const TextureInitParams& init = {});
-        static Texture LoadPNG(Str fname, const TextureInitParams& init = {});
+        static Texture LoadPNG(CStr fname, const TextureInitParams& init = {});
 
-        static Texture LoadCubemapPNG(IList<Str> faces /* in order: rludfb */, const TextureInitParams& init = {});
+        static Texture LoadCubemapPNG(IList<CStr> faces /* in order: rludfb */, const TextureInitParams& init = {});
 
         void Activate(int slot = -1);
         void Deactivate();
