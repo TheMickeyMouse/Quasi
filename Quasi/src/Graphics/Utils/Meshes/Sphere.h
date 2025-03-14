@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Constants.h"
-#include "Mesh.h"
 #include "MeshConstructor.h"
 
 namespace Quasi::Graphics::MeshUtils {

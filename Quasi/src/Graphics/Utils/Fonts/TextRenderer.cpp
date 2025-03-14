@@ -1,7 +1,5 @@
 #include "TextRenderer.h"
 
-#include "Constants.h"
-
 namespace Quasi::Graphics {
     void TextRenderer::CharQuad::MoveY(float y) {
         v0.Position.y += y;
@@ -157,7 +155,7 @@ namespace Quasi::Graphics {
                                 * 2 / (float)lineIndices.Length(); // space between each line
             u32 lineNum = 0; // line number to keep track of offset
             for (u32 i = 0; i < meshIndex; ++i) {
-                if (i >= (lineNum >= lineIndices.Length() ? U32_MAX : lineIndices[lineNum])) // last line doesnt exist, so index is at UINT32_MAX
+                if (i >= (lineNum >= lineIndices.Length() ? u32s::MAX : lineIndices[lineNum])) // last line doesnt exist, so index is at UINT32_MAX
                     ++lineNum; // increments line number if index surpasses next line index
                 CharAt(i).MoveY(yOff * (float)lineNum); // offsets points accordingly
             }
@@ -322,7 +320,7 @@ namespace Quasi::Graphics {
         auto it = string.begin();
         for (; it != string.end(); ++it) { // loop each char in string (keep in mind not ranged for loop)
             if (it.currentState.codeLang && monos.Length() == monoNum) {
-                monos.Push({ pen.x, INF });
+                monos.Push({ pen.x, f32s::INFINITY });
                 pen.x += monoPadding;
             } else if (!it.currentState.codeLang && monos.Length() != monoNum) {
                 pen.x += monoPadding;

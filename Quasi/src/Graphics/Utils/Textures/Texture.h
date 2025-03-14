@@ -128,7 +128,7 @@ namespace Quasi::Graphics {
         }
 
         void TexImage(const byte* data, const Math::uVector3& dim, const TextureLoadParams& params = {}, TextureTarget overrideTarget = TextureTarget::NONE);
-        void TexImage(const byte* data, uint width, const TextureLoadParams& params = {}) {
+        void TexImage(const byte* data, u32 width, const TextureLoadParams& params = {}) {
             TexImage(data, { width, 0, 0 }, params);
         }
         void TexImage(const byte* data, const Math::uVector2& dim, const TextureLoadParams& params = {}) {

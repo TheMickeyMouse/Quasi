@@ -1,5 +1,6 @@
 #pragma once
 #include "Manifold2D.h"
+#include "Math/Vector.h"
 
 namespace Quasi::Physics2D {
     class Shape;

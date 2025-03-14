@@ -1,6 +1,7 @@
 #include "RenderBuffer.h"
 #include <glp.h>
 #include "GLDebug.h"
+#include "Utils/Textures/TextureConstants.h"
 
 namespace Quasi::Graphics {
     RenderBuffer::RenderBuffer(GraphicsID id) : GLObject(id) {}

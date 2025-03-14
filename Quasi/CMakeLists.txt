@@ -100,7 +100,6 @@ set(HEADER_FILES
     src/Utils/Str.h
     src/Utils/String.h
     src/Utils/CStr.h
-    src/Utils/CString.h
     src/Utils/Numeric.h
     src/Utils/MacroIteration.h
     src/Utils/Text/Parsing.h
@@ -186,7 +185,6 @@ set(SOURCE_FILES
     src/Utils/Str.cpp
     src/Utils/String.cpp
     src/Utils/CStr.cpp
-    src/Utils/CString.cpp
     src/Utils/Memory.cpp
     src/Utils/Text/Parsing.cpp
     src/Utils/Text/Num.cpp
@@ -209,6 +207,12 @@ source_group("Source Files" FILES ${SOURCE_FILES})
 set(ALL_FILES
     ${HEADER_FILES}
     ${SOURCE_FILES}
+        src/Utils/Tuple.h
+        src/Utils/Iter/LinesIter.h
+        src/Utils/Iter/LinesIter.cpp
+        src/Utils/Bitwise.h
+        src/Utils/Bitwise.cpp
+        src/Utils/Iter/SplitIter.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

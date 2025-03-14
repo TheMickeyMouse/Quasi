@@ -1,5 +1,6 @@
 #pragma once
 #include "IShape2D.h"
+#include "Math/Rect.h"
 
 namespace Quasi::Physics2D {
     class CircleShape : public IShape {

@@ -2,6 +2,8 @@
 
 #include "Span.h"
 #include "String.h"
+#include "Iter/LinesIter.h"
+#include "Iter/SplitIter.h"
 #include "Text/StringWriter.h"
 
 namespace Quasi {
@@ -111,6 +113,9 @@ namespace Quasi {
     strdef BufferIterator<const char&> strcls::Iter()    const        { return { Data(), Length() }; }
     strdef BufferIterator<char&>       strcls::IterMut() requires mut { return { Data(), Length() }; }
 
+    strdef Iter::SplitIter<Super> strcls::Split(Str sep) const { return Iter::SplitIter<Super>::New(AsStr(), sep); }
+    strdef Iter::LinesIter strcls::Lines() const { return Iter::LinesIter::New(AsStr()); }
+
     strdef Str              strcls::AsStr()      const        { return Str   ::Slice(Data(),    Length()); }
     strdef StrMut           strcls::AsStrMut()   requires mut { return StrMut::Slice(DataMut(), Length()); }
     strdef Span<const char> strcls::AsSpan()     const        { return Span<const char>::Slice(Data(),    Length()); }
@@ -119,6 +124,11 @@ namespace Quasi {
     strdef Span<byte>       strcls::AsBytesMut() requires mut { return Span<byte>      ::Slice((byte*)DataMut(),    Length()); }
     strdef strcls::operator Str()    const        { return AsStr(); }
     strdef strcls::operator StrMut() requires mut { return AsStrMut(); }
+
+    strdef OptRef<char> strcls::TryFirstMut() requires mut { return Length() ? OptRefs::SomeRef(At(0))            : nullptr; }
+    strdef OptRef<char> strcls::TryLastMut()  requires mut { return Length() ? OptRefs::SomeRef(At(Length() - 1)) : nullptr; }
+    strdef OptRef<const char> strcls::TryFirst() const     { return Length() ? OptRefs::SomeRef(At(0))            : nullptr; }
+    strdef OptRef<const char> strcls::TryLast()  const     { return Length() ? OptRefs::SomeRef(At(Length() - 1)) : nullptr; }
 
     strdef Span<const char> strcls::Subspan   (usize start) const              { return Subspan(start, Length() - start); }
     strdef Str              strcls::Substr    (usize start) const              { return Substr (start, Length() - start); }
@@ -137,7 +147,8 @@ namespace Quasi {
     strdef StrMut strcls::InitMut()           requires mut { return SubstrMut(Length() - 1); }
     strdef Tuple<char&,  StrMut>        strcls::SplitFirstMut()          requires mut { return { FirstMut(),   TailMut() }; }
     strdef Tuple<StrMut, char&>         strcls::SplitLastMut()           requires mut { return { InitMut(),    LastMut() }; }
-    strdef Tuple<StrMut, StrMut>        strcls::SplitAtMut(usize at)     requires mut { return { FirstMut(at), SkipMut(at) }; }
+    strdef Tuple<StrMut, StrMut>        strcls::CutAtMut(usize at)       requires mut { return { FirstMut(at), SkipMut(at) }; }
+    strdef Tuple<StrMut, StrMut>        strcls::SplitAtMut(usize at)     requires mut { return { FirstMut(at), SkipMut(at + 1) }; }
     strdef Tuple<StrMut, char&, StrMut> strcls::PartitionAtMut(usize at) requires mut { return { FirstMut(at), At(at), SkipMut(at + 1) }; }
     strdef Str strcls::First(usize num) const { return Substr(0, num); }
     strdef Str strcls::Skip(usize len)  const { return Substr(len); }
@@ -147,8 +158,12 @@ namespace Quasi {
     strdef Str strcls::Init()           const { return Substr(Length() - 1); }
     strdef Tuple<const char&, Str>      strcls::SplitFirst()          const { return { First(),   Tail() }; }
     strdef Tuple<Str, const char&>      strcls::SplitLast()           const { return { Init(),    Last() }; }
-    strdef Tuple<Str, Str>              strcls::SplitAt(usize at)     const { return { First(at), Skip(at) }; }
+    strdef Tuple<Str, Str>              strcls::CutAt(usize at)       const { return { First(at), Skip(at) }; }
+    strdef Tuple<Str, Str>              strcls::SplitAt(usize at)     const { return { First(at), Skip(at + 1) }; }
     strdef Tuple<Str, const char&, Str> strcls::PartitionAt(usize at) const { return { First(at), At(at), Skip(at + 1) }; }
+
+    strdef Tuple<Str, Str> strcls::SplitOnce(char c)  const { return SplitAt(Find(c).UnwrapOr(Length())); }
+    strdef Tuple<Str, Str> strcls::SplitOnce(Str sep) const { return SplitAt(Find(sep).UnwrapOr(Length())); }
 
     strdef bool strcls::RefEquals     (Str other) const { return Data() == other.Data() && Length() == other.Length(); }
     strdef bool strcls::ContainsBuffer(Str buf)   const { return buf.Data() >= Data() && Data() + Length() >= buf.Data() + buf.Length(); }
@@ -294,6 +309,10 @@ namespace Quasi {
     strdef StrMut strcls::RemoveSuffixOneOfMut(Span<const char> suffix) requires mut { const usize i = EndsWithOneOf  (suffix); return TruncMut(i != -1); }
     strdef StrMut strcls::RemovePrefixOneOfMut(Span<const Str> prefix)  requires mut { const usize i = StartsWithOneOf(prefix); return SkipMut (i == -1 ? 0 : prefix.Length()); }
     strdef StrMut strcls::RemoveSuffixOneOfMut(Span<const Str> suffix)  requires mut { const usize i = EndsWithOneOf  (suffix); return TruncMut(i == -1 ? 0 : suffix.Length()); }
+
+    strdef Iter::SplitIter<Str> strcls::Split(Str sep) {
+        return Iter::SplitIter<Str>::New(AsStr(), sep);
+    }
 
     strdef String strcls::ToString() const {
         return String::FromStr(*this);

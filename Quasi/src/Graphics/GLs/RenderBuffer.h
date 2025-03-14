@@ -4,6 +4,8 @@
 #include "Math/Vector.h"
 
 namespace Quasi::Graphics {
+    enum class TextureIFormat;
+
     class RenderBuffer : public GLObject<RenderBuffer> {
         explicit RenderBuffer(GraphicsID id);
     public:

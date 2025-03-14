@@ -1,10 +1,9 @@
 #pragma once
 #include "CapsuleShape2D.h"
 #include "CircleShape2D.h"
-#include "Match.h"
 #include "PolygonShape2D.h"
 #include "RectShape2D.h"
-#include "Variant.h"
+#include "Utils/Match.h"
 
 namespace Quasi::Physics2D {
     template <class T> static constexpr IShape::Type ShapeTypeIndexOf() {
@@ -15,7 +14,7 @@ namespace Quasi::Physics2D {
             case (TriangleShape)   { return IShape::TRI; },
             case (QuadShape)       { return IShape::QUAD; },
             case (DynPolygonShape) { return IShape::POLY; },
-            else { static_assert(std::is_same_v<T, std::monostate>, "oops"); return IShape::CIRCLE; }
+            else { static_assert(false, "oops"); return IShape::CIRCLE; }
         ));
     }
     static constexpr IShape::ClipPrimitive PrimitiveOfType(IShape::Type t) {

@@ -1,5 +1,7 @@
 ﻿#include "VertexBufferLayout.h"
 
+#include "Utils/Vec.h"
+
 namespace Quasi::Graphics {
     VertexBufferLayout::VertexBufferLayout(IList<VertexBufferComponent> comps) {
         components.Reserve(comps.size());

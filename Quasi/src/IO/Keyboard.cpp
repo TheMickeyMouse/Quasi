@@ -1,10 +1,10 @@
 #include <GLFW/glfw3.h>
 
-#include "GraphicsDevice.h"
-
 #include "Keyboard.h"
 
 #include "imgui_impl_glfw.h"
+#include "IO.h"
+#include "Graphicals/GraphicsDevice.h"
 
 namespace Quasi::IO {
     GLFWwindow* KeyboardType::inputWindow() { return io->gdevice->GetWindow(); }

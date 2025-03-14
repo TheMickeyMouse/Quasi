@@ -5,7 +5,7 @@
 #include "TimeType.h"
 #include "IO.h"
 
-#include "GraphicsDevice.h"
+#include "Graphicals/GraphicsDevice.h"
 
 namespace Quasi::IO {
     IO::IO(Graphics::GraphicsDevice& gd) :

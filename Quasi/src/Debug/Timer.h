@@ -2,6 +2,7 @@
 #include <chrono>
 
 #include "Utils/Ref.h"
+#include "Utils/Str.h"
 #include "Utils/Type.h"
 
 namespace Quasi::Debug {

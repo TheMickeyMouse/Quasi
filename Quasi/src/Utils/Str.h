@@ -1,9 +1,14 @@
 #pragma once
 #include "Iterator.h"
+#include "Tuple.h"
 
 namespace Quasi {
     namespace Text {
         struct StringWriter;
+    }
+
+    namespace Iter {
+        struct LinesIter;
     }
 
     struct Str;
@@ -65,10 +70,10 @@ namespace Quasi {
 
         BufferIterator<const char&> Iter() const;
         BufferIterator<char&> IterMut() requires mut;
-        // CharsIter Chars() const;
         // Utf8CharsIter Utf8Chars() const;
         // SplitWhitespaceIter SplitWhitespace() const;
-        // LinesIter Lines() const;
+        Iter::SplitIter<Super> Split(Str sep) const;
+        Iter::LinesIter Lines() const;
 
         Str              AsStr()      const;
         StrMut           AsStrMut()   requires mut;
@@ -83,6 +88,10 @@ namespace Quasi {
         char&       LastMut()  requires mut { return At(Length() - 1); }
         const char& First()    const        { return At(0); }
         const char& Last()     const        { return At(Length() - 1); }
+        OptRef<char>       TryFirstMut() requires mut;
+        OptRef<char>       TryLastMut()  requires mut;
+        OptRef<const char> TryFirst()    const;
+        OptRef<const char> TryLast()     const;
 
         Span<const char> Subspan   (usize start) const;
         Str              Substr    (usize start) const;
@@ -101,6 +110,7 @@ namespace Quasi {
         StrMut           InitMut()           requires mut;
         Tuple<char&,  StrMut>        SplitFirstMut()      requires mut;
         Tuple<StrMut, char&>         SplitLastMut()       requires mut;
+        Tuple<StrMut, StrMut>        CutAtMut(usize at)   requires mut;
         Tuple<StrMut, StrMut>        SplitAtMut(usize at) requires mut;
         Tuple<StrMut, char&, StrMut> PartitionAtMut(usize at) requires mut;
         Tuple<StrMut, StrMut>        SplitOnMut(Predicate<char> auto&& pred) requires mut {
@@ -109,7 +119,11 @@ namespace Quasi {
         }
         Tuple<StrMut, StrMut>        RevSplitOnMut(Predicate<char> auto&& pred) requires mut {
             const OptionUsize i = RevFindIf(pred);
-            return SplitAtMut(i ? 0 : i + 1);
+            return SplitAtMut(i.UnwrapOr(0));
+        }
+        Tuple<StrMut, StrMut>        SplitOnceMut(char c) requires mut {
+            const OptionUsize i = Find(c);
+            return SplitAtMut(i.UnwrapOr(Length()));
         }
         Str First(usize num) const;
         Str Skip(usize len)  const;
@@ -119,16 +133,20 @@ namespace Quasi {
         Str Init()           const;
         Tuple<const char&, Str>      SplitFirst()                            const;
         Tuple<Str, const char&>      SplitLast()                             const;
-        Tuple<Str, Str>              SplitAt   (usize at)                    const;
+        Tuple<Str, Str>              CutAt(usize at)                         const;
+        Tuple<Str, Str>              SplitAt(usize at)                       const;
         Tuple<Str, const char&, Str> PartitionAt(usize at)                   const;
-        Tuple<Str, Str>              SplitOn(Predicate<char> auto&& pred)    const {
-            const usize i = FindIf(pred);
-            return SplitAt(i == -1 ? Length() : i);
+
+        Tuple<Str, Str> SplitOnceOn(Predicate<char> auto&& pred) const {
+            const OptionUsize i = FindIf(pred);
+            return SplitAt(i.UnwrapOr(Length()));
         }
-        Tuple<Str, Str>              RevSplitOn(Predicate<char> auto&& pred) const {
-            const usize i = RevFindIf(pred);
-            return SplitAt(i == -1 ? 0 : i + 1);
+        Tuple<Str, Str> RevSplitOnceOn(Predicate<char> auto&& pred) const {
+            const OptionUsize i = RevFindIf(pred);
+            return SplitAt(i.UnwrapOr(0));
         }
+        Tuple<Str, Str> SplitOnce(char c) const;
+        Tuple<Str, Str> SplitOnce(Str sep) const;
 
         bool RefEquals     (Str other) const;
         bool ContainsBuffer(Str buf)   const;
@@ -227,7 +245,8 @@ namespace Quasi {
         StrMut RemovePrefixOneOfMut(Span<const Str> prefix) requires mut;
         StrMut RemoveSuffixOneOfMut(Span<const Str> suffix) requires mut;
 
-        // SplitIter             Split(const char sep)
+        Iter::SplitIter<Str> Split(Str sep);
+
         // SplitIfIter           SplitIf(Fn<bool, char> pred)
         // SplitIfInclIter       SplitIfIncl(Fn<bool, char> pred)
         // RevSplitIter          RevSplit(const char sep)

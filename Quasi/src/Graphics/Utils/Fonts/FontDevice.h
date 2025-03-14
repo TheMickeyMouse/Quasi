@@ -56,7 +56,7 @@ namespace Quasi::Graphics {
         return { (int)points };
     }
 
-    inline PointPer64 operator ""_points(f80 points) {
+    inline PointPer64 operator ""_points(long double points) {
         return { (float)points };
     }
 }

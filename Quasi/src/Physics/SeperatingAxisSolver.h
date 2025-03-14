@@ -20,7 +20,7 @@ namespace Quasi::Physics2D {
         bool collides = true;
 
         fVector2 seperatingAxis;
-        float overlap = INFINITY;
+        float overlap = f32s::INFINITY;
         u32 axisIndex = 0;
 
 

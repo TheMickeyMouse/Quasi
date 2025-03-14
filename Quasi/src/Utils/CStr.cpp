@@ -21,6 +21,10 @@ namespace Quasi {
         return TryFrom(zs.Init());
     }
 
+    CStr CStr::FromUnchecked(Str s) {
+        return SliceUnchecked(s.Data(), s.Length());
+    }
+
     BufferIterator<const char&> CStr::Iter() const {
         return { data, data + size };
     }

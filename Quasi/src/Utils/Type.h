@@ -14,9 +14,6 @@ namespace Quasi {
     template <class T> using IterOf = typename T::const_iterator;
     template <class T> using IterMutOf = typename T::iterator;
 
-    template <class... Ts> using Tuple = std::tuple<Ts...>;
-	template <class T, class U> using Pair = std::pair<T, U>;
-
 	template <class T> using NoInfer = std::type_identity_t<T>;
 
 	struct Empty {
@@ -88,4 +85,13 @@ namespace Quasi {
 	template <class T, class U> using Common = decltype(false ? std::declval<T>() : std::declval<U>());
 
 	template <class T> concept TrivialCopy = std::is_trivially_copyable_v<T>;
+
+	template <usize...> struct IntSeq {};
+
+	template <usize N, usize... Is> struct MakeIntRange {
+		using Result = typename MakeIntRange<N - 1, N - 1, Is...>::Result; };
+
+	template <usize... Is> struct MakeIntRange<0, Is...> { using Result = IntSeq<Is...>; };
+
+	template <usize N> using IntRangeSeq = typename MakeIntRange<N>::Result;
 }

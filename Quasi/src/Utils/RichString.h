@@ -1,9 +1,9 @@
 #pragma once
-#include <string>
 #include "Macros.h"
 
 #include "Enum.h"
 #include "Ref.h"
+#include "String.h"
 #include "Vec.h"
 
 namespace Quasi::Text {
@@ -124,10 +124,10 @@ namespace Quasi::Text {
     };
 
     inline RichString operator ""_md(const char* markdown, usize size) {
-        return RichString::ParseMarkdown(Str { markdown, size });
+        return RichString::ParseMarkdown(Str::Slice(markdown, size));
     }
 
     inline RichString operator ""_html(const char* html, usize size) {
-        return RichString::ParseHtml(Str { html, size });
+        return RichString::ParseHtml(Str::Slice(html, size));
     }
 }

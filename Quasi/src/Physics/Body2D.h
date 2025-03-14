@@ -1,10 +1,10 @@
 #pragma once
 #include "Collision2D.h"
 
-#include "IShape2D.h"
 #include "PhysicsTransform2D.h"
 #include "Shape2D.h"
-#include "Vector.h"
+#include "Math/Vector.h"
+#include "Math/Complex.h"
 
 namespace Quasi::Physics2D {
     enum class BodyType {

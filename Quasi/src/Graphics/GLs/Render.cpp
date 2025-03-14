@@ -1,6 +1,8 @@
 ﻿#include "Render.h"
 #include <glp.h>
 #include "GLDebug.h"
+#include "VertexArray.h"
+#include "Graphicals/RenderData.h"
 
 namespace Quasi::Graphics::Render {
     void Draw(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader) {
@@ -15,6 +17,22 @@ namespace Quasi::Graphics::Render {
         indexBuff.Bind();
         shader.Bind();
         QGLCall$(GL::DrawElementsInstanced(GL::TRIANGLES, (int)indexBuff.GetUsedLength(), GL::UNSIGNED_INT, nullptr, instances));
+    }
+
+    void Draw(const RenderData& dat, const Shader& s) {
+        Draw(dat.varray, dat.ibo, s);
+    }
+
+    void Draw(const RenderData& dat) {
+        Draw(dat, dat.shader);
+    }
+
+    void DrawInstanced(const RenderData& dat, const Shader& s, int instances) {
+        DrawInstanced(dat.varray, dat.ibo, s, instances);
+    }
+
+    void DrawInstanced(const RenderData& dat, int instances) {
+        DrawInstanced(dat, dat.shader, instances);
     }
 
     void Clear(const BufferBit bit) {

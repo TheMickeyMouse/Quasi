@@ -1,7 +1,11 @@
 #pragma once
 
-#include "Mesh.h"
 #include "MeshConstructor.h"
+#include "Graphicals/Mesh.h"
+
+namespace Quasi::Graphics::VertexBuilder {
+    struct MeshConstructData3D;
+}
 
 namespace Quasi::Graphics::MeshUtils {
     struct CubeNormlessCreator;

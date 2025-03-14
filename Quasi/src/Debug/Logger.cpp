@@ -46,7 +46,7 @@ namespace Quasi::Debug {
     }
 
     Str Logger::FmtFile(Str fullname) const {
-        return shortenFileNames ? std::get<1>(Text::SplitDirectory(fullname)) : fullname;
+        return shortenFileNames ? Text::SplitDirectory(fullname)[1_st] : fullname;
     }
 
     String Logger::FmtSourceLoc(const SourceLoc& loc) const {

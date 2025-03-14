@@ -145,10 +145,15 @@ namespace Quasi {
         Option<String> Unescape() const;
 
         operator Str() const { return AsStr(); }
-        String  operator+(char rhs) const;
+        String  operator+ (char rhs) const;
         String& operator+=(char rhs);
-        String  operator+(Str rhs) const;
+        String  operator+ (Str rhs) const;
         String& operator+=(Str rhs);
+        // prevent String -> bool -> char & String -> Str clashing
+        String  operator+ (const String& rhs) const;
+        String& operator+=(const String& rhs);
+        String  operator+ (const char* rhs) const;
+        String& operator+=(const char* rhs);
     };
 
     template <class T> Str    Span<T>::AsStr() const requires SameAs<const T, const char> { return Str::Slice(data, size); }

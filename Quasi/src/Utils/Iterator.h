@@ -2,6 +2,7 @@
 #include "Comparison.h"
 #include "Type.h"
 #include "Option.h"
+#include "Tuple.h"
 
 namespace Quasi {
     template <class T, class Super> struct IIterator;
@@ -16,6 +17,7 @@ namespace Quasi {
     namespace Iter {
         template <class It>          struct EnumerateIter;
         template <class It, class F> struct MapIter;
+        template <class Vw>          struct SplitIter;
     }
 #pragma endregion
 
@@ -147,6 +149,10 @@ namespace Quasi {
         MutT&    LastMut()  mut { return super().AsSpanMut().LastMut(); }
         const T& First()  const { return super().AsSpan().First(); }
         const T& Last()   const { return super().AsSpan().Last(); }
+        OptRef<MutT>    TryFirstMut() mut { return super().AsSpanMut().TryFirstMut(); }
+        OptRef<MutT>    TryLastMut()  mut { return super().AsSpanMut().TryLastMut(); }
+        OptRef<const T> TryFirst()  const { return super().AsSpan().TryFirst(); }
+        OptRef<const T> TryLast()   const { return super().AsSpan().TryLast(); }
 
         Span<MutT> SubspanMut(usize start)              mut { return super().AsSpan().SubspanMut(start); }
         Span<MutT> SubspanMut(usize start, usize count) mut { return super().AsSpan().SubspanMut(start, count); }
@@ -158,10 +164,12 @@ namespace Quasi {
         Span<MutT> InitMut()                            mut { return super().AsSpan().InitMut(); }
         Tuple<MutT&,      Span<MutT>>        SplitFirstMut()                         mut { return super().AsSpan().SplitFirstMut(); }
         Tuple<Span<MutT>, MutT&>             SplitLastMut()                          mut { return super().AsSpan().SplitLastMut(); }
+        Tuple<Span<MutT>, Span<MutT>>        CutAtMut(usize at)                      mut { return super().AsSpan().CutAtMut(at); }
         Tuple<Span<MutT>, Span<MutT>>        SplitAtMut(usize at)                    mut { return super().AsSpan().SplitAtMut(at); }
         Tuple<Span<MutT>, MutT&, Span<MutT>> PartitionAtMut(usize at)                mut { return super().AsSpan().PartitionAtMut(at); }
-        Tuple<Span<MutT>, Span<MutT>>        SplitOnMut(Predicate<T> auto&& pred)    mut { return super().AsSpan().SplitOnMut(pred); }
-        Tuple<Span<MutT>, Span<MutT>>        RevSplitOnMut(Predicate<T> auto&& pred) mut { return super().AsSpan().RevSplitOnMut(pred); }
+        Tuple<Span<MutT>, Span<MutT>>        SplitOnceOnMut(Predicate<T> auto&& pred)    mut { return super().AsSpan().SplitOnceOnMut(pred); }
+        Tuple<Span<MutT>, Span<MutT>>        RevSplitOnceOnMut(Predicate<T> auto&& pred) mut { return super().AsSpan().RevSplitOnceOnMut(pred); }
+        Tuple<Span<MutT>, Span<MutT>>        SplitOnceMut(const T& sep)                  mut { return super().AsSpan().SplitOnceMut(sep); }
         Span<const T> Subspan(usize start)              const { return super().AsSpan().Subspan(start); }
         Span<const T> Subspan(usize start, usize count) const { return super().AsSpan().Subspan(start, count); }
         Span<const T> First(usize num)                  const { return super().AsSpan().First(num); }
@@ -172,10 +180,19 @@ namespace Quasi {
         Span<const T> Init()                            const { return super().AsSpan().InitMut(); }
         Tuple<const T&,      Span<const T>>           SplitFirst()                         const { return super().AsSpan().SplitFirst(); }
         Tuple<Span<const T>, const T&>                SplitLast()                          const { return super().AsSpan().SplitLast(); }
+        Tuple<Span<const T>, Span<const T>>           CutAt(usize at)                      const { return super().AsSpan().CutAt(at); }
         Tuple<Span<const T>, Span<const T>>           SplitAt(usize at)                    const { return super().AsSpan().SplitAt(at); }
         Tuple<Span<const T>, const T&, Span<const T>> PartitionAt(usize at)                const { return super().AsSpan().PartitionAt(at); }
-        Tuple<Span<const T>, Span<const T>>           SplitOn(Predicate<T> auto&& pred)    const { return super().AsSpan().SplitOn(pred); }
-        Tuple<Span<const T>, Span<const T>>           RevSplitOn(Predicate<T> auto&& pred) const { return super().AsSpan().RevSplitOn(pred); }
+        Tuple<Span<const T>, Span<const T>>           SplitOnceOn(Predicate<T> auto&& pred)    const { return super().AsSpan().SplitOnceOn(pred); }
+        Tuple<Span<const T>, Span<const T>>           RevSplitOnceOn(Predicate<T> auto&& pred) const { return super().AsSpan().RevSplitOnceOn(pred); }
+        Tuple<Span<const T>, Span<const T>>           SplitOnce(const T& sep)                  const { return super().AsSpan().SplitOnce(sep); }
+
+        Iter::SplitIter<Span<const T>> Split(const T& sep) const {
+            return Iter::SplitIter<Span<const T>>::New(*this, Single(sep));
+        }
+        Iter::SplitIter<Span<const T>> Split(Span<const T> sep) const {
+            return Iter::SplitIter<Span<const T>>::New(*this, sep);
+        }
 
         void Swap(usize i, usize j) mut { return super().AsSpanMut().Swap(i, j); }
         void Reverse()              mut { return super().AsSpanMut().Reverse(); }

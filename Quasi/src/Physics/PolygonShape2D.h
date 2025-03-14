@@ -1,5 +1,6 @@
 #pragma once
 #include "IShape2D.h"
+#include "Utils/Vec.h"
 
 namespace Quasi::Physics2D {
     template <class T>

@@ -1,6 +1,6 @@
 #pragma once
-#include "Vector.h"
-#include "Color.h"
+#include "Math/Vector.h"
+#include "Math/Color.h"
 #include "Variant.h"
 
 namespace Quasi::Graphics {

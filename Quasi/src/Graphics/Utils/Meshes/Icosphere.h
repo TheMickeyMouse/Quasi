@@ -1,9 +1,18 @@
 #pragma once
 
-#include "Constants.h"
-#include "Mesh.h"
 #include "MeshConstructor.h"
-#include "Algorithm.h"
+#include "Graphicals/Mesh.h"
+#include "Math/Vector.h"
+#include "Utils/Array.h"
+#include "Utils/Numeric.h"
+
+namespace Quasi::Graphics {
+    struct TriIndices;
+}
+
+namespace Quasi::Graphics::VertexBuilder {
+    struct MeshConstructData3D;
+}
 
 namespace Quasi::Graphics::MeshUtils {
     struct IcosphereCreator;

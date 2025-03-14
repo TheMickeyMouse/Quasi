@@ -1,6 +1,7 @@
 #pragma once
 #include "Iterator.h"
 #include "Numeric.h"
+#include "Tuple.h"
 #include "Type.h"
 
 namespace Quasi {
@@ -28,6 +29,7 @@ namespace Quasi {
 
         static Option<CStr> TryFrom(Str s);
         static Option<CStr> TryFromWithNull(Str zs);
+        static CStr FromUnchecked(Str s);
 
         const char* Data()    const { return data; }
         const char* DataEnd() const { return data + size; }

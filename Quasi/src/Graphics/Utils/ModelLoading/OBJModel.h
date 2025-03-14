@@ -1,7 +1,6 @@
 #pragma once
-#include "Mesh.h"
-#include "Math/Vector.h"
-#include "VertexElement.h"
+#include "Graphics/Graphicals/Mesh.h"
+#include "Graphics/GLs/VertexElement.h"
 
 namespace Quasi::Graphics {
     using OBJVertex = VertexTextureNormal3D;

@@ -1,8 +1,8 @@
 #pragma once
 #include <cmath>
 
-#include "Matrix.h"
-#include "Rect.h"
+#include "Math/Matrix.h"
+#include "Math/Rect.h"
 
 namespace Quasi::Graphics {
     class GraphicsDevice;

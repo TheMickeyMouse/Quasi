@@ -4,25 +4,33 @@
 #include "Text.h"
 
 namespace Quasi {
-    Str StringListIter::Value() const {
+    Str StringListIter::CurrentImpl() const {
         const byte size = *ptr;
-        return Str { ptr + 1, size };
+        return Str::Slice(ptr + 1, size);
     }
 
-    void StringListIter::Advance() {
+    void StringListIter::AdvanceImpl() {
         ptr += (*ptr) + 2;
     }
 
-    StringList::StringList(IList<Str> strings) {
-        for (const auto str : strings) {
-            Push(str);
-        }
+    bool StringListIter::CanNextImpl() const {
+        return *ptr != '\0';
     }
 
-    StringList::StringList(Str str) {
-        stringlist += (char)str.size();
-        stringlist += str;
-        stringlist += '\0';
+    StringList StringList::FromListOf(IList<Str> strings) {
+        StringList list;
+        for (const auto str : strings) {
+            list.Push(str);
+        }
+        return list;
+    }
+
+    StringList StringList::Only(Str first) {
+        StringList list;
+        list.stringlist += (char)first.Length();
+        list.stringlist += first;
+        list.stringlist += '\0';
+        return list;
     }
 
     StringList StringList::FromListed(String slist) {
@@ -30,7 +38,7 @@ namespace Quasi {
     }
 
     void StringList::Push(Str str) {
-        stringlist += (char)str.size();
+        stringlist += (char)str.Length();
         stringlist += str;
         stringlist += '\0';
     }
@@ -46,14 +54,14 @@ namespace Quasi {
     StringListView::StringListView(const StringList& sl) : sv(sl.stringlist) {}
 
     String StringListView::Join(Str c) const {
-        return Text::ArrStr(*this, c);
+        // return Text::ArrStr(*this, c);
     }
 
     Str StringListView::First() const {
-        return *begin();
+        return sv.Substr(1, sv.First());
     }
 
     StringListView StringListView::Rest() const {
-        return { sv.substr(sv[0] + 2) };
+        return { sv.Substr(sv[0] + 2) };
     }
 } // Q

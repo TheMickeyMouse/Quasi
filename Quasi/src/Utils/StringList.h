@@ -1,22 +1,24 @@
 #pragma once
+#include "String.h"
 #include "Type.h"
 
 namespace Quasi {
-    struct StringListIter {
+    struct StringListIter : IIterator<Str, StringListIter> {
         const char* ptr;
-        Str Value() const;
-        void Advance();
+        StringListIter(const char* p) : ptr(p) {}
 
-        bool operator==(const StringListIter&) const = default;
-        StringListIter& operator++() { Advance(); return *this; }
-        Str operator*() const { return Value(); }
+        Str  CurrentImpl() const;
+        void AdvanceImpl();
+        bool CanNextImpl() const;
     };
 
     struct StringList;
 
     struct StringListView {
         Str sv;
+
         StringListView() = default;
+        StringListView(Str sv) : sv(sv) {}
         StringListView(const StringList& sl);
 
         using Iter = StringListIter;
@@ -26,10 +28,7 @@ namespace Quasi {
         Str First() const;
         StringListView Rest() const;
 
-        bool Empty() const { return sv.empty(); }
-
-        Iter begin() const { return { sv.data() }; }
-        Iter end() const { return { sv.data() + sv.size() }; }
+        bool IsEmpty() const { return sv.IsEmpty(); }
     };
 
     // represents a vector of strings as: [len1][string1...][len2][string2...]...
@@ -39,9 +38,9 @@ namespace Quasi {
         StringList(String slist, int /* to seperate constructors */) : stringlist(std::move(slist)) {}
     public:
         StringList() = default;
-        StringList(IList<Str> strings);
-        StringList(Str str);
-        StringList(const char* str) : StringList(Str(str)) {}
+
+        static StringList FromListOf(IList<Str> strings);
+        static StringList Only(Str first);
 
         static StringList FromListed(String slist);
 
@@ -54,13 +53,10 @@ namespace Quasi {
 
         String Join(Str c) const { return AsView().Join(c); }
 
-        bool Empty() const { return stringlist.empty(); }
-        void Clear() { stringlist.clear(); }
+        bool Empty() const { return stringlist.IsEmpty(); }
+        void Clear() { stringlist.Clear(); }
 
-        using Iter = StringListIter;
-
-        Iter begin() const { return { stringlist.data() }; }
-        Iter end() const { return { stringlist.data() + stringlist.size() }; }
+        StringListIter Iter() const { return { stringlist.Data() }; }
         bool operator==(const StringList&) const = default;
     };
 
@@ -70,11 +66,11 @@ namespace Quasi {
 
     inline StringList operator&(StringList first, Str second) {
         first.Push(second);
-        return std::move(first);
+        return first;
     }
 
     inline StringList operator&(StringList first, StringListView second) {
         first.Connect(second);
-        return std::move(first);
+        return first;
     }
 } // Q

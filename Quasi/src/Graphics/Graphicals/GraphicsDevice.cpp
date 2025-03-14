@@ -2,23 +2,21 @@
 #include <glp.h>
 #include <GLFW/glfw3.h>
 
-#include "Render.h"
 #include "GraphicsDevice.h"
 
 #include <algorithm>
 #include <ranges>
 
 #include "IO.h"
-#include "Mouse.h"
-#include "Keyboard.h"
 
-#include "GLDebug.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include "Textures/Texture.h"
+#include "Utils/Textures/Texture.h"
 
 namespace Quasi::Graphics {
+    class RenderData;
+
     GraphicsDevice::GraphicsDevice(GLFWwindow* window, Math::iVector2 winSize) :
         windowSize(winSize), mainWindow{ window }, ioDevice(*this) {
         Instance = *this;

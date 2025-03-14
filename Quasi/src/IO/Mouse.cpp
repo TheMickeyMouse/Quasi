@@ -1,5 +1,4 @@
-#include "GraphicsDevice.h"
-
+#include "Graphicals/GraphicsDevice.h"
 #include <GLFW/glfw3.h>
 
 #include "IO.h"

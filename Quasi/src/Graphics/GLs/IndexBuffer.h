@@ -1,8 +1,7 @@
 ﻿#pragma once
-#include "Span.h"
 
 #include "GLObject.h"
-#include "TriIndices.h"
+#include "Utils/Span.h"
 
 namespace Quasi::Graphics {
     struct TriIndices;

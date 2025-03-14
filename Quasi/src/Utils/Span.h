@@ -3,6 +3,7 @@
 #include "Memory.h"
 #include "Iterator.h"
 #include "Ref.h"
+#include "Tuple.h"
 
 namespace Quasi {
     namespace Algorithm {};
@@ -66,6 +67,10 @@ namespace Quasi {
         MutT& LastMut()  mut   { return data[size - 1]; }
         const T& First() const { return data[0]; }
         const T& Last()  const { return data[size - 1]; }
+        OptRef<MutT> TryFirstMut() mut   { return size ? OptRefs::SomeRef(data[0])        : nullptr; }
+        OptRef<MutT> TryLastMut()  mut   { return size ? OptRefs::SomeRef(data[size - 1]) : nullptr; }
+        OptRef<const T> TryFirst() const { return size ? OptRefs::SomeRef(data[0])        : nullptr; }
+        OptRef<const T> TryLast()  const { return size ? OptRefs::SomeRef(data[size - 1]) : nullptr; }
 
         Span<MutT> SubspanMut(usize start)              mut { return { data + start, size - start }; }
         Span<MutT> SubspanMut(usize start, usize count) mut { return { data + start, count }; }
@@ -77,15 +82,20 @@ namespace Quasi {
         Span<MutT> InitMut()                            mut { return { data, size - 1 }; }
         Tuple<MutT&,      Span<MutT>> SplitFirstMut()       mut { return { data[0], TailMut() }; }
         Tuple<Span<MutT>, MutT&>      SplitLastMut()        mut { return { InitMut(), data[size - 1] }; }
-        Tuple<Span<MutT>, Span<MutT>> SplitAtMut(usize at)  mut { return { FirstMut(at), SkipMut(at) }; }
+        Tuple<Span<MutT>, Span<MutT>> CutAtMut(usize at)    mut { return { FirstMut(at), SkipMut(at) }; }
+        Tuple<Span<MutT>, Span<MutT>> SplitAtMut(usize at)  mut { return { FirstMut(at), SkipMut(at + 1) }; }
         Tuple<Span<MutT>, MutT&, Span<MutT>> PartitionAtMut(usize at) mut { return { FirstMut(at), data[at], SkipMut(at + 1) }; }
-        Tuple<Span<MutT>, Span<MutT>> SplitOnMut(Predicate<T> auto&& pred) mut {
-            const usize i = FindIf(pred);
-            return i == -1 ? Tuple { *this, Span<MutT>::Empty() } : SplitAtMut(i);
+        Tuple<Span<MutT>, Span<MutT>> SplitOnceOnMut(Predicate<T> auto&& pred) mut {
+            const OptionUsize i = FindIf(pred);
+            return i ? SplitAtMut(i) : Tuple { *this, Span<MutT>::Empty() };
         }
-        Tuple<Span<MutT>, Span<MutT>> RevSplitOnMut(Predicate<T> auto&& pred) mut {
-            const usize i = RevFindIf(pred);
-            return i == -1 ? Tuple { Span<MutT>::Empty(), *this } : SplitAtMut(i);
+        Tuple<Span<MutT>, Span<MutT>> RevSplitOnceOnMut(Predicate<T> auto&& pred) mut {
+            const OptionUsize i = RevFindIf(pred);
+            return i ? SplitAtMut(i) : Tuple { Span<MutT>::Empty(), *this };
+        }
+        Tuple<Span<MutT>, Span<MutT>> SplitOnceMut(const T& sep) mut {
+            const OptionUsize i = Find(sep);
+            return i ? SplitAtMut(i) : Tuple { *this, Empty() };
         }
         Span<const T> Subspan(usize start)              const { return { data + start, size - start }; }
         Span<const T> Subspan(usize start, usize count) const { return { data + start, count }; }
@@ -97,15 +107,20 @@ namespace Quasi {
         Span<const T> Init()                            const { return { data, size - 1 }; }
         Tuple<const T&,      Span<const T>> SplitFirst()       const { return { data[0], Tail() }; }
         Tuple<Span<const T>, const T&>      SplitLast()        const { return { Init(), data[size - 1] }; }
-        Tuple<Span<const T>, Span<const T>> SplitAt(usize at)  const { return { First(at), Skip(at) }; }
+        Tuple<Span<const T>, Span<const T>> CutAt(usize at)    const { return { First(at), Skip(at) }; }
+        Tuple<Span<const T>, Span<const T>> SplitAt(usize at)  const { return { First(at), Skip(at + 1) }; }
         Tuple<Span<const T>, const T&, Span<const T>> PartitionAt(usize at) const { return { First(at), data[at], Skip(at + 1) }; }
-        Tuple<Span<const T>, Span<const T>> SplitOn(Predicate<T> auto&& pred) const {
-            const usize i = FindIf(pred);
-            return i == -1 ? Tuple { *this, Empty() } : SplitAt(i);
+        Tuple<Span<const T>, Span<const T>> SplitOnceOn(Predicate<T> auto&& pred) const {
+            const OptionUsize i = FindIf(pred);
+            return i ? SplitAt(i) : Tuple { *this, Empty() };
         }
-        Tuple<Span<const T>, Span<const T>> RevSplitOn(Predicate<T> auto&& pred) const {
-            const usize i = RevFindIf(pred);
-            return i == -1 ? Tuple { Empty(), *this } : SplitAt(i);
+        Tuple<Span<const T>, Span<const T>> RevSplitOnceOn(Predicate<T> auto&& pred) const {
+            const OptionUsize i = RevFindIf(pred);
+            return i ? SplitAt(i) : Tuple { Empty(), *this };
+        }
+        Tuple<Span<const T>, Span<const T>> SplitOnce(const T& sep) const {
+            const OptionUsize i = Find(sep);
+            return i ? SplitAt(i) : Tuple { *this, Empty() };
         }
 
         // Option<FixedSpan<T, N>> FirstChunk<usize N>()
@@ -125,7 +140,13 @@ namespace Quasi {
         // Tuple<Span, Span<Array<RemConst<T>, N>>> AsRevChunks<usize N>()
         //
         // ChunkByIter           ChunkBy(Fn<bool, T&, T&> pred)
-        // SplitIter             Split(const T& sep)
+        Iter::SplitIter<Span> Split(const T& sep) const {
+            return Iter::SplitIter<Span>::New(*this, Single(sep));
+        }
+        Iter::SplitIter<Span> Split(Span<const T> sep) const {
+            return Iter::SplitIter<Span>::New(*this, sep);
+        }
+
         // SplitIfIter           SplitIf(Fn<bool, T&> pred)
         // SplitIfInclIter       SplitIfIncl(Fn<bool, T&> pred)
         // RevSplitIter          RevSplit(const T& sep)

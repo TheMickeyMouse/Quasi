@@ -2,6 +2,9 @@
 #include <ranges>
 
 #include "OBJModel.h"
+#include "Utils/Match.h"
+#include "Utils/Iter/LinesIter.h"
+#include "Utils/Text/Parsing.h"
 
 namespace Quasi::Graphics {
     void MTLMaterialLoader::Load(Str string) {
@@ -10,9 +13,7 @@ namespace Quasi::Graphics {
     }
 
     void MTLMaterialLoader::ParseProperty(Str line) {
-        const usize spaceIdx = line.find_first_of(' ');
-        const Str prefix = line.substr(0, spaceIdx),
-                  data   = line.substr(spaceIdx + 1);
+        const auto [prefix, data] = line.SplitOnce(' ');
 
         MTLProperty prop;
         Qmatch$ (prefix, (
@@ -21,9 +22,9 @@ namespace Quasi::Graphics {
             case ("Kd")     prop.Set(DiffuseCol  { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 {}).to_color3() });,
             case ("Ks")     prop.Set(SpecularCol { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 {}).to_color3() });,
             case ("Ke")     prop.Set(EmissiveCol { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 {}).to_color3() });,
-            case ("Ns")     prop.Set(SpecularExp { Text::Parse<float>(data).UnwrapOr(NAN) });,
-            case ("Ni")     prop.Set(OpticalDen  { Text::Parse<float>(data).UnwrapOr(NAN) });,
-            case ("d")      prop.Set(Dissolve    { Text::Parse<float>(data).UnwrapOr(NAN) });,
+            case ("Ns")     prop.Set(SpecularExp { Text::Parse<float>(data).UnwrapOr(f32s::NAN) });,
+            case ("Ni")     prop.Set(OpticalDen  { Text::Parse<float>(data).UnwrapOr(f32s::NAN) });,
+            case ("d")      prop.Set(Dissolve    { Text::Parse<float>(data).UnwrapOr(f32s::NAN) });,
             case ("illum")  prop.Set(IlluminationType { Text::Parse<u32>(data).UnwrapOr(-1) });
         ))
         if (!prop.Is<Empty>())
@@ -32,8 +33,8 @@ namespace Quasi::Graphics {
 
     void MTLMaterialLoader::ParseProperties(Str string) {
         using namespace std::literals;
-        for (const auto line : std::views::split(string, "\n"sv)) {
-            ParseProperty(Str { line.begin(), line.end() });
+        for (const Str line : string.Lines()) {
+            ParseProperty(line);
         }
     }
 
@@ -79,10 +80,10 @@ namespace Quasi::Graphics {
                 [&] (const DiffuseCol&       x) { ss += "diffuse: ";      ss += x.color.hexcode();          },
                 [&] (const SpecularCol&      x) { ss += "specular: ";     ss += x.color.hexcode();          },
                 [&] (const EmissiveCol&      x) { ss += "emmisive: ";     ss += x.color.hexcode();          },
-                [&] (const SpecularExp&      x) { ss += "specular exp: "; ss += std::to_string(x.exp);      },
-                [&] (const OpticalDen&       x) { ss += "optical den: ";  ss += std::to_string(x.density);  },
-                [&] (const Dissolve&         x) { ss += "dissolve: ";     ss += std::to_string(x.dissolve); },
-                [&] (const IlluminationType& x) { ss += "illumtype: ";    ss += std::to_string(x.itype);    },
+                [&] (const SpecularExp&      x) { ss += "specular exp: "; ss += Text::Format("{}", x.exp);      },
+                [&] (const OpticalDen&       x) { ss += "optical den: ";  ss += Text::Format("{}", x.density);  },
+                [&] (const Dissolve&         x) { ss += "dissolve: ";     ss += Text::Format("{}", x.dissolve); },
+                [&] (const IlluminationType& x) { ss += "illumtype: ";    ss += Text::Format("{}", x.itype);    },
                 [] (const auto&) {}
             );
         }

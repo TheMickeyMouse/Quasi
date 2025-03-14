@@ -1,13 +1,16 @@
 #include "OBJModelLoader.h"
-#include "Algorithm.h"
-#include "Comparison.h"
+#include "Utils/Algorithm.h"
+#include "Utils/Comparison.h"
 
-#include "Iter/MapIter.h"
+#include "Utils/Iter/MapIter.h"
 #include "Utils/Match.h"
+#include "Utils/Iter/LinesIter.h"
+#include "Utils/Text/Parsing.h"
+#include "Utils/Text/Num.h"
 
 namespace Quasi::Graphics {
     void OBJModelLoader::LoadFile(CStr filepath) {
-        std::tie(folder, filename) = Text::SplitDirectory(filepath);
+        Text::SplitDirectory(filepath).TieTo(folder, filename);
         Load(Text::ReadFile(filepath).Assert());
     }
 
@@ -17,7 +20,16 @@ namespace Quasi::Graphics {
     }
 
     void OBJModelLoader::LoadMaterialFile(CStr filepath) {
-        mats.LoadFile(folder + '\\' + String { filepath } + '\0');
+        const usize len = folder.Length() + filepath.Length() + 2;
+        char* fullpath = Memory::QAlloca$(char, len),
+            * acc = fullpath;
+
+        Memory::MemCopy(acc, folder.Data(), folder.Length()); acc += folder.Length();
+        *acc++ = '\\';
+        Memory::MemCopy(acc, filepath.Data(), filepath.Length());
+
+
+        mats.LoadFile(CStr::SliceUnchecked(acc, len));
         model.materials = std::move(mats.materials);
     }
 
@@ -39,9 +51,9 @@ namespace Quasi::Graphics {
             case ("f") ({
                 Face face;
                 u32 i = 0;
-                for (const auto idx : std::views::split(data, ' ')) {
+                for (const auto idx : data.Split(' ')) {
                     if (i >= 3) break;
-                    const auto [v, t, n] = Math::iVector3::parse(Str { idx.begin(), idx.end() }, "/", "", "",
+                    const auto [v, t, n] = Math::iVector3::parse(idx, "/", "", "",
                         [](Str x) -> Option<int> { return Text::Parse<int>(x).UnwrapOr(-1); }).UnwrapOr({ -1 });
                     face.indices[i][0] = v; face.indices[i][1] = t; face.indices[i][2] = n;
                     ++i;
@@ -59,7 +71,11 @@ namespace Quasi::Graphics {
             case ("g")      prop.Set(Group  { String(data) });,
             case ("s")      prop.Set(SmoothShade { data != "0" });,
             case ("usemtl") prop.Set(UseMaterial { String(data) });,
-            case ("mtllib") prop.Set(MaterialLib { String(data) });
+            case ("mtllib") {
+                String mtllibdir = data;
+                data += '\0';
+                prop.Set(MaterialLib { std::move(mtllibdir) });
+            }
         ))
         if (!prop.Is<Empty>())
             properties.Push(std::move(prop));
@@ -67,8 +83,8 @@ namespace Quasi::Graphics {
 
     void OBJModelLoader::ParseProperties(Str string) {
         using namespace std::literals;
-        for (const auto line : std::views::split(string, "\n"sv)) {
-            ParseProperty(Str { line.begin(), line.end() });
+        for (const Str line : string.Lines()) {
+            ParseProperty(line);
         }
     }
 
@@ -76,7 +92,7 @@ namespace Quasi::Graphics {
         u32 lastObj = 0;
         for (u32 i = 0; i < properties.Length(); ++i) {
             if (const auto matfile = properties[i].As<MaterialLib>()) {
-                LoadMaterialFile(matfile->dir);
+                LoadMaterialFile(CStr::FromUnchecked(matfile->dir));
                 continue;
             }
             if (!properties[i].Is<Object>()) continue;
@@ -132,8 +148,8 @@ namespace Quasi::Graphics {
         }
         indices.SortBy(Cmp3 {});
         indices.RemoveDups();
-        obj.mesh.vertices = indices.MapVec(
-            [&](Math::uVector3 triple) {
+        obj.mesh.vertices = indices.MapEach(
+            [&] (Math::uVector3 triple) {
                 return OBJVertex {
                     triple.x == -1 ? Math::fVector3 {} : vertex[triple.x - 1],
                     triple.y == -1 ? Math::fVector2 {} : vertexTexture[triple.y - 1],

@@ -1,9 +1,11 @@
 ﻿#pragma once
 #include "IndexBuffer.h"
 #include "Shader.h"
-#include "RenderObject.h"
 
 namespace Quasi::Graphics {
+    class RenderData;
+    class VertexArray;
+
     enum class BufferBit {
         COLOR = 0x00004000, DEPTH = 0x00000100, STENCIL = 0x00000400, ACCUM = 0x00000200,
         ALL = COLOR | DEPTH | STENCIL,
@@ -103,18 +105,10 @@ namespace Quasi::Graphics {
 namespace Quasi::Graphics::Render {
     void Draw(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader);
     void DrawInstanced(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader, int instances);
-    inline void Draw(const RenderData& dat, const Shader& s) {
-        Draw(dat.varray, dat.ibo, s);
-    }
-    inline void Draw(const RenderData& dat) {
-        Draw(dat, dat.shader);
-    }
-    inline void DrawInstanced(const RenderData& dat, const Shader& s, int instances) {
-        DrawInstanced(dat.varray, dat.ibo, s, instances);
-    }
-    inline void DrawInstanced(const RenderData& dat, int instances) {
-        DrawInstanced(dat, dat.shader, instances);
-    }
+    inline void Draw(const RenderData& dat, const Shader& s);
+    inline void Draw(const RenderData& dat);
+    inline void DrawInstanced(const RenderData& dat, const Shader& s, int instances);
+    inline void DrawInstanced(const RenderData& dat, int instances);
 
 #pragma region GL Functions
 #define GL_SWITCH(F, NAME, E) inline void F##NAME() { F(E); }

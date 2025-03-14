@@ -1,7 +1,12 @@
 #pragma once
-#include "Constants.h"
-#include "Mesh.h"
+
 #include "MeshConstructor.h"
+#include "Graphicals/Mesh.h"
+#include "Utils/Numeric.h"
+
+namespace Quasi::Graphics::VertexBuilder {
+    struct MeshConstructData2D;
+}
 
 namespace Quasi::Graphics::MeshUtils {
     struct CircleCreator;

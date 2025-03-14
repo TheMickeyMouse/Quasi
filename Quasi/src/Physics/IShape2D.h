@@ -3,6 +3,9 @@
 #include "Rect.h"
 #include "Utils/ArenaAllocator.h"
 #include "PhysicsTransform2D.h"
+#include "Math/Geometry.h"
+#include "Math/Rect.h"
+#include "Math/Vector.h"
 
 namespace Quasi::Physics2D {
     class SeperatingAxisSolver;

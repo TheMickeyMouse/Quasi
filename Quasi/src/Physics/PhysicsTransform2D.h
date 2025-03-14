@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Complex.h"
-#include "Geometry.h"
-#include "Rect.h"
+#include "Math/Complex.h"
+#include "Math/Geometry.h"
+#include "Math/Vector.h"
 
 namespace Quasi::Physics2D {
     using namespace Math;

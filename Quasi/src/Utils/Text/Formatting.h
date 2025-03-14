@@ -3,7 +3,7 @@
 #include "StringWriter.h"
 
 namespace Quasi::Text {
-    template <class T> struct Formatter;
+    template <class T> struct Formatter {};
 
     template <class T>
     usize FormatObjectTo(StringWriter output, const T& object, const typename Formatter<T>::FormatOptions options = {}) {

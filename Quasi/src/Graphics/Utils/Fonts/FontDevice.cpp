@@ -1,8 +1,9 @@
 #include "FontDevice.h"
 
-#include "GLDebug.h"
+#include "GLs/GLDebug.h"
 
 #include "ft2build.h"
+
 #include FT_FREETYPE_H
 
 namespace Quasi::Graphics {

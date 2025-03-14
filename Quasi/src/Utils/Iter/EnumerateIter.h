@@ -2,10 +2,16 @@
 #include "Utils/Iterator.h"
 
 namespace Quasi::Iter {
+    template <class T>
+    struct EnumeratePair {
+        usize index;
+        T value;
+    };
+
     template <class It>
-    struct EnumerateIter : IIterator<Tuple<usize, CollectionItem<It>>, EnumerateIter<It>> {
+    struct EnumerateIter : IIterator<EnumeratePair<CollectionItem<It>>, EnumerateIter<It>> {
         using OriginalItem = CollectionItem<It>;
-        using Item = Tuple<usize, OriginalItem>;
+        using Item = EnumeratePair<OriginalItem>;
         friend IIterator<Item, EnumerateIter>;
     private:
         usize i = 0;

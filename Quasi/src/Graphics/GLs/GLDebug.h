@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Logger.h"
+#include "Debug/Logger.h"
 
 namespace Quasi::Graphics {
     // a very thin wrapper for an extern variable

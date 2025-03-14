@@ -1,15 +1,23 @@
 #pragma once
 #include <utility>
 
-#include "VertexElement.h"
+#include "Graphicals/Mesh.h"
+#include "Math/Transform2D.h"
+#include "Math/Transform3D.h"
+#include "Utils/Type.h"
+
+namespace Quasi::Graphics::VertexBuilder {
+    struct MeshConstructData2D;
+    struct MeshConstructData3D;
+}
 
 namespace Quasi::Graphics::MeshUtils {
     template <class T>
     struct OptionsFor {};
     
     template <class R, class MD> concept MTransformer =
-        std::is_same_v<VertexBuilder::MeshConstructData2D, MD> && Math::ITransformer2D<R> ||
-        std::is_same_v<VertexBuilder::MeshConstructData3D, MD> && Math::ITransformer3D<R>;
+        SameAs<VertexBuilder::MeshConstructData2D, MD> && Math::ITransformer2D<R> ||
+        SameAs<VertexBuilder::MeshConstructData3D, MD> && Math::ITransformer3D<R>;
 
     template <class T>
     struct MeshConstructor {

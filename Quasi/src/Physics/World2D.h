@@ -23,7 +23,6 @@ namespace Quasi::Physics2D {
         World& operator=(World&& w) noexcept;
 
         World Clone() const;
-
     private:
         const Body& BodyDirectAt(u32 i) const { return bodies[i]; }
         Body& BodyDirectAt(u32 i) { return bodies[i]; }

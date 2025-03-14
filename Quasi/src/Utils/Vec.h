@@ -224,7 +224,7 @@ namespace Quasi {
         // void Replace(IntegerRange, Span) // replaced values with span values
         // ExtractIfIter ExtractIf() // see https://doc.rust-lang.org/nightly/std/vec/struct.Vec.html#method.extract_if. probably not needed
 
-        Vec Split(usize index) { Vec tail = Vec::MoveNew(this->SubspanMut(index)); SetLengthUnsafe(index); return tail; }
+        Vec SplitOff(usize index) { Vec tail = Vec::MoveNew(this->SubspanMut(index)); SetLengthUnsafe(index); return tail; }
 
         /* Vec<CollectionItem<T>> */ auto Flattened() const requires CollectionAny<T> {
             Vec<CollectionItem<T>> flattened;
@@ -240,6 +240,14 @@ namespace Quasi {
                 for (auto& sub : item.IntoIter()) flattened.Push(std::move(sub));
             }
             return flattened;
+        }
+
+        template <FnArgs<const T&> F>
+        Vec<FuncResult<F, const T&>> MapEach(const F& mapper) {
+            using R = FuncResult<F, const T&>;
+            Vec<R> result = Vec<R>::WithCap(size);
+            for (const T* beg = data; beg != data + size; ++beg) result.Push(mapper(*beg));
+            return result;
         }
 
         // + see span iterators

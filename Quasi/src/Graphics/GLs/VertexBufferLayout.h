@@ -4,6 +4,7 @@
 #include "GLTypeID.h"
 #include "Math/Vector.h"
 #include "Math/Color.h"
+#include "Utils/Vec.h"
 
 namespace Quasi::Graphics {
     struct VertexBufferComponent {
@@ -31,8 +32,8 @@ namespace Quasi::Graphics {
         static VertexBufferComponent IVec4()  { return { GLGetTypeID<int>(),    4 }; }
 
         template <class T> static VertexBufferComponent Type() {
-            if constexpr (std::is_floating_point_v<T>) return { GLGetTypeID<T>(), 1 };
-            if constexpr (std::is_integral_v<T>) return { GLGetTypeID<T>(), 1, false, true };
+            if constexpr (Floating<T>) return { GLGetTypeID<T>(), 1 };
+            if constexpr (Integer<T>) return { GLGetTypeID<T>(), 1, false, true };
             if constexpr (Math::IVector<T> || Math::ColorLike<T>)
                 return { GLGetTypeID<typename T::scalar>(), T::dimension };
             return { GLTypeID::NONE, 0 };

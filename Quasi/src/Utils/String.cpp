@@ -395,4 +395,9 @@ namespace Quasi {
         AppendStr(rhs);
         return *this;
     }
+
+    String  String::operator+ (const String& rhs) const { return operator+ (rhs.AsStr()); }
+    String& String::operator+=(const String& rhs)       { return operator+=(rhs.AsStr()); }
+    String  String::operator+ (const char* rhs)   const { return operator+ (Str { rhs }); }
+    String& String::operator+=(const char* rhs)         { return operator+=(Str { rhs }); }
 }

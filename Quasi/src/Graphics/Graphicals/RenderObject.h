@@ -70,8 +70,8 @@ namespace Quasi::Graphics {
 	    void SetProjection(const Math::Matrix3D& proj) { rd->SetProjection(proj); }
 	    
 	    void UseShader(Str code) { rd->UseShader(code); }
-	    void UseShaderFromFile(Str file) { rd->UseShaderFromFile(file); }
-	    void UseShaderFromFile(Str vert, Str frag, Str geom = {})
+	    void UseShaderFromFile(CStr file) { rd->UseShaderFromFile(file); }
+	    void UseShaderFromFile(CStr vert, CStr frag, CStr geom = {})
     	{ rd->UseShaderFromFile(vert, frag, geom); }
     };
 

@@ -2,8 +2,6 @@
 
 #include <algorithm>
 
-#include "Memory.h"
-
 namespace Quasi::Physics2D {
     World::~World() {
         Span<Body> bodiesTemp = bodies.LeakSpan();
@@ -75,7 +73,7 @@ namespace Quasi::Physics2D {
     u32 World::FindVacantIndex() const {
         if (!bodySparseEnabled) return 0;
         for (u32 i = 0; i < bodySparseEnabled.Length(); ++i) {
-            if (bodySparseEnabled[i] == USIZE_MAX) continue;
+            if (bodySparseEnabled[i] == usizes::MAX) continue;
             return i * BITS_IN_USIZE + std::countr_one(bodySparseEnabled[i]);
         }
         return bodySparseEnabled.Length() * BITS_IN_USIZE;
@@ -147,7 +145,7 @@ namespace Quasi::Physics2D {
                     const bool bDyn = b.IsDynamic(), cDyn = c.IsDynamic();
                     if ((bDyn || cDyn) && c.boundingBox.yrange().overlaps(b.boundingBox.yrange())) {
                         const Manifold manifold = b.CollideWith(c);
-                        if (manifold.contactCount && std::max(manifold.contactDepth[0], manifold.contactDepth[1]) > EPSILON) {
+                        if (manifold.contactCount && std::max(manifold.contactDepth[0], manifold.contactDepth[1]) > f32s::EPSILON) {
                             StaticResolve(b, c, manifold);
                             DynamicResolve(b, c, manifold);
                             if (bDyn) b.TryUpdateTransforms();

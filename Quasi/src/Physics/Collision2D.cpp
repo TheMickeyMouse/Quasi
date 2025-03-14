@@ -1,8 +1,11 @@
 #include "Collision2D.h"
 
+#include <bits/stl_algo.h>
+
 #include "Body2D.h"
-#include "Logger.h"
 #include "SeperatingAxisSolver.h"
+#include "Debug/Logger.h"
+#include "Math/Geometry.h"
 
 namespace Quasi::Physics2D {
     float ClosestBetweenSegments(const fVector2& a1, const fVector2& b1, const fVector2& a2, const fVector2& b2,
@@ -15,21 +18,21 @@ namespace Quasi::Physics2D {
         const float r2 = direction2.dot(relative);
 
         // Check if either or both segments degenerate into points
-        if (len1 <= EPSILON && len2 <= EPSILON) {
+        if (len1 <= f32s::EPSILON && len2 <= f32s::EPSILON) {
             // Both segments degenerate into points
             *s = *t = 0.0f;
             *c1 = a1;
             *c2 = a2;
             return c1->distsq(*c2);
         }
-        if (len1 <= EPSILON) {
+        if (len1 <= f64s::EPSILON) {
             // First segment degenerates into a point
             *s = 0.0f;
             *t = r2 / len2; // s = 0 => t = (b*s + f) / e = f / e
             *t = std::clamp(*t, 0.0f, 1.0f);
         } else {
             const float r1 = direction1.dot(relative);
-            if (len2 <= EPSILON) {
+            if (len2 <= f64s::EPSILON) {
                 // Second segment degenerates into a point
                 *t = 0.0f;
                 *s = std::clamp(-r1 / len1, 0.0f, 1.0f); // t = 0 => s = (b*t - c) / a = -c / a
@@ -714,7 +717,7 @@ namespace Quasi::Physics2D {
 
             const float t = relVel.dot(tangent);
 
-            if (std::abs(t) <= EPSILON) continue;
+            if (std::abs(t) <= f32s::EPSILON) continue;
 
             const float denomT = [&] {
                 if constexpr (BDyn && TDyn) {

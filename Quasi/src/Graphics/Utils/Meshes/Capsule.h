@@ -1,8 +1,12 @@
 #pragma once
 
-#include "Constants.h"
-#include "Mesh.h"
 #include "MeshConstructor.h"
+#include "Graphicals/Mesh.h"
+#include "Math/Vector.h"
+
+namespace Quasi::Graphics::VertexBuilder {
+    struct MeshConstructData3D;
+}
 
 namespace Quasi::Graphics::MeshUtils {
     struct CapsuleCreator;

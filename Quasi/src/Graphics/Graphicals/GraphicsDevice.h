@@ -1,13 +1,16 @@
 ﻿#pragma once
 
-#include "Render.h"
-
-#include "IO.h"
-#include "Timer.h"
+#include "RenderObject.h"
+#include "Debug/Timer.h"
+#include "GLs/Render.h"
+#include "IO/IO.h"
 #include "Math/Random.h"
-#include "Fonts/FontDevice.h"
+#include "Utils/Box.h"
+#include "Utils/Fonts/FontDevice.h"
 
 namespace Quasi::Graphics {
+    class RenderData;
+
     class GraphicsDevice {
         static constexpr usize MAX_VERTEX_COUNT = 1024;
         static constexpr usize MAX_INDEX_COUNT = 1024;

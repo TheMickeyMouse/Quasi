@@ -1,5 +1,5 @@
 #pragma once
-#include "Mesh.h"
+
 #include "MeshConstructor.h"
 
 namespace Quasi::Graphics::MeshUtils {
