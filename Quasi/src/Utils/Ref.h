@@ -66,6 +66,8 @@ namespace Quasi {
 
         bool operator==(ConstRef r) const { return this->Equals(r); }
 
+        Hashing::Hash GetHashCode() const;
+
         Ref<RemConst<T>> AsMut() requires IsConst<T> { return { (RemConst<T>*)obj }; }
         Ref<const T> AsConst() const requires IsMut<T> { return { (const T*)obj }; }
 
@@ -127,6 +129,8 @@ namespace Quasi {
         void SetNull() { obj = nullptr; }
 
         bool operator==(ConstRef r) const { return this->Equals(r); }
+
+        Hashing::Hash GetHashCode() const;
 
         OptRef<RemConst<T>> AsMut() requires IsConst<T> { return { (RemConst<T>*)obj }; }
         OptRef<const T> AsConst() const requires IsMut<T> { return { (const T*)obj }; }

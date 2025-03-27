@@ -375,21 +375,42 @@ namespace Quasi::Text {
     }
 
     usize NumberConversion::FormatU64(StringWriter sw, u64 num, const IntFormatOptions& options, char sign) {
-        char strbuf[u64s::DIGITS] = {};
-        const u32 nlen = U64FullToString(num, strbuf);
+        if (num == 0) {
+            const u32 padLen = options.totalLength - options.numLen;
+            const u32 left = padLen * (usize)options.alignment / 2;
+            sw.WriteRepeat(options.pad, left);
+            sw.WriteRepeat(options.shouldPadZero ? '0' : ' ', options.numLen - 1);
+            sw.Write('0');
+            sw.WriteRepeat(options.pad, padLen - left);
+            return options.totalLength;
+        }
+
+        u32 nlen;
+        switch (options.base) {
+            case IntFormatOptions::DECIMAL: nlen = 1 + u64s::Log10(num); break;
+            case IntFormatOptions::BINARY:  nlen = u64s::BitWidth(num);  break;
+            case IntFormatOptions::OCTAL:   nlen = (u64s::BitWidth(num) + 2) / 3; break;
+            case IntFormatOptions::HEX:
+            case IntFormatOptions::CAP_HEX: nlen = (u64s::BitWidth(num) + 3) / 4; break;
+        }
 
         const u32 targetnLen = std::max(nlen, options.numLen) + (sign != '\0');
         const u32 padLen = options.totalLength - std::min(options.totalLength, targetnLen);
         const u32 left = padLen * (usize)options.alignment / 2;
 
         sw.WriteRepeat(options.pad, left);
-
-        for (u32 j = nlen; j < targetnLen; ++j)
-            sw.Write(options.shouldPadZero ? '0' : ' ');
+        sw.WriteRepeat(options.shouldPadZero ? '0' : ' ', targetnLen - nlen);
 
         if (sign)
             sw.Write(sign);
-        sw.Write(Str::Slice(strbuf, nlen));
+
+        switch (options.base) {
+            case IntFormatOptions::DECIMAL: WriteU64Decimal(sw, num);          break;
+            case IntFormatOptions::BINARY:  WriteU64Binary(sw, num, nlen);     break;
+            case IntFormatOptions::OCTAL:   WriteU64Octal(sw, num, nlen);      break;
+            case IntFormatOptions::HEX:     WriteU64Hex(sw, num, nlen, false); break;
+            case IntFormatOptions::CAP_HEX: WriteU64Hex(sw, num, nlen, true);  break;
+        }
 
         sw.WriteRepeat(options.pad, padLen - left);
 
@@ -399,6 +420,67 @@ namespace Quasi::Text {
     usize NumberConversion::FormatI64(StringWriter sw, i64 num, const IntFormatOptions& options) {
         const bool negative = num < 0;
         return FormatU64(sw, negative ? (u64)-num : (u64)num, options, negative ? '-' : options.showSign ? '+' : '\0');
+    }
+
+    void NumberConversion::WriteU64Decimal(StringWriter sw, u64 num) {
+        char strbuf[u64s::DIGITS] = {};
+        sw.Write(Str::Slice(strbuf, U64FullToString(num, strbuf)));
+    }
+
+    void NumberConversion::WriteU64Binary(StringWriter sw, u64 num, u32 bitwidth) {
+        char strbuf[u64s::BITS] = {};
+        u32 i = u64s::BITS - 8;
+        while (num) {
+            u64 x = ((num & 0x55) * 0x02040810204081) | ((num & 0xAA) * 0x02040810204081);
+            x &= 0x0101010101010101;
+            x |= 0x3030303030303030;
+            Memory::WriteU64(x, &strbuf[i]);
+            i -= 8;
+            num >>= 8;
+        }
+        sw.Write(Str::Slice(strbuf + u64s::BITS - bitwidth, bitwidth));
+    }
+
+    void NumberConversion::WriteU64Octal(StringWriter sw, u64 num, u32 octalDigits) {
+        char strbuf[24] = {};
+        u32 i = sizeof(strbuf) - 4;
+        while (num) {
+            u32 x = (num & 7) |
+                    (num & 070) << 5 |
+                    (num & 0700) << 10 |
+                    (num & 07000) << 15;
+            x |= 0x30303030;
+            Memory::WriteU32(x, &strbuf[i]);
+            i -= 4;
+            num >>= 4 * 3;
+        }
+        sw.Write(Str::Slice(strbuf + 24 - octalDigits, octalDigits));
+    }
+
+    void NumberConversion::WriteU64Hex(StringWriter sw, u64 num, u32 hexDigits, bool upperCase) {
+        char strbuf[u64s::HEX_DIGITS] = {};
+        for (u32 i = 0; i < 2; ++i) { // repeat twice
+            u64 x = num & 0xFFFF'FFFF;
+            // x = 00 00 00 00 ab cd ef gh
+            x |= x << 16;
+            // x = 00 00 ab cd ?? ?? ef gh
+            x = (x << 8) & 0x00FF0000'00FF0000 | // 00 ab 00 00 00 ef 00 00
+                (x       & 0x000000FF'000000FF); // 00 00 00 cd 00 00 00 gh
+            // 00 ab 00 cd 00 ef 00 gh
+            x |= x << 4;
+            // 0a ?b 0c ?d 0e ?f 0g ?h
+            x &= 0x0F0F0F0F'0F0F0F0F;
+
+            // if each hex digit of x is represented by a letter (aka >= 10)
+            x += 0x06060606'06060606;
+            x += ((x >> 4) & 0x01010101'01010101) * (upperCase ? 7 : 39);
+            x += 0x2A2A2A2A'2A2A2A2A;
+            Memory::WriteU64(x, &strbuf[(1 - i) * 8]);
+
+            x >>= 32;
+            if (!x) break;
+        }
+        sw.Write(Str::Slice(strbuf + (u64s::BITS / 4) - hexDigits, hexDigits));
     }
 
     char* NumberConversion::AddSign(f64 f, char* out, bool alwaysShowSign) {

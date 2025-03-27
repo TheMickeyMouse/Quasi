@@ -110,6 +110,11 @@ namespace Quasi::Text {
         usize FormatU64(StringWriter sw, u64 num, const IntFormatOptions& options, char sign = '\0');
         usize FormatI64(StringWriter sw, i64 num, const IntFormatOptions& options);
 
+        void WriteU64Decimal(StringWriter sw, u64 num);
+        void WriteU64Binary (StringWriter sw, u64 num, u32 bitwidth);
+        void WriteU64Octal  (StringWriter sw, u64 num, u32 octalDigits);
+        void WriteU64Hex    (StringWriter sw, u64 num, u32 hexDigits, bool upperCase);
+
         char* AddSign(f64 f, char* out, bool alwaysShowSign = false);
         char* WriteFltDecimal(f64 f, char* out, u32 precision = ~0);
         u32 WriteFltSci(f64 f, char* out, u32 precision = ~0, char e = 'e', int log10 = i32s::MIN);

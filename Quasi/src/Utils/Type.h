@@ -84,7 +84,8 @@ namespace Quasi {
 
 	template <class T, class U> using Common = decltype(false ? std::declval<T>() : std::declval<U>());
 
-	template <class T> concept TrivialCopy = std::is_trivially_copyable_v<T>;
+	template <class T> concept TrivialCopy     = std::is_trivially_copyable_v<T>;
+	template <class T> concept TrivialDestruct = std::is_trivially_destructible_v<T>;
 
 	template <usize...> struct IntSeq {};
 

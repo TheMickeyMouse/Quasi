@@ -1,5 +1,6 @@
 #include "CStr.h"
 
+#include "Hash.h"
 #include "Span.h"
 #include "Str.h"
 #include "String.h"
@@ -23,6 +24,10 @@ namespace Quasi {
 
     CStr CStr::FromUnchecked(Str s) {
         return SliceUnchecked(s.Data(), s.Length());
+    }
+
+    Hashing::Hash CStr::GetHashCode() const {
+        return Hashing::HashBytes(AsBytes());
     }
 
     BufferIterator<const char&> CStr::Iter() const {

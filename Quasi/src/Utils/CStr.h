@@ -37,6 +37,9 @@ namespace Quasi {
 
         bool  IsEmpty() const { return Length() == 0; }
         operator bool() const { return Length() != 0; }
+
+        Hashing::Hash GetHashCode() const;
+
         const char& At(usize i)             const { return Data()[i]; }
         const char& AtWrap(WrappingIndex i) const { return At(i(Length())); }
 

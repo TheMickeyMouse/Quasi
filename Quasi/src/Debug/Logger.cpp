@@ -26,13 +26,14 @@ namespace Quasi::Debug {
             debug_break();
     }
 
-    String Logger::FmtLog(const LogEntry& log) const {
-        return FmtLog(log.log, log.severity, log.time, log.fileLoc);
+    void Logger::FmtLog(Text::StringWriter output, const LogEntry& log) const {
+        return FmtLog(output, log.log, log.severity, log.time, log.fileLoc);
     }
 
-    String Logger::FmtLog(Str log, Severity severity, DateTime time, const SourceLoc& fileLoc) const {
+    void Logger::FmtLog(Text::StringWriter output, Str log, Severity severity, DateTime time, const SourceLoc& fileLoc) const {
         const Text::ConsoleColor scol = severity->color;
-        return Text::Format(
+        Text::FormatTo(
+            output,
             "{}[{:%y-%M-%d %H:%m:%s.%u}]{} {}> {}{:<8} {} {}{}\n",
             scol, time, Text::RESET, name,
             scol, Text::Format("[{}]:", severity->name),
@@ -61,7 +62,7 @@ namespace Quasi::Debug {
     }
 
     void Logger::ConsoleLog(const Severity sv, const Str s, const SourceLoc& loc) {
-        logOut.Write(FmtLog(s, sv, Timer::Now(), loc));
+        FmtLog(logOut, s, sv, Timer::Now(), loc);
         if (alwaysFlush) Flush();
     }
 
@@ -86,7 +87,7 @@ namespace Quasi::Debug {
         filter = filter == Severity::NONE ? filterLevel : filter;
         for (const LogEntry& entry : logs) {
             if (Overrides(filter, entry.severity))
-                out.Write(FmtLog(entry));
+                FmtLog(out, entry);
         }
     }
 }

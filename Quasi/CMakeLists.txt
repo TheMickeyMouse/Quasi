@@ -87,7 +87,6 @@ set(HEADER_FILES
     src/Utils/Type.h
     src/Utils/ArenaAllocator.h
     src/Utils/Match.h
-    src/Utils/Format.h
     src/Utils/Memory.h
     src/Utils/Iterator.h
     src/Utils/Vec.h
@@ -181,7 +180,6 @@ set(SOURCE_FILES
     src/Utils/StringList.cpp
     src/Utils/Text.cpp
     src/Utils/ArenaAllocator.cpp
-    src/Utils/Format.cpp
     src/Utils/Str.cpp
     src/Utils/String.cpp
     src/Utils/CStr.cpp
@@ -213,6 +211,9 @@ set(ALL_FILES
         src/Utils/Bitwise.h
         src/Utils/Bitwise.cpp
         src/Utils/Iter/SplitIter.h
+        src/Utils/Hash.h
+        src/Utils/Hash.cpp
+        src/Utils/HashMap.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

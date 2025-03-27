@@ -132,7 +132,6 @@ namespace Quasi {
     template <class F, class T>
     concept Predicate = Fn<F, bool, const T&>;
 
-
 #define Q_LMB_TAKES_ARGS(...) , Q_TINY_LAMBDA_SIMPLE,
 #define Q_TINY_LAMBDA_ARGS(...) [&] (__VA_ARGS__) { return
 #define Q_TINY_LAMBDA_SIMPLE(...) Q_TINY_LAMBDA_ARGS __VA_ARGS__ ; }

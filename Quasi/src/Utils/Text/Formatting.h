@@ -2,6 +2,10 @@
 #include "Utils/String.h"
 #include "StringWriter.h"
 
+namespace Quasi {
+    struct CStr;
+}
+
 namespace Quasi::Text {
     template <class T> struct Formatter {};
 
@@ -108,9 +112,12 @@ namespace Quasi::Text {
         static usize FormatTo(StringWriter sw, char c, const FormatOptions& options);
     };
 
-    template <> struct Formatter<StrMut> : Formatter<Str> { using Formatter<Str>::FormatOptions; };
-    template <> struct Formatter<String> : Formatter<Str> { using Formatter<Str>::FormatOptions; };
-    template <usize N> struct Formatter<const char[N]> : Formatter<Str> { using Formatter<Str>::FormatOptions; };
+    template <> struct Formatter<CStr>   : Formatter<Str> {};
+    template <> struct Formatter<StrMut> : Formatter<Str> {};
+    template <> struct Formatter<String> : Formatter<Str> {};
+    template <> struct Formatter<const char*> : Formatter<Str> {};
+    template <usize N> struct Formatter<const char[N]> : Formatter<Str> {};
+
 
     template <class T>
     struct Formatter<WithFormatOptions<T>> {
@@ -128,7 +135,7 @@ namespace Quasi::Text {
 
         static usize FormatTo(StringWriter sw, const FormatResult<Ts...>& fres, const FormatOptions& options) {
             if (options.alignment == TextFormatOptions::LEFT) {
-                usize len = 0;
+                usize len;
                 if (options.escape) {
                     len = fres.ToString().WriteEscape(sw);
                 } else
@@ -146,3 +153,78 @@ namespace Quasi::Text {
         }
     };
 }
+
+#pragma region Extra Type Formattings
+namespace Quasi::Text {
+    template <> struct Formatter<void*> {
+        using FormatOptions = Empty;
+        static usize FormatTo(StringWriter sw, void* fres, Empty);
+    };
+
+    template <class T> struct Formatter<Ref<T>> : Formatter<T> {};
+
+    template <class T>
+    struct Formatter<OptRef<T>> : Formatter<T> {
+        using Formatter<T>::FormatOptions;
+        static usize FormatTo(StringWriter sw, OptRef<T> optref, const FormatOptions& options) {
+            if (optref) {
+                sw.Write("Some(&"_str);
+                const usize i = Formatter<T>::FormatTo(sw, *optref, options);
+                sw.Write(')');
+                return i + 7;
+            } else { sw.Write("&None"_str); return 5; }
+        }
+    };
+
+    template <class T>
+    struct Formatter<Option<T>> : Formatter<T> {
+        using Formatter<T>::FormatOptions;
+        static usize FormatTo(StringWriter sw, const Option<T>& opt, const FormatOptions& options) {
+            if (opt) {
+                sw.Write("Some("_str);
+                const usize i = Formatter<T>::FormatTo(sw, *opt, options);
+                sw.Write(')');
+                return i + 6;
+            } else { sw.Write("None"_str); return 4; }
+        }
+    };
+
+    template <class T>
+    struct Text::Formatter<Span<T>> : Formatter<RemConst<T>> {
+        using Formatter<RemQual<T>>::FormatOptions;
+        static usize FormatTo(StringWriter sw, Span<T> span, const FormatOptions& options) {
+            usize len = 2;
+            sw.Write('[');
+            for (usize i = 0; i < span.Length(); ++i) {
+                if (!i) len += sw.Write(", ");
+                len += FormatObjectTo(sw, span[i], options);
+            }
+            sw.Write(']');
+            return len;
+        }
+    };
+
+    template <class T>          struct Text::Formatter<Vec<T>>      : Formatter<Span<const T>> {};
+    template <class T, usize N> struct Text::Formatter<Array<T, N>> : Formatter<Span<const T>> {};
+
+    template <class... Ts> struct Text::Formatter<Tuple<Ts...>> {
+        using FormatOptions = Str;
+        static Str ConfigureOptions(Str fspec) { return fspec; }
+        static usize FormatTo(StringWriter sw, const Tuple<Ts...>& tuple, Str fspec) {
+            sw.Write('(');
+            usize len = 2;
+            [&]<usize... Is>(IntSeq<Is...>) {
+                ((Is ? (len += sw.Write(", ")) : 0,
+                  len += FormatObjectTo(sw, tuple.template Get<Is>(),
+                        Formatter<Ts>::ConfigureOptions(fspec.TakeFirst(
+                            fspec.Find(',').UnwrapOr(fspec.Length())
+                        ))
+                    )
+                ), ...);
+            } (IntRangeSeq<sizeof...(Ts)> {});
+            sw.Write(')');
+            return len;
+        }
+    };
+}
+#pragma endregion

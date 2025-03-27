@@ -1,5 +1,6 @@
 #include "Str.h"
 
+#include "Hash.h"
 #include "Span.h"
 #include "String.h"
 #include "Iter/LinesIter.h"
@@ -110,6 +111,10 @@ namespace Quasi {
 #define strdef template <class Char, class Super>
 #define strcls StringHolder<Char, Super>
 
+    strdef Hashing::Hash strcls::GetHashCode() const {
+        return Hashing::HashBytes(Data(), sizeof(char) * Length());
+    }
+
     strdef BufferIterator<const char&> strcls::Iter()    const        { return { Data(), Length() }; }
     strdef BufferIterator<char&>       strcls::IterMut() requires mut { return { Data(), Length() }; }
 
@@ -163,7 +168,7 @@ namespace Quasi {
     strdef Tuple<Str, const char&, Str> strcls::PartitionAt(usize at) const { return { First(at), At(at), Skip(at + 1) }; }
 
     strdef Tuple<Str, Str> strcls::SplitOnce(char c)  const { return SplitAt(Find(c).UnwrapOr(Length())); }
-    strdef Tuple<Str, Str> strcls::SplitOnce(Str sep) const { return SplitAt(Find(sep).UnwrapOr(Length())); }
+    strdef Tuple<Str, Str> strcls::SplitOnce(Str sep) const { const usize i = Find(sep); return { First(i), Skip(i + sep.Length()) }; }
 
     strdef bool strcls::RefEquals     (Str other) const { return Data() == other.Data() && Length() == other.Length(); }
     strdef bool strcls::ContainsBuffer(Str buf)   const { return buf.Data() >= Data() && Data() + Length() >= buf.Data() + buf.Length(); }

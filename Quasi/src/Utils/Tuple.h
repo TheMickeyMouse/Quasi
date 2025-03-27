@@ -104,6 +104,21 @@ namespace Quasi {
     Tuple(Ts...) -> Tuple<Ts...>;
 }
 
+namespace Quasi::Hashing {
+    enum Hash : usize;
+
+    template <class... Ts>
+    struct Hasher<Tuple<Ts...>> {
+        Hash operator()(const Tuple<Ts...>& tup) const {
+            Hash h {};
+            [&]<usize... Is>(IntSeq<Is...>) {
+                ((h = HashCombine(h, HashObject(tup.template Get<Is>()))), ...);
+            }(IntRangeSeq<sizeof...(Ts)> {});
+            return h;
+        }
+    };
+}
+
 // structured binding support
 template <class... Ts>
 struct std::tuple_size<Quasi::Tuple<Ts...>> { static constexpr Quasi::usize value = sizeof...(Ts); };

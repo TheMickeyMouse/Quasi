@@ -27,6 +27,13 @@ namespace Quasi {
     i32 Memory::ReadI32Little(const void* bytes) { return (i32)ReadU32Little(bytes); }
     i64 Memory::ReadI64Little(const void* bytes) { return (i64)ReadU64Little(bytes); }
 
+    u16 Memory::ReadU16Native(const void* bytes) { u16 x; MemCopyNoOverlap(&x, bytes, sizeof(u16)); return x; }
+    u32 Memory::ReadU32Native(const void* bytes) { u32 x; MemCopyNoOverlap(&x, bytes, sizeof(u32)); return x; }
+    u64 Memory::ReadU64Native(const void* bytes) { u64 x; MemCopyNoOverlap(&x, bytes, sizeof(u64)); return x; }
+    i16 Memory::ReadI16Native(const void* bytes) { i16 x; MemCopyNoOverlap(&x, bytes, sizeof(i16)); return x; }
+    i32 Memory::ReadI32Native(const void* bytes) { i32 x; MemCopyNoOverlap(&x, bytes, sizeof(i32)); return x; }
+    i64 Memory::ReadI64Native(const void* bytes) { i64 x; MemCopyNoOverlap(&x, bytes, sizeof(i64)); return x; }
+
     void Memory::WriteU16(u16 x, void* out) { const auto b = (byte*)out; b[0] = x >> 8;  b[1] = x; }
     void Memory::WriteU32(u32 x, void* out) { const auto b = (byte*)out; b[0] = x >> 24; b[1] = x >> 16; b[2] = x >> 8;  b[3] = x; }
     void Memory::WriteU64(u64 x, void* out) { const auto b = (byte*)out; b[0] = x >> 56; b[1] = x >> 48; b[2] = x >> 40; b[3] = x >> 32;
@@ -44,6 +51,13 @@ namespace Quasi {
     void Memory::WriteI16Little(i16 x, void* out) { WriteU16Little((u16)x, out); }
     void Memory::WriteI32Little(i32 x, void* out) { WriteU32Little((u32)x, out); }
     void Memory::WriteI64Little(i64 x, void* out) { WriteU64Little((u64)x, out); }
+
+    void Memory::WriteU16Native(u16 x, void* out) { MemCopyNoOverlap(out, &x, sizeof(u16)); }
+    void Memory::WriteU32Native(u32 x, void* out) { MemCopyNoOverlap(out, &x, sizeof(u32)); }
+    void Memory::WriteU64Native(u64 x, void* out) { MemCopyNoOverlap(out, &x, sizeof(u64)); }
+    void Memory::WriteI16Native(i16 x, void* out) { MemCopyNoOverlap(out, &x, sizeof(i16)); }
+    void Memory::WriteI32Native(i32 x, void* out) { MemCopyNoOverlap(out, &x, sizeof(i32)); }
+    void Memory::WriteI64Native(i64 x, void* out) { MemCopyNoOverlap(out, &x, sizeof(i64)); }
 
     u16 operator ""_u16(const char* s, usize n) {
         return n == 0 ? 0 :

@@ -80,8 +80,8 @@ namespace Quasi::Debug {
         void SetRecordLogs(const bool flag) { recordLogs = flag; }
         void SetLocPad(const u32 pad) { lPad = pad; }
 
-        String FmtLog(const LogEntry& log) const;
-        String FmtLog(Str log, Severity severity, DateTime time, const SourceLoc& fileLoc) const;
+        void FmtLog(Text::StringWriter output, const LogEntry& log) const;
+        void FmtLog(Text::StringWriter output, Str log, Severity severity, DateTime time, const SourceLoc& fileLoc) const;
         Str FmtFile(Str fullname) const;
         String FmtSourceLoc(const SourceLoc& loc) const;
         void LogNoOut  (Severity sv, Str s, const SourceLoc& loc = SourceLoc::current());
@@ -117,13 +117,6 @@ namespace Quasi::Debug {
             );
         }
 
-        template <class ...Ts> void Trace   (const FmtStr& fmt, Ts&&... args) { this->LogFmt(Severity::TRACE,    fmt, std::forward<Ts>(args)...); }
-        template <class ...Ts> void Debug   (const FmtStr& fmt, Ts&&... args) { this->LogFmt(Severity::DEBUG,    fmt, std::forward<Ts>(args)...); }
-        template <class ...Ts> void Info    (const FmtStr& fmt, Ts&&... args) { this->LogFmt(Severity::INFO,     fmt, std::forward<Ts>(args)...); }
-        template <class ...Ts> void Warn    (const FmtStr& fmt, Ts&&... args) { this->LogFmt(Severity::WARN,     fmt, std::forward<Ts>(args)...); }
-        template <class ...Ts> void Error   (const FmtStr& fmt, Ts&&... args) { this->LogFmt(Severity::ERROR,    fmt, std::forward<Ts>(args)...); }
-        template <class ...Ts> void Critical(const FmtStr& fmt, Ts&&... args) { this->LogFmt(Severity::CRITICAL, fmt, std::forward<Ts>(args)...); }
-
         void NoOp() const {}
 
         static Logger& GetInternalLog();
@@ -158,12 +151,6 @@ namespace Quasi::Debug {
     template <class T>
     void AssertNeq(const T& val, const T& cmp, const SourceLoc& loc = SourceLoc::current()) { Logger::GetInternalLog().AssertNeq(val, cmp, loc); }
 
-    template <class ...Ts> void Trace   (const FmtStr& fmt, Ts&&... args) { Logger::GetInternalLog().Trace   (fmt, std::forward<Ts>(args)...); }
-    template <class ...Ts> void Debug   (const FmtStr& fmt, Ts&&... args) { Logger::GetInternalLog().Debug   (fmt, std::forward<Ts>(args)...); }
-    template <class ...Ts> void Info    (const FmtStr& fmt, Ts&&... args) { Logger::GetInternalLog().Info    (fmt, std::forward<Ts>(args)...); }
-    template <class ...Ts> void Warn    (const FmtStr& fmt, Ts&&... args) { Logger::GetInternalLog().Warn    (fmt, std::forward<Ts>(args)...); }
-    template <class ...Ts> void Error   (const FmtStr& fmt, Ts&&... args) { Logger::GetInternalLog().Error   (fmt, std::forward<Ts>(args)...); }
-    template <class ...Ts> void Critical(const FmtStr& fmt, Ts&&... args) { Logger::GetInternalLog().Critical(fmt, std::forward<Ts>(args)...); }
     inline void NoOp() {}
 
 #ifdef NDEBUG
@@ -178,16 +165,16 @@ namespace Quasi::Debug {
     #define QAssertNeq$ NoOp() Q_EAT
     #define QAssertMsg$ NoOp() Q_EAT
 #else
-    #define QTrace$    Trace
-    #define QDebug$    Debug
-    #define QInfo$     Info
-    #define QWarn$     Warn
-    #define QError$    Error
-    #define QCritical$ Critical
-    #define QAssert$    Assert
-    #define QAssertEq$  AssertEq
-    #define QAssertNeq$ AssertNeq
-    #define QAssertMsg$ AssertMsg
+    #define QTrace$(...)    LogFmt(Quasi::Debug::Severity::TRACE,    __VA_ARGS__)
+    #define QDebug$(...)    LogFmt(Quasi::Debug::Severity::DEBUG,    __VA_ARGS__)
+    #define QInfo$(...)     LogFmt(Quasi::Debug::Severity::INFO,     __VA_ARGS__)
+    #define QWarn$(...)     LogFmt(Quasi::Debug::Severity::WARN,     __VA_ARGS__)
+    #define QError$(...)    LogFmt(Quasi::Debug::Severity::ERROR,    __VA_ARGS__)
+    #define QCritical$(...) LogFmt(Quasi::Debug::Severity::CRITICAL, __VA_ARGS__)
+    #define QAssert$        Assert
+    #define QAssertEq$      AssertEq
+    #define QAssertNeq$     AssertNeq
+    #define QAssertMsg$     AssertMsg
 #endif
 
     void Flush();

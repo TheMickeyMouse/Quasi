@@ -63,6 +63,12 @@ namespace Quasi::Memory {
     i32 ReadI32Little(const void* bytes);
     u64 ReadU64Little(const void* bytes);
     i64 ReadI64Little(const void* bytes);
+    u16 ReadU16Native(const void* bytes);
+    i16 ReadI16Native(const void* bytes);
+    u32 ReadU32Native(const void* bytes);
+    i32 ReadI32Native(const void* bytes);
+    u64 ReadU64Native(const void* bytes);
+    i64 ReadI64Native(const void* bytes);
 
     void WriteU16(u16 x, void* out);
     void WriteI16(i16 x, void* out);
@@ -76,6 +82,15 @@ namespace Quasi::Memory {
     void WriteI32Little(i32 x, void* out);
     void WriteU64Little(u64 x, void* out);
     void WriteI64Little(i64 x, void* out);
+    void WriteU16Native(u16 x, void* out);
+    void WriteI16Native(i16 x, void* out);
+    void WriteU32Native(u32 x, void* out);
+    void WriteI32Native(i32 x, void* out);
+    void WriteU64Native(u64 x, void* out);
+    void WriteI64Native(i64 x, void* out);
+
+    constexpr bool IsLittleEndian() { return std::endian::native == std::endian::little; }
+    constexpr bool IsBigEndian()    { return std::endian::native == std::endian::big; }
 
     u16 ByteSwap16(u16 x);
     u32 ByteSwap32(u32 x);

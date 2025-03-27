@@ -131,6 +131,8 @@ namespace Quasi {
         const RemRef<T>* Data() const { return super().DataImpl(); }
         usize Length() const { return super().LengthImpl(); }
 
+        Hashing::Hash GetHashCode() const;
+
         Span<const T> AsSpan()  const { return Span<const T>::Slice(Data(), Length()); }
         Span<T>       AsSpan()    mut { return Span<MutT>   ::Slice(Data(), Length()); }
         Span<MutT>    AsSpanMut() mut { return Span<MutT>   ::Slice(Data(), Length()); }

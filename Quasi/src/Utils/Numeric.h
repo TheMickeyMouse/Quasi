@@ -88,11 +88,12 @@ namespace Quasi {
 
 #define QUASI_DEFINE_INTEGER(INT, UINT) \
     namespace INT##s { \
-        static constexpr bool  IS_SIGNED = ((INT)-1) < 0; \
-        static constexpr INT   MAX       = ~(IS_SIGNED ? 1 << (sizeof(INT) * 8 - 1) : 0); \
-        static constexpr INT   MIN       = ~MAX; \
-        static constexpr usize BITS      = sizeof(INT) * 8; \
-        static constexpr usize DIGITS    = 1 + ((BITS - IS_SIGNED) * Math::INV_LOG10_2_MUL >> 16); \
+        static constexpr bool  IS_SIGNED  = ((INT)-1) < 0; \
+        static constexpr INT   MAX        = ~(IS_SIGNED ? 1 << (sizeof(INT) * 8 - 1) : 0); \
+        static constexpr INT   MIN        = ~MAX; \
+        static constexpr usize BITS       = sizeof(INT) * 8; \
+        static constexpr usize HEX_DIGITS = sizeof(INT) * 2; \
+        static constexpr usize DIGITS     = 1 + ((BITS - IS_SIGNED) * Math::INV_LOG10_2_MUL >> 16); \
         \
         bool AddOverflow(INT a, INT b, INT& out) { return __builtin_add_overflow(a, b, &out); } \
         bool SubOverflow(INT a, INT b, INT& out) { return __builtin_sub_overflow(a, b, &out); } \

@@ -3,7 +3,6 @@
 #include "Memory.h"
 #include "Iterator.h"
 #include "Ref.h"
-#include "Tuple.h"
 
 namespace Quasi {
     namespace Algorithm {};
@@ -364,6 +363,8 @@ namespace Quasi {
         Vec<MutT> Repeat(usize num) const;
         // Vec<ConcatResult<T>> Concat() const requires CanConcat<T>;
         // Vec<ConcatResult<T>> Join(const auto& sep) const requires CanConcat<T> && CanConcat<T, decltype(sep)>;
+
+        Hashing::Hash GetHashCode() const;
 
         template <class U>
         Tuple<Span, Span<AddConstIf<U, T>>, Span> TransmuteAligned() const requires SameAs<const T, const byte> {

@@ -151,6 +151,8 @@ namespace Quasi {
     public:
         bool operator==(const Option&) const = default;
         bool operator==(const T& other) const { return isSome && value == other; }
+
+        Hashing::Hash GetHashCode() const;
     };
 
     struct OptionUsize : INullable<usize, OptionUsize> {
@@ -175,6 +177,8 @@ namespace Quasi {
     public:
         bool operator==(const OptionUsize&) const = default;
         bool operator==(usize v) const { return value == v; }
+
+        Hashing::Hash GetHashCode() const;
     };
 
     namespace Options {

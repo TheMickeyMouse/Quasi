@@ -63,6 +63,8 @@ namespace Quasi {
         bool  IsEmpty()    const { return super().Length() == 0; }
         operator bool()    const { return super().Length() != 0; }
 
+        Hashing::Hash GetHashCode() const;
+
         const char& At(usize i)              const { return Data()[i]; }
         char& At(usize i)             requires mut { return Data()[i]; }
         const char& AtWrap(WrappingIndex i)  const { return At(i(Length())); }

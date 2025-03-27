@@ -3,7 +3,7 @@
 #include <glp.h>
 
 namespace Quasi::Graphics {
-    Debug::Logger GLDebugContainer::Logger { std::cout };
+    Debug::Logger GLDebugContainer::Logger { Text::StringWriter::WriteToConsole() };
     Debug::TimeDuration GLDebugContainer::GpuProcessDuration { 0 };
 
     Debug::Logger& GLLogger() {
@@ -12,7 +12,7 @@ namespace Quasi::Graphics {
 
     void InitGLDebugTools() {
         GLLogger().SetName("OpenGL");
-        GLLogger().SetNameColor(Debug::ConsoleColor::FG_GREEN);
+        GLLogger().SetNameColor(Text::ConsoleColor::FG_GREEN);
         GLLogger().SetBreakLevel(Debug::Severity::ERROR);
         GLLogger().SetShortenFile(true);
         GLLogger().SetIncludeFunc(false);
@@ -20,12 +20,24 @@ namespace Quasi::Graphics {
         GLLogger().SetLocPad(0);
     }
 
-    GLErrorCode GLErrorCode::FromID(u32 glid) {
-        return Find(&GLErrorCodeData::glID, glid);
+    Str GetErrName(GLErrorCode ec) {
+        using enum GLErrorCode;
+        switch (ec) {
+            case INVALID_ENUM:                  return "INVALID_ENUM"_str;
+            case INVALID_VALUE:                 return "INVALID_VALUE"_str;
+            case INVALID_OPERATION:             return "INVALID_OPERATION"_str;
+            case STACK_OVERFLOW:                return "STACK_OVERFLOW"_str;
+            case STACK_UNDERFLOW:               return "STACK_UNDERFLOW"_str;
+            case OUT_OF_MEMORY:                 return "OUT_OF_MEMORY"_str;
+            case INVALID_FRAMEBUFFER_OPERATION: return "INVALID_FRAMEBUFFER_OPERATION"_str;
+            case CONTEXT_LOST:                  return "CONTEXT_LOST"_str;
+            case TABLE_TOO_LARGE:               return "TABLE_TOO_LARGE"_str;
+            default:                            return "NO_ERROR"_str;
+        }
     }
 
-    u32 GLGetErr() {
-        return GL::GetError();
+    GLErrorCode GLGetErr() {
+        return (GLErrorCode)GL::GetError();
     }
 
     void GLClearErr() {
@@ -33,18 +45,18 @@ namespace Quasi::Graphics {
     }
 
     void GLReport(const Debug::SourceLoc& loc) {
-        u32 err;
-        while ((err = GLGetErr())) {
-            GLLogger().Error({ "GL Error code {} was uncaught.", loc }, GLErrorCode::FromID(err));
+        GLErrorCode err;
+        while ((err = GLGetErr()) != GLErrorCode::NO_ERROR) {
+            GLLogger().QError$({ "GL Error code {} was uncaught.", loc }, err);
         }
     }
 
     void GLReportFn(Str signature, const Debug::SourceLoc& loc) {
-        u32 err;
-        while ((err = GLGetErr())) {
-            GLLogger().Error(
+        GLErrorCode err;
+        while ((err = GLGetErr()) != GLErrorCode::NO_ERROR) {
+            GLLogger().QError$(
                 { "GL Error code {} was uncaught when calling gl{} (see https://docs.gl/gl3/{}).", loc },
-                GLErrorCode::FromID(err), signature.substr(signature.find("::") + 2), signature.substr(0, signature.find('(')));
+                err, signature.SplitOnce("::")[2_nd], signature.SplitOnce('(')[1_st]);
         }
     }
 }

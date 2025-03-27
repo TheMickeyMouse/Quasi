@@ -125,11 +125,11 @@ namespace Quasi::Math {
     inline iComplex operator ""_i(u64 i) { return iComplex { 0, i }; }
 }
 
-namespace Quasi::Text {
-    template <class T>
-    struct Formatter<Math::Complex<T>> : Formatter<T> {
-        void FormatTo(const Math::Complex<T>& z, StringOutput output) {
-            return FormatOnto(output, "{} {} {}i", z.re, z.im < 0 ? '-' : '+', z.im);
-        }
-    };
-}
+// namespace Quasi::Text {
+//     template <class T>
+//     struct Formatter<Math::Complex<T>> : Formatter<T> {
+//         void FormatTo(const Math::Complex<T>& z, StringOutput output) {
+//             return FormatOnto(output, "{} {} {}i", z.re, z.im < 0 ? '-' : '+', z.im);
+//         }
+//     };
+// }
