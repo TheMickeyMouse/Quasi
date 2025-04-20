@@ -121,7 +121,7 @@ namespace Quasi::Text {
     }
 
     u32 NumberConversion::ParseDigitsTinyRadix4(u32 dig, u32 radix) {
-        static constexpr u32 TINY_LOOKUP[5] = { 0, 0, 0x08'04'02'01, 0x'1B'09'03'01, 0x40'20'04'01 };
+        static constexpr u32 TINY_LOOKUP[5] = { 0, 0, 0x08'04'02'01, 0x1B'09'03'01, 0x40'20'04'01 };
         return (dig * TINY_LOOKUP[radix]) >> 24;
     }
 
@@ -138,121 +138,152 @@ namespace Quasi::Text {
         return ((a * radix + b) * radix + c) * radix + d;
     }
 
-    template <Integer I>
-    OptionUsize NumberConversion::ParseBinaryInt(Str string, Out<I&> out, bool neg) {
-        return ParseIntBy<I, 8>(string, out, neg, [] (I& n, const char* str) {
-            u64 digs = Memory::ReadU64Little(str);
+    OptionUsize NumberConversion::ParseBinaryInt(Str string, Out<u64&> out, u32 bits) {
+        return ParseIntBy<8>(string, out,  [] (u64& n, const char* str) {
+            u64 digs = Memory::ReadU64(str);
             digs = ConvertDigits8(digs);
             if (digs & 0x7E7E7E7E7E7E7E7E) return false;
             // magic multiplication to make array of 8 bits into a u8
             digs = (digs * 0x80'40'20'10'08'04'02'01) >> 56;
             n = (n << 8) + digs;
             return true;
-        }, sizeof(I) * 8, true, 2);
+        }, bits, true, 2);
     }
 
-    template <Integer I>
-    OptionUsize NumberConversion::ParseDecimalInt(Str string, Out<I&> out, bool neg) {
-        return ParseIntBy<I, 4>(string, out, neg, [] (I& n, const char* str) {
-            u32 digs = Memory::ReadU32Little(str);
+    OptionUsize NumberConversion::ParseDecimalInt(Str string, Out<u64&> out, u32 bits) {
+        return ParseIntBy<4>(string, out, [] (u64& n, const char* str) {
+            u32 digs = Memory::ReadU32(str);
             if (!AreAllDigits4(digs)) return false;
             digs = ParseDigits4(digs);
             n = n * 10'000 + digs;
             return true;
-        }, sizeof(I) * Math::INV_LOG10_2_MUL >> 13, false, 10);
+        }, bits * Math::INV_LOG10_2_MUL >> 16, false, 10);
     }
 
-    template <Integer I>
-    OptionUsize NumberConversion::ParseHexInt(Str string, Out<I&> out, bool neg) {
-        return ParseIntBy<I, 4>(string, out, neg, [] (I& n, const char* str) {
-            u32 digs = Memory::ReadU32Little(str);
+    OptionUsize NumberConversion::ParseHexInt(Str string, Out<u64&> out, u32 bits) {
+        return ParseIntBy<4>(string, out, [] (u64& n, const char* str) {
+            u32 digs = Memory::ReadU32(str);
             if (!AreAllHexDigits4(digs)) return false;
             digs = ParseHexDigits4(digs);
             n = (n << 16) + digs;
             return true;
-        }, sizeof(I) * 2, true, 16);
+        }, bits * 2, true, 16);
     }
 
-    template <Integer I>
-    OptionUsize NumberConversion::ParseTinyRadixInt(Str string, Out<I&> out, bool neg, u32 radix) {
+    OptionUsize NumberConversion::ParseTinyRadixInt(Str string, Out<u64&> out, u32 bits, u32 radix) {
         const bool hasInexactDigit = radix & 1; // when radix is 3 instead of 2/4, the log is an irrational
-        return ParseIntBy<I, 4>(string, out, neg, [&, r4 = radix * radix * radix * radix] (I& n, const char* str) {
-            u32 digs = Memory::ReadU32Little(str);
+        return ParseIntBy<4>(string, out, [&, r4 = radix * radix * radix * radix] (u64& n, const char* str) {
+            u32 digs = Memory::ReadU32(str);
             if (!AreAllDigitsRadix4(digs, radix)) return false;
             digs = ConvertDigits4(digs);
             digs = ParseDigitsTinyRadix4(digs, radix);
             n = n * r4 + digs;
             return true;
-        }, hasInexactDigit + (sizeof(I) * Math::INV_LOG2_LOOKUP[radix] >> 13), !hasInexactDigit, radix);
+        }, hasInexactDigit + (bits * Math::INV_LOG2_LOOKUP[radix] >> 16), !hasInexactDigit, radix);
     }
 
-    template <Integer I>
-    OptionUsize NumberConversion::ParseSmallRadixInt(Str string, Out<I&> out, bool neg, u32 radix) {
-        return ParseIntBy<I, 4>(string, out, neg, [&, r4 = radix * radix * radix * radix] (I& n, const char* str) {
-            u32 digs = Memory::ReadU32Little(str);
+    OptionUsize NumberConversion::ParseSmallRadixInt(Str string, Out<u64&> out, u32 bits, u32 radix) {
+        return ParseIntBy<4>(string, out, [&, r4 = radix * radix * radix * radix] (u64& n, const char* str) {
+            u32 digs = Memory::ReadU32(str);
             if (!AreAllDigitsRadix4(digs, radix)) return false;
             digs = ConvertDigits4(digs);
             digs = ParseDigitsSmallRadix4(digs, radix);
             n = n * r4 + digs;
             return true;
-        }, 1 + (sizeof(I) * Math::INV_LOG2_LOOKUP[radix] >> 13), false, radix);
+        }, 1 + (bits * Math::INV_LOG2_LOOKUP[radix] >> 16), false, radix);
     }
 
-    template <Integer I>
-    OptionUsize NumberConversion::ParseAsciiRadixInt(Str string, Out<I&> out, bool neg, u32 radix) {
-        return ParseIntBy<I, 4>(string, out, neg, [&, r4 = radix * radix * radix * radix] (I& n, const char* str) {
-            u32 digs = Memory::ReadU32Little(str);
+    OptionUsize NumberConversion::ParseAsciiRadixInt(Str string, Out<u64&> out, u32 bits, u32 radix) {
+        return ParseIntBy<4>(string, out, [&, r4 = radix * radix * radix * radix] (u64& n, const char* str) {
+            u32 digs = Memory::ReadU32(str);
             if (!AreAllHexDigitsRadix4(digs, radix)) return false;
             digs = ConvertHexDigits4(digs);
             digs = ParseDigitsSmallRadix4(digs, radix);
             n = n * r4 + digs;
             return true;
-        }, 1 + (sizeof(I) * Math::INV_LOG2_LOOKUP[radix] >> 13), false, radix);
+        }, 1 + (bits * Math::INV_LOG2_LOOKUP[radix] >> 16), false, radix);
     }
 
-    template <Integer I>
-    OptionUsize NumberConversion::ParseLargeRadixInt(Str string, Out<I&> out, bool neg, u32 radix) {
-        return ParseIntBy<I, 4>(string, out, neg, [&, r4 = radix * radix * radix * radix] (I& n, const char* str) {
-            u32 digs = Memory::ReadU32Little(str);
+    OptionUsize NumberConversion::ParseLargeRadixInt(Str string, Out<u64&> out, u32 bits, u32 radix) {
+        return ParseIntBy<4>(string, out, [&, r4 = radix * radix * radix * radix] (u64& n, const char* str) {
+            u32 digs = Memory::ReadU32(str);
             if (!AreAllHexDigitsRadix4(digs, radix)) return false;
             digs = ConvertHexDigits4(digs);
             digs = ParseDigitsLargeRadix4(digs, radix);
             n = n * r4 + digs;
             return true;
-        }, 1 + (sizeof(I) * Math::INV_LOG2_LOOKUP[radix] >> 13), false, radix);
+        }, 1 + (bits * Math::INV_LOG2_LOOKUP[radix] >> 16), false, radix);
     }
 
     template <Integer I>
-    OptionUsize NumberConversion::ParseInt(Str string, Out<I&> out, IntParseOptions options) {
+    OptionUsize NumberConversion::ParseInt(Str string, Out<I&> out, IntParser::ParseOptions options) {
+        static constexpr usize BITS = sizeof(I) * 8;
         bool negative = false;
-        if (string.StartsWith('+')) string.Advance(1);
-        if constexpr (Signed<I>)
-            if (string.StartsWith('-')) { negative = true; string.Advance(1); }
+        if (string.StartsWith('+'))
+            string.Advance(1);
+        else {
+            if constexpr (Signed<I>)
+                if (string.StartsWith('-')) { negative = true; string.Advance(1); }
+        }
 
-        if (options.radix == IntParseOptions::ADAPTIVE) {
+        if (string.IsEmpty()) return nullptr;
+
+        if (options.radix == IntParser::ParseOptions::ADAPTIVE) {
             if (string.StartsWith('0')) {
+                u64 n = 0;
+                OptionUsize result;
                 switch (string[2]) {
-                    case 'b': return ParseBinaryInt(string.Skip(2), out, negative);
-                    case 'x': return ParseHexInt   (string.Skip(2), out, negative);
-                    default:  return ParseSmallRadixInt(string, out, negative, 8);
+                    case 'b': result = ParseBinaryInt(string.Skip(2), n, BITS); break;
+                    case 'x': result = ParseHexInt   (string.Skip(2), n, BITS); break;
+                    default:  result = ParseSmallRadixInt(string, n, BITS, 8);  break;
                 }
+                if (!result) return result;
+                if (negative ? (n < NumInfo<I>::MIN) : (n > NumInfo<I>::MAX)) return nullptr;
+
+                *result += negative;
+                out = negative ? (I)-n : (I)n;
+                return result;
             } else {
-                return string ? ParseDecimalInt(string, out, negative) : nullptr;
+                u64 n = 0;
+                OptionUsize result = ParseDecimalInt(string, n, BITS);
+                if (!result) return result;
+                if (negative ? (n < NumInfo<I>::MIN) : (n > NumInfo<I>::MAX)) return nullptr;
+
+                *result += negative;
+                out = negative ? (I)-n : (I)n;
+                return result;
             }
         }
-        if (string.IsEmpty()) return nullptr;
-        if (options.radix == IntParseOptions::BINARY)  return ParseBinaryInt (string, out, negative);
-        if (options.radix == IntParseOptions::DECIMAL) return ParseDecimalInt(string, out, negative);
-        if (options.radix == IntParseOptions::HEX)     return ParseHexInt    (string, out, negative);
 
-        if (options.radix <= 4)
-            return ParseTinyRadixInt(string, out, negative, options.radix);
+        u64 n = 0;
+        OptionUsize result;
+        if (options.radix == 2)
+            result = ParseBinaryInt(string, n, BITS);
+        else if (options.radix == 10)
+            result = ParseDecimalInt(string, n, BITS);
+        else if (options.radix == 16)
+            result = ParseHexInt(string, n, BITS);
+        else if (options.radix <= 4)
+            result = ParseTinyRadixInt(string, n, BITS, options.radix);
         else if (options.radix < 10)
-            return ParseSmallRadixInt(string, out, negative, options.radix);
+            result = ParseSmallRadixInt(string, n, BITS, options.radix);
         else if (options.radix < 16)
-            return ParseAsciiRadixInt(string, out, negative, options.radix);
-        else return ParseLargeRadixInt(string, out, negative, options.radix);
+            result = ParseAsciiRadixInt(string, n, BITS, options.radix);
+        else
+            result = ParseLargeRadixInt(string, n, BITS, options.radix);
+
+        if (negative ? (n < NumInfo<I>::MIN) : (n > NumInfo<I>::MAX)) return nullptr;
+
+        out = negative ? (I)-n : (I)n;
+        return result;
     }
+
+    template OptionUsize NumberConversion::ParseInt<u16>(Str string, Out<u16&> out, IntParser::ParseOptions options);
+    template OptionUsize NumberConversion::ParseInt<i16>(Str string, Out<i16&> out, IntParser::ParseOptions options);
+    template OptionUsize NumberConversion::ParseInt<u32>(Str string, Out<u32&> out, IntParser::ParseOptions options);
+    template OptionUsize NumberConversion::ParseInt<i32>(Str string, Out<i32&> out, IntParser::ParseOptions options);
+    template OptionUsize NumberConversion::ParseInt<u64>(Str string, Out<u64&> out, IntParser::ParseOptions options);
+    template OptionUsize NumberConversion::ParseInt<i64>(Str string, Out<i64&> out, IntParser::ParseOptions options);
 
     template <Floating F>
     OptionUsize NumberConversion::ParseNanOrInf(Str string, Out<F&> out) {
@@ -269,7 +300,7 @@ namespace Quasi::Text {
             } else return nullptr;
             return 3;
         } else {
-            u64 first8 = Memory::ReadU64(string.Data());
+            u64 first8 = Memory::ReadU64Big(string.Data());
             first8 &= CLEAR_CASE;
             if (first8 == "INFINITY"_u64) {
                 out = Math::Infinity;
@@ -279,12 +310,15 @@ namespace Quasi::Text {
         return nullptr;
     }
 
+    template OptionUsize NumberConversion::ParseNanOrInf<f32>(Str string, Out<f32&> out);
+    template OptionUsize NumberConversion::ParseNanOrInf<f64>(Str string, Out<f64&> out);
+
     u64 NumberConversion::U64ToBCD2(u64 x) {
         // x          = [000] [0AB]
         // tens       = [000] [00A]
         // tens * 256 = [00A] [000]
         // tens * -10 = [000] [-A0]
-        const u32 tenCarry = x * 6554 >> 16 * (256 - 10); // shifting by 16 = /65536, 6554/65536 ~ 1/10
+        const u32 tenCarry = (x * 6554 >> 16) * (256 - 10); // shifting by 16 = /65536, 6554/65536 ~ 1/10
         x += tenCarry;
         return x;
     }
@@ -297,7 +331,7 @@ namespace Quasi::Text {
         // x   = [00AB00CD]
         x += top * (65536 - 100);
         // top = [000A000C]
-        top = ((x * 103) >> 9) & 0xF0000F;
+        top = ((x * 103) >> 10) & 0xF000F;
         // x   = [0A0B0C0D]
         x += top * (256 - 10);
         return x;
@@ -308,13 +342,13 @@ namespace Quasi::Text {
         // top = [000000000000ABCD]
         u32 top = (x * 109951163) >> 40; // 1/10000
         // x   = [0000ABCD0000EFGH]
-        x += top * ((1 << 32) - 10000);
+        x += top * ((1_u64 << 32) - 10000);
         // top = [000000AB000000EF]
         top = ((x * 5243) >> 19) & 0xFF000000FF;
         // x   = [00AB00CD00EF00GH]
         x += top * (65536 - 100);
         // top = [000A000C000E000G]
-        top = ((x * 103) >> 9) & 0x000F000F000F000F;
+        top = ((x * 103) >> 10) & 0x000F000F000F000F;
         // x   = [0A0B0C0D0E0F0G0H]
         x += top * (256 - 10);
         return x;
@@ -326,7 +360,7 @@ namespace Quasi::Text {
             return 1;
         } else {
             x = U64ToBCD2(x);
-            Memory::WriteU16(x | 0x3030, out);
+            Memory::WriteU16Big(x | 0x3030, out);
             return 2;
         }
     }
@@ -340,9 +374,9 @@ namespace Quasi::Text {
         x |= 0x30303030;
 
         if (len == 4) {
-            Memory::WriteU32(x, out);
+            Memory::WriteU32Big(x, out);
         } else {
-            Memory::WriteU16(x >> 8, out);
+            Memory::WriteU16Big(x >> 8, out);
             out[2] = (char)(x & 0xFF);
         }
         return len;
@@ -374,50 +408,50 @@ namespace Quasi::Text {
         return len;
     }
 
-    usize NumberConversion::FormatU64(StringWriter sw, u64 num, const IntFormatOptions& options, char sign) {
+    usize NumberConversion::FormatU64(StringWriter sw, u64 num, const IntFormatter::FormatOptions& options, char sign) {
         if (num == 0) {
             const u32 padLen = options.totalLength - options.numLen;
-            const u32 left = padLen * (usize)options.alignment / 2;
-            sw.WriteRepeat(options.pad, left);
-            sw.WriteRepeat(options.shouldPadZero ? '0' : ' ', options.numLen - 1);
+            const u32 right = padLen * (usize)options.alignment / 2;
+            sw.WriteRepeat(options.pad, padLen - right);
+            sw.WriteRepeat(options.shouldPadZero ? '0' : ' ', std::max(options.numLen, 1u) - 1);
             sw.Write('0');
-            sw.WriteRepeat(options.pad, padLen - left);
+            sw.WriteRepeat(options.pad, padLen - right);
             return options.totalLength;
         }
 
         u32 nlen;
         switch (options.base) {
-            case IntFormatOptions::DECIMAL: nlen = 1 + u64s::Log10(num); break;
-            case IntFormatOptions::BINARY:  nlen = u64s::BitWidth(num);  break;
-            case IntFormatOptions::OCTAL:   nlen = (u64s::BitWidth(num) + 2) / 3; break;
-            case IntFormatOptions::HEX:
-            case IntFormatOptions::CAP_HEX: nlen = (u64s::BitWidth(num) + 3) / 4; break;
+            case IntFormatter::FormatOptions::DECIMAL: nlen = 1 + u64s::Log10(num); break;
+            case IntFormatter::FormatOptions::BINARY:  nlen = u64s::BitWidth(num);  break;
+            case IntFormatter::FormatOptions::OCTAL:   nlen = (u64s::BitWidth(num) + 2) / 3; break;
+            case IntFormatter::FormatOptions::HEX:
+            case IntFormatter::FormatOptions::CAP_HEX: nlen = (u64s::BitWidth(num) + 3) / 4; break;
         }
 
         const u32 targetnLen = std::max(nlen, options.numLen) + (sign != '\0');
         const u32 padLen = options.totalLength - std::min(options.totalLength, targetnLen);
-        const u32 left = padLen * (usize)options.alignment / 2;
+        const u32 right = padLen * (usize)options.alignment / 2;
 
-        sw.WriteRepeat(options.pad, left);
+        sw.WriteRepeat(options.pad, padLen - right);
         sw.WriteRepeat(options.shouldPadZero ? '0' : ' ', targetnLen - nlen);
 
         if (sign)
             sw.Write(sign);
 
         switch (options.base) {
-            case IntFormatOptions::DECIMAL: WriteU64Decimal(sw, num);          break;
-            case IntFormatOptions::BINARY:  WriteU64Binary(sw, num, nlen);     break;
-            case IntFormatOptions::OCTAL:   WriteU64Octal(sw, num, nlen);      break;
-            case IntFormatOptions::HEX:     WriteU64Hex(sw, num, nlen, false); break;
-            case IntFormatOptions::CAP_HEX: WriteU64Hex(sw, num, nlen, true);  break;
+            case IntFormatter::FormatOptions::DECIMAL: WriteU64Decimal(sw, num);          break;
+            case IntFormatter::FormatOptions::BINARY:  WriteU64Binary(sw, num, nlen);     break;
+            case IntFormatter::FormatOptions::OCTAL:   WriteU64Octal(sw, num, nlen);      break;
+            case IntFormatter::FormatOptions::HEX:     WriteU64Hex(sw, num, nlen, false); break;
+            case IntFormatter::FormatOptions::CAP_HEX: WriteU64Hex(sw, num, nlen, true);  break;
         }
 
-        sw.WriteRepeat(options.pad, padLen - left);
+        sw.WriteRepeat(options.pad, right);
 
         return std::max(options.totalLength, targetnLen);
     }
 
-    usize NumberConversion::FormatI64(StringWriter sw, i64 num, const IntFormatOptions& options) {
+    usize NumberConversion::FormatI64(StringWriter sw, i64 num, const IntFormatter::FormatOptions& options) {
         const bool negative = num < 0;
         return FormatU64(sw, negative ? (u64)-num : (u64)num, options, negative ? '-' : options.showSign ? '+' : '\0');
     }
@@ -434,7 +468,7 @@ namespace Quasi::Text {
             u64 x = ((num & 0x55) * 0x02040810204081) | ((num & 0xAA) * 0x02040810204081);
             x &= 0x0101010101010101;
             x |= 0x3030303030303030;
-            Memory::WriteU64(x, &strbuf[i]);
+            Memory::WriteU64Big(x, &strbuf[i]);
             i -= 8;
             num >>= 8;
         }
@@ -450,7 +484,7 @@ namespace Quasi::Text {
                     (num & 0700) << 10 |
                     (num & 07000) << 15;
             x |= 0x30303030;
-            Memory::WriteU32(x, &strbuf[i]);
+            Memory::WriteU32Big(x, &strbuf[i]);
             i -= 4;
             num >>= 4 * 3;
         }
@@ -475,7 +509,7 @@ namespace Quasi::Text {
             x += 0x06060606'06060606;
             x += ((x >> 4) & 0x01010101'01010101) * (upperCase ? 7 : 39);
             x += 0x2A2A2A2A'2A2A2A2A;
-            Memory::WriteU64(x, &strbuf[(1 - i) * 8]);
+            Memory::WriteU64Big(x, &strbuf[(1 - i) * 8]);
 
             x >>= 32;
             if (!x) break;
@@ -506,7 +540,7 @@ namespace Quasi::Text {
                 const u32 empty = u32s::CountRightZeros(dig3) / 8;
                 dig3 <<= 8;
                 dig3 |= 0x30'30'30'00;
-                Memory::WriteU32(dig3, out);
+                Memory::WriteU32Big(dig3, out);
                 out += 3 - empty;
             }
         } else {
@@ -517,7 +551,7 @@ namespace Quasi::Text {
 
                 u32 i = (u32)f64s::FloorToIntUnsigned(f);
                 i = U64ToBCD2(i);
-                Memory::WriteU16(i | 0x3030, out);
+                Memory::WriteU16Big(i | 0x3030, out);
                 out += 2;
             }
             if (p < precision) {
@@ -530,7 +564,7 @@ namespace Quasi::Text {
     u32 NumberConversion::WriteFltSci(f64 f, char* out, u32 precision, char e, int log10) {
         const char* begin = out;
         if (f == 0) {
-            Memory::WriteU16("0."_u16, out);
+            Memory::WriteU16(".0"_u16, out);
             out += 2;
             if (precision == ~0)
                 return 1;
@@ -552,12 +586,12 @@ namespace Quasi::Text {
 
         // *out++ = '0' + (char);
         // *out++ = '.';
-        Memory::WriteU16((f64s::FastToIntUnsigned(mant) << 8) | "0."_u16, out);
+        Memory::WriteU16(f64s::FastToIntUnsigned(mant) | ".0"_u16, out);
         out += 2;
 
         out = WriteFltDecimal(mantDec, out, precision);
         // ...E+... or ...E-...
-        Memory::WriteU16Little((log10 < 0 ? '-' : '+') << 8 | e, out);
+        Memory::WriteU16(e << 8 | (log10 < 0 ? '-' : '+'), out);
         out += 2;
         log10 = std::abs(log10);
 
@@ -577,7 +611,7 @@ namespace Quasi::Text {
         const char* begin = out;
         if (f == 0) {
             const u32 w = width ? width : 1;
-            Memory::RangeSet(out, pad, w);
+            Memory::MemSet(out, pad, w);
             if (precision == ~0) {
                 return w;
             }
@@ -585,18 +619,18 @@ namespace Quasi::Text {
             out += w;
             *out++ = '.';
 
-            Memory::RangeSet(out, pad, precision);
+            Memory::MemSet(out, pad, precision);
             return w + 1 + precision;
         } else if (f < 1) { // log will be negative
             const u32 w = width ? width : 1;
-            Memory::RangeSet(out, pad, w);
+            Memory::MemSet(out, pad, w);
             out += w;
             *out++ = '.';
         } else {
             log10 = (log10 == i32s::MIN ? (int)f64s::FloorToIntUnsigned(f64s::Log10(f)) : log10) + 1;
 
             if (log10 < width) {
-                Memory::RangeSet(out, pad, width - log10);
+                Memory::MemSet(out, pad, width - log10);
                 out += width - log10;
             }
 
@@ -610,7 +644,7 @@ namespace Quasi::Text {
                     u32 topDigits = f64s::FastToIntUnsigned(f);
                     topDigits = U64ToBCD4(topDigits);
                     topDigits |= 0x30303030;
-                    Memory::WriteU32(topDigits, out);
+                    Memory::WriteU32Big(topDigits, out);
                     out += 4;
 
                     f = frac * 10000;
@@ -642,7 +676,7 @@ namespace Quasi::Text {
         }
     }
 
-    usize NumberConversion::FormatFltSci(StringWriter sw, f64 f, const FloatFormatOptions& options) {
+    usize NumberConversion::FormatFltSci(StringWriter sw, f64 f, const FloatFormatter::FormatOptions& options) {
         // -_.___E+____
         // break down:
         // sign (1)
@@ -656,7 +690,7 @@ namespace Quasi::Text {
             std::abs(f),
             AddSign(f, strbuf, options.showSign),
             options.precision,
-            options.mode == FloatFormatOptions::SCI_CAP ? 'E' : 'e'
+            options.mode == FloatFormatter::FormatOptions::SCI_CAP ? 'E' : 'e'
         );
         return Formatter<Str>::FormatTo(sw,
             Str::Slice(strbuf, len),
@@ -664,7 +698,7 @@ namespace Quasi::Text {
         );
     }
 
-    usize NumberConversion::FormatFltFxd(StringWriter sw, f64 f, const FloatFormatOptions& options) {
+    usize NumberConversion::FormatFltFxd(StringWriter sw, f64 f, const FloatFormatter::FormatOptions& options) {
         // -___.___
         // sign (1)
         // digits (max(log10, width))
@@ -687,8 +721,8 @@ namespace Quasi::Text {
         );
     }
 
-    usize NumberConversion::FormatFloating(StringWriter sw, f64 f, const FloatFormatOptions& options) {
-        using enum FloatFormatOptions::Mode;
+    usize NumberConversion::FormatFloating(StringWriter sw, f64 f, const FloatFormatter::FormatOptions& options) {
+        using enum FloatFormatter::FormatOptions::Mode;
 
         static constexpr char NaNString[] = "NaN%",
                               InfString[] = "-Infinity%";
@@ -718,7 +752,7 @@ namespace Quasi::Text {
             case GEN_CAP: {
                 if (std::abs(f) > f64s::Exp10(options.width) ||
                     std::abs(f) < f64s::Exp10(-options.precision)) {
-                    FloatFormatOptions fopt = options;
+                    FloatFormatter::FormatOptions fopt = options;
                     fopt.mode = options.mode == GEN_CAP ? SCI_CAP : SCIENTIFIC;
                     return FormatFltSci(sw, f, fopt);
                 } else {
@@ -736,21 +770,25 @@ namespace Quasi::Text {
         return Formatter<Str>::FormatTo(sw, input ? "true"_str : "false"_str, options);
     }
 
-    IntFormatOptions IntFormatOptions::Configure(Str opt) {
-        IntFormatOptions options;
+    IntFormatter::FormatOptions IntFormatter::ConfigureOptions(Str opt) {
+        FormatOptions options;
         if (opt.Length() > 1 && opt[0] != '+') {
             if (opt[0] != '<' && opt[0] != '^' && opt[0] != '>') {
                 options.pad = opt[0];
                 opt.Advance(1);
-            }
-            if (opt[0] == '^') {
+            } else if (opt[0] == '^') {
                 options.alignment = TextFormatOptions::CENTER;
-            } else {
-                options.alignment = (TextFormatOptions::Alignment)(opt[0] - '<');
+                opt.Advance(1);
+            } else if (opt[0] == '<') {
+                options.alignment = TextFormatOptions::LEFT;
+                opt.Advance(1);
+            } else if (opt[0] == '>') {
+                options.alignment = TextFormatOptions::RIGHT;
+                opt.Advance(1);
             }
-            const auto [n, totalLen] = ParsePartial<u32>(opt.Tail());
+            const auto [n, totalLen] = ParsePartial<u32>(opt);
             options.totalLength = totalLen.Assert();
-            opt.Advance(*n + 1);
+            opt.Advance(*n);
             if (opt.IsEmpty())
                 return options;
             Debug::AssertEq(opt[0], ',');
@@ -766,37 +804,45 @@ namespace Quasi::Text {
             opt.Advance(1);
         }
         if (const auto i = "dboxX"_str.Find(opt.Last())) {
-            options.base = (Base)*i;
+            options.base = (FormatOptions::Base)*i;
             opt.Shorten(1);
         }
-        options.numLen = Parse<u32>(opt).Assert();
+        options.numLen = Parse<u32>(opt).UnwrapOr(0);
         return options;
     }
 
-    template <Integer N>
-    usize Formatter<N>::FormatTo(StringWriter sw, N num, const FormatOptions& options) {
+    template <class N>
+    usize IntFormatter::FormatTo(StringWriter sw, N num, const FormatOptions& options) {
         if constexpr (Unsigned<N>)
             return NumberConversion::FormatU64(sw, (u64)num, options, options.showSign ? '+' : '\0');
         else
             return NumberConversion::FormatI64(sw, (i64)num, options);
     }
 
-    FloatFormatOptions FloatFormatOptions::Configure(Str opt) {
+    template usize IntFormatter::FormatTo<u16>(StringWriter sw, u16 num, const FormatOptions& options);
+    template usize IntFormatter::FormatTo<i16>(StringWriter sw, i16 num, const FormatOptions& options);
+    template usize IntFormatter::FormatTo<u32>(StringWriter sw, u32 num, const FormatOptions& options);
+    template usize IntFormatter::FormatTo<i32>(StringWriter sw, i32 num, const FormatOptions& options);
+    template usize IntFormatter::FormatTo<u64>(StringWriter sw, u64 num, const FormatOptions& options);
+    template usize IntFormatter::FormatTo<i64>(StringWriter sw, i64 num, const FormatOptions& options);
+
+    FloatFormatter::FormatOptions FloatFormatter::ConfigureOptions(Str opt) {
         // ((?'pad'.?)(?'align'[<^>])(?'totalLen'[0-9]+)\,)?(?'showSign'\+?)(?'shouldPadZero'0?)(?'width'[0-9]*)\.(?'precision'[0-9]*)(?'mode'[feEgG%])
-        FloatFormatOptions options;
+        FormatOptions options;
         if (opt.Length() > 1 && opt[0] != '+') {
             if (opt[0] != '<' && opt[0] != '^' && opt[0] != '>') {
                 options.pad = opt[0];
                 opt.Advance(1);
-            }
-            if (opt[0] == '^') {
+            } else if (opt[0] == '^') {
                 options.alignment = TextFormatOptions::CENTER;
+                opt.Advance(1);
             } else {
                 options.alignment = (TextFormatOptions::Alignment)(opt[0] - '<');
+                opt.Advance(1);
             }
             const auto [n, totalLen] = ParsePartial<u32>(opt.Tail());
             options.totalLength = totalLen.Assert();
-            opt.Advance(*n + 1);
+            opt.Advance(*n);
             if (opt.IsEmpty())
                 return options;
             Debug::AssertEq(opt[0], ',');
@@ -813,15 +859,15 @@ namespace Quasi::Text {
         }
         const auto [wlen, width] = ParsePartial<u32>(opt);
         if (options.shouldPadZero) {
-            Debug::Assert(wlen, "float spec can't have 0 width");
+            Debug::Assert((bool)wlen, "float spec can't have 0 width");
         }
-        options.width = width;
+        options.width = *width;
 
         Debug::AssertEq(opt[*wlen], '.');
         opt.Advance(*wlen + 1);
 
         if (const auto i = "efgEG%"_str.Find(opt.Last())) {
-            options.mode = (Mode)*i;
+            options.mode = (FormatOptions::Mode)*i;
             opt.Shorten(1);
         }
         options.precision = opt ? std::min(Parse<u32>(opt).Assert(), 32u) : ~0;
@@ -830,8 +876,6 @@ namespace Quasi::Text {
 
     template struct Formatter<bool>;
 
-    template struct Formatter<u8>;
-    template struct Formatter<i8>;
     template struct Formatter<u16>;
     template struct Formatter<i16>;
     template struct Formatter<u32>;
@@ -842,8 +886,8 @@ namespace Quasi::Text {
     template struct Formatter<f32>;
     template struct Formatter<f64>;
 
-    OptionUsize Parser<bool>::ParseUntil(Str string, Out<bool&> out, ParseOptions options) {
-        if (options.format & BooleanParseOptions::ALLOW_NUMERIC) {
+    OptionUsize BoolParser::ParseUntil(Str string, Out<bool&> out, ParseOptions options) {
+        if (options.format & ParseOptions::ALLOW_NUMERIC) {
             if (!string) return nullptr;
             const char first = string.First();
             if (first == '0' || first == '1') {
@@ -852,26 +896,22 @@ namespace Quasi::Text {
             }
             return nullptr;
         }
-        if (options.format & BooleanParseOptions::USE_WORDS) {
+        if (options.format & ParseOptions::USE_WORDS) {
             if (string.StartsWith("true"))  { out = true;  return 4; }
             if (string.StartsWith("false")) { out = false; return 5; }
         }
         return nullptr;
     }
 
-    template <Integer N>
-    OptionUsize Parser<N>::ParseUntil(Str string, Out<N&> out, ParseOptions options) {
-        return NumberConversion::ParseInt(string, out, options);
-    }
+    template <class N>
+    OptionUsize NumberConversion::FloatConv<N>::ParseUntil(Str string, Out<N&> out, FloatParser::ParseOptions options) {
+        const bool isFixed = (options.format & FloatParser::ParseOptions::FIXED),
+                   isSci   = (options.format & FloatParser::ParseOptions::SCIENTIFIC);
 
-    template <Floating N>
-    OptionUsize Parser<N>::ParseUntil(Str string, Out<N&> out, ParseOptions options) {
-        const bool isFixed = (options.format & FloatParseOptions::FIXED),
-                   isSci   = (options.format & FloatParseOptions::SCIENTIFIC);
-
-        bool negative = false;
+        bool negative = false, hasSign = true;
         if (string.StartsWith('+')) string.Advance(1);
-        if (string.StartsWith('-')) { negative = true; string.Advance(1); }
+        else if (string.StartsWith('-')) { negative = true; string.Advance(1); }
+        else hasSign = false;
 
         N num;
         const usize integerPart = ParseInteger(string, num);
@@ -880,18 +920,21 @@ namespace Quasi::Text {
             if (isSci)
                 return nullptr;
             out = negative ? -num : num;
-            return integerPart;
+            return integerPart + hasSign;
         }
 
         usize decimalPart = 0;
         if (string[integerPart] == '.') {
-            decimalPart = ParseDecimal(string.Skip(integerPart + 1), num);
+            N decimal = 0;
+            decimalPart = ParseDecimal(string.Skip(integerPart + 1), decimal);
+            num += decimal;
         }
 
         const usize fixedPart = integerPart + decimalPart + 1;
 
         if (fixedPart == string.Length()) {
-            return string.Length();
+            out = negative ? -num : num;
+            return string.Length() + hasSign;
         }
 
         if (Chr::ToUpper(string[fixedPart]) == 'E' && isSci) {
@@ -901,18 +944,18 @@ namespace Quasi::Text {
             if (!expPart) return nullptr;
 
             out = negative ? -num : num;
-            return fixedPart + 1 + *expPart;
+            return hasSign + fixedPart + 1 + *expPart;
         }
 
         if (isFixed) return nullptr;
 
         out = negative ? -num : num;
-        return fixedPart;
+        return hasSign + fixedPart;
     }
 
-    template <Floating N>
-    usize Parser<N>::ParseInteger(Str string, Out<N&> out) {
-        string = string.First(string.FindIf(Qfn$(!Chr::IsDigit)));
+    template <class N>
+    usize NumberConversion::FloatConv<N>::ParseInteger(Str string, Out<N&> out) {
+        string = string.First(string.FindIf([] (Str x) { return !Chr::IsDigit(x[0]); }).UnwrapOr(string.Length()));
         const usize totalLen = string.Length();
         string = string.TrimStart('0');
 
@@ -923,9 +966,9 @@ namespace Quasi::Text {
 
         N num = 0;
         usize i = 0;
-        for (; i < string.Length() & ~3; i += 4) {
-            u32 dig = Memory::ReadU32Little(string.Data() + i);
-            dig = NumberConversion::ParseDigits4(dig);
+        for (; i < (string.Length() & ~3); i += 4) {
+            u32 dig = Memory::ReadU32(string.Data() + i);
+            dig = ParseDigits4(dig);
             num = num * N { 10'000 } + dig;
         }
         for (; i < string.Length(); ++i) {
@@ -935,17 +978,18 @@ namespace Quasi::Text {
         return totalLen;
     }
 
-    template <Floating N>
-    usize Parser<N>::ParseDecimal(Str string, InOut<N&> out) {
-        string = string.First(string.FindIf(Qfn$(!Chr::IsDigit)));
+    template <class N>
+    usize NumberConversion::FloatConv<N>::ParseDecimal(Str string, InOut<N&> out) {
+        string = string.First(string.FindIf([] (Str x) { return !Chr::IsDigit(x[0]); }).UnwrapOr(string.Length()));
         const usize totalLen = string.Length();
         string = string.TrimEnd('0');
 
         N decimal = 1.0f;
         usize i = 0;
-        for (; i < string.Length() & ~3; i += 4) {
-            u32 dig = Memory::ReadU32Little(string.Data() + i);
-            dig = NumberConversion::ParseDigits4(dig);
+        for (; i < (string.Length() & ~3); i += 4) {
+            u32 dig = Memory::ReadU32(string.Data() + i);
+            if (dig == "0000"_u32) continue;
+            dig = ParseDigits4(dig);
             decimal *= N { 0.0001 };
             const N newOut = out + decimal * dig;
             if (newOut == out) return totalLen;
@@ -953,6 +997,7 @@ namespace Quasi::Text {
         }
         for (; i < string.Length(); ++i) {
             decimal *= N { 0.1 };
+            if (string[i] == '0') continue;
             const N newOut = out + decimal * Chr::ToDigit(string[i]);
             if (newOut == out) return totalLen;
             out = newOut;
@@ -960,8 +1005,8 @@ namespace Quasi::Text {
         return totalLen;
     }
 
-    template <Floating N>
-    OptionUsize Parser<N>::ParseExponent(Str string, InOut<N&> out) {
+    template <class N>
+    OptionUsize NumberConversion::FloatConv<N>::ParseExponent(Str string, InOut<N&> out) {
         if (!string) return nullptr;
 
         bool negExp = false;
@@ -982,10 +1027,11 @@ namespace Quasi::Text {
         return i;
     }
 
+    template struct NumberConversion::FloatConv<float>;
+    template struct NumberConversion::FloatConv<double>;
+
     template struct Parser<bool>;
 
-    template struct Parser<u8>;
-    template struct Parser<i8>;
     template struct Parser<u16>;
     template struct Parser<i16>;
     template struct Parser<u32>;

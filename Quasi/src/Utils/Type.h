@@ -5,9 +5,6 @@
 #include "Numeric.h"
 
 namespace Quasi {
-    template <class K, class V, class Cmp = std::less<K>, class Alc = std::allocator<std::pair<const K, V>>>
-    using Map = std::map<K, V, Cmp, Alc>;
-
     template <class T>
     using IList = std::initializer_list<T>;
 
@@ -54,8 +51,8 @@ namespace Quasi {
 	template <class T> using   RemQual = std::remove_cvref_t<T>;
 
 	template <class R> concept IsRawArray   = std::is_array_v<R>;
-	template <class R> using   ArrayElement = decltype(R {} [0]);
-	template <class R> constexpr usize ArrayLength() { return sizeof(R) / sizeof(ArrayElement<R>); }
+	template <class R> using   ArrayElement = RemRef<decltype(R {} [0])>;
+	template <class R> constexpr usize ArrayLength = sizeof(R) / sizeof(ArrayElement<R>);
 
 	template <class T, class U>      concept SameAs      =  std::is_same_v<T, U>;
 	template <class T, class U>      concept DifferentTo = !std::is_same_v<T, U>;
@@ -84,6 +81,19 @@ namespace Quasi {
 
 	template <class T, class U> using Common = decltype(false ? std::declval<T>() : std::declval<U>());
 
+	template <bool Packed> struct MakeCommonResult {
+		template <class T, class... Ts>
+		using Result = decltype(false ?
+			std::declval<T>() :
+			std::declval<typename MakeCommonResult<(sizeof...(Ts) > 1)>::template Result<Ts...>>());
+	};
+	template <> struct MakeCommonResult<false> { template <class T> using Result = T; };
+
+	template <class F, class... Ts> using CommonResult =
+		typename MakeCommonResult<(sizeof...(Ts) > 1)>::template Result<
+			decltype(std::declval<F>()(std::declval<const Ts&>()))...
+		>;
+
 	template <class T> concept TrivialCopy     = std::is_trivially_copyable_v<T>;
 	template <class T> concept TrivialDestruct = std::is_trivially_destructible_v<T>;
 
@@ -95,4 +105,11 @@ namespace Quasi {
 	template <usize... Is> struct MakeIntRange<0, Is...> { using Result = IntSeq<Is...>; };
 
 	template <usize N> using IntRangeSeq = typename MakeIntRange<N>::Result;
+
+	template <class T, class First, class... Ts>
+	static constexpr usize IndexOfType() {
+		if constexpr (sizeof...(Ts) == 0 || SameAs<T, First>)
+			return 0;
+		else return 1 + IndexOfType<T, Ts...>();
+	}
 }

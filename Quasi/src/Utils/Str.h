@@ -1,6 +1,5 @@
 #pragma once
 #include "Iterator.h"
-#include "Tuple.h"
 
 namespace Quasi {
     namespace Text {
@@ -14,6 +13,9 @@ namespace Quasi {
     struct Str;
     struct StrMut;
     struct String;
+    struct CStr;
+
+    template <class... Ts> struct Tuple;
 
     namespace Chr {
         constexpr char  NULL_TERM = '\0',
@@ -51,31 +53,31 @@ namespace Quasi {
 
     template <class Char, class Super>
     struct StringHolder : IContinuousCollection<Char, Super> {
+        friend IContinuousCollection<Char, Super>;
     private:
         static constexpr bool mut = IsMut<Char>;
 
         Super& super() { return *static_cast<Super*>(this); }
         const Super& super() const { return *static_cast<const Super*>(this); }
     public:
-        const char* Data() const = delete;
-        char* DataMut() requires mut = delete;
-        usize Length()     const = delete;
-        bool  IsEmpty()    const { return super().Length() == 0; }
-        operator bool()    const { return super().Length() != 0; }
+        bool IsEmpty()           const { return super().Length() == 0; }
+        explicit operator bool() const { return super().Length() != 0; }
 
         Hashing::Hash GetHashCode() const;
 
-        const char& At(usize i)              const { return Data()[i]; }
-        char& At(usize i)             requires mut { return Data()[i]; }
-        const char& AtWrap(WrappingIndex i)  const { return At(i(Length())); }
-        char& AtWrap(WrappingIndex i) requires mut { return At(i(Length())); }
+        const char& At(usize i)              const { return super().DataImpl()[i]; }
+        char& At(usize i)             requires mut { return super().DataImpl()[i]; }
+        const char& AtWrap(WrappingIndex i)  const { return At(i(super().LengthImpl())); }
+        char& AtWrap(WrappingIndex i) requires mut { return At(i(super().LengthImpl())); }
 
         BufferIterator<const char&> Iter() const;
         BufferIterator<char&> IterMut() requires mut;
         // Utf8CharsIter Utf8Chars() const;
         // SplitWhitespaceIter SplitWhitespace() const;
-        Iter::SplitIter<Super> Split(Str sep) const;
+        Iter::SplitIter<Str> Split(Str sep) const;
         Iter::LinesIter Lines() const;
+        usize CountLines() const;
+        usize CountChars(char c) const;
 
         Str              AsStr()      const;
         StrMut           AsStrMut()   requires mut;
@@ -87,9 +89,9 @@ namespace Quasi {
         operator StrMut() requires mut;
 
         char&       FirstMut() requires mut { return At(0); }
-        char&       LastMut()  requires mut { return At(Length() - 1); }
+        char&       LastMut()  requires mut { return At(super().LengthImpl() - 1); }
         const char& First()    const        { return At(0); }
-        const char& Last()     const        { return At(Length() - 1); }
+        const char& Last()     const        { return At(super().LengthImpl() - 1); }
         OptRef<char>       TryFirstMut() requires mut;
         OptRef<char>       TryLastMut()  requires mut;
         OptRef<const char> TryFirst()    const;
@@ -115,18 +117,10 @@ namespace Quasi {
         Tuple<StrMut, StrMut>        CutAtMut(usize at)   requires mut;
         Tuple<StrMut, StrMut>        SplitAtMut(usize at) requires mut;
         Tuple<StrMut, char&, StrMut> PartitionAtMut(usize at) requires mut;
-        Tuple<StrMut, StrMut>        SplitOnMut(Predicate<char> auto&& pred) requires mut {
-            const OptionUsize i = FindIf(pred);
-            return SplitAtMut(i.UnwrapOr(Length()));
-        }
-        Tuple<StrMut, StrMut>        RevSplitOnMut(Predicate<char> auto&& pred) requires mut {
-            const OptionUsize i = RevFindIf(pred);
-            return SplitAtMut(i.UnwrapOr(0));
-        }
-        Tuple<StrMut, StrMut>        SplitOnceMut(char c) requires mut {
-            const OptionUsize i = Find(c);
-            return SplitAtMut(i.UnwrapOr(Length()));
-        }
+        Tuple<StrMut, StrMut>        SplitOnMut(Predicate<char> auto&& pred) requires mut;
+        Tuple<StrMut, StrMut>        RevSplitOnMut(Predicate<char> auto&& pred) requires mut;
+        Tuple<StrMut, StrMut>        SplitOnceMut(char c) requires mut;
+
         Str First(usize num) const;
         Str Skip(usize len)  const;
         Str Tail()           const;
@@ -138,15 +132,8 @@ namespace Quasi {
         Tuple<Str, Str>              CutAt(usize at)                         const;
         Tuple<Str, Str>              SplitAt(usize at)                       const;
         Tuple<Str, const char&, Str> PartitionAt(usize at)                   const;
-
-        Tuple<Str, Str> SplitOnceOn(Predicate<char> auto&& pred) const {
-            const OptionUsize i = FindIf(pred);
-            return SplitAt(i.UnwrapOr(Length()));
-        }
-        Tuple<Str, Str> RevSplitOnceOn(Predicate<char> auto&& pred) const {
-            const OptionUsize i = RevFindIf(pred);
-            return SplitAt(i.UnwrapOr(0));
-        }
+        Tuple<Str, Str> SplitOnceOn(Predicate<char> auto&& pred) const;
+        Tuple<Str, Str> RevSplitOnceOn(Predicate<char> auto&& pred) const;
         Tuple<Str, Str> SplitOnce(char c) const;
         Tuple<Str, Str> SplitOnce(Str sep) const;
 
@@ -157,6 +144,9 @@ namespace Quasi {
         bool Equals          (Str other) const;
         bool EqualsIgnoreCase(Str other) const;
         bool operator==      (Str other) const;
+        bool operator==      (const String& other) const;
+        bool operator==      (const char* other) const;
+        template <usize N> bool operator==(const char other[N]) const { return Equals(other); }
 
         Comparison Cmp(Str other) const;
         Comparison CmpSized(Str other) const;
@@ -168,12 +158,12 @@ namespace Quasi {
         void Reverse() requires mut;
 
         OptionUsize FindIf(Predicate<Str> auto&& pred) const {
-            for (usize i = 0; i < Length(); ++i)
+            for (usize i = 0; i < super().LengthImpl(); ++i)
                 if (pred(Skip(i))) return i;
             return nullptr;
         }
         OptionUsize RevFindIf(Predicate<Str> auto&& pred) const {
-            for (usize i = Length(); i --> 0; )
+            for (usize i = super().LengthImpl(); i --> 0; )
                 if (pred(Skip(i))) return i;
             return nullptr;
         }
@@ -280,20 +270,24 @@ namespace Quasi {
     };
 
     struct Str : StringHolder<const char, Str> {
+        friend IContinuousCollection;
+        friend StringHolder;
+        using StringHolder::operator==;
+        using StringHolder::operator<=>;
     private:
         const char* data = nullptr;
         usize size = 0;
-        Str(const char* data, usize size) : data(data), size(size) {}
+        constexpr Str(const char* data, usize size) : data(data), size(size) {}
+    protected:
+        const char* DataImpl() const { return data; }
+        usize LengthImpl()     const { return size; }
     public:
-        Str() = default;
-        Str(Nullptr) : Str() {}
-        Str(const char* zstr) : data(zstr) { while (data[size++]); }
+        constexpr Str() = default;
+        constexpr Str(Nullptr) : Str() {}
+        constexpr Str(const char* zstr) : data(zstr) { while (data[size]) ++size; }
 
-        static Str Empty() { return nullptr; }
-        static Str Slice(const char* data, usize size) { return { data, size }; }
-
-        const char* Data() const { return data; }
-        usize Length()     const { return size; }
+        static constexpr Str Empty() { return nullptr; }
+        static constexpr Str Slice(const char* data, usize size) { return { data, size }; }
 
         Str&        Advance(usize num);
         Str&        Shorten(usize amount);
@@ -311,20 +305,24 @@ namespace Quasi {
     };
 
     struct StrMut : StringHolder<char, StrMut> {
+        friend IContinuousCollection;
+        friend StringHolder;
+        using StringHolder::operator==;
+        using StringHolder::operator<=>;
     private:
         char* data = nullptr;
         usize size = 0;
         StrMut(char* data, usize size) : data(data), size(size) {}
+    protected:
+        const char* DataImpl() const { return data; }
+        char* DataImpl()          { return data; }
+        usize LengthImpl()     const { return size; }
     public:
         StrMut() = default;
         StrMut(Nullptr) : StrMut() {}
 
         static StrMut Empty() { return nullptr; }
         static StrMut Slice(char* data, usize size) { return { data, size }; }
-
-        const char* Data() const { return data; }
-        char* DataMut()          { return data; }
-        usize Length()     const { return size; }
 
         StrMut&     Advance(usize num);
         StrMut&     Shorten(usize amount);
@@ -342,36 +340,60 @@ namespace Quasi {
         Str AsConst() const { return AsStr(); }
     };
 
-    inline Str operator ""_str(const char* data, usize size) {
+    constexpr Str operator ""_str(const char* data, usize size) {
         return Str::Slice(data, size);
     }
 
-    template <class Char, class Super> Str StringHolder<Char, Super>::TrimIf(Predicate<char> auto&& pred) const {
+#define strdef template <class Char, class Super>
+#define strcls StringHolder<Char, Super>
+    strdef Tuple<StrMut, StrMut> strcls::SplitOnMut(Predicate<char> auto&& pred) requires mut {
+        const OptionUsize i = FindIf(pred);
+        return SplitAtMut(i.UnwrapOr(super().LengthImpl()));
+    }
+    strdef Tuple<StrMut, StrMut> strcls::RevSplitOnMut(Predicate<char> auto&& pred) requires mut {
+        const OptionUsize i = RevFindIf(pred);
+        return SplitAtMut(i.UnwrapOr(0));
+    }
+    strdef Tuple<StrMut, StrMut> strcls::SplitOnceMut(char c) requires mut {
+        const OptionUsize i = Find(c);
+        return SplitAtMut(i.UnwrapOr(super().LengthImpl()));
+    }
+    strdef Tuple<Str, Str> strcls::SplitOnceOn(Predicate<char> auto&& pred) const {
+        const OptionUsize i = FindIf(pred);
+        return SplitAt(i.UnwrapOr(super().LengthImpl()));
+    }
+    strdef Tuple<Str, Str> strcls::RevSplitOnceOn(Predicate<char> auto&& pred) const {
+        const OptionUsize i = RevFindIf(pred);
+        return SplitAt(i.UnwrapOr(0));
+    }
+    strdef Str strcls::TrimIf(Predicate<char> auto&& pred) const {
         return TrimStartIf(pred).TrimEndIf(pred);
     }
-    template <class Char, class Super> Str StringHolder<Char, Super>::TrimStartIf(Predicate<char> auto&& pred) const {
+    strdef Str strcls::TrimStartIf(Predicate<char> auto&& pred) const {
         usize beg = 0;
-        while (beg < Length() && pred(At(beg++))) {}
+        while (beg < super().LengthImpl() && pred(At(beg))) ++beg;
         return Skip(beg);
     }
-    template <class Char, class Super> Str StringHolder<Char, Super>::TrimEndIf(Predicate<char> auto&& pred) const {
-        usize end = Length();
+    strdef Str strcls::TrimEndIf(Predicate<char> auto&& pred) const {
+        usize end = super().LengthImpl();
         while (end --> 0 && pred(At(end))) {}
         return First(end + 1);
     }
-    template <class Char, class Super> StrMut StringHolder<Char, Super>::TrimIfMut(Predicate<char> auto&& pred) requires mut {
+    strdef StrMut strcls::TrimIfMut(Predicate<char> auto&& pred) requires mut {
         return TrimStartIfMut(pred).TrimEndIfMut(pred);
     }
-    template <class Char, class Super> StrMut StringHolder<Char, Super>::TrimStartIfMut(Predicate<char> auto&& pred) requires mut {
+    strdef StrMut strcls::TrimStartIfMut(Predicate<char> auto&& pred) requires mut {
         usize beg = 0;
-        while (beg < Length() && pred(At(beg++))) {}
+        while (beg < super().LengthImpl() && pred(At(beg))) ++beg;
         return SkipMut(beg);
     }
-    template <class Char, class Super> StrMut StringHolder<Char, Super>::TrimEndIfMut(Predicate<char> auto&& pred) requires mut {
-        usize end = Length();
+    strdef StrMut strcls::TrimEndIfMut(Predicate<char> auto&& pred) requires mut {
+        usize end = super().LengthImpl();
         while (end --> 0 && pred(At(end))) {}
         return FirstMut(end + 1);
     }
+#undef strdef
+#undef strcls
 
     template <class T, class Super>
     Str    IContinuousCollection<T, Super>::AsStr() const requires SameAs<const char, const T> { return AsSpan().AsStr(); }

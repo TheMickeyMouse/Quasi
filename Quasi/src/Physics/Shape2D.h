@@ -41,7 +41,7 @@ namespace Quasi::Physics2D {
         fRange ProjectOntoOwnAxis(u32 axisID, const fVector2& axis) const;
         bool AddSeperatingAxes(SeperatingAxisSolver& sat) const;
 
-        Type TypeIndex() const { return (Type)ID(); }
+        Type TypeIndex() const { return (Type)GetTagImpl(); }
         ClipPrimitive PreferedPrimitive() const { return PrimitiveOfType(TypeIndex()); }
     };
 

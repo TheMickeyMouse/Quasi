@@ -72,8 +72,8 @@ namespace Quasi::Physics2D {
     };
 
     struct BodyHandle : INullable<Body&, BodyHandle>, IReference<Body, BodyHandle> {
-        u32 index;
-        OptRef<World> world;
+        u32 index = 0;
+        OptRef<World> world = nullptr;
 
         using IReference::operator->;
         using IReference::operator*;

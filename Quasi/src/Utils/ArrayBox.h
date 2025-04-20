@@ -65,7 +65,7 @@ namespace Quasi {
         Span<const T>* operator->() const = delete;
         Span<T>* operator->() = delete;
 
-        operator bool() const { return buf != nullptr; }
+        explicit operator bool() const { return buf != nullptr; }
     };
 
     template <class T, class A> ArrayBox<T> Box<T, A>::IntoArrayBox() {

@@ -64,7 +64,7 @@ namespace Quasi::Graphics {
             return;
         } else {
             const auto begin = Debug::Timer::Now();
-            auto res = f();
+            const auto res = f();
             const Debug::DateTime end = Debug::Timer::Now();
             GLDebugContainer::GpuProcessDuration += end - begin;
             GLReportFn(fsig, loc);
@@ -80,8 +80,7 @@ namespace Quasi::Graphics {
 
 template <>
 struct Quasi::Text::Formatter<Quasi::Graphics::GLErrorCode> {
-    using FormatOptions = Empty;
-    void FormatTo(StringWriter output, Graphics::GLErrorCode err, Empty) const {
-        Text::FormatTo(output, "0x{:X04} ({})", (u32)err, GetErrName(err));
+    static usize FormatTo(StringWriter output, Graphics::GLErrorCode err, Str) {
+        return Text::FormatTo(output, "0x{:X04} ({})", (u32)err, GetErrName(err));
     }
 };

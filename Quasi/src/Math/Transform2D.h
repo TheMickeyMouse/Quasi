@@ -20,13 +20,13 @@ namespace Quasi::Math {
         static_assert(ITransformer2D<T>, "T should be a transformer2d"); // delayed constraint
         const T& tformer;
         fVector2 Transform       (const fVector2& point) const { return tformer.TransformInverse(point); }
-                      void     TransformInplace(fVector2&       point) const { tformer.TransformInverseInplace(point); }
+        void     TransformInplace(fVector2&       point) const { tformer.TransformInverseInplace(point); }
         fVector2 TransformInverse       (const fVector2& point) const { return tformer.Transform(point); }
-                      void     TransformInverseInplace(fVector2&       point) const { tformer.TransformInplace(point); }
+        void     TransformInverseInplace(fVector2&       point) const { tformer.TransformInplace(point); }
         fVector2 TransformNormal       (const fVector2& normal) const { return tformer.TransformInverseNormal(normal); }
-                      void     TransformNormalInplace(fVector2&       normal) const { tformer.TransformInverseNormalInplace(normal); }
+        void     TransformNormalInplace(fVector2&       normal) const { tformer.TransformInverseNormalInplace(normal); }
         fVector2 TransformInverseNormal       (const fVector2& normal) const { return tformer.TransformNormal(normal); }
-                      void     TransformInverseNormalInplace(fVector2&       normal) const { tformer.TransformNormalInplace(normal); }
+        void     TransformInverseNormalInplace(fVector2&       normal) const { tformer.TransformNormalInplace(normal); }
     };
 
     struct Transform2D {

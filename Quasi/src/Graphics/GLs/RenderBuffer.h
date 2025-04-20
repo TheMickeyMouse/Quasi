@@ -1,6 +1,6 @@
 #pragma once
 #include "GLObject.h"
-#include "Textures/TextureConstants.h"
+#include "TextureConstants.h"
 #include "Math/Vector.h"
 
 namespace Quasi::Graphics {

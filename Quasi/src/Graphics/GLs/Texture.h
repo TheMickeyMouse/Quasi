@@ -1,13 +1,14 @@
 ﻿#pragma once
+#include <utility>
 #include <vector>
 
 #include "Utils/Box.h"
-#include "Graphics/GLs/GLObject.h"
+#include "Utils/Variant.h"
+#include "GLObject.h"
 
-#include "Graphics/GLs/GLTypeID.h"
+#include "GLTypeID.h"
 #include "TextureConstants.h"
 #include "Math/Rect.h"
-#include "Utils/Variant.h"
 
 namespace Quasi {
     struct CStr;
@@ -20,7 +21,7 @@ namespace Quasi::Graphics {
 
         template <class E> requires std::is_enum_v<E>
         TextureParamPair(TextureParamName name, E val) : pname(name), val((int)val) {}
-        TextureParamPair(TextureParamName name, const decltype(val)& val) : pname(name), val(val) {}
+        TextureParamPair(TextureParamName name, decltype(val) val) : pname(name), val(std::move(val)) {}
 
         static TextureParamPair NearestSample()   { return { TextureParamName::XT_SAMPLE_FILTER, TextureSample::NEAREST }; }
         static TextureParamPair LinearSample()    { return { TextureParamName::XT_SAMPLE_FILTER, TextureSample::LINEAR }; }
@@ -74,7 +75,7 @@ namespace Quasi::Graphics {
 
             void Replace(u32 slot) { CloseImpl(); index = slot; }
 
-            operator bool() const { return index != 0; }
+            explicit operator bool() const { return index != 0; }
         };
 
         Math::uVector3 size;
@@ -90,7 +91,7 @@ namespace Quasi::Graphics {
         Texture() = default;
         static Texture New(const byte* raw, const Math::uVector3& size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_3D });
         static Texture New(const byte* raw, const Math::uVector2& size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_2D }) { return New(raw, size.with_z(0), init); }
-        static Texture New(const byte* raw, uint size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_1D }) { return New(raw, { size, 0, 0 }, init); }
+        static Texture New(const byte* raw, u32 size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_1D }) { return New(raw, { size, 0, 0 }, init); }
         static void DestroyObject(GraphicsID id);
         static void BindObject(TextureTarget target, GraphicsID id);
         static void UnbindObject(TextureTarget target);
@@ -145,7 +146,7 @@ namespace Quasi::Graphics {
 
         const Math::uVector3& Size() const { return size; }
         Math::uVector2 Size2D() const { return size.xy(); }
-        uint Size1D() const { return size.x; }
+        u32 Size1D() const { return size.x; }
 
         int Dimension() const;
 

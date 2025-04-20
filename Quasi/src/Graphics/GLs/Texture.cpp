@@ -1,14 +1,12 @@
 ﻿#include "Texture.h"
 
-#include <ranges>
-
 #include <glp.h>
 #include "Utils/Str.h"
-#include "Graphics/GLs/GLDebug.h"
-#include "Graphics/Graphicals/GraphicsDevice.h"
-#include "stb_image/stb_image.h"
 #include "Utils/CStr.h"
 #include "Utils/Vec.h"
+#include "GLDebug.h"
+#include "Graphicals/GraphicsDevice.h"
+#include "vendor/stb_image/stb_image.h"
 
 namespace Quasi::Graphics {
     void STBIImageHandler::operator()(byte* dat) const {

@@ -6,13 +6,14 @@
 
 namespace Quasi::Debug {
     Logger Logger::InternalLog = [] {
+        Logger::WinEnableANSI();
+
         Logger log { Text::StringWriter::WriteToConsole() };
         log.SetName("Internal");
 
         log.SetBreakLevel(Severity::ERROR);
         log.SetShortenFile(true);
         log.SetIncludeFunc(false);
-        log.SetAlwaysFlush(DEBUG);
         log.SetLocPad(0);
         return log;
     }();
@@ -32,28 +33,26 @@ namespace Quasi::Debug {
 
     void Logger::FmtLog(Text::StringWriter output, Str log, Severity severity, DateTime time, const SourceLoc& fileLoc) const {
         const Text::ConsoleColor scol = severity->color;
-        Text::FormatTo(
-            output,
-            "{}[{:%y-%M-%d %H:%m:%s.%u}]{} {}> {}{:<8} {} {}{}\n",
+        Text::FormatTo(output,
+            "{}[{:%y-%M-%d %H:%m:%s.%u}]{} {}> {}{:<8}",
             scol, time, Text::RESET, name,
-            scol, Text::Format("[{}]:", severity->name),
-            Text::SetFmtOptions(
-                FmtSourceLoc(fileLoc),
-                { .targetLength = lPad, .alignment = Text::TextFormatOptions::LEFT }
-            ),
-            log,
-            Text::RESET
+            scol, Text::Format("[{}]:", severity->name)
         );
+        FmtSourceLoc(output, fileLoc);
+        output.Write(log);
+        output.SetColor(Text::RESET);
+        output.Write('\n');
+        fflush(stdout);
     }
 
     Str Logger::FmtFile(Str fullname) const {
-        return shortenFileNames ? Text::SplitDirectory(fullname)[1_st] : fullname;
+        return shortenFileNames ? Text::SplitDirectory(fullname)[2_nd] : fullname;
     }
 
-    String Logger::FmtSourceLoc(const SourceLoc& loc) const {
-        return includeFunction ?
-            Text::Format("{}:{}:{} in {}:", FmtFile(loc.file_name()), loc.line(), loc.column(), loc.function_name()) :
-            Text::Format("{}:{}:{}:", FmtFile(loc.file_name()), loc.line(), loc.column());
+    void Logger::FmtSourceLoc(Text::StringWriter output, const SourceLoc& loc) const {
+        includeFunction ?
+            FormatTo(output, "{}:{}:{} in {}: ", FmtFile(loc.file_name()), loc.line(), loc.column(), loc.function_name()) :
+            FormatTo(output, "{}:{}:{}: ", FmtFile(loc.file_name()), loc.line(), loc.column());
     }
 
     void Logger::LogNoOut(const Severity sv, const Str s, const SourceLoc& loc) {
@@ -63,22 +62,19 @@ namespace Quasi::Debug {
 
     void Logger::ConsoleLog(const Severity sv, const Str s, const SourceLoc& loc) {
         FmtLog(logOut, s, sv, Timer::Now(), loc);
-        if (alwaysFlush) Flush();
     }
 
     void Logger::Log(const Severity sv, const Str s, const SourceLoc& loc) {
         LogNoOut(sv, s, loc);
         ConsoleLog(sv, s, loc);
         if (Overrides(breakLevel, sv)) {
-            Flush();
             DebugBreak();
         }
     }
 
     void Logger::AssertMsg(const bool assert, Str msg, const SourceLoc& loc) {
         if (!assert) {
-            Log(Severity::ERROR, Text::Format("Assertion failed: {}", msg).ToString(), loc);
-            Flush();
+            Log(Severity::ERROR, Text::Format("Assertion failed: {}", msg), loc);
             DebugBreak();
         }
     }
@@ -149,4 +145,15 @@ namespace Quasi::Text {
         }
         return len;
     }
+}
+
+#include <windows.h>
+
+void Quasi::Debug::Logger::WinEnableANSI() {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD dwMode = 0;
+    GetConsoleMode(hConsole, &dwMode);
+    dwMode |= ENABLE_PROCESSED_OUTPUT;
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    SetConsoleMode(hConsole, dwMode);
 }

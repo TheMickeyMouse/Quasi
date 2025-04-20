@@ -20,8 +20,9 @@ namespace Quasi::Graphics {
         GLObject& operator=(const GLObject&) = delete;
         GLObject(GLObject&& obj) noexcept : rendererID(obj.rendererID) { obj.rendererID = GraphicsNoID; }
         GLObject& operator=(GLObject&& obj) noexcept {
-            this->~GLObject();
-            new (this) GLObject(std::move(obj));
+            G::DestroyObject(rendererID);
+            rendererID = obj.rendererID;
+            obj.rendererID = GraphicsNoID;
             return *this;
         }
 
@@ -32,7 +33,7 @@ namespace Quasi::Graphics {
 
         bool IsNull() const { return rendererID == GraphicsNoID; }
 
-        operator bool() const { return !IsNull(); }
-        operator GraphicsID() const { return rendererID; }
+        explicit operator bool() const { return !IsNull(); }
+        explicit operator GraphicsID() const { return rendererID; }
     };
 }

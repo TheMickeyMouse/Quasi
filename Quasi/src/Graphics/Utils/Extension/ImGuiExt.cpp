@@ -1,15 +1,18 @@
 #include "ImGuiExt.h"
 
 #include <imgui_internal.h>
-#include "Array.h"
+#include <imgui_stdlib.h>
+#include "Utils/Array.h"
 
-#include "Constants.h"
 #include "Complex.h"
-#include "Quaternion.h"
-#include "CameraController.h"
-#include "Light.h"
-#include "Transform2D.h"
-#include "Transform3D.h"
+#include "Math/Quaternion.h"
+#include "Graphicals/CameraController.h"
+#include "Graphicals/Light.h"
+#include "Math/Transform2D.h"
+#include "Math/Transform3D.h"
+#include "Utils/Text/Formatting.h"
+
+struct InputTextCallback_UserData;
 
 namespace ImGui {
     static const Quasi::Math::Color COLOR_X_AXIS = Quasi::Math::Color::BETTER_RED();
@@ -62,7 +65,7 @@ namespace ImGui {
     }
 
     void DisplayTextCropped(Q Str text, float width) {
-        const char* begin = text.data(), *end = begin + text.size();
+        const char* begin = text.Data(), *end = begin + text.Length();
         const ImVec2 textSize = CalcTextSize(begin, end),
                      cursor = GetCursorScreenPos();
         const float clipX = cursor.x + width;
@@ -75,17 +78,29 @@ namespace ImGui {
         RenderTextEllipsis(GetWindowDrawList(), cursor, { clipX, cursor.y + textSize.y }, clipX, clipX, begin, end, &textSize);
     }
 
+    void EditString(Q Str label, Q String& string) {
+        auto* const callback = +[] (ImGuiInputTextCallbackData* data) -> int {
+            Q String* s = (Q String*)data->UserData;
+            if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
+                s->Resize(data->BufTextLen);
+                data->Buf = (char*)s->Data();
+            }
+            return 0;
+        };
+        InputTextMultiline(label.Data(), string.Data(), string.Capacity(), ImVec2(0, 0), ImGuiInputTextFlags_CallbackResize, callback, &string);
+    }
+
     template <class T> ImGuiDataType ImGuiDataEnum() {
-        if constexpr (std::is_same_v<T, Q f32>) return ImGuiDataType_Float;
-        if constexpr (std::is_same_v<T, Q f64>) return ImGuiDataType_Double;
-        if constexpr (std::is_same_v<T, Q u8 >) return ImGuiDataType_U8;
-        if constexpr (std::is_same_v<T, Q i8 >) return ImGuiDataType_S8;
-        if constexpr (std::is_same_v<T, Q u16>) return ImGuiDataType_U16;
-        if constexpr (std::is_same_v<T, Q i16>) return ImGuiDataType_S16;
-        if constexpr (std::is_same_v<T, Q u32>) return ImGuiDataType_U32;
-        if constexpr (std::is_same_v<T, Q i32>) return ImGuiDataType_S32;
-        if constexpr (std::is_same_v<T, Q u64>) return ImGuiDataType_U64;
-        if constexpr (std::is_same_v<T, Q i64>) return ImGuiDataType_S64;
+        if constexpr (Q SameAs<T, Q f32>) return ImGuiDataType_Float;
+        if constexpr (Q SameAs<T, Q f64>) return ImGuiDataType_Double;
+        if constexpr (Q SameAs<T, Q u8 >) return ImGuiDataType_U8;
+        if constexpr (Q SameAs<T, Q i8 >) return ImGuiDataType_S8;
+        if constexpr (Q SameAs<T, Q u16>) return ImGuiDataType_U16;
+        if constexpr (Q SameAs<T, Q i16>) return ImGuiDataType_S16;
+        if constexpr (Q SameAs<T, Q u32>) return ImGuiDataType_U32;
+        if constexpr (Q SameAs<T, Q i32>) return ImGuiDataType_S32;
+        if constexpr (Q SameAs<T, Q u64>) return ImGuiDataType_U64;
+        if constexpr (Q SameAs<T, Q i64>) return ImGuiDataType_S64;
         return ImGuiDataType_COUNT;
     }
 
@@ -98,7 +113,7 @@ namespace ImGui {
         SetNextItemWidth(GetItemDefaultWidth(width));
         SameLine(0, GetItemRemainingWidth(width) - GetLastItemWidth());
 
-        PushID(title.data());
+        PushID(title.Data());
         DragScalar("", ImGuiDataEnum<T>(), &value, speed,
             range ? &range->min.x : nullptr, range ? &range->max.x : nullptr);
         PopID();
@@ -116,7 +131,7 @@ namespace ImGui {
 
         for (Q u32 i = 0; i < N; ++i) {
 
-            PushID(title.data());
+            PushID(title.Data());
             EditScalarWithIcon(
                 &"X:\0Y:\0Z:\0W:"[i * 3],
                 Q Array { COLOR_X_AXIS, COLOR_Y_AXIS, COLOR_Z_AXIS, COLOR_W_AXIS }[i], // amazing hack
@@ -139,7 +154,7 @@ namespace ImGui {
 
         SameLine(0, GetItemRemainingWidth(width) - GetLastItemWidth());
         const float fullWidth = GetItemDefaultWidth(width) - GetSpacingWidth();
-        PushID(title.data());
+        PushID(title.Data());
         EditScalarWithIcon("Min", COLOR_ALPHA, range.min.x, speed, constraint, {}, fullWidth * 0.5f);
         SameLine();
         EditScalarWithIcon("Max", COLOR_ALPHA, range.max.x, speed, constraint, {}, fullWidth * 0.5f);
@@ -154,7 +169,7 @@ namespace ImGui {
 
         SameLine(0, GetItemRemainingWidth(width) - GetLastItemWidth());
         const float rWidth = GetItemDefaultWidth(width);
-        PushID(title.data());
+        PushID(title.Data());
         EditVector("Min", range.min, speed, constraint, rWidth);
         Indent(GetItemRemainingWidth(width));
         EditVector("Max", range.max, speed, constraint, rWidth);
@@ -171,7 +186,7 @@ namespace ImGui {
         SameLine(0, GetItemRemainingWidth(width) - GetLastItemWidth());
 
         const float w = GetItemDefaultWidth(width);
-        PushID(title.data());
+        PushID(title.Data());
         EditScalarWithIcon((const char*)u8"θ:", COLOR_Z_ANGLE, rotation, 1, Q Math::fRange { -180, 180 }, "%f°", w);
         PopID();
 
@@ -187,7 +202,7 @@ namespace ImGui {
         SameLine(0, GetItemRemainingWidth(width) - GetLastItemWidth());
 
         const float w = (GetItemDefaultWidth(width) - 2 * GetSpacingWidth()) / 3;
-        PushID(title.data());
+        PushID(title.Data());
         EditScalarWithIcon((const char*)u8"θ:", COLOR_X_ANGLE, xrot, 1, Q Math::fRange {  -90,  90 }, "%f°", w); SameLine();
         EditScalarWithIcon((const char*)u8"Ψ:", COLOR_Y_ANGLE, yrot, 1, Q Math::fRange { -180, 180 }, "%f°", w); SameLine();
         EditScalarWithIcon((const char*)u8"φ:", COLOR_Z_ANGLE, zrot, 1, Q Math::fRange { -180, 180 }, "%f°", w);
@@ -223,14 +238,14 @@ namespace ImGui {
             Q Math::Color c = Q Array<Q Math::Color, 4> { COLOR_X_AXIS, COLOR_Y_AXIS, COLOR_Z_AXIS, COLOR_ALPHA }[i];
 
             const Q Math::Range<typename C::scalar> range = { 0, (typename C::scalar)(C::traits_is_floating ? 1 : 255) };
-            PushID(title.data());
+            PushID(title.Data());
             EditScalarWithIcon(&"R:\0G:\0B:\0A:"[i * 3], c, color[i],
                 C::traits_is_floating ? 0.005f : 1.0f, range, {}, unitWidth);
             SameLine();
             PopID();
         }
 
-        PushID(title.data(), "button");
+        PushID(title.Data(), "button");
         static constexpr Q u32 FLAGS = ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreviewHalf;
         if constexpr (C::traits_is_floating) {
             if constexpr (C::dimension == 3) {
@@ -251,7 +266,7 @@ namespace ImGui {
     }
 
     Q_IMGUI_EDITOR(EditTransform, Q Math::Transform2D& transform, float speed) {
-        if (!TreeNode(title.data())) return;
+        if (!TreeNode(title.Data())) return;
         EditVector         ("Position", transform.position, speed);
         EditVector         ("Scale",    transform.scale, speed);
         EditComplexRotation("Rotation", transform.rotation);
@@ -259,7 +274,7 @@ namespace ImGui {
     }
 
     Q_IMGUI_EDITOR(EditTransform, Q Math::Transform3D& transform, float speed) {
-        if (!TreeNode(title.data())) return;
+        if (!TreeNode(title.Data())) return;
         EditVector      ("Position", transform.position, speed);
         EditVector      ("Scale",    transform.scale, speed);
         EditQuatRotation("Rotation", transform.rotation);
@@ -271,7 +286,7 @@ namespace ImGui {
 
         static bool showControls = false;
 
-        if (!TreeNode(title.data())) return;
+        if (!TreeNode(title.Data())) return;
 
         TextDisabled(camera.enabled ? " (press Esc to disable!)" : " (press Esc to enable!)");
 
@@ -309,7 +324,7 @@ namespace ImGui {
                 "camera.fov = {};\n"
                 "camera.fovRange = {{ {}, {} }};\n"
                 "camera.zoomRatio = {};\n"
-                "camera.smoothZoom = {};\n",
+                "camera.smoothZoom = {};\n\0",
                 camera.position,
                 camera.yaw, camera.pitch,
                 camera.speed,
@@ -318,7 +333,7 @@ namespace ImGui {
                 camera.fovRange.min.value(), camera.fovRange.max.value(),
                 camera.zoomRatio,
                 camera.smoothZoom)
-            .c_str());
+            .Data());
         }
         SameLine();
         if (Button(showControls ? "Hide Controls" : "Show Controls")) {
@@ -347,7 +362,7 @@ namespace ImGui {
 
     Q_IMGUI_EDITOR(EditLight, Q Graphics::Light& light) {
         Separator();
-        if (!TreeNode(title.data())) return;
+        if (!TreeNode(title.Data())) return;
 
         BeginTabBar("Light Edit");
 
@@ -369,12 +384,12 @@ namespace ImGui {
             light.Set(FlashLight {
                 .position = light.Position(),
                 .yaw = yaw, .pitch = pitch,
-                .innerCut = 12.5_deg, .outerCut = 20.0_deg
+                .innerCut = 12.5_degf, .outerCut = 20.0_degf
             });
         }
 
         EditColor("Color + Intensity", light.color);
-        light.Visit(
+        light.VisitMut(
             [](SunLight& sun) {
                 auto [len, yaw, pitch] = sun.direction.spheric();
                 yaw   = std::isnan(yaw)   ? 0 : yaw;
@@ -408,13 +423,13 @@ namespace ImGui {
 
         EndTabBar();
         if (Button("Copy State to Clipboard")) {
-            SetClipboardText(light.Visit(
+            SetClipboardText(light.Visit<Quasi::String>(
                 [&](const SunLight& sun) {
                     return Quasi::Text::Format(
                         "light = Graphics::SunLight {{\n"
                         "   .direction = fVector3 {:($),},\n"
                         "}};\n"
-                        "light.color = fColor {:($),};\n",
+                        "light.color = fColor {:($),};\n\0",
                         sun.direction,
                         light.color);
                 },
@@ -426,7 +441,7 @@ namespace ImGui {
                         "   .linear = {},\n"
                         "   .quadratic = {},\n"
                         "}};\n"
-                        "light.color = fColor {:($),};\n",
+                        "light.color = fColor {:($),};\n\0",
                         point.position,
                         point.constant, point.linear, point.quadratic,
                         light.color);
@@ -438,13 +453,13 @@ namespace ImGui {
                         "   .yaw = {}, .pitch = {},\n"
                         "   .innerCut = {}, .outerCut = {}\n"
                         "}};\n"
-                        "light.color = fColor {:($),};\n",
+                        "light.color = fColor {:($),};\n\0",
                         flash.position,
                         flash.yaw, flash.pitch,
                         flash.innerCut, flash.outerCut,
                         light.color);
                 }
-            ).c_str());
+            ).Data());
         }
         TreePop();
     }

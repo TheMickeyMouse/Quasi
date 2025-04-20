@@ -1,12 +1,10 @@
 ﻿#pragma once
-#include <type_traits>
-#include <array>
 #include <cmath>
 
-#include "Constants.h"
-#include "Option.h"
-#include "Text.h"
+#include "Utils/Option.h"
+#include "Utils/Text/Num.h"
 
+#include "Utils/Array.h"
 #include "Utils/Iterator.h"
 #include "Utils/Ref.h"
 
@@ -17,9 +15,9 @@ namespace Quasi::Math {
     }
 
     template <u32 N, class T> struct VectorN : details::vecn_base<N, T> {
-        std::array<T, N> elems;
+        Array<T, N> elems;
 
-        VectorN(T base = 0) { elems.fill(base); }
+        VectorN(T base = 0) { elems.Fill(base); }
         template <class... R> VectorN(R... args)
         requires ((std::is_convertible_v<T, R> && ...) && sizeof...(R) == N) : elems { args... } {}
 
@@ -221,7 +219,7 @@ namespace Quasi::Math {
     public:
         using scalar = T;
         using vect = VectorN<N, T>;
-        static constexpr u32 size() { return N; }
+        static constexpr u32 Length() { return N; }
         static constexpr u32 dimension = N;
 
         static constexpr bool traits_float  = std::is_floating_point_v<T>,
@@ -322,7 +320,7 @@ namespace Quasi::Math {
         NODISC bool       in_range(const vect& other, T d) const { return dist(other) <= d; }
         NODISC vect       norm() const { return as_vec() / len(); }
         NODISC vect       norm(float d) const { return norm() * d; }
-        NODISC vect       safe_norm() const { return lensq() <= EPSILON * EPSILON ? 0 : norm(); }
+        NODISC vect       safe_norm() const { return lensq() <= f32s::EPSILON * f32s::EPSILON ? 0 : norm(); }
 
         NODISC T sum() const { return details::accum(add {}, as_vec(), (T)0); }
         NODISC T dot(const vect& other) const { return (as_vec() * other).sum(); }
@@ -364,29 +362,21 @@ namespace Quasi::Math {
         static vect random_in_unit(RandomGenerator& rg) requires traits_float;
 
         static Option<vect> parse(Str string, Str sep, Str beg, Str end, Fn<Option<T>, Str> auto elemParser) {
-            if (!string.starts_with(beg) || !string.starts_with(end)) return nullptr;
+            if (!string.StartsWith(beg) || !string.StartsWith(end)) return nullptr;
 
-            string = string.substr(beg.size(), string.size() - beg.size() - end.size());
-            u32 splittings[N - 1] {};
-            for (u32 i = 0; i < N - 1; ++i) {
-                const auto it = string.find(sep, i ? splittings[i - 1] + sep.size() : 0);
-                if (it == Str::npos) return nullptr;
-                splittings[i] = it;
+            string = string.Substr(beg.Length(), string.Length() - beg.Length() - end.Length());
+            vect v;
+            for (usize i = 0; i < N; ++i) {
+                const auto [e, rest] = string.SplitOnce(sep);
+                Option<T> element = elemParser(e);
+                if (!element) return nullptr;
+                v[i] = *element;
+                if (i < N - 1 && rest.IsEmpty()) return nullptr;
+                string = rest;
             }
-            if (string.find(sep, splittings[N - 2] + sep.size()) != Str::npos) return nullptr;
-
-            vect vector;
-            for (u32 i = 0; i < N; ++i) {
-                Option<T> val = elemParser(string.substr(
-                    i ? splittings[i - 1] + sep.size() : 0,
-                    i == N - 1 ? Str::npos : splittings[i] - (i ? splittings[i - 1] + sep.size() : 0)
-                ));
-                if (!val) return nullptr;
-                vector[i] = val.Unwrap();
-            }
-            return vector;
+            return v;
         }
-        static Option<vect> parse(Str string, Str sep, Str beg, Str end) { return parse(string, sep, beg, end, Text::Parse<T>); }
+        static Option<vect> parse(Str string, Str sep, Str beg, Str end) { return parse(string, sep, beg, end, [] (Str s) { return Text::Parse<T>(s); }); }
     };
 
     template <u32 N, class T> auto operator+(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return vec + val; }
@@ -416,7 +406,7 @@ namespace Quasi::Math {
         VectorN(T x = 0) : x(x) {}
         VectorN(std::convertible_to<T> auto x) : x((T)x) {}
 
-        static constexpr Str params = "x";
+        static constexpr Str params = "x"_str;
 
         NODISC const T& value() const { return x; }
         T& value() { return x; }
@@ -615,31 +605,12 @@ namespace Quasi::Math {
 }
 
 #pragma region Formatting
-#include "Format.h"
 namespace Quasi::Text {
     template <u32 N, class T>
-    struct Formatter<Math::VectorN<N, T>> : Formatter<Array<T, N>> {
-        void WriteElement(T x, char s, StringOutput output) const {
-            for (const char c : this->elemFormat) {
-                if (c == '#') {
-                    output(s);
-                    continue;
-                }
-                if (c == '$') {
-                    FormatOnto(output, x);
-                    continue;
-                }
-                output(c);
-            }
-        }
-        void FormatTo(const Math::VectorN<N, T>& vec, StringOutput output) {
-            output(this->brack);
-            for (u32 i = 0; i < N; ++i) {
-                WriteElement(vec[i], "xyzw"[i], output);
-                if (i < N - 1 || this->trailingComma)
-                    output(this->seperator);
-            }
-            output(this->brack + 1);
+    struct Formatter<Math::VectorN<N, T>> : Formatter<Span<const T>> {
+        using typename Formatter<Span<const T>>::FormatOptions;
+        static usize FormatTo(StringWriter sw, const Math::VectorN<N, T>& vec, const FormatOptions& options) {
+            return Formatter<Span<const T>>::FormatTo(sw, Spans::Slice(vec.begin(), N), options);
         }
     };
 }

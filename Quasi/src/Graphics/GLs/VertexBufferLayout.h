@@ -18,24 +18,24 @@ namespace Quasi::Graphics {
         VertexBufferComponent(GLTypeID type, uint count, bool norm = false, bool integral = false)
             : type(type), count(count), flags((integral * INTEGER_FLAG) | (norm * NORMALIZED_FLAG)) {}
         
-        static VertexBufferComponent Float()  { return { GLGetTypeID<float>(),  1 }; }
-        static VertexBufferComponent Double() { return { GLGetTypeID<double>(), 1 }; }
-        static VertexBufferComponent Int()    { return { GLGetTypeID<int>(),    1 }; }
-        static VertexBufferComponent Uint()   { return { GLGetTypeID<uint>(),   1 }; }
-        static VertexBufferComponent SByte()  { return { GLGetTypeID<char>(),   1 }; }
-        static VertexBufferComponent Byte()   { return { GLGetTypeID<uchar>(),  1 }; }
-        static VertexBufferComponent Vec2()   { return { GLGetTypeID<float>(),  2 }; }
-        static VertexBufferComponent Vec3()   { return { GLGetTypeID<float>(),  3 }; }
-        static VertexBufferComponent Vec4()   { return { GLGetTypeID<float>(),  4 }; }
-        static VertexBufferComponent IVec2()  { return { GLGetTypeID<int>(),    2 }; }
-        static VertexBufferComponent IVec3()  { return { GLGetTypeID<int>(),    3 }; }
-        static VertexBufferComponent IVec4()  { return { GLGetTypeID<int>(),    4 }; }
+        static VertexBufferComponent Float()  { return { GetTypeIDFor<float>(),  1 }; }
+        static VertexBufferComponent Double() { return { GetTypeIDFor<double>(), 1 }; }
+        static VertexBufferComponent Int()    { return { GetTypeIDFor<int>(),    1 }; }
+        static VertexBufferComponent Uint()   { return { GetTypeIDFor<uint>(),   1 }; }
+        static VertexBufferComponent SByte()  { return { GetTypeIDFor<char>(),   1 }; }
+        static VertexBufferComponent Byte()   { return { GetTypeIDFor<uchar>(),  1 }; }
+        static VertexBufferComponent Vec2()   { return { GetTypeIDFor<float>(),  2 }; }
+        static VertexBufferComponent Vec3()   { return { GetTypeIDFor<float>(),  3 }; }
+        static VertexBufferComponent Vec4()   { return { GetTypeIDFor<float>(),  4 }; }
+        static VertexBufferComponent IVec2()  { return { GetTypeIDFor<int>(),    2 }; }
+        static VertexBufferComponent IVec3()  { return { GetTypeIDFor<int>(),    3 }; }
+        static VertexBufferComponent IVec4()  { return { GetTypeIDFor<int>(),    4 }; }
 
         template <class T> static VertexBufferComponent Type() {
-            if constexpr (Floating<T>) return { GLGetTypeID<T>(), 1 };
-            if constexpr (Integer<T>) return { GLGetTypeID<T>(), 1, false, true };
+            if constexpr (Floating<T>) return { GetTypeIDFor<T>(), 1 };
+            if constexpr (Integer<T>) return { GetTypeIDFor<T>(), 1, false, true };
             if constexpr (Math::IVector<T> || Math::ColorLike<T>)
-                return { GLGetTypeID<typename T::scalar>(), T::dimension };
+                return { GetTypeIDFor<typename T::scalar>(), T::dimension };
             return { GLTypeID::NONE, 0 };
         }
     };
@@ -56,22 +56,18 @@ namespace Quasi::Graphics {
         void Push(VertexBufferComponent comp);
         void PushLayout(const VertexBufferLayout& layout);
 
-#define VBE VertexBufferComponent::
-        
-        void PushFloat()      { Push(VBE Float());  }
-        void PushDouble()     { Push(VBE Double()); }
-        void PushInt()        { Push(VBE Int());    }
-        void PushUInt()       { Push(VBE Uint());   }
-        void PushChar()       { Push(VBE SByte());  }
-        void PushByte()       { Push(VBE Byte());   }
-        void PushVector2()    { Push(VBE Vec2());   }
-        void PushVector3()    { Push(VBE Vec3());   }
-        void PushVector4()    { Push(VBE Vec4());   }
-        void PushVector2Int() { Push(VBE IVec2());  }
-        void PushVector3Int() { Push(VBE IVec3());  }
-        void PushVector4Int() { Push(VBE IVec4());  }
-
-#undef VBE
+        void PushFloat()      { Push(VertexBufferComponent::Float());  }
+        void PushDouble()     { Push(VertexBufferComponent::Double()); }
+        void PushInt()        { Push(VertexBufferComponent::Int());    }
+        void PushUInt()       { Push(VertexBufferComponent::Uint());   }
+        void PushChar()       { Push(VertexBufferComponent::SByte());  }
+        void PushByte()       { Push(VertexBufferComponent::Byte());   }
+        void PushVector2()    { Push(VertexBufferComponent::Vec2());   }
+        void PushVector3()    { Push(VertexBufferComponent::Vec3());   }
+        void PushVector4()    { Push(VertexBufferComponent::Vec4());   }
+        void PushVector2Int() { Push(VertexBufferComponent::IVec2());  }
+        void PushVector3Int() { Push(VertexBufferComponent::IVec3());  }
+        void PushVector4Int() { Push(VertexBufferComponent::IVec4());  }
 
         const Vec<VertexBufferComponent>& GetComponents() const { return components; }
         u32 GetStride() const { return stride; }
@@ -79,7 +75,7 @@ namespace Quasi::Graphics {
 
     template <class T>
     void VertexBufferLayout::Push(u32 count, bool normalized, bool integral) {
-        GLTypeID type = GLGetTypeID<T>();
+        GLTypeID type = GetTypeIDFor<T>();
         components.Push({ type, count, normalized, integral });
         stride += count * type->typeSize;
     }

@@ -2,11 +2,9 @@
 #include "Utils/Algorithm.h"
 #include "Utils/Comparison.h"
 
-#include "Utils/Iter/MapIter.h"
-#include "Utils/Match.h"
 #include "Utils/Iter/LinesIter.h"
 #include "Utils/Text/Parsing.h"
-#include "Utils/Text/Num.h"
+#include "Utils/Iter/SplitIter.h"
 
 namespace Quasi::Graphics {
     void OBJModelLoader::LoadFile(CStr filepath) {
@@ -29,7 +27,7 @@ namespace Quasi::Graphics {
         Memory::MemCopy(acc, filepath.Data(), filepath.Length());
 
 
-        mats.LoadFile(CStr::SliceUnchecked(acc, len));
+        mats.LoadFile(CStr::SliceUnchecked(fullpath, len));
         model.materials = std::move(mats.materials);
     }
 
@@ -39,19 +37,21 @@ namespace Quasi::Graphics {
     }
 
     void OBJModelLoader::ParseProperty(const Str line) {
-        const usize spaceIdx = line.Find(' ');
-        const auto [prefix, data] = line.SplitAt(spaceIdx);
+        const OptionUsize spaceIdx = line.Find(' ');
+        if (!spaceIdx) return;
+        const auto [prefix, data] = line.SplitAt(*spaceIdx);
 
-        OBJProperty prop;
-        Qmatch$ (prefix, (
-            case ("v")      prop.Set(Vertex       { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 { Math::NaN }) });,
-            case ("vt")     prop.Set(VertexTex    { Math::fVector2::parse(data, " ", "", "").UnwrapOr(Math::fVector2 { Math::NaN }) });,
-            case ("vn")     prop.Set(VertexNormal { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 { Math::NaN }) });,
-            case ("vp")     prop.Set(VertexParam  { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 { Math::NaN }) });,
-            case ("f") ({
+        OBJProperty prop = { Empty {} };
+
+        switch (Memory::ReadZeroExtU64Big(prefix.Data(), prefix.Length())) {
+            case "v"_u64:  prop.Set(Vertex       { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 { Math::NaN }) }); break;
+            case "vt"_u64: prop.Set(VertexTex    { Math::fVector2::parse(data, " ", "", "").UnwrapOr(Math::fVector2 { Math::NaN }) }); break;
+            case "vn"_u64: prop.Set(VertexNormal { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 { Math::NaN }) }); break;
+            case "vp"_u64: prop.Set(VertexParam  { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 { Math::NaN }) }); break;
+            case "f"_u64: {
                 Face face;
                 u32 i = 0;
-                for (const auto idx : data.Split(' ')) {
+                for (const Str idx : data.Split(" ")) {
                     if (i >= 3) break;
                     const auto [v, t, n] = Math::iVector3::parse(idx, "/", "", "",
                         [](Str x) -> Option<int> { return Text::Parse<int>(x).UnwrapOr(-1); }).UnwrapOr({ -1 });
@@ -59,30 +59,31 @@ namespace Quasi::Graphics {
                     ++i;
                 }
                 if (i == 3) prop.Set(face);
-            });,
-            case ("l") {
+            } break;
+            case "l"_u64: {
                 Vec<int> indices;
-                for (const auto idx : std::views::split(data, ' ')) {
-                    indices.Push(Text::Parse<int>({ idx.begin(), idx.end() }).UnwrapOr(-1));
+                for (const Str idx : data.Split(" ")) {
+                    indices.Push(Text::Parse<int>(idx).UnwrapOr(-1));
                 }
                 prop.Set<Line>({ indices });
-            },
-            case ("o")      prop.Set(Object { String(data) });,
-            case ("g")      prop.Set(Group  { String(data) });,
-            case ("s")      prop.Set(SmoothShade { data != "0" });,
-            case ("usemtl") prop.Set(UseMaterial { String(data) });,
-            case ("mtllib") {
+            } break;
+            case "o"_u64:      prop.Set(Object { data }); break;
+            case "g"_u64:      prop.Set(Group  { data }); break;
+            case "s"_u64:      prop.Set(SmoothShade { data != "0" }); break;
+            case "usemtl"_u64: prop.Set(UseMaterial { data }); break;
+            case "mtllib"_u64: {
                 String mtllibdir = data;
-                data += '\0';
+                mtllibdir.AddNullTerm();
                 prop.Set(MaterialLib { std::move(mtllibdir) });
-            }
-        ))
+            } break;
+            default:;
+        }
+
         if (!prop.Is<Empty>())
             properties.Push(std::move(prop));
     }
 
     void OBJModelLoader::ParseProperties(Str string) {
-        using namespace std::literals;
         for (const Str line : string.Lines()) {
             ParseProperty(line);
         }
@@ -93,6 +94,7 @@ namespace Quasi::Graphics {
         for (u32 i = 0; i < properties.Length(); ++i) {
             if (const auto matfile = properties[i].As<MaterialLib>()) {
                 LoadMaterialFile(CStr::FromUnchecked(matfile->dir));
+                ++lastObj;
                 continue;
             }
             if (!properties[i].Is<Object>()) continue;
@@ -107,17 +109,18 @@ namespace Quasi::Graphics {
     void OBJModelLoader::CreateObject(Span<const OBJProperty> objprop) {
         if (objprop.IsEmpty() || !objprop[0].Is<Object>()) return;
 
-        model.objects.Push({});
-        OBJObject& object = model.objects.Last();
+        OBJObject& object = model.objects.Push({});
         object.model = &model;
         object.name = objprop[0].As<Object>()->name;
 
         for (const OBJProperty& prop : objprop.Skip(1)) {
             prop.Visit(
                 [&] (const UseMaterial& usemat) {
-                    object.materialIndex = (u32)model.materials.FindIf(
+                    const OptionUsize i = model.materials.FindIf(
                         [&](const MTLMaterial& m) { return m.name == usemat.name; }
                     );
+                    if (!i) return;
+                    object.materialIndex = (int)*i;
                 },
                 [&] (const Vertex&       v) { vertex       .Push(v.pos); },
                 [&] (const VertexTex&    t) { vertexTexture.Push(t.tex); },
@@ -132,7 +135,7 @@ namespace Quasi::Graphics {
 
     void OBJModelLoader::ResolveObjectIndices(OBJObject& obj) {
         struct Cmp3 {
-            Comparison operator()(Math::iVector3 tripleA, Math::iVector3 tripleB) const {
+            Comparison operator()(const Math::iVector3& tripleA, const Math::iVector3& tripleB) const {
                 const auto [ax, ay, az] = tripleA;
                 const auto [bx, by, bz] = tripleB;
                 return ax != bx ? Cmp::Between(ax, bx) : ay != by ? Cmp::Between(ay, by) : Cmp::Between(az, bz);
@@ -159,14 +162,14 @@ namespace Quasi::Graphics {
         );
 
         Vec<TriIndices>& ind = obj.mesh.indices;
-        ind.Reserve(faces.Length() * 3);
+        ind.Reserve(faces.Length());
         for (const Face& f : faces) {
             Math::iVector3 v1 { f.indices[0][0], f.indices[0][1], f.indices[0][2] };
             Math::iVector3 v2 { f.indices[1][0], f.indices[1][1], f.indices[1][2] };
             Math::iVector3 v3 { f.indices[2][0], f.indices[2][1], f.indices[2][2] };
-            const usize i1 = indices.LowerBoundBy([&] (const Math::iVector3& x) { return Cmp3 {}(x, v1); }),
-                        i2 = indices.LowerBoundBy([&] (const Math::iVector3& x) { return Cmp3 {}(x, v2); }),
-                        i3 = indices.LowerBoundBy([&] (const Math::iVector3& x) { return Cmp3 {}(x, v3); });
+            const auto [_1, i1] = indices.BinarySearchWith([&] (const Math::iVector3& x) { return Cmp3 {}(x, v1); });
+            const auto [_2, i2] = indices.BinarySearchWith([&] (const Math::iVector3& x) { return Cmp3 {}(x, v2); });
+            const auto [_3, i3] = indices.BinarySearchWith([&] (const Math::iVector3& x) { return Cmp3 {}(x, v3); });
             ind.Push({ (u32)i1, (u32)i2, (u32)i3 });
         }
 
@@ -177,27 +180,27 @@ namespace Quasi::Graphics {
         return std::move(model);
     }
 
-    String OBJModelLoader::DebugStr() const {
-        String ss {};
-        for (const OBJProperty& p : properties) {
-            p.Visit(
-                [&] (const Vertex&       x) { ss += "v: ";      ss += Text::Format(x.pos); },
-                [&] (const VertexTex&    x) { ss += "vt: ";     ss += Text::Format(x.tex); },
-                [&] (const VertexNormal& x) { ss += "vn: ";     ss += Text::Format(x.nrm); },
-                [&] (const VertexParam&  x) { ss += "vp: ";     ss += Text::Format(x.prm); },
-                [&] (const Face&         x) { ss += "f: ";      ss += Text::ArrStr(x.indices, ", ", [] (const int (&vtn)[3]) { return Text::ArrStr(vtn, "/"); }); },
-                [&] (const Line&         x) { ss += "l: ";      ss += Text::ArrStr(x.indices); },
-                [&] (const Object&       x) { ss += "o: ";      ss += x.name; },
-                [&] (const Group&        x) { ss += "g: ";      ss += x.name; },
-                [&] (const SmoothShade&  x) { ss += "s: ";      ss += x.enabled ? "true" : "false"; },
-                [&] (const UseMaterial&  x) { ss += "usemtl: "; ss += x.name; },
-                [&] (const MaterialLib&  x) { ss += "mtllib: "; ss += x.dir;  },
-                [] (const auto&) {}
-            );
-        }
-        ss += "========\n";
-        ss += mats.DebugStr();
-        return ss;
-    }
+    // String OBJModelLoader::DebugStr() const {
+    //     String ss {};
+    //     for (const OBJProperty& p : properties) {
+    //         p.Visit(
+    //             [&] (const Vertex&       x) { ss += "v: ";      ss += Text::Format(x.pos); },
+    //             [&] (const VertexTex&    x) { ss += "vt: ";     ss += Text::Format(x.tex); },
+    //             [&] (const VertexNormal& x) { ss += "vn: ";     ss += Text::Format(x.nrm); },
+    //             [&] (const VertexParam&  x) { ss += "vp: ";     ss += Text::Format(x.prm); },
+    //             [&] (const Face&         x) { ss += "f: ";      ss += Text::ArrStr(x.indices, ", ", [] (const int (&vtn)[3]) { return Text::ArrStr(vtn, "/"); }); },
+    //             [&] (const Line&         x) { ss += "l: ";      ss += Text::ArrStr(x.indices); },
+    //             [&] (const Object&       x) { ss += "o: ";      ss += x.name; },
+    //             [&] (const Group&        x) { ss += "g: ";      ss += x.name; },
+    //             [&] (const SmoothShade&  x) { ss += "s: ";      ss += x.enabled ? "true" : "false"; },
+    //             [&] (const UseMaterial&  x) { ss += "usemtl: "; ss += x.name; },
+    //             [&] (const MaterialLib&  x) { ss += "mtllib: "; ss += x.dir;  },
+    //             [] (const auto&) {}
+    //         );
+    //     }
+    //     ss += "========\n";
+    //     ss += mats.DebugStr();
+    //     return ss;
+    // }
 }
 

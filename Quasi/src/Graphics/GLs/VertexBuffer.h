@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "GLObject.h"
-#include "Span.h"
+#include "Utils/Span.h"
 
 namespace Quasi::Graphics {
     class VertexBuffer : public GLObject<VertexBuffer> {

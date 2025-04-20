@@ -16,7 +16,6 @@ namespace Quasi::Graphics {
         GLLogger().SetBreakLevel(Debug::Severity::ERROR);
         GLLogger().SetShortenFile(true);
         GLLogger().SetIncludeFunc(false);
-        GLLogger().SetAlwaysFlush(true);
         GLLogger().SetLocPad(0);
     }
 

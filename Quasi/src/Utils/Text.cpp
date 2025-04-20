@@ -12,12 +12,12 @@ namespace Quasi::Text {
         std::FILE *fp = std::fopen(fname.Data(), "r");
         if (fp) {
             std::fseek(fp, 0, SEEK_END);
-            const usize length = std::ftell(fp);
+            usize length = std::ftell(fp);
             // ownership is transfered at return
             char* const contentsRaw = (char*)Memory::AllocateRaw(length * sizeof(char));
 
             std::rewind(fp);
-            std::fread(contentsRaw, 1, length, fp);
+            length = std::fread(contentsRaw, 1, length, fp);
             std::fclose(fp);
             return String::Compose(contentsRaw, length, length);
         }
@@ -28,12 +28,12 @@ namespace Quasi::Text {
         std::FILE *fp = std::fopen(fname.Data(), "rb");
         if (fp) {
             std::fseek(fp, 0, SEEK_END);
-            const usize length = std::ftell(fp);
+            usize length = std::ftell(fp);
             // ownership is transfered at return
             char* const contentsRaw = (char*)Memory::AllocateRaw(length * sizeof(char));
 
             std::rewind(fp);
-            std::fread(contentsRaw, 1, length, fp);
+            length = std::fread(contentsRaw, 1, length, fp);
             std::fclose(fp);
             return String::Compose(contentsRaw, length, length);
         }
@@ -55,9 +55,9 @@ namespace Quasi::Text {
     Tuple<Str, Str> SplitDirectory(Str fname) {
         const auto [pos, _] = fname.RevFindOneOf("\\/");
         return pos ?
-            Tuple { Str::Empty(), fname } :
-            Tuple { fname.Substr(0, pos),
-                    fname.Substr(pos + 1) };
+            Tuple { fname.Substr(0, *pos),
+                    fname.Substr(*pos + 1) } :
+            Tuple { Str::Empty(), fname };
     }
 
     String AutoIndent(Str text) {
@@ -87,15 +87,20 @@ namespace Quasi::Text {
         return { col, txt };
     }
 
-    usize Formatter<ConsoleColor>::FormatTo(StringWriter output, ConsoleColor c, Empty) {
+    usize Formatter<ConsoleColor>::FormatTo(StringWriter output, ConsoleColor c, Str) {
         output.Write("\x1B["_str);
         if (IsBold(c))
             output.Write("1;"_str);
 
+        if (c == ConsoleColor::RESET) {
+            return 2 + (IsBold(c) ? 2 : 0) + output.Write("0m");
+        }
+
         char regbuf[3] = { '\0', '\0', 'm' };
         u16 byte2 = Regular(c);
-        byte2 += (byte2 * 103 >> 9) * (256 - 10);
-        Memory::WriteU16(byte2, regbuf);
+        byte2 += (byte2 * 103 >> 10) * (256 - 10);
+        byte2 |= 0x3030;
+        Memory::WriteU16Big(byte2, regbuf);
 
         output.Write(Str::Slice(regbuf, 3));
         return 2 + (IsBold(c) ? 2 : 0) + 3;
@@ -104,13 +109,13 @@ namespace Quasi::Text {
     usize Formatter<ColoredStr>::FormatTo(StringWriter output, const ColoredStr& cstr, const FormatOptions& options) {
         usize padLen = options.targetLength - cstr.text.Length();
         padLen &= -(padLen <= options.targetLength); // fun bithacks that turn negative numbers into 0
-        const usize left = padLen * (usize)options.alignment / 2;
+        const usize right = padLen * (usize)options.alignment / 2;
 
-        return output.WriteRepeat(options.pad, left) +
-               FormatObjectTo(output, cstr.color) +
+        return output.WriteRepeat(options.pad, padLen - right) +
+               output.SetColor(cstr.color) +
                output.Write(cstr.text) +
                output.Write("\x1B[0m"_str) +
-               output.WriteRepeat(options.pad, padLen - left);
+               output.WriteRepeat(options.pad, right);
     }
 
     template struct Formatter<ConsoleColor>;

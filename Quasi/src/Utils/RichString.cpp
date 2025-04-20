@@ -7,20 +7,6 @@
 #include "Match.h"
 
 namespace Quasi::Text {
-    bool RichString::Matches(IterOf<Str> iter, IterOf<Str> end, Str matchExpr) {
-        if (end - iter < matchExpr.size()) return false;
-        const char* m = matchExpr.data();
-        for (auto it = iter; it < iter + matchExpr.size(); ++it, ++m) {
-            if (*it != *m) return false;
-        }
-        return true;
-    }
-
-    IterOf<Str> RichString::Find(IterOf<Str> iter, IterOf<Str> end, Str matchExpr) {
-        while (iter != end && !Matches(iter, end, matchExpr)) ++iter;
-        return iter;
-    }
-    
     RichString RichString::ParseMarkdown(Str markdown) {
         // *           (N)-> IS SPECIAL CHAR ----IS WHITESPACE ------> [ {V} IS '*' (N)               (Y)TOGGLE BOLD
         // * START -> IS '\'                      (N)->START LINE      [       (Y)---+----> IS NEXT CHAR '*' |-----------v
@@ -51,9 +37,8 @@ namespace Quasi::Text {
         int state = NONE, styleFlags = NO_FLAGS;
         bool isStartLine = true;
         RichString str;
-        const auto end = markdown.end();
-        for (auto it = markdown.begin(); it != markdown.end(); ++it) {
-            const char c = *it;
+        for (; markdown; markdown.Advance(1)) {
+            const char c = markdown.First();
 
             if (state == SKIP) {
                 state = NONE;
@@ -75,32 +60,30 @@ namespace Quasi::Text {
                     goto end;
                 }
 
-                if (Matches(it, end, "\n\n")) {
-                    ++it;
+                if (markdown.StartsWith("\n\n")) {
+                    markdown.Advance(1);
                     goto newLine;
                 }
 
                 if (c == '`') {
-                    const auto searchIt = Find(it + 1, end, "`");
-                    if (searchIt == markdown.end()) {
+                    const OptionUsize endTick = markdown.Tail().Find('`');
+                    if (!endTick) {
                         state = LITERAL;
                         goto rawChar;
                     }
                     str.AddTag(Style::CODE_BLOCK, { 1 });
-                    str.Append(it + 1, searchIt);
+                    str.Append(markdown.Substr(1, *endTick - 1));
                     str.AddTag(Style::CODE_BLOCK, { 0 });
-                    it = searchIt;
+                    markdown.Advance(*endTick + 1);
                     goto end;
                 }
 
                 if (c == '*') { // try bold or italic
-                    const byte boldOrItalic = it + 1 < markdown.end() ? it[1] == '*' : 255;
-                    // 0 -> italic, 1 -> bold, 255 -> no need
-                    if (boldOrItalic == 255) goto rawChar;
+                    if (markdown.Length() <= 1) goto rawChar;
+                    const bool boldOrItalic = markdown[1] == '*';
                     const bool isSet = styleFlags & 2 << (1 - boldOrItalic);
                     if (!isSet) {
-                        const auto searchIt = Find(it + 1 + boldOrItalic, end, boldOrItalic ? "**" : "*");
-                        if (searchIt == markdown.end()) {
+                        if (!markdown.Skip(1 + boldOrItalic).Contains(Str::Slice("**", 1 + boldOrItalic))) {
                             state = boldOrItalic ? SKIP : LITERAL;
                             goto rawChar;
                         }
@@ -111,11 +94,10 @@ namespace Quasi::Text {
                     goto end;
                 }
 
-                if (Matches(it, end, "~~")) {
+                if (markdown.StartsWith("~~")) {
                     const bool isSet = styleFlags & STRIKE_FLAG;
                     if (!isSet) {
-                        const auto searchIt = Find(it + 2, end, "~~");
-                        if (searchIt == markdown.end()) {
+                        if (!markdown.Skip(2).Contains("~~")) {
                             state = LITERAL;
                             goto rawChar;
                         }
@@ -131,9 +113,9 @@ namespace Quasi::Text {
                     styleFlags |= QUOTE_FLAG;
                 }
 
-                if (Matches(it, end, "<br>")) {
+                if (markdown.StartsWith("<br>")) {
                     str.Append('\n');
-                    it += 3;
+                    markdown.Advance(3);
                     goto end;
                 }
             }
@@ -173,49 +155,25 @@ namespace Quasi::Text {
     }
 
     void RichString::AddTag(Style s, IList<byte> data, int off) {
-        rawString.insert(rawString.end() + off, DELIMITER);
+        rawString.Insert(DELIMITER, off);
         stylings.Push((byte)s.Ord());
         for (byte byte : data) stylings.Push(byte);
     }
 
     void RichString::AddTag(Style s, bool state, int off) {
-        rawString.insert(rawString.end() + off, DELIMITER);
+        rawString.Insert(DELIMITER, off);
         stylings.Push((byte)(s + !state).Ord()); // off is encoded as the next enum val
     }
 
     uint RichString::Lines() const {
-        return (uint)(std::ranges::count(rawString, '\n') + 1);
-    }
-
-    String RichString::DebugRawstr() const {
-        String debug;
-        debug.reserve(rawString.size());
-        const byte*    stylePtr = stylings.Data();
-        IterOf<String> lastSpan = rawString.begin();
-        for (auto it = rawString.begin(); it != rawString.end(); ++it) {
-            if (*it == DELIMITER) {
-                debug += Str { lastSpan, it };
-                const Style s = Style::FromOrd(*stylePtr);
-                switch (s->byteEncodingSize) {
-                    case 0: debug += s->debugStr; break;
-                    case 1: debug += std::vformat(s->debugStr, std::make_format_args(stylePtr[1])); break;
-                    case 2: debug += std::vformat(s->debugStr, std::make_format_args(stylePtr[1], stylePtr[2])); break;
-                    case 4: debug += std::vformat(s->debugStr, std::make_format_args(stylePtr[1], stylePtr[2], stylePtr[3], stylePtr[4])); break;
-                    default: break;
-                }
-                stylePtr += s->byteEncodingSize + 1;
-                lastSpan = it + 1;
-            }
-        }
-        debug += Str { lastSpan, rawString.end() };
-        return debug;
+        return rawString.CountLines();
     }
 
     RichString::Iter RichString::begin() const {
-        return ++Iter { .str = *this, .iter = rawString.data() - 1 };
+        return ++Iter { .str = *this, .iter = rawString.Data() - 1 };
     }
     RichString::Iter RichString::end() const {
-        return { .str = *this, .iter = rawString.data() + rawString.size() };
+        return { .str = *this, .iter = rawString.DataEnd() };
     }
 
     void RichString::StyleState::AddState(Style s, const byte* data) {

@@ -1,8 +1,5 @@
 #include "PolygonShape2D.h"
 
-#include <numeric>
-
-#include "Logger.h"
 #include "SeperatingAxisSolver.h"
 
 namespace Quasi::Physics2D {

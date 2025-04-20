@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Graphics/GLs/VertexArray.h"
-#include "Graphics/GLs/VertexBuffer.h"
-#include "Graphics/GLs/IndexBuffer.h"
-#include "Graphics/GLs/Shader.h"
-#include "Graphics/GLs/VertexElement.h"
+#include "GLs/VertexArray.h"
+#include "GLs/VertexBuffer.h"
+#include "GLs/IndexBuffer.h"
+#include "GLs/Shader.h"
+#include "GLs/VertexElement.h"
 
 namespace Quasi::Graphics {
 	class GraphicsDevice;

@@ -1,4 +1,5 @@
 #include "Hash.h"
+#include "Span.h"
 
 namespace Quasi::Hashing {
     Hash  AsHash(usize x) { return (Hash)x; }

@@ -167,7 +167,7 @@ namespace Quasi::Text {
     OptionUsize Parser<String>::ParseUnicode(Str string, Out<String&> out) {
         if (5 >= string.Length()) return nullptr;
 
-        const u32 first4Digits = Memory::ReadU32(string.Data() + 2);
+        const u32 first4Digits = Memory::ReadU32Big(string.Data() + 2);
         if (!NumberConversion::AreAllHexDigits4(first4Digits)) return nullptr;
         u32 codepoint = NumberConversion::ParseHexDigits4(first4Digits);
 

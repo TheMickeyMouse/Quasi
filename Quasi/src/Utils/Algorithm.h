@@ -41,7 +41,8 @@ namespace Quasi::Algorithm {
         }
         return i + (cmp(span[i]) <= 0);
     }
-    
+
+    // sorting algorithm ipnsort from https://github.com/Voultapher/sort-research-rs/blob/main/ipnsort/src/lib.rs
     namespace SortingDetails {
         namespace SmallSort {
             /// Optimal number of comparisons, and good perf.
@@ -522,7 +523,7 @@ namespace Quasi::Algorithm {
 
                 // Limit the number of imbalanced partitions to `2 * floor(log2(len))`.
                 // The binary OR by one is used to eliminate the zero-check in the logarithm.
-                const usize limit = 2 * std::bit_width(len | 1) - 2;
+                const usize limit = 2 * usizes::Log2(len | 1);
                 QuickSort(span, OptRef<const T> { nullptr }, limit, cmp);
             }
 
@@ -586,7 +587,7 @@ namespace Quasi::Algorithm {
                     // [[assume(numLt < span.Length())]];
 
                     // Split the slice into `left`, `pivot`, and `right`.
-                    auto [left, right] = span.SplitAtMut(numLt);
+                    auto [left, right] = span.CutAtMut(numLt);
                     const T& newPivot = right.TakeFirst();
 
                     // Recurse into the left side. We have a fixed recursion limit, testing shows no real
@@ -660,7 +661,7 @@ namespace Quasi::Algorithm {
 
                 // This construct is used to limit the LLVM IR generated, which saves large amounts of
                 // compile-time by only instantiating the code that is needed. Idea by Frank Steffahn.
-                const usize numLt = InstPartition(spanRest, *p, cmp);
+                const usize numLt = InstPartition(spanRest, p, cmp);
 
                 // Place the pivot between the two partitions.
                 span.Swap(0, numLt);
@@ -982,7 +983,7 @@ namespace Quasi {
     }
 
     template <class T>
-    Tuple<Span<T>, Ref<T>, Span<T>> Span<T>::SortedPartitionByKey(usize idx, FnArgs<const T&> auto&& keyf) requires IsMut<T> {
+    Tuple<Span<T>, T&, Span<T>> Span<T>::SortedPartitionByKey(usize idx, FnArgs<const T&> auto&& keyf) requires IsMut<T> {
         return SortedPartitionBy(idx, Cmp::LessThanKeyed { keyf });
     }
 

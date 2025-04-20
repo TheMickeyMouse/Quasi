@@ -61,6 +61,6 @@ namespace Quasi::Graphics {
 
         OBJModel&& RetrieveModel();
 
-        String DebugStr() const;
+        // String DebugStr() const;
     };
 }

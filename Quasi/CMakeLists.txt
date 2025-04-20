@@ -31,8 +31,8 @@ set(HEADER_FILES
     src/Graphics/Utils/ModelLoading/MTLMaterialLoader.h
     src/Graphics/Utils/ModelLoading/OBJModel.h
     src/Graphics/Utils/ModelLoading/OBJModelLoader.h
-    src/Graphics/Utils/Textures/TextureConstants.h
-    src/Graphics/Utils/Textures/Texture.h
+    src/Graphics/GLs/TextureConstants.h
+    src/Graphics/GLs/Texture.h
     src/Graphics/Utils/Fonts/Font.h
     src/Graphics/Utils/Fonts/FontDevice.h
     src/Graphics/Utils/Fonts/TextAlign.h
@@ -85,7 +85,6 @@ set(HEADER_FILES
     src/Utils/Macros.h
     src/Utils/RichString.h
     src/Utils/Type.h
-    src/Utils/ArenaAllocator.h
     src/Utils/Match.h
     src/Utils/Memory.h
     src/Utils/Iterator.h
@@ -100,6 +99,10 @@ set(HEADER_FILES
     src/Utils/String.h
     src/Utils/CStr.h
     src/Utils/Numeric.h
+    src/Utils/Tuple.h
+    src/Utils/Bitwise.h
+    src/Utils/Hash.h
+    src/Utils/HashMap.h
     src/Utils/MacroIteration.h
     src/Utils/Text/Parsing.h
     src/Utils/Text/Num.h
@@ -107,6 +110,8 @@ set(HEADER_FILES
     src/Utils/Text/Formatting.h
     src/Utils/Iter/MapIter.h
     src/Utils/Iter/EnumerateIter.h
+    src/Utils/Iter/LinesIter.h
+    src/Utils/Iter/SplitIter.h
 
     src/vendor/imgui/imconfig.h
     src/vendor/imgui/imgui.h
@@ -142,14 +147,14 @@ set(SOURCE_FILES
     src/Graphics/Graphicals/RenderData.cpp
 
     src/Graphics/Utils/ModelLoading/MTLMaterialLoader.cpp
-    src/Graphics/Utils/ModelLoading/OBJModel.cpp
     src/Graphics/Utils/ModelLoading/OBJModelLoader.cpp
+    src/Graphics/Utils/ModelLoading/OBJModel.cpp
     src/Graphics/Utils/Fonts/Font.cpp
     src/Graphics/Utils/Fonts/FontDevice.cpp
     src/Graphics/Utils/Fonts/TextAlign.cpp
     src/Graphics/Utils/Fonts/TextRenderer.cpp
-    src/Graphics/Utils/Textures/Texture.cpp
     src/Graphics/Utils/Extension/ImGuiExt.cpp
+    src/Graphics/GLs/Texture.cpp
 
     src/IO/IO.cpp
     src/IO/Keyboard.cpp
@@ -177,17 +182,18 @@ set(SOURCE_FILES
     src/Physics/RectShape2D.cpp
 
     src/Utils/RichString.cpp
-    src/Utils/StringList.cpp
     src/Utils/Text.cpp
-    src/Utils/ArenaAllocator.cpp
     src/Utils/Str.cpp
     src/Utils/String.cpp
     src/Utils/CStr.cpp
     src/Utils/Memory.cpp
+    src/Utils/Bitwise.cpp
+    src/Utils/Hash.cpp
     src/Utils/Text/Parsing.cpp
     src/Utils/Text/Num.cpp
     src/Utils/Text/StringWriter.cpp
     src/Utils/Text/Formatting.cpp
+    src/Utils/Iter/LinesIter.cpp
 
     src/vendor/imgui/imgui.cpp
     src/vendor/imgui/imgui_demo.cpp
@@ -205,15 +211,6 @@ source_group("Source Files" FILES ${SOURCE_FILES})
 set(ALL_FILES
     ${HEADER_FILES}
     ${SOURCE_FILES}
-        src/Utils/Tuple.h
-        src/Utils/Iter/LinesIter.h
-        src/Utils/Iter/LinesIter.cpp
-        src/Utils/Bitwise.h
-        src/Utils/Bitwise.cpp
-        src/Utils/Iter/SplitIter.h
-        src/Utils/Hash.h
-        src/Utils/Hash.cpp
-        src/Utils/HashMap.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

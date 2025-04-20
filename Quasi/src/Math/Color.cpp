@@ -2,6 +2,7 @@
 
 #include "Random.h"
 #include "Vector.h"
+#include "Utils/String.h"
 
 namespace Quasi::Math::details {
 #pragma region Util Funcs
@@ -68,7 +69,7 @@ namespace Quasi::Math::details {
             const f32 max = std::max({r, g, b}), min = std::min({r, g, b});
             const f32 v = max, d = max - min;
             if (v == 0) // NOLINT(clang-diagnostic-f32-equal)
-                return { NAN, 0, v }; // acromatic
+                return { f32s::NAN, 0, v }; // acromatic
             f32 s = d / v;
 
             if (d == 0)  // NOLINT(clang-diagnostic-f32-equal)
@@ -149,7 +150,7 @@ namespace Quasi::Math::details {
 
         template <class TColor> TColor color_base<TColor>::from_hex(Str hex) {
             if constexpr (traits_has_alpha)
-                return hex.size() > 6 ? TColor {
+                return hex.Length() > 6 ? TColor {
                     details::channel_from_hexcode<scalar>(hex[0], hex[1]),
                     details::channel_from_hexcode<scalar>(hex[2], hex[3]),
                     details::channel_from_hexcode<scalar>(hex[4], hex[5]),
@@ -167,7 +168,7 @@ namespace Quasi::Math::details {
         }
 
         template <class TColor> String color_base<TColor>::hexcode() const {
-            if constexpr (traits_has_alpha) return std::format("{}{}{}{}{}{}{}{}",
+            if constexpr (traits_has_alpha) return Text::Format("{}{}{}{}{}{}{}{}",
                 details::hexdigit_2(color().r),
                 details::hexdigit_1(color().r),
                 details::hexdigit_2(color().g),
@@ -176,7 +177,7 @@ namespace Quasi::Math::details {
                 details::hexdigit_1(color().b),
                 details::hexdigit_2(color().a),
                 details::hexdigit_1(color().a)
-            ); else return std::format("{}{}{}{}{}{}",
+            ); else return Text::Format("{}{}{}{}{}{}",
                 details::hexdigit_2(color().r),
                 details::hexdigit_1(color().r),
                 details::hexdigit_2(color().g),

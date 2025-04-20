@@ -1,12 +1,11 @@
 #pragma once
 #include <chrono>
-#include <iostream>
 #include <source_location>
 
-#include "Timer.h"
 #include "Utils/Text.h"
 #include "Utils/Text/Num.h"
 #include "Utils/Enum.h"
+#include "Timer.h"
 
 namespace Quasi::Debug {
     void DebugBreak();
@@ -54,7 +53,6 @@ namespace Quasi::Debug {
 
         bool shortenFileNames : 1 = true;
         bool includeFunction : 1 = true;
-        bool alwaysFlush : 1 = false;
         bool recordLogs : 1 = false;
         u32 lPad = 50;
 
@@ -76,14 +74,13 @@ namespace Quasi::Debug {
         void SetNameColor(const Text::ConsoleColor col) { name.color = col; }
         void SetShortenFile(const bool flag) { shortenFileNames = flag; }
         void SetIncludeFunc(const bool flag) { includeFunction = flag; }
-        void SetAlwaysFlush(const bool flag) { alwaysFlush = flag; }
         void SetRecordLogs(const bool flag) { recordLogs = flag; }
         void SetLocPad(const u32 pad) { lPad = pad; }
 
         void FmtLog(Text::StringWriter output, const LogEntry& log) const;
         void FmtLog(Text::StringWriter output, Str log, Severity severity, DateTime time, const SourceLoc& fileLoc) const;
         Str FmtFile(Str fullname) const;
-        String FmtSourceLoc(const SourceLoc& loc) const;
+        void FmtSourceLoc(Text::StringWriter output, const SourceLoc& loc) const;
         void LogNoOut  (Severity sv, Str s, const SourceLoc& loc = SourceLoc::current());
         void ConsoleLog(Severity sv, Str s, const SourceLoc& loc = SourceLoc::current());
         void Log       (Severity sv, Str s, const SourceLoc& loc = SourceLoc::current());
@@ -98,7 +95,7 @@ namespace Quasi::Debug {
 
         template <class ...Ts> void Assert(bool assert, const FmtStr& fmt, Ts&&... args) {
             if (assert) return;
-            this->AssertMsg(true, Text::Format(fmt.fmt, std::forward<Ts>(args)...), fmt.loc);
+            this->AssertMsg(false, Text::Format(fmt.fmt, std::forward<Ts>(args)...), fmt.loc);
         }
 
         template <class T>
@@ -120,6 +117,8 @@ namespace Quasi::Debug {
         void NoOp() const {}
 
         static Logger& GetInternalLog();
+
+        static void WinEnableANSI();
     };
 
     inline void SetFilter(Severity s) { Logger::GetInternalLog().SetFilter(s); }
@@ -176,8 +175,6 @@ namespace Quasi::Debug {
     #define QAssertNeq$     AssertNeq
     #define QAssertMsg$     AssertMsg
 #endif
-
-    void Flush();
 }
 
 namespace Quasi {
@@ -203,8 +200,6 @@ namespace Quasi {
 namespace Quasi::Text {
     template <>
     struct Formatter<Debug::DateTime> {
-        using FormatOptions = Str;
-        static FormatOptions ConfigureOptions(Str x) { return x; }
         static usize FormatTo(StringWriter out, const Debug::DateTime& time, Str fmt);
     };
 }

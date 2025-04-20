@@ -1,11 +1,10 @@
 ﻿#pragma once
 
 #include "GLObject.h"
+#include "Graphicals/TriIndices.h"
 #include "Utils/Span.h"
 
 namespace Quasi::Graphics {
-    struct TriIndices;
-
     class IndexBuffer : public GLObject<IndexBuffer> {
     private:
         u32 bufferSize = 0;

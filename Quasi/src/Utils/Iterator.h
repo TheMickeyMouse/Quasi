@@ -33,17 +33,19 @@ namespace Quasi {
         Iterator<T&> auto IterMutImpl() = delete;
     public:
         Iterator<const T&> auto Iter() const { return super().IterImpl(); }
-        Iterator<T&> auto IterMut() { return super().IterMutImpl(); }
+        Iterator<T&> auto IterMut() requires IsMut<T> { return super().IterMutImpl(); }
 
         /// Legacy methods:
         /// CIter<Super> begin();
         /// IteratorEndMarker end();
         Iterator<const T&> auto begin()  const { return Iter(); }
         Iterator<const T&> auto cbegin() const { return Iter(); }
-        Iterator<T&> auto begin() { return IterMut(); }
+        Iterator<T&> auto begin() requires IsMut<T> { return IterMut(); }
         IteratorEndMarker end()  const { return IteratorEnd; }
         IteratorEndMarker cend() const { return IteratorEnd; }
     public:
+
+
     };
 
     template <class C>             concept CollectionAny = Implements<C, ICollection, CollectionItem<C>>;
@@ -59,12 +61,14 @@ namespace Quasi {
         const Super& super() const { return *static_cast<const Super*>(this); }
 
         Super IterImpl() const { return super(); }
-        Super IterMutImpl() requires IsMut<RemRef<T>> { return super(); }
+        Super IterMutImpl() requires IsMutRef<T> { return super(); }
 
         T CurrentImpl() const = delete;
         void AdvanceImpl() = delete;
         bool CanNextImpl() const = delete;
     public:
+        Super IterMut() requires IsMutRef<T> { return super(); }
+
         T Current() const { return super().CurrentImpl(); }
         void Advance() { return super().AdvanceImpl(); }
         bool CanNext() const { return super().CanNextImpl(); }
@@ -73,6 +77,87 @@ namespace Quasi {
         Super& operator++() { Advance(); return super(); }
         friend bool operator==(const Super& it, const IteratorEndMarker&) { return !it.CanNext(); }
         friend bool operator!=(const Super& it, const IteratorEndMarker&) { return  it.CanNext(); }
+
+        usize Count() const {
+            usize count = 0;
+            for (; CanNext(); Advance()) ++count;
+            return count;
+        }
+        usize CountOccurs(Predicate<Item> auto&& pred) {
+            usize count = 0;
+            for (; CanNext(); Advance()) {
+                if (pred(Current())) ++count;
+            }
+            return count;
+        }
+        usize CountNumberOf(const Item& i) { return CountOccurs(Cmp::Equals { i }); }
+
+        usize AdvanceBy(usize n) {
+            for (usize i = 0; i < n; ++i) {
+                if (!CanNext()) return i;
+                Advance();
+            }
+            return n;
+        }
+
+        Option<Item> Last() {
+            Option<Item> last = nullptr;
+            while (CanNext()) {
+                last = Current();
+                Advance();
+            }
+            return last;
+        }
+
+        Option<Item> Nth(usize n) {
+            if (AdvanceBy(n) < n || !CanNext()) return nullptr;
+            return Current();
+        }
+
+        void ForEach(Fn<void, const Item&> auto&& fn) {
+            for (Item i : super())
+                fn(i);
+        }
+
+        Option<Item> Reduce(Fn<Item, Item, const Item&> auto&& reducer) {
+            if (!CanNext()) return nullptr;
+            Item acc = Current();
+            do {
+                Advance();
+                acc = reducer(std::move(acc), Current());
+            } while (CanNext());
+            return acc;
+        }
+
+        template <class R> R Reduce(Fn<R, R, const Item&> auto&& reducer, R starting) {
+            for (; CanNext(); Advance()) {
+                starting = reducer(std::move(starting), Current());
+            }
+            return starting;
+        }
+        Item Sum() { return Reduce(Operators::Add {}); }
+        Item Sum(Item begin) { return Reduce(Operators::Add {}, begin); }
+        Item Min() { return Reduce(Qfn$(std::min)); }
+        Item Max() { return Reduce(Qfn$(std::max)); }
+
+        bool All(Predicate<Item> auto&& pred = Combinate::Identity {}) {
+            for (; CanNext(); Advance())
+                if (!pred(Current())) return false;
+            return true;
+        }
+        bool Any(Predicate<Item> auto&& pred = Combinate::Identity {}) {
+            for (; CanNext(); Advance())
+                if (pred(Current())) return true;
+            return false;
+        }
+
+        Option<Item> Find(Predicate<Item> auto&& pred) {
+            for (; CanNext(); Advance()) {
+                const Item i = Current();
+                if (pred(i)) return i;
+            }
+            return nullptr;
+        }
 
         template <Collection<RemQual<T>> C> C Collect() {
             C collection;
@@ -86,6 +171,23 @@ namespace Quasi {
         Iter::EnumerateIter<Super> Enumerate() &&;
         template <FnArgs<T> F> Iter::MapIter<Super, F> Map(F&& fn) const&;
         template <FnArgs<T> F> Iter::MapIter<Super, F> Map(F&& fn) &&;
+        // TODO:
+        // StepBy
+        // Chain
+        // Zip
+        // ForEach
+        // Filter
+        // FilterMap
+        // SkipWhile
+        // TakeWhile
+        // MapWhile
+        // Take
+        // Scan
+        // FlatMap
+        // Flatten
+        // MapWindows
+        // CollectPartitioned
+        // Acc
     };
 
 
@@ -110,7 +212,7 @@ namespace Quasi {
         Super& super() { return *static_cast<Super*>(this); }
         const Super& super() const { return *static_cast<const Super*>(this); }
 
-        RemRef<T>* DataImpl() = delete;
+        RemRef<T>*       DataImpl() mut   = delete;
         const RemRef<T>* DataImpl() const = delete;
         usize LengthImpl() const = delete;
 
@@ -123,15 +225,17 @@ namespace Quasi {
         BufferIterator<T&>       IterMut()      { return super().AsSpan().IterMut(); }
         BufferIterator<const T&> Iter()   const { return super().AsSpan().Iter(); }
 
-        BufferIterator<T&>       begin() requires IsMut<T> { return super().IterMut(); }
+        BufferIterator<T&>       begin()  mut   { return super().IterMut(); }
         BufferIterator<const T&> begin()  const { return super().Iter(); }
         BufferIterator<const T&> cbegin() const { return super().Iter(); }
 
-        RemRef<T>* Data() { return super().DataImpl(); }
+        RemRef<T>*       Data() mut   { return super().DataImpl(); }
         const RemRef<T>* Data() const { return super().DataImpl(); }
+        RemRef<T>*       DataEnd() mut   { return super().DataImpl() + super().LengthImpl(); }
+        const RemRef<T>* DataEnd() const { return super().DataImpl() + super().LengthImpl(); }
         usize Length() const { return super().LengthImpl(); }
 
-        Hashing::Hash GetHashCode() const;
+        Hashing::Hash GetHashCode() const { return AsSpan().GetHashCode(); }
 
         Span<const T> AsSpan()  const { return Span<const T>::Slice(Data(), Length()); }
         Span<T>       AsSpan()    mut { return Span<MutT>   ::Slice(Data(), Length()); }
@@ -143,9 +247,9 @@ namespace Quasi {
         Span<byte>                AsBytesMut() mut;
         // Range<T*> AsPtrRange()
 
-        usize ByteSize()   const { return super().AsSpan().ByteSize(); }
-        bool IsEmpty()     const { return super().AsSpan().IsEmpty(); }
-        operator bool()    const { return (bool)super().AsSpan(); }
+        usize ByteSize()         const { return super().AsSpan().ByteSize(); }
+        bool IsEmpty()           const { return super().AsSpan().IsEmpty(); }
+        explicit operator bool() const { return (bool)super().AsSpan(); }
 
         MutT&    FirstMut() mut { return super().AsSpanMut().FirstMut(); }
         MutT&    LastMut()  mut { return super().AsSpanMut().LastMut(); }
@@ -190,7 +294,7 @@ namespace Quasi {
         Tuple<Span<const T>, Span<const T>>           SplitOnce(const T& sep)                  const { return super().AsSpan().SplitOnce(sep); }
 
         Iter::SplitIter<Span<const T>> Split(const T& sep) const {
-            return Iter::SplitIter<Span<const T>>::New(*this, Single(sep));
+            return Iter::SplitIter<Span<const T>>::New(*this, Only(sep));
         }
         Iter::SplitIter<Span<const T>> Split(Span<const T> sep) const {
             return Iter::SplitIter<Span<const T>>::New(*this, sep);

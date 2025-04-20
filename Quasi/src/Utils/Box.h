@@ -129,8 +129,8 @@ namespace Quasi {
         [[nodiscard]] bool IsNull()    const { return data == nullptr; }
         [[nodiscard]] bool OwnsValue() const { return data != nullptr; }
 
-        operator const T*() const { return Data(); }
-        operator T*()             { return DataMut(); }
-        operator bool()     const { return data != nullptr; }
+        operator const T*()      const { return Data(); }
+        operator T*()                  { return DataMut(); }
+        explicit operator bool() const { return data != nullptr; }
     };
 }

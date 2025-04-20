@@ -33,7 +33,7 @@ namespace Quasi {
         FuncRef(const FuncRef& f) = default;
         FuncRef(FuncRef&& f) noexcept = default;
 
-        template <class Lamb>
+        template <class Lamb> requires DistantTo<Lamb, FuncRef>
         FuncRef(Lamb&& lamb)
             : userPtr(&lamb),
             functionPtr(+[] (void* functionObj, Args... args) {
@@ -60,7 +60,7 @@ namespace Quasi {
 
     namespace FuncRefs {
         template <class O, class... Is>
-        FuncRef<O(Is...)> FromRaw(void* user, O(*fptr)(Is...)) { return FuncRef<O(Is...)>::FromRaw(user, fptr); }
+        FuncRef<O(Is...)> FromRaw(void* user, O(*fptr)(void*, Is...)) { return FuncRef<O(Is...)>::FromRaw(user, fptr); }
     }
 
     template <class T> struct Vec;
@@ -111,6 +111,44 @@ namespace Quasi {
         struct Member      { auto& operator()(const auto& x) const { return x.*Indirect; } };
         template <auto Indirect>
         struct MemberArrow { auto& operator()(const auto& x) const { return x->*Indirect; } };
+
+        template <class T>
+        struct Create {
+            T operator()(auto&&... args) const { return T { args... }; }
+        };
+
+        struct Destructor {
+            template <class T>
+            void operator()(T& t) const { t.~T(); }
+        };
+
+#define Q_CREATE_UNARY_OPERATOR_FUNCTOR(NAME, OP) struct NAME { auto operator()(auto&& x) const { return x.operator OP; } };
+#define Q_CREATE_OPERATOR_FUNCTOR(NAME, OP) struct NAME { auto operator()(auto&& x, auto&& y) const { return x OP (y); } };
+        // arithmetic
+        Q_CREATE_UNARY_OPERATOR_FUNCTOR(UPos, +())
+        Q_CREATE_UNARY_OPERATOR_FUNCTOR(UNeg, -())
+        Q_CREATE_OPERATOR_FUNCTOR(Add, +) Q_CREATE_OPERATOR_FUNCTOR(AddAssign, +=)
+        Q_CREATE_OPERATOR_FUNCTOR(Sub, -) Q_CREATE_OPERATOR_FUNCTOR(SubAssign, -=)
+        Q_CREATE_OPERATOR_FUNCTOR(Mul, *) Q_CREATE_OPERATOR_FUNCTOR(MulAssign, *=)
+        Q_CREATE_OPERATOR_FUNCTOR(Div, /) Q_CREATE_OPERATOR_FUNCTOR(DivAssign, /=)
+        Q_CREATE_OPERATOR_FUNCTOR(Mod, %) Q_CREATE_OPERATOR_FUNCTOR(ModAssign, %=)
+        Q_CREATE_UNARY_OPERATOR_FUNCTOR(Inc, ++()) Q_CREATE_UNARY_OPERATOR_FUNCTOR(PostInc, ++(0))
+        Q_CREATE_UNARY_OPERATOR_FUNCTOR(Dec, --()) Q_CREATE_UNARY_OPERATOR_FUNCTOR(PostDec, --(0))
+        // bitwise
+        Q_CREATE_OPERATOR_FUNCTOR(BitAnd, &)  Q_CREATE_OPERATOR_FUNCTOR(BitAndAssign, &=)
+        Q_CREATE_OPERATOR_FUNCTOR(BitOr,  |)  Q_CREATE_OPERATOR_FUNCTOR(BitOrAssign,  |=)
+        Q_CREATE_OPERATOR_FUNCTOR(BitXor, ^)  Q_CREATE_OPERATOR_FUNCTOR(BitXorAssign, ^=)
+        Q_CREATE_OPERATOR_FUNCTOR(BitShl, <<) Q_CREATE_OPERATOR_FUNCTOR(BitShlAssign, <<=)
+        Q_CREATE_OPERATOR_FUNCTOR(BitShr, >>) Q_CREATE_OPERATOR_FUNCTOR(BitShrAssign, >>=)
+        Q_CREATE_UNARY_OPERATOR_FUNCTOR(Compl, ~())
+        // logical
+        Q_CREATE_UNARY_OPERATOR_FUNCTOR(Not, !)
+        Q_CREATE_OPERATOR_FUNCTOR(And, &&)
+        Q_CREATE_OPERATOR_FUNCTOR(Or,  ||)
+        // other
+        Q_CREATE_OPERATOR_FUNCTOR(Index, .operator[])
+#undef Q_CREATE_OPERATOR_FUNCTOR
+#undef Q_CREATE_UNARY_OPERATOR_FUNCTOR
     }
 
     template <class F, class O, class... I>

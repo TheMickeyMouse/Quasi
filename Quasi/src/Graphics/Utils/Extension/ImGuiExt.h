@@ -1,8 +1,9 @@
 #pragma once
 #include <imgui.h>
-#include "Type.h"
-#include "Rect.h"
-#include "Color.h"
+#include "Utils/Str.h"
+#include "Utils/Type.h"
+#include "Math/Rect.h"
+#include "Math/Color.h"
 
 namespace Quasi::Graphics {
     class CameraController;
@@ -11,20 +12,22 @@ namespace Quasi::Graphics {
 
 namespace ImGui {
 #define Q Quasi::
-#define Q_IMGUI_EDITOR(NAME, ...) void NAME(Q Str title, __VA_ARGS__, float width = NAN)
+#define Q_IMGUI_EDITOR(NAME, ...) void NAME(Q Str title, __VA_ARGS__, float width = Q floats::NAN)
 
     template <class T> ImGuiDataType ImGuiDataEnum();
 
     float GetUsableWidth();
-    float GetRemWidth(float width = NAN);
+    float GetRemWidth(float width = Q floats::NAN);
     float GetLastItemWidth();
     float GetSpacingWidth();
-    float GetItemDefaultWidth(float totalWidth = NAN);
-    float GetItemRemainingWidth(float totalWidth = NAN);
+    float GetItemDefaultWidth(float totalWidth = Q floats::NAN);
+    float GetItemRemainingWidth(float totalWidth = Q floats::NAN);
 
     void DisplaySimpleIcon(const char* text, const Q Math::Color& bgColor);
 
     void DisplayTextCropped(Q Str text, float width);
+
+    void EditString(Q Str label, Q String& string);
 
     template <class T> requires std::is_arithmetic_v<T>
     Q_IMGUI_EDITOR(EditScalar, T& value, float speed = 1, Q NoInfer<Q Option<Q Math::Range<T>>> range = nullptr);
@@ -32,12 +35,12 @@ namespace ImGui {
     template <class T> requires std::is_arithmetic_v<T>
     Q_IMGUI_EDITOR(EditScalarWithIcon, const Q Math::Color& color,
         T& value, float speed = 1, Q NoInfer<Q Option<Q Math::Range<T>>> range = nullptr, Q Str fmt = {}) {
-        PushID(title.data());
-        DisplaySimpleIcon(title.data(), color);
+        PushID(title.Data());
+        DisplaySimpleIcon(title.Data(), color);
 
         SetNextItemWidth(GetRemWidth(width) - GetLastItemWidth() - GetSpacingWidth());
         SameLine();
-        DragScalar("##value", ImGuiDataEnum<T>(), &value, speed, range ? &range->min : nullptr, range ? &range->max : nullptr, fmt.data());
+        DragScalar("##value", ImGuiDataEnum<T>(), &value, speed, range ? &range->min : nullptr, range ? &range->max : nullptr, fmt.Data());
         PopID();
     }
 

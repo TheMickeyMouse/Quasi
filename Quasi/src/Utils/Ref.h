@@ -7,6 +7,8 @@ namespace Quasi {
     template <class> struct Ref;
     template <class> struct OptRef;
 
+    namespace Hashing { enum Hash : usize; }
+
     /*
      * An interface that describes ref classes.
      * Must implement:
@@ -66,7 +68,7 @@ namespace Quasi {
 
         bool operator==(ConstRef r) const { return this->Equals(r); }
 
-        Hashing::Hash GetHashCode() const;
+        Hashing::Hash GetHashCode() const { return Hashing::HashObject(*obj); }
 
         Ref<RemConst<T>> AsMut() requires IsConst<T> { return { (RemConst<T>*)obj }; }
         Ref<const T> AsConst() const requires IsMut<T> { return { (const T*)obj }; }
@@ -130,7 +132,7 @@ namespace Quasi {
 
         bool operator==(ConstRef r) const { return this->Equals(r); }
 
-        Hashing::Hash GetHashCode() const;
+        Hashing::Hash GetHashCode() const { return obj ? Hashing::HashObject(*obj) : Hashing::EmptyHash(); }
 
         OptRef<RemConst<T>> AsMut() requires IsConst<T> { return { (RemConst<T>*)obj }; }
         OptRef<const T> AsConst() const requires IsMut<T> { return { (const T*)obj }; }

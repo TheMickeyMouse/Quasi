@@ -13,7 +13,7 @@ namespace Quasi {
         friend IContinuousCollection<T, Array>;
     private:
         using InnerRawArray = IfElse<N == 0, ZeroArray<T>, T[N]>;
-        InnerRawArray array;
+        InnerRawArray array {};
     protected:
         T* DataImpl() { return array; }
         const T* DataImpl() const { return array; }
@@ -26,4 +26,13 @@ namespace Quasi {
 
     template <class T, SimilarTo<T>... U>
     Array(T&&, U&&...) -> Array<RemQual<T>, 1 + sizeof...(U)>;
+    template <class T, usize N>
+    Array(T(&&)[N]) -> Array<RemQual<T>, N>;
+
+    namespace Arrays {
+        template <class A>
+        Array<ArrayElement<A>, ArrayLength<A>> FromCArray(A&& array) {
+            return { array };
+        }
+    }
 }

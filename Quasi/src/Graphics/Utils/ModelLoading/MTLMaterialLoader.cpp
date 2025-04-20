@@ -15,7 +15,7 @@ namespace Quasi::Graphics {
     void MTLMaterialLoader::ParseProperty(Str line) {
         const auto [prefix, data] = line.SplitOnce(' ');
 
-        MTLProperty prop;
+        MTLProperty prop = { Empty {} };
         Qmatch$ (prefix, (
             case ("newmtl") prop.Set(NewMaterial { String(data) });,
             case ("Ka")     prop.Set(AmbientCol  { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 {}).to_color3() });,
@@ -71,22 +71,22 @@ namespace Quasi::Graphics {
         CreateMaterial(properties.Skip(lastMat));
     }
 
-    String MTLMaterialLoader::DebugStr() const {
-        String ss {};
-        for (const MTLProperty& p : properties) {
-            p.Visit(
-                [&] (const NewMaterial&      x) { ss += "newmtl: ";       ss += x.name;                     },
-                [&] (const AmbientCol&       x) { ss += "ambient: ";      ss += x.color.hexcode();          },
-                [&] (const DiffuseCol&       x) { ss += "diffuse: ";      ss += x.color.hexcode();          },
-                [&] (const SpecularCol&      x) { ss += "specular: ";     ss += x.color.hexcode();          },
-                [&] (const EmissiveCol&      x) { ss += "emmisive: ";     ss += x.color.hexcode();          },
-                [&] (const SpecularExp&      x) { ss += "specular exp: "; ss += Text::Format("{}", x.exp);      },
-                [&] (const OpticalDen&       x) { ss += "optical den: ";  ss += Text::Format("{}", x.density);  },
-                [&] (const Dissolve&         x) { ss += "dissolve: ";     ss += Text::Format("{}", x.dissolve); },
-                [&] (const IlluminationType& x) { ss += "illumtype: ";    ss += Text::Format("{}", x.itype);    },
-                [] (const auto&) {}
-            );
-        }
-        return ss;
-    }
+    // String MTLMaterialLoader::DebugStr() const {
+    //     String ss {};
+    //     for (const MTLProperty& p : properties) {
+    //         p.Visit(
+    //             [&] (const NewMaterial&      x) { ss += "newmtl: ";       ss += x.name;                     },
+    //             [&] (const AmbientCol&       x) { ss += "ambient: ";      ss += x.color.hexcode();          },
+    //             [&] (const DiffuseCol&       x) { ss += "diffuse: ";      ss += x.color.hexcode();          },
+    //             [&] (const SpecularCol&      x) { ss += "specular: ";     ss += x.color.hexcode();          },
+    //             [&] (const EmissiveCol&      x) { ss += "emmisive: ";     ss += x.color.hexcode();          },
+    //             [&] (const SpecularExp&      x) { ss += "specular exp: "; ss += Text::Format("{}", x.exp);      },
+    //             [&] (const OpticalDen&       x) { ss += "optical den: ";  ss += Text::Format("{}", x.density);  },
+    //             [&] (const Dissolve&         x) { ss += "dissolve: ";     ss += Text::Format("{}", x.dissolve); },
+    //             [&] (const IlluminationType& x) { ss += "illumtype: ";    ss += Text::Format("{}", x.itype);    },
+    //             [] (const auto&) {}
+    //         );
+    //     }
+    //     return ss;
+    // }
 }

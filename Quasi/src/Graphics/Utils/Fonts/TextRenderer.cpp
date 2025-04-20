@@ -37,10 +37,10 @@ namespace Quasi::Graphics {
         return (const CharQuad*)textVertices.Data();
     }
     TextRenderer::CharQuad* TextRenderer::End() {
-        return (CharQuad*)(textVertices.Data() + textVertices.Length());
+        return (CharQuad*)textVertices.DataEnd();
     }
     const TextRenderer::CharQuad* TextRenderer::End() const {
-        return (const CharQuad*)(textVertices.Data() + textVertices.Length());
+        return (const CharQuad*)textVertices.DataEnd();
     }
     TextRenderer::CharQuad& TextRenderer::CharAt(u32 index) {
         return Begin()[index];
@@ -122,30 +122,30 @@ namespace Quasi::Graphics {
             }
     }
 
-    bool TextRenderer::WordWrap(float advance, IterOf<Str>& it, IterOf<Str> begin) {
-        if (align.IsWordWrap() && lineWidth + advance > align.rect.width()) { // word wrapping (complex part over here)
-            if (it == begin) return false;
-            auto backUntilSpace       = it - 1; // new iterator for looping until we reach a space
-            const float originalWidth = lineWidth; // keeps track if the word is too long and will always overflow without breaking the word
-            do { // man the first time ive use do while
-                lineWidth -= align.GetAdvance(font.GetGlyphRect(*backUntilSpace), scaleRatio); // dementia, remove line width with overflowed word
-                if (lineWidth <= 0) { // if word is still too long, then abort and just render it on a single line
-                    lineWidth = originalWidth; // reset width
-                    return false; // abort
-                }
-                --backUntilSpace; // look back for spaces
-            } while (*backUntilSpace != ' ');
-            lineWidth -= spaceAdvance; // remember to remove the space as well
-            if (align.IsAlignJustified()) lineWords.Pop(); // and delete this overflowed word
+    bool TextRenderer::WordWrap(float advance, const char*& it, const char* begin) {
+        if (!align.IsWordWrap() || lineWidth + advance <= align.rect.width()) return false;
 
-            textVertices.Resize(4 * lastSpaceIndex); // forget about mesh data; re-render the word
-            meshIndex = lastSpaceIndex; // reset everything back to before the overflowed word
-            lastSpaceIndex = 0;
-            TriggerNewLine(); // make new line
-            it = backUntilSpace; // reset to the character before the overflowed word, and now on new line
-            return true; // go back and re-render the rest
-        }
-        return false;
+        // word wrapping (complex part over here)
+        if (it == begin) return false;
+        auto backUntilSpace       = it - 1; // new iterator for looping until we reach a space
+        const float originalWidth = lineWidth; // keeps track if the word is too long and will always overflow without breaking the word
+        do { // man the first time ive use do while
+            lineWidth -= align.GetAdvance(font.GetGlyphRect(*backUntilSpace), scaleRatio); // dementia, remove line width with overflowed word
+            if (lineWidth <= 0) { // if word is still too long, then abort and just render it on a single line
+                lineWidth = originalWidth; // reset width
+                return false; // abort
+            }
+            --backUntilSpace; // look back for spaces
+        } while (*backUntilSpace != ' ');
+        lineWidth -= spaceAdvance;                     // remember to remove the space as well
+        if (align.IsAlignJustified()) lineWords.Pop(); // and delete this overflowed word
+
+        textVertices.Resize(4 * lastSpaceIndex); // forget about mesh data; re-render the word
+        meshIndex = lastSpaceIndex;              // reset everything back to before the overflowed word
+        lastSpaceIndex = 0;
+        TriggerNewLine();    // make new line
+        it = backUntilSpace; // reset to the character before the overflowed word, and now on new line
+        return true;         // go back and re-render the rest
     }
 
     void TextRenderer::FixAlignY() {
@@ -185,7 +185,7 @@ namespace Quasi::Graphics {
         textVertices.Push({ pos.corner(3), tex.corner(3), 1.0f, Vertex::RENDER_TEXT });
     }
 
-    void TextRenderer::AddChar(IterOf<Str>& it, IterOf<Str> begin) {
+    void TextRenderer::AddChar(const char*& it, const char* begin) {
         using namespace Math;
         const char glyph = *it;
         if (glyph == '\n') {
@@ -295,13 +295,13 @@ namespace Quasi::Graphics {
 
     void TextRenderer::RenderText(Str string) {
         using namespace Math;
-        lineCount = (u32)(std::ranges::count(string, '\n') + 1); // line count for vertical alignment
+        lineCount = (u32)string.CountLines(); // line count for vertical alignment
         Prepare();
         
         if (align.IsAlignJustified()) lineWords.Push({ 0, 0.0f }); // add new beginning 'word'
 
-        for (auto it = string.begin(); it != string.end(); ++it) { // loop each char in string (keep in mind not ranged for loop)
-            AddChar(it, string.begin());
+        for (const char* it = string.Data(); it < string.DataEnd(); ++it) { // loop each char in string (keep in mind not ranged for loop)
+            AddChar(it, string.Data());
         }
         FixAlignX(); // dont forget to fix the last line
         FixAlignY();

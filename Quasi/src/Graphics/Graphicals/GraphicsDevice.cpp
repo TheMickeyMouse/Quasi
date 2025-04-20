@@ -12,7 +12,8 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include "Utils/Textures/Texture.h"
+#include "../GLs/Texture.h"
+#include "GLs/GLDebug.h"
 
 namespace Quasi::Graphics {
     class RenderData;
@@ -235,7 +236,7 @@ namespace Quasi::Graphics {
                 ImGui::Text("Pressed: ");
                 for (int i = 0; i < IO::MouseType::LAST_MOUSE; ++i) {
                     if (!ioDevice.Mouse.ButtonPressed(i)) continue;
-                    ImGui::Text("   %s", IO::MouseType::MouseButtonToStr(i).data());
+                    ImGui::Text("   %s", IO::MouseType::MouseButtonToStr(i).Data());
                 }
             }
             ImGui::Unindent();
@@ -245,7 +246,7 @@ namespace Quasi::Graphics {
             {
                 ImGui::Text("Keys Pressed Are:");
                 ioDevice.Keyboard.VisitKeysPressed([] (IO::Key k) {
-                    ImGui::Text("   %s", IO::KeyboardType::KeyToStr(k).data());
+                    ImGui::Text("   %s", IO::KeyboardType::KeyToStr(k).Data());
                 });
             }
             ImGui::Unindent();

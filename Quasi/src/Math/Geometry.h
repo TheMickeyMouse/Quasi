@@ -33,7 +33,7 @@ namespace Quasi::Math {
                               (start.y - other.start.y) * (other.start.x - other.end.x);
             const float u   = (start.x - end.x) * (start.y - other.start.y) -
                               (start.y - end.y) * (start.x - other.start.x);
-            if (std::abs(det) < EPSILON)
+            if (std::abs(det) < f32s::EPSILON)
                 return { -1, -1 };
             return { t / det, -u / det };
         }

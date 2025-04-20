@@ -1,7 +1,7 @@
 #pragma once
 #include "Math/Vector.h"
 #include "Math/Color.h"
-#include "Variant.h"
+#include "Utils/Variant.h"
 
 namespace Quasi::Graphics {
     struct SunLight {

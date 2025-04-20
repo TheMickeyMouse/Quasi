@@ -2,10 +2,10 @@
 #include <string>
 #include <freetype/freetype.h>
 
-#include "Graphics/Graphicals/Mesh.h"
+#include "Graphicals/Mesh.h"
 #include "TextAlign.h"
 #include "TextStyle.h"
-#include "Graphics/Utils/Textures/Texture.h"
+#include "GLs/Texture.h"
 
 #define Q_USER_FONTS R"(C:\Users\User\AppData\Local\Microsoft\Windows\Fonts\)"
 #define Q_WIN_FONTS R"(C:\Windows\Fonts\)"

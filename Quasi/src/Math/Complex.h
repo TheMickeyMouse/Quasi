@@ -121,15 +121,15 @@ namespace Quasi::Math {
     using fComplex = Complex<float>;
     using dComplex = Complex<double>;
 
-    inline dComplex operator ""_i(f80 f) { return dComplex { 0, f }; }
+    inline dComplex operator ""_i(long double f) { return dComplex { 0, f }; }
     inline iComplex operator ""_i(u64 i) { return iComplex { 0, i }; }
 }
 
-// namespace Quasi::Text {
-//     template <class T>
-//     struct Formatter<Math::Complex<T>> : Formatter<T> {
-//         void FormatTo(const Math::Complex<T>& z, StringOutput output) {
-//             return FormatOnto(output, "{} {} {}i", z.re, z.im < 0 ? '-' : '+', z.im);
-//         }
-//     };
-// }
+namespace Quasi::Text {
+    template <class T>
+    struct Formatter<Math::Complex<T>> {
+        static usize FormatTo(StringWriter output, const Math::Complex<T>& z, Str) {
+            return Text::FormatTo(output, "{} {} {}i", z.re, z.im < 0 ? '-' : '+', z.im);
+        }
+    };
+}

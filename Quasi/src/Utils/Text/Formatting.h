@@ -16,7 +16,9 @@ namespace Quasi::Text {
 
     template <class T>
     usize FormatObjectTo(StringWriter output, const T& object, Str options) {
-        return Text::FormatObjectTo(output, object, Formatter<T>::ConfigureOptions(options));
+        if constexpr (requires (Str x) { Formatter<T>::ConfigureOptions(x); })
+            return Text::FormatObjectTo(output, object, Formatter<T>::ConfigureOptions(options));
+        else return Formatter<T>::FormatTo(output, object, options);
     }
 
     // should only be used internally
@@ -27,7 +29,7 @@ namespace Quasi::Text {
 
     // should only be used internally
     usize FormatToDynamic(StringWriter output, Str fmt,
-        const void* argParams[], FuncPtr<void, StringWriter, const void*, Str> writerParams[], usize n);
+        const void* const argParams[], const FuncPtr<usize, StringWriter, const void*, Str> writerParams[], usize n);
 
     template <class... Ts>
     usize FormatDynamicTypesTo(StringWriter output, Str fmt, const void* argParams[]) {
@@ -38,7 +40,7 @@ namespace Quasi::Text {
     }
 
     template <class... Ts>
-    usize FormatTo(StringWriter output, Str fmt, Ts&&... args) {
+    usize FormatTo(StringWriter output, Str fmt, const Ts&... args) {
         const void* argParams[] = { (const void*)&args... };
         return Text::FormatDynamicTypesTo<Ts...>(output, fmt, argParams);
     }
@@ -53,36 +55,11 @@ namespace Quasi::Text {
         return { (T&&)subject, std::move(o) };
     }
 
-    template <class T> struct FormatResultLeaf {
-        T leaf;
-    };
-
-    // intermediate result, lazily evaluated
     template <class... Ts>
-    struct FormatResult : FormatResultLeaf<Ts>... {
-        Str fmtStr;
-
-        String ToString() const {
-            String output;
-            WriteTo(StringWriter::WriteTo(output));
-            return output;
-        }
-
-        usize WriteTo(StringWriter output) const {
-            const void* argParams[] = { static_cast<FormatResultLeaf<Ts>>(this)->leaf... };
-            return Text::FormatDynamicTypesTo<Ts...>(output, fmtStr, argParams);
-        }
-
-        operator String() const { return ToString(); }
-    };
-
-    template <class... Ts>
-    FormatResult<Ts...> Format(Str fmt, Ts&&... args) {
-        return { (Ts&&)args..., fmt };
-    }
-
-    template <class... Ts> usize StringWriter::Write(const FormatResult<Ts...>& fmtRes) {
-        return fmtRes.WriteTo(*this);
+    String Format(Str fmt, Ts&&... args) {
+        String s {};
+        FormatTo(StringWriter::WriteTo(s), fmt, (Ts&&)args...);
+        return s;
     }
 
     // (?'char'.)?(?'align'[<^>])(?'len'[0-9]+)
@@ -116,40 +93,14 @@ namespace Quasi::Text {
     template <> struct Formatter<StrMut> : Formatter<Str> {};
     template <> struct Formatter<String> : Formatter<Str> {};
     template <> struct Formatter<const char*> : Formatter<Str> {};
+    template <> struct Formatter<char*>       : Formatter<Str> {};
     template <usize N> struct Formatter<const char[N]> : Formatter<Str> {};
 
 
     template <class T>
     struct Formatter<WithFormatOptions<T>> {
-        using FormatOptions = Empty;
-        static usize FormatTo(StringWriter sw, const WithFormatOptions<T>& fres, Empty) {
+        static usize FormatTo(StringWriter sw, const WithFormatOptions<T>& fres, Str) {
             return Text::FormatObjectTo(sw, fres.subject, fres.options);
-        }
-    };
-
-    template <class... Ts>
-    struct Formatter<FormatResult<Ts...>> {
-        using FormatOptions = TextFormatOptions;
-
-        static FormatOptions ConfigureOptions(Str opt) { return TextFormatOptions::Configure(opt); }
-
-        static usize FormatTo(StringWriter sw, const FormatResult<Ts...>& fres, const FormatOptions& options) {
-            if (options.alignment == TextFormatOptions::LEFT) {
-                usize len;
-                if (options.escape) {
-                    len = fres.ToString().WriteEscape(sw);
-                } else
-                    len = fres.WriteTo(sw);
-
-                if (options.targetLength > len) {
-                    sw.WriteRepeat(options.pad, options.targetLength - len);
-                    return options.targetLength;
-                }
-                return len;
-            } else {
-                const String result = fres.ToString();
-                return FormatObjectTo(sw, result, options);
-            }
         }
     };
 }
@@ -157,15 +108,14 @@ namespace Quasi::Text {
 #pragma region Extra Type Formattings
 namespace Quasi::Text {
     template <> struct Formatter<void*> {
-        using FormatOptions = Empty;
-        static usize FormatTo(StringWriter sw, void* fres, Empty);
+        static usize FormatTo(StringWriter sw, void* fres, Str);
     };
 
     template <class T> struct Formatter<Ref<T>> : Formatter<T> {};
 
     template <class T>
     struct Formatter<OptRef<T>> : Formatter<T> {
-        using Formatter<T>::FormatOptions;
+        using typename Formatter<T>::FormatOptions;
         static usize FormatTo(StringWriter sw, OptRef<T> optref, const FormatOptions& options) {
             if (optref) {
                 sw.Write("Some(&"_str);
@@ -178,7 +128,7 @@ namespace Quasi::Text {
 
     template <class T>
     struct Formatter<Option<T>> : Formatter<T> {
-        using Formatter<T>::FormatOptions;
+        using typename Formatter<T>::FormatOptions;
         static usize FormatTo(StringWriter sw, const Option<T>& opt, const FormatOptions& options) {
             if (opt) {
                 sw.Write("Some("_str);
@@ -190,8 +140,8 @@ namespace Quasi::Text {
     };
 
     template <class T>
-    struct Text::Formatter<Span<T>> : Formatter<RemConst<T>> {
-        using Formatter<RemQual<T>>::FormatOptions;
+    struct Formatter<Span<T>> : Formatter<RemConst<T>> {
+        using typename Formatter<RemQual<T>>::FormatOptions;
         static usize FormatTo(StringWriter sw, Span<T> span, const FormatOptions& options) {
             usize len = 2;
             sw.Write('[');
@@ -204,12 +154,10 @@ namespace Quasi::Text {
         }
     };
 
-    template <class T>          struct Text::Formatter<Vec<T>>      : Formatter<Span<const T>> {};
-    template <class T, usize N> struct Text::Formatter<Array<T, N>> : Formatter<Span<const T>> {};
+    template <class T>          struct Formatter<Vec<T>>      : Formatter<Span<const T>> {};
+    template <class T, usize N> struct Formatter<Array<T, N>> : Formatter<Span<const T>> {};
 
-    template <class... Ts> struct Text::Formatter<Tuple<Ts...>> {
-        using FormatOptions = Str;
-        static Str ConfigureOptions(Str fspec) { return fspec; }
+    template <class... Ts> struct Formatter<Tuple<Ts...>> {
         static usize FormatTo(StringWriter sw, const Tuple<Ts...>& tuple, Str fspec) {
             sw.Write('(');
             usize len = 2;

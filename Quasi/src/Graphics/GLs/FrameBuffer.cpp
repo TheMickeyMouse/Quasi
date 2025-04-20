@@ -4,7 +4,7 @@
 
 #include "RenderBuffer.h"
 #include "GLDebug.h"
-#include "Textures/Texture.h"
+#include "Texture.h"
 
 namespace Quasi::Graphics {
     FrameBuffer::FrameBuffer(GraphicsID id) : GLObject(id) {}
@@ -38,7 +38,7 @@ namespace Quasi::Graphics {
     void FrameBuffer::Complete() const {
         const int status = GL::CheckFramebufferStatus(GL::FRAMEBUFFER);
         if (status != GL::FRAMEBUFFER_COMPLETE) {
-            GLLogger().Error("Framebuffer was incomplete with code 0x{:04X}.", status);
+            GLLogger().QError$("Framebuffer was incomplete with code 0x{:04X}.", status);
         }
     }
 }

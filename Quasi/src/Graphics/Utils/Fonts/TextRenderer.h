@@ -1,10 +1,9 @@
 #pragma once
-#include <vector>
 #include "Utils/RichString.h"
 
 #include "Font.h"
 #include "TextAlign.h"
-#include "Vector.h"
+#include "Math/Vector.h"
 
 namespace Quasi::Graphics {
     struct TextRenderer {
@@ -28,7 +27,7 @@ namespace Quasi::Graphics {
 
         PointPer64 fontSize = 0;
 
-        TextAlign align = { { 0, INFINITY } };
+        TextAlign align = { { 0, f32s::INFINITY } };
         using Vertex = Font::Vertex;
         Vec<Vertex> textVertices, bgVertices;
         Vec<TriIndices> bgIndices;
@@ -63,16 +62,16 @@ namespace Quasi::Graphics {
         void FixAlignX();
         void JustifyAlignX();
         void AlignX();
-        bool WordWrap(float advance, IterOf<Str>& it, IterOf<Str> begin);
-        
+        bool WordWrap(float advance, const char*& it, const char* begin);
+
         void FixAlignY();
         void ClipY(Math::fRect2D& pos, Math::fRect2D& tex,
                    bool clipTop, bool clipBottom) const;
         
         void PushCharQuad(const Math::fRect2D& pos, const Math::fRect2D& tex);
-        void AddChar(IterOf<Str>& it, IterOf<Str> begin);
+        void AddChar(const char*& it, const char* begin);
         void AddRichChar(const Text::RichString::Iter& it);
-        
+
         void TriggerNewLine();
         void TriggerSpace();
         

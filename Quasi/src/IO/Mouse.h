@@ -11,8 +11,7 @@ namespace Quasi::Graphics {
 
 namespace Quasi::IO {
     class IO;
-    
-    // TODO: USE INTERFERE INSTEAD OF POLLING WITH GLFWMOSUECALLBACK
+
     struct MouseType {
         static constexpr int LEFT_MOUSE   = 0;
         static constexpr int RIGHT_MOUSE  = 1;

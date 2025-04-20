@@ -38,8 +38,6 @@ namespace Quasi::Text {
         String rawString;
         Vec<byte> stylings;
 
-        static bool Matches(IterOf<Str> iter, IterOf<Str> end, Str matchExpr);
-        static IterOf<Str> Find(IterOf<Str> iter, IterOf<Str> end, Str matchExpr);
         static RichString ParseMarkdown(Str markdown);
         static RichString ParseHtml(Str html);
 
@@ -47,13 +45,11 @@ namespace Quasi::Text {
         const String& RawString() const { return rawString; }
 
         void Append(const char c) { rawString += c; }
-        template <class It> void Append(It begin, It end) { rawString += Str { begin, end }; }
+        void Append(Str s) { rawString += s; }
         void AddTag(Style s, IList<byte> data, int off = 0);
         void AddTag(Style s, bool state, int off = 0);
 
         uint Lines() const;
-
-        String DebugRawstr() const;
 
         struct Iter;
         struct RichChar;
@@ -61,40 +57,6 @@ namespace Quasi::Text {
         
         Iter begin() const;
         Iter end() const;
-
-        enum class CodeLang {
-            C,
-            CPP,
-            CSHARP,
-            JAVASCRIPT,
-            JAVA,
-            HTML,
-            PYTHON,
-            LUA,
-            GO_LANG,
-            RUST
-        };
-
-#define MAP(VALUE, FIRST, ...)  { FIRST, CodeLang::VALUE } Q_IF(Q_HAS_ARGS(__VA_ARGS__),, MAP2(VALUE, __VA_ARGS__))
-#define MAP2(VALUE, FIRST, ...) { FIRST, CodeLang::VALUE } Q_IF(Q_HAS_ARGS(__VA_ARGS__),, MAP3(VALUE, __VA_ARGS__))
-#define MAP3(VALUE, FIRST, ...) { FIRST, CodeLang::VALUE } Q_IF(Q_HAS_ARGS(__VA_ARGS__),, MAP (VALUE, __VA_ARGS__))
-
-        inline static Map<Str, CodeLang> LanguageMapping = {
-            MAP(C, "c"),
-            MAP(CPP, "c++", "cpp"),
-            MAP(CSHARP, "c#", "csharp"),
-            MAP(JAVASCRIPT, "js", "javascript"),
-            MAP(JAVA, "java"),
-            MAP(HTML, "html"),
-            MAP(PYTHON, "py", "python"),
-            MAP(LUA, "lua"),
-            MAP(GO_LANG, "go", "golang"),
-            MAP(RUST, "rust"),
-        };
-
-#undef MAP
-#undef MAP2
-#undef MAP3
     };
 
     struct RichString::StyleState {
@@ -116,7 +78,7 @@ namespace Quasi::Text {
         Ref<const RichString> str;
         const char* iter;
         StyleState currentState;
-        uint styleOffset = 0;
+        u32 styleOffset = 0;
 
         bool operator==(const Iter& other) const { return iter == other.iter; }
         RichChar operator*() const;

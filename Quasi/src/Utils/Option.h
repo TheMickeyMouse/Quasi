@@ -45,7 +45,7 @@ namespace Quasi {
     public:
         bool HasValue() const { return super().HasValueImpl(); }
         bool IsNull() const { return !HasValue(); }
-        operator bool() const { return HasValue(); }
+        explicit operator bool() const { return HasValue(); }
 
         void SetNull() { super().SetNull(); }
         void Set(const T& value)              { super().SetImpl(value); }
@@ -64,10 +64,10 @@ namespace Quasi {
         const V* operator->() const { return &Unwrap(); }
 
         OptRef<T>       AsRef()          { return HasValue() ? Unwrap() : OptRef<T>::None(); }
-        Span<T>         AsSpan()         { return HasValue() ? Span<T>::Single(Unwrap()) : Span<T>::Empty(); }
+        Span<T>         AsSpan()         { return HasValue() ? Span<T>::Only(Unwrap()) : Span<T>::Empty(); }
         Option<T>       AsOption() const { return HasValue() ? Option<T>::Some(Unwrap()) : nullptr; }
         OptRef<const T> AsRef()    const { return HasValue() ? SomeRef(Unwrap()) : nullptr; }
-        Span<const T>   AsSpan()   const { return HasValue() ? Span<const T>::Single(Unwrap()) : Span<const T>::Empty(); }
+        Span<const T>   AsSpan()   const { return HasValue() ? Span<const T>::Only(Unwrap()) : Span<const T>::Empty(); }
 
         T UnwrapOr(const T& otherwise) const              { return HasValue() ? Unwrap() : otherwise; }
         T UnwrapOr(T&& otherwise) const requires USE_RREF { return HasValue() ? Unwrap() : std::move(otherwise); }
@@ -79,7 +79,7 @@ namespace Quasi {
         // behaves like pythonic and
         Super And(const Super& onlyif) const { return HasValue() ? onlyif            : None(); }
         Super And(Super&& onlyif)      const { return HasValue() ? std::move(onlyif) : None(); }
-        auto  AndThen(FnArgs<Super> auto&& onlyif) const { return HasValue() ? onlyif(Unwrap()) : nullptr; }
+        auto  AndThen(FnArgs<T> auto&& onlyif) const { return HasValue() ? onlyif(Unwrap()) : nullptr; }
 
         Super Xor(const Super& extra) const { return HasValue() ^ extra.HasValue() ? (HasValue() ? *this : extra) : None(); }
         Super Xor(Super&& extra)      const { return HasValue() ^ extra.HasValue() ? (HasValue() ? *this : std::move(extra)) : None(); }
@@ -122,6 +122,8 @@ namespace Quasi {
         static Super None() { return Super::NoneImpl(); }
         static Super Some(const T& t) { return Super::SomeImpl(t); }
         static Super Some(T&& t) requires USE_RREF { return Super::SomeImpl(std::move(t)); }
+
+        bool operator==(const INullable&) const = default;
     };
 
     template <class T>
@@ -152,10 +154,13 @@ namespace Quasi {
         bool operator==(const Option&) const = default;
         bool operator==(const T& other) const { return isSome && value == other; }
 
-        Hashing::Hash GetHashCode() const;
+        Hashing::Hash GetHashCode() const {
+            return isSome ? Hashing::HashObject(value) : Hashing::EmptyHash();
+        }
     };
 
     struct OptionUsize : INullable<usize, OptionUsize> {
+        friend INullable;
     private:
         usize value = -1;
     public:
@@ -178,7 +183,7 @@ namespace Quasi {
         bool operator==(const OptionUsize&) const = default;
         bool operator==(usize v) const { return value == v; }
 
-        Hashing::Hash GetHashCode() const;
+        Hashing::Hash GetHashCode() const { return Hashing::HashInt(value); }
     };
 
     namespace Options {

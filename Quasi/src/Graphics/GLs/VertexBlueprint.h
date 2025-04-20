@@ -1,5 +1,5 @@
 #pragma once
-#include "Macros.h"
+#include "Utils/MacroIteration.h"
 
 #define Q_GL_VERTEX_BLUEPRINT(V, SHADER) \
     [&] (const auto& inVertex) -> V { \

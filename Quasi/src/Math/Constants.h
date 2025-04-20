@@ -1,5 +1,5 @@
 #pragma once
-#include "Numeric.h"
+#include "Utils/Numeric.h"
 
 namespace Quasi::Math {
 #define NUM_LIMITS(T, V) std::numeric_limits<T>::V()
@@ -37,6 +37,9 @@ namespace Quasi::Math {
 
     inline double operator ""_deg(long double deg) {
         return (double)deg * DEG2RAD;
+    }
+    inline float operator ""_degf(long double deg) {
+        return (float)deg * DEG2RAD;
     }
 
 #undef MATH_CONSTANT

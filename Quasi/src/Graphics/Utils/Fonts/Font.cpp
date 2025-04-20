@@ -4,7 +4,7 @@
 #include "ft2build.h"
 #include FT_FREETYPE_H
 
-#include "Graphics/GLs/GLDebug.h"
+#include "GLs/GLDebug.h"
 
 namespace Quasi::Graphics {
     void FontDeleter::operator()(FT_FaceRec_* ptr) const {
@@ -47,7 +47,7 @@ namespace Quasi::Graphics {
                 // new method: SDFs extrude 8 pixels in all directions, so you can load normally and then add 16
                 // (no need to load twice!)
                 if (const int error = FT_Load_Char(faceHandle.DataMut(), charCode, FT_LOAD_DEFAULT)) {
-                    GLLogger().Error("Loading char with err code {}", error);
+                    GLLogger().QError$("Loading char with err code {}", error);
                     continue;  /* ignore errors */
                 }
 
@@ -81,7 +81,7 @@ namespace Quasi::Graphics {
             });
             for (char charCode = 32; charCode < 127; ++charCode) { // loop through again, this time drawing textures
                 if (const int error = FT_Load_Char(faceHandle.DataMut(), charCode, loadSDF)) { // loads again
-                    GLLogger().Error("Loading char with err code {}", error);
+                    GLLogger().QError$("Loading char with err code {}", error);
                     continue;
                 }
             
@@ -149,9 +149,9 @@ namespace Quasi::Graphics {
         }
         
         if (error == FT_Err_Unknown_File_Format)
-            GLLogger().Error("Font {} doesn't have valid format", filename);
+            GLLogger().QError$("Font {} doesn't have valid format", filename);
         else
-            GLLogger().Error("Font loaded with err code {}", error);
+            GLLogger().QError$("Font loaded with err code {}", error);
         return {};
     }
 
@@ -164,7 +164,7 @@ namespace Quasi::Graphics {
             return font;
         }
         
-        GLLogger().Error("Font loaded with err code {}", error);
+        GLLogger().QError$("Font loaded with err code {}", error);
         return {};
     }
 

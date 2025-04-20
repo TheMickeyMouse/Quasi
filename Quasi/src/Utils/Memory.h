@@ -7,11 +7,13 @@ namespace Quasi::Memory {
 
     template <class U, class T> U& TransmuteRef(T& t)       { return *reinterpret_cast<U*>(&t); }
     template <class U, class T> U* TransmutePtr(T* t)       { return reinterpret_cast<U*>(t); }
-    template <class U, class T> U  Transmute(T t) requires (sizeof(T) == sizeof(U)) { return __builtin_bit_cast(U, t); }
+    template <class U, class T> constexpr U Transmute(T t) requires (sizeof(T) == sizeof(U)) { return __builtin_bit_cast(U, t); }
     template <class T> const byte* AsBytePtr(const T* t)    { return (const byte*)t; }
     template <IsMut T>       byte* AsBytePtr(T* t)          { return (byte*)t; }
     template <class T>       void* DowncastPtr(T* t)        { return (void*)t; }
     template <class T>          T* UpcastPtr(void* t)       { return (T*)t; }
+    template <class T> const void* DowncastPtr(const T* t)  { return (const void*)t; }
+    template <class T> const    T* UpcastPtr(const void* t) { return (const T*)t; }
 
     template <class T> const T&  AsConst   (T& val)       { return const_cast<const T&>(val); }
     template <class T> const T*  AsConstPtr(T* ptr)       { return const_cast<const T*>(ptr); }
@@ -51,18 +53,18 @@ namespace Quasi::Memory {
         new (temp) T(std::move(*value));
     }
 
+    u16 ReadU16Big(const void* bytes);
+    i16 ReadI16Big(const void* bytes);
+    u32 ReadU32Big(const void* bytes);
+    i32 ReadI32Big(const void* bytes);
+    u64 ReadU64Big(const void* bytes);
+    i64 ReadI64Big(const void* bytes);
     u16 ReadU16(const void* bytes);
     i16 ReadI16(const void* bytes);
     u32 ReadU32(const void* bytes);
     i32 ReadI32(const void* bytes);
     u64 ReadU64(const void* bytes);
     i64 ReadI64(const void* bytes);
-    u16 ReadU16Little(const void* bytes);
-    i16 ReadI16Little(const void* bytes);
-    u32 ReadU32Little(const void* bytes);
-    i32 ReadI32Little(const void* bytes);
-    u64 ReadU64Little(const void* bytes);
-    i64 ReadI64Little(const void* bytes);
     u16 ReadU16Native(const void* bytes);
     i16 ReadI16Native(const void* bytes);
     u32 ReadU32Native(const void* bytes);
@@ -70,18 +72,25 @@ namespace Quasi::Memory {
     u64 ReadU64Native(const void* bytes);
     i64 ReadI64Native(const void* bytes);
 
+    u16 ReadZeroExtU16(const void* bytes, usize len);
+    u32 ReadZeroExtU32(const void* bytes, usize len);
+    u64 ReadZeroExtU64(const void* bytes, usize len);
+    u16 ReadZeroExtU16Big(const void* bytes, usize len);
+    u32 ReadZeroExtU32Big(const void* bytes, usize len);
+    u64 ReadZeroExtU64Big(const void* bytes, usize len);
+
+    void WriteU16Big(u16 x, void* out);
+    void WriteI16Big(i16 x, void* out);
+    void WriteU32Big(u32 x, void* out);
+    void WriteI32Big(i32 x, void* out);
+    void WriteU64Big(u64 x, void* out);
+    void WriteI64Big(i64 x, void* out);
     void WriteU16(u16 x, void* out);
     void WriteI16(i16 x, void* out);
     void WriteU32(u32 x, void* out);
     void WriteI32(i32 x, void* out);
     void WriteU64(u64 x, void* out);
     void WriteI64(i64 x, void* out);
-    void WriteU16Little(u16 x, void* out);
-    void WriteI16Little(i16 x, void* out);
-    void WriteU32Little(u32 x, void* out);
-    void WriteI32Little(i32 x, void* out);
-    void WriteU64Little(u64 x, void* out);
-    void WriteI64Little(i64 x, void* out);
     void WriteU16Native(u16 x, void* out);
     void WriteI16Native(i16 x, void* out);
     void WriteU32Native(u32 x, void* out);
@@ -100,6 +109,7 @@ namespace Quasi::Memory {
     // WARNING: undefined behavior on overlapping pointer ranges
     void MemCopyNoOverlap(void* __restrict__ out, const void* __restrict__ in, usize bytes);
     void MemCopyRev(void* out, const void* in, usize bytes);
+    void MemSet(void* dest, byte value, usize bytes);
 
     template <class T> constexpr void RangeSet(T* out, const T& fill, usize count) {
         for (usize i = 0; i < count; ++i)
@@ -158,7 +168,32 @@ namespace Quasi::Memory {
 }
 
 namespace Quasi {
-    u16 operator ""_u16(const char* s, usize n);
-    u32 operator ""_u32(const char* s, usize n);
-    u64 operator ""_u64(const char* s, usize n);
+    constexpr u16 operator ""_u16(const char* s, usize n) {
+        return n == 0 ? 0 :
+               n == 1 ? (u8)s[0] : Memory::ReadU16Big(s);
+    }
+
+    constexpr u32 operator ""_u32(const char* s, usize n) {
+        switch (n) {
+            case 0: return 0;
+            case 1: return (u32)(u8)s[0];
+            case 2: return (u32)(u8)s[0] << 8  | (u32)(u8)s[1];
+            case 3: return (u32)(u8)s[0] << 16 | (u32)(u8)s[1] << 8 | (u32)(u8)s[2];
+            default: return Memory::ReadU32Big(s);
+        }
+    }
+
+    constexpr u64 operator ""_u64(const char* s, usize n) {
+        switch (n) {
+            case 0: return 0;
+            case 1: return (u64)(u8)s[0];
+            case 2: return (u64)(u8)s[0] << 8  | (u64)(u8)s[1];
+            case 3: return (u64)(u8)s[0] << 16 | (u64)(u8)s[1] << 8  | (u64)(u8)s[2];
+            case 4: return (u64)(u8)s[0] << 24 | (u64)(u8)s[1] << 16 | (u64)(u8)s[2] << 8  | (u64)(u8)s[3];
+            case 5: return (u64)(u8)s[0] << 32 | (u64)(u8)s[1] << 24 | (u64)(u8)s[2] << 16 | (u64)(u8)s[3] << 8  | (u64)(u8)s[4];
+            case 6: return (u64)(u8)s[0] << 40 | (u64)(u8)s[1] << 32 | (u64)(u8)s[2] << 24 | (u64)(u8)s[3] << 16 | (u64)(u8)s[4] << 8  | (u64)(u8)s[5];
+            case 7: return (u64)(u8)s[0] << 48 | (u64)(u8)s[1] << 40 | (u64)(u8)s[2] << 32 | (u64)(u8)s[3] << 24 | (u64)(u8)s[4] << 16 | (u64)(u8)s[5] << 8 | (u64)(u8)s[6];
+            default: return Memory::ReadU64Big(s);
+        }
+    }
 }

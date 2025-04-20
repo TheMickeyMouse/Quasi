@@ -1,24 +1,35 @@
 #pragma once
-#include "Numeric.h"
+#include "Hash.h"
 
 namespace Quasi {
 #pragma region Indexing
     template <usize N> struct GetTupleElement {
         template <class T, class U, class V, class W, class... Rest>
-        using Result = typename GetTupleElement<N - 4>::template Result<Rest...>;
+        using Result = typename GetTupleElement<N - 4>::template DeferResult<Rest...>;
+        template <class T, class U, class V, class W, class... Rest>
+        static Result<T, U, V, W, Rest...> GetDeferResult();
+        template <class... Ts> using DeferResult = decltype(GetDeferResult<Ts...>());
     };
 
     template <> struct GetTupleElement<0> {
         template <class T, class...> using Result = T;
+        template <class T, class... Ts> static T GetDeferResult();
+        template <class... Ts> using DeferResult = decltype(GetDeferResult<Ts...>());
     };
     template <> struct GetTupleElement<1> {
         template <class T, class U, class...> using Result = U;
+        template <class T, class U, class... Ts> static U GetDeferResult();
+        template <class... Ts> using DeferResult = decltype(GetDeferResult<Ts...>());
     };
     template <> struct GetTupleElement<2> {
         template <class T, class U, class V, class...> using Result = V;
+        template <class T, class U, class V, class... Ts> static V GetDeferResult();
+        template <class... Ts> using DeferResult = decltype(GetDeferResult<Ts...>());
     };
     template <> struct GetTupleElement<3> {
         template <class T, class U, class V, class W, class...> using Result = W;
+        template <class T, class U, class V, class W, class... Ts> static W GetDeferResult();
+        template <class... Ts> using DeferResult = decltype(GetDeferResult<Ts...>());
     };
 
     template <usize N, class... Types>
@@ -57,15 +68,15 @@ namespace Quasi {
     }
 #pragma endregion
 
-    template <usize, class... T> struct TupleLeaf { T leaf; };
+    template <usize, class T> struct TupleLeaf { T leaf; };
 
     template <usize N, class T, class... Ts> struct TupleImpl : TupleLeaf<N, T>, TupleImpl<N + 1, Ts...> {
         TupleImpl() = default;
-        TupleImpl(T first, Ts... args) : TupleLeaf<N, T>(std::move(first)), TupleImpl<N + 1, Ts...>(std::move(args)...) {}
+        TupleImpl(T first, Ts... args) : TupleLeaf<N, T>((T&&)first), TupleImpl<N + 1, Ts...>((Ts&&)args...) {}
     };
     template <usize N, class T> struct TupleImpl<N, T> : TupleLeaf<N, T> {
         TupleImpl() = default;
-        TupleImpl(T first) : TupleLeaf<N, T>(std::move(first)) {}
+        TupleImpl(T first) : TupleLeaf<N, T>((T&&)first) {}
     };
 
     template <class... Ts> struct Tuple : TupleImpl<0, Ts...> {
@@ -73,11 +84,11 @@ namespace Quasi {
 
         template <usize N>
         const TupleElement<N, Ts...>& Get() const {
-            return static_cast<const TupleLeaf<N, TupleElement<N, Ts...>>*>(this)->node;
+            return static_cast<const TupleLeaf<N, TupleElement<N, Ts...>>*>(this)->leaf;
         }
         template <usize N>
         TupleElement<N, Ts...>& Get() {
-            return static_cast<TupleLeaf<N, TupleElement<N, Ts...>>*>(this)->node;
+            return static_cast<TupleLeaf<N, TupleElement<N, Ts...>>*>(this)->leaf;
         }
 
         // structured binding support
@@ -98,27 +109,29 @@ namespace Quasi {
                 ((outs = std::move(Get<Is>())), ...);
             }(IntRangeSeq<sizeof...(Ts)> {});
         }
+
+        Hashing::Hash GetHashCode() const {
+            Hashing::Hash h {};
+            [&]<usize... Is>(IntSeq<Is...>) {
+                ((h = Hashing::HashCombine(h, HashObject(Get<Is>()))), ...);
+            }(IntRangeSeq<sizeof...(Ts)> {});
+            return h;
+        }
+    };
+
+    template <> struct Tuple<> {
+        template <usize> void Get() const = delete;
+        template <usize> void get() const = delete;
+        void operator[](auto) const = delete;
+        Hashing::Hash GetHashCode() const { return Hashing::EmptyHash(); }
     };
 
     template <class... Ts>
     Tuple(Ts...) -> Tuple<Ts...>;
 }
 
-namespace Quasi::Hashing {
-    enum Hash : usize;
-
-    template <class... Ts>
-    struct Hasher<Tuple<Ts...>> {
-        Hash operator()(const Tuple<Ts...>& tup) const {
-            Hash h {};
-            [&]<usize... Is>(IntSeq<Is...>) {
-                ((h = HashCombine(h, HashObject(tup.template Get<Is>()))), ...);
-            }(IntRangeSeq<sizeof...(Ts)> {});
-            return h;
-        }
-    };
-}
-
 // structured binding support
 template <class... Ts>
 struct std::tuple_size<Quasi::Tuple<Ts...>> { static constexpr Quasi::usize value = sizeof...(Ts); };
+template <Quasi::usize N, class... Ts>
+struct std::tuple_element<N, Quasi::Tuple<Ts...>> { using type = Quasi::TupleElement<N, Ts...>; };

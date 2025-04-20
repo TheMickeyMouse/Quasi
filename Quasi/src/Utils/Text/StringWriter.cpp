@@ -3,10 +3,11 @@
 #include <cstdio>
 
 #include "Utils/String.h"
+#include "Utils/Text.h"
 
 namespace Quasi::Text {
     StringWriter StringWriter::WriteTo(String& string) {
-        return { Qfn$(string.AppendStr) };
+        return { FuncRefs::FromRaw(&string, StringWriteCallback) };
     }
 
     StringWriter StringWriter::WriteToFile(std::FILE* file) {
@@ -17,8 +18,16 @@ namespace Quasi::Text {
         return WriteToFile(stdout);
     }
 
-    void StringWriter::FileWriteCallback(std::FILE* file, Str str) {
-        std::fwrite(str.Data(), 1, str.Length(), file);
+    StringWriter StringWriter::WriteToError() {
+        return WriteToFile(stderr);
+    }
+
+    void StringWriter::StringWriteCallback(void* s, Str str) {
+        ((String*)s)->AppendStr(str);
+    }
+
+    void StringWriter::FileWriteCallback(void* file, Str str) {
+        std::fwrite(str.Data(), 1, str.Length(), (std::FILE*)file);
     }
 
     usize StringWriter::Write(Str str) {
@@ -39,5 +48,9 @@ namespace Quasi::Text {
         }
         Write(rep8.Substr(0, n));
         return n;
+    }
+
+    usize StringWriter::SetColor(ConsoleColor col) {
+        return Text::FormatObjectTo(*this, col, Str::Empty());
     }
 }

@@ -1,20 +1,17 @@
 ﻿#include "Shader.h"
 
 #include <glp.h>
-#include "Graphics/Utils/Textures/Texture.h"
+#include "Texture.h"
 #include "Utils/Text.h"
 #include "GLDebug.h"
+#include "Utils/Iter/LinesIter.h"
 
 namespace Quasi::Graphics {
     Shader::Shader(GraphicsID id) : GLObject(id) {}
 
     Shader Shader::New(Str program) {
-        const ShaderProgramSource shadersrc = ParseShader(program);
-        const GraphicsID rendererID = CreateShader(
-            shadersrc.GetShader(ShaderType::VERTEX),
-            shadersrc.GetShader(ShaderType::FRAGMENT),
-            shadersrc.GetShader(ShaderType::GEOMETRY)
-        );
+        const auto [vtx, frg, geo] = ParseShader(program);
+        const GraphicsID rendererID = CreateShader(vtx, frg, geo);
         return Shader { rendererID };
     }
 
@@ -35,10 +32,9 @@ namespace Quasi::Graphics {
         QGLCall$(GL::UseProgram(0));
     }
 
-    int Shader::GetUniformLocation(Str name) {
-        const auto it = uniformCache.find(name);
-        if (it != uniformCache.end())
-            return it->second;
+    int Shader::GetUniformLocation(CStr name) {
+        if (const auto cachedLoc = uniformCache.Get(name))
+            return *cachedLoc;
 
         const int location = QGLCall$(GL::GetUniformLocation(rendererID, name.Data()));
         GLLogger().Assert(location != -1, "invalid uniform location for '{}'", name);
@@ -46,79 +42,133 @@ namespace Quasi::Graphics {
         return location;
     }
 
-    void Shader::SetUniformDyn(const ShaderParameter& arg) {
+    void Shader::SetUniformDyn(CStr name, ShaderUniformType type, Bytes data) {
         using enum ShaderUniformType;
-        const int loc = GetUniformLocation(arg.name);
-        #define SWITCH_STATE(I) case UNIF_##I: SetUniformAtLoc<UNIF_##I>(loc, arg.value.as<ShaderUniformArgOf<UNIF_##I>>()); break;
-        switch (arg.value.type) {
-            SWITCH_STATE(1I)      SWITCH_STATE(2I)      SWITCH_STATE(3I)      SWITCH_STATE(4I)
-            SWITCH_STATE(1UI)     SWITCH_STATE(2UI)     SWITCH_STATE(3UI)     SWITCH_STATE(4UI)
-            SWITCH_STATE(1F)      SWITCH_STATE(2F)      SWITCH_STATE(3F)      SWITCH_STATE(4F)
-            SWITCH_STATE(1I_ARR)  SWITCH_STATE(2I_ARR)  SWITCH_STATE(3I_ARR)  SWITCH_STATE(4I_ARR)
-            SWITCH_STATE(1UI_ARR) SWITCH_STATE(2UI_ARR) SWITCH_STATE(3UI_ARR) SWITCH_STATE(4UI_ARR)
-            SWITCH_STATE(1F_ARR)  SWITCH_STATE(2F_ARR)  SWITCH_STATE(3F_ARR)  SWITCH_STATE(4F_ARR)
-            SWITCH_STATE(MAT2x2)  SWITCH_STATE(MAT2x3)  SWITCH_STATE(MAT2x4)
-            SWITCH_STATE(MAT3x2)  SWITCH_STATE(MAT3x3)  SWITCH_STATE(MAT3x4)
-            SWITCH_STATE(MAT4x2)  SWITCH_STATE(MAT4x3)  SWITCH_STATE(MAT4x4)
-            default:;
+        switch (type) {
+            case F_UNIT:    return SetUniformFloat(name, data.ReadFirst<float>());
+            case FV2:       return SetUniformFv2  (name, data.ReadFirst<Math::fVector2>());
+            case FV3:       return SetUniformFv3  (name, data.ReadFirst<Math::fVector3>());
+            case FV4:       return SetUniformFv4  (name, data.ReadFirst<Math::fVector4>());
+            case F_ARRAY:   return SetUniformFloatArr(name, data.Transmute<float>());
+            case FV2_ARRAY: return SetUniformFv2Arr  (name, data.Transmute<Math::fVector2>());
+            case FV3_ARRAY: return SetUniformFv3Arr  (name, data.Transmute<Math::fVector3>());
+            case FV4_ARRAY: return SetUniformFv4Arr  (name, data.Transmute<Math::fVector4>());
+            case I_UNIT:    return SetUniformInt   (name, data.ReadFirst<int>());
+            case IV2:       return SetUniformIv2   (name, data.ReadFirst<Math::iVector2>());
+            case IV3:       return SetUniformIv3   (name, data.ReadFirst<Math::iVector3>());
+            case IV4:       return SetUniformIv4   (name, data.ReadFirst<Math::iVector4>());
+            case I_ARRAY:   return SetUniformIntArr(name, data.Transmute<int>());
+            case IV2_ARRAY: return SetUniformIv2Arr(name, data.Transmute<Math::iVector2>());
+            case IV3_ARRAY: return SetUniformIv3Arr(name, data.Transmute<Math::iVector3>());
+            case IV4_ARRAY: return SetUniformIv4Arr(name, data.Transmute<Math::iVector4>());
+            case U_UNIT:    return SetUniformUint(name, data.ReadFirst<uint>());
+            case UV2:       return SetUniformUv2 (name, data.ReadFirst<Math::uVector2>());
+            case UV3:       return SetUniformUv3 (name, data.ReadFirst<Math::uVector3>());
+            case UV4:       return SetUniformUv4 (name, data.ReadFirst<Math::uVector4>());
+            case U_ARRAY:   return SetUniformUintArr(name, data.Transmute<uint>());
+            case UV2_ARRAY: return SetUniformUv2Arr (name, data.Transmute<Math::uVector2>());
+            case UV3_ARRAY: return SetUniformUv3Arr (name, data.Transmute<Math::uVector3>());
+            case UV4_ARRAY: return SetUniformUv4Arr (name, data.Transmute<Math::uVector4>());
+            case FMAT_2X2:  return SetUniformMat2x2Arr(name, data.Transmute<Math::Matrix2x2>());
+            case FMAT_2X3:  return SetUniformMat2x3Arr(name, data.Transmute<Math::Matrix2x3>());
+            case FMAT_2X4:  return SetUniformMat2x4Arr(name, data.Transmute<Math::Matrix2x4>());
+            case FMAT_3X2:  return SetUniformMat3x2Arr(name, data.Transmute<Math::Matrix3x2>());
+            case FMAT_3X3:  return SetUniformMat3x3Arr(name, data.Transmute<Math::Matrix3x3>());
+            case FMAT_3X4:  return SetUniformMat3x4Arr(name, data.Transmute<Math::Matrix3x4>());
+            case FMAT_4X2:  return SetUniformMat4x2Arr(name, data.Transmute<Math::Matrix4x2>());
+            case FMAT_4X3:  return SetUniformMat4x3Arr(name, data.Transmute<Math::Matrix4x3>());
+            case FMAT_4X4:  return SetUniformMat4x4Arr(name, data.Transmute<Math::Matrix4x4>());
         }
     }
 
     void Shader::SetUniformArgs(const ShaderArgs& args) {
-        for (const auto arg : args) {
-            SetUniformDyn(arg);
-        }
-    }
-
-    ShaderProgramSource Shader::ParseShader(Str program) {
-        usize lastLine = 0;
-        Math::zRange ssv, ssf, ssg, *ss = nullptr;
-        for (usize i = 0; i < program.Length(); ++i) {
-            if (program[i] != '\n') continue;
-            Str line = program.Substr(lastLine, i - lastLine);
-            lastLine = i + 1;
-
-            if (line.StartsWith("#shader")) {
-                if (ss) ss->max = program.Unaddress(line.Data());
-
-                line.Advance(8);
-
-                if (line.StartsWith("vertex"))
-                    ss = &ssv;
-                else if (line.StartsWith("fragment"))
-                    ss = &ssf;
-                else if (line.StartsWith("geometry"))
-                    ss = &ssg;
-
-                if (ss) ss->min = i + 1;
+        Bytes argBytes = args.rawBytes;
+        while (argBytes) {
+            const ShaderUniformType type = (ShaderUniformType)argBytes.TakeFirst();
+            Bytes bytes;
+            if (IsArrayUnif(type) || IsMatrixUnif(type)) {
+                const usize byteCount = argBytes.Read<usize>();
+                bytes = Bytes::Slice(argBytes.Read<const byte*>(), byteCount);
+            } else {
+                bytes = argBytes.TakeFirst(4 * sizeof(u32));
             }
+            const CStr uname = (const char*)argBytes.Data();
+            SetUniformDyn(uname, type, bytes);
+            argBytes.Advance(uname.LengthWithNull());
         }
-        if (ss) ss->max = program.Length();
+    }
 
-        String concatedProgram = String::WithCap(ssv.width() + ssf.width() + ssg.width());
-        concatedProgram += program.Substr(ssv.min, ssv.width());
-        concatedProgram += program.Substr(ssv.min, ssv.width());
-        concatedProgram += program.Substr(ssv.min, ssv.width());
+    void Shader::SetUniformFloat(CStr name, float x)                 { GL::Uniform1f(GetUniformLocation(name), x); }
+    void Shader::SetUniformFv2(CStr name, const Math::fVector2& v2s) { GL::Uniform2f(GetUniformLocation(name), v2s.x, v2s.y); }
+    void Shader::SetUniformFv3(CStr name, const Math::fVector3& v3s) { GL::Uniform3f(GetUniformLocation(name), v3s.x, v3s.y, v3s.z); }
+    void Shader::SetUniformFv4(CStr name, const Math::fVector4& v4s) { GL::Uniform4f(GetUniformLocation(name), v4s.x, v4s.y, v4s.z, v4s.w); }
+    void Shader::SetUniformFloatArr(CStr name, Span<const float> xs) { GL::Uniform1fv(GetUniformLocation(name), xs.Length(), xs.Data()); }
+    void Shader::SetUniformFv2Arr(CStr name, Span<const Math::fVector2> v2s) { GL::Uniform2fv(GetUniformLocation(name), v2s.Length(), (const float*)v2s.Data()); }
+    void Shader::SetUniformFv3Arr(CStr name, Span<const Math::fVector3> v3s) { GL::Uniform3fv(GetUniformLocation(name), v3s.Length(), (const float*)v3s.Data()); }
+    void Shader::SetUniformFv4Arr(CStr name, Span<const Math::fVector4> v4s) { GL::Uniform4fv(GetUniformLocation(name), v4s.Length(), (const float*)v4s.Data()); }
+    void Shader::SetUniformInt(CStr name, int x)                     { GL::Uniform1i(GetUniformLocation(name), x); }
+    void Shader::SetUniformIv2(CStr name, const Math::iVector2& v2s) { GL::Uniform2i(GetUniformLocation(name), v2s.x, v2s.y); }
+    void Shader::SetUniformIv3(CStr name, const Math::iVector3& v3s) { GL::Uniform3i(GetUniformLocation(name), v3s.x, v3s.y, v3s.z); }
+    void Shader::SetUniformIv4(CStr name, const Math::iVector4& v4s) { GL::Uniform4i(GetUniformLocation(name), v4s.x, v4s.y, v4s.z, v4s.w); }
+    void Shader::SetUniformIntArr(CStr name, Span<const int> xs)     { GL::Uniform1iv(GetUniformLocation(name), xs.Length(), xs.Data()); }
+    void Shader::SetUniformIv2Arr(CStr name, Span<const Math::iVector2> v2s) { GL::Uniform2iv(GetUniformLocation(name), v2s.Length(), (const int*)v2s.Data()); }
+    void Shader::SetUniformIv3Arr(CStr name, Span<const Math::iVector3> v3s) { GL::Uniform3iv(GetUniformLocation(name), v3s.Length(), (const int*)v3s.Data()); }
+    void Shader::SetUniformIv4Arr(CStr name, Span<const Math::iVector4> v4s) { GL::Uniform4iv(GetUniformLocation(name), v4s.Length(), (const int*)v4s.Data()); }
+    void Shader::SetUniformUint(CStr name, uint x)                   { GL::Uniform1ui(GetUniformLocation(name), x); }
+    void Shader::SetUniformUv2(CStr name, const Math::uVector2& v2s) { GL::Uniform2ui(GetUniformLocation(name), v2s.x, v2s.y); }
+    void Shader::SetUniformUv3(CStr name, const Math::uVector3& v3s) { GL::Uniform3ui(GetUniformLocation(name), v3s.x, v3s.y, v3s.z); }
+    void Shader::SetUniformUv4(CStr name, const Math::uVector4& v4s) { GL::Uniform4ui(GetUniformLocation(name), v4s.x, v4s.y, v4s.z, v4s.w); }
+    void Shader::SetUniformUintArr(CStr name, Span<const uint> xs)   { GL::Uniform1uiv(GetUniformLocation(name), xs.Length(), xs.Data()); }
+    void Shader::SetUniformUv2Arr(CStr name, Span<const Math::uVector2> v2s) { GL::Uniform2uiv(GetUniformLocation(name), v2s.Length(), (const uint*)v2s.Data()); }
+    void Shader::SetUniformUv3Arr(CStr name, Span<const Math::uVector3> v3s) { GL::Uniform3uiv(GetUniformLocation(name), v3s.Length(), (const uint*)v3s.Data()); }
+    void Shader::SetUniformUv4Arr(CStr name, Span<const Math::uVector4> v4s) { GL::Uniform4uiv(GetUniformLocation(name), v4s.Length(), (const uint*)v4s.Data()); }
 
-        return {
-            concatedProgram,
-            { ssv.width(), ssv.width() + ssf.width() }
+    void Shader::SetUniformColor(CStr name, const Math::fColor3& color3) { GL::Uniform3f(GetUniformLocation(name), color3.r, color3.g, color3.b); }
+    void Shader::SetUniformColor(CStr name, const Math::fColor&  color)  { GL::Uniform4f(GetUniformLocation(name), color.r, color.g, color.b, color.a); }
+    void Shader::SetUniformTex(CStr name, const class Texture& texture)  { GL::Uniform1i(GetUniformLocation(name), texture.Slot()); }
+    
+    void Shader::SetUniformMat2x2Arr(CStr name, Span<const Math::Matrix2x2> mats) { GL::UniformMatrix2fv  (GetUniformLocation(name), mats.Length(), false, (const float*)mats.Data()); }
+    void Shader::SetUniformMat2x3Arr(CStr name, Span<const Math::Matrix2x3> mats) { GL::UniformMatrix2x3fv(GetUniformLocation(name), mats.Length(), false, (const float*)mats.Data()); }
+    void Shader::SetUniformMat2x4Arr(CStr name, Span<const Math::Matrix2x4> mats) { GL::UniformMatrix2x4fv(GetUniformLocation(name), mats.Length(), false, (const float*)mats.Data()); }
+    void Shader::SetUniformMat3x2Arr(CStr name, Span<const Math::Matrix3x2> mats) { GL::UniformMatrix3x2fv(GetUniformLocation(name), mats.Length(), false, (const float*)mats.Data()); }
+    void Shader::SetUniformMat3x3Arr(CStr name, Span<const Math::Matrix3x3> mats) { GL::UniformMatrix3fv  (GetUniformLocation(name), mats.Length(), false, (const float*)mats.Data()); }
+    void Shader::SetUniformMat3x4Arr(CStr name, Span<const Math::Matrix3x4> mats) { GL::UniformMatrix3x4fv(GetUniformLocation(name), mats.Length(), false, (const float*)mats.Data()); }
+    void Shader::SetUniformMat4x2Arr(CStr name, Span<const Math::Matrix4x2> mats) { GL::UniformMatrix4x2fv(GetUniformLocation(name), mats.Length(), false, (const float*)mats.Data()); }
+    void Shader::SetUniformMat4x3Arr(CStr name, Span<const Math::Matrix4x3> mats) { GL::UniformMatrix4x3fv(GetUniformLocation(name), mats.Length(), false, (const float*)mats.Data()); }
+    void Shader::SetUniformMat4x4Arr(CStr name, Span<const Math::Matrix4x4> mats) { GL::UniformMatrix4fv  (GetUniformLocation(name), mats.Length(), false, (const float*)mats.Data()); }
+
+    Tuple<Str, Str, Str> Shader::ParseShader(Str program) {
+        Str sources[3];
+        Str* current = nullptr;
+        for (Str line : program.Lines()) {
+            if (!line.StartsWith("#shader")) continue;
+
+            if (current) {
+                current->TakeAfter(current->Unaddress(line.Data()));
+            }
+
+            line.Advance(8);
+            if (line.StartsWith("vertex"))
+                current = &sources[0];
+            else if (line.StartsWith("fragment"))
+                current = &sources[1];
+            else if (line.StartsWith("geometry"))
+                current = &sources[2];
+            else current = nullptr;
+
+            if (current) {
+                *current = Str::Slice(line.DataEnd() + 1, program.DataEnd() - line.DataEnd() - 1);
+            }
         };
-    }
 
-
-    ShaderProgramSource Shader::ParseFromFile(CStr filepath) {
-        return ParseShader(Text::ReadFile(filepath).Assert());
-    }
-
-    void Shader::SetUniformTex(Str name, const Texture& texture) {
-        SetUniformInt(name, texture.Slot());
+        return { sources[0], sources[1], sources[2] };
     }
 
     Shader Shader::FromFile(CStr filepath) {
         Shader s {};
-        const ShaderProgramSource shadersrc = ParseFromFile(filepath);
-        s.rendererID = CreateShader(shadersrc.GetShader(ShaderType::VERTEX), shadersrc.GetShader(ShaderType::FRAGMENT), shadersrc.GetShader(ShaderType::GEOMETRY));
+        const String file = Text::ReadFile(filepath).Assert();
+        const auto [vtx, frg, geo] = ParseShader(file);
+        s.rendererID = CreateShader(vtx, frg, geo);
         return s;
     }
 
@@ -147,7 +197,7 @@ namespace Quasi::Graphics {
             GL::GetShaderiv(id, GL::INFO_LOG_LENGTH, &len);
             char* errbuf = Memory::QAlloca$(char, len);
             GL::GetShaderInfoLog(id, len, &len, errbuf);
-            GLLogger().Error("Compiling {} shader yielded compiler errors:\n{}", type->shaderName, errbuf);
+            GLLogger().QError$("Compiling {} shader yielded compiler errors:\n{}", type->shaderName, errbuf);
 
             GL::DeleteShader(id);
             return 0;
@@ -162,58 +212,48 @@ namespace Quasi::Graphics {
         const GraphicsID fs = CompileShaderFrag(frg);
         const GraphicsID gm = geo.IsEmpty() ? 0 : CompileShaderGeom(geo);
 
-                QGLCall$(GL::AttachShader(program, vs));
-                QGLCall$(GL::AttachShader(program, fs));
+        QGLCall$(GL::AttachShader(program, vs));
+        QGLCall$(GL::AttachShader(program, fs));
         if (gm) QGLCall$(GL::AttachShader(program, gm));
 
         QGLCall$(GL::LinkProgram(program));
         QGLCall$(GL::ValidateProgram(program));
         
-                QGLCall$(GL::DeleteShader(vs));
-                QGLCall$(GL::DeleteShader(fs));
+        QGLCall$(GL::DeleteShader(vs));
+        QGLCall$(GL::DeleteShader(fs));
         if (gm) QGLCall$(GL::DeleteShader(fs));
 
         return program;
     }
 
-    ShaderArgs::ShaderArgs(IList<ShaderParameter> p) : params(Vec<ShaderValueVariant>::WithCap(p.size())) {
-        for (const auto param : p) {
-            args.Push(param.name);
-            params.Push(param.value);
+    bool Shader::IsArrayUnif (ShaderUniformType type) { return (u32)type & 0x40; }
+    bool Shader::IsMatrixUnif(ShaderUniformType type) { return (u32)type & 0x0C; }
+
+    ShaderParameter::ShaderParameter(Str name, const Math::fColor3& color3) : ShaderParameter(name, color3.as_rgbf()) {}
+    ShaderParameter::ShaderParameter(Str name, const Math::fColor&  color)  : ShaderParameter(name, color.as_rgbaf()) {}
+    ShaderParameter::ShaderParameter(Str name, Span<const Math::fColor3> color3s) : ShaderParameter(name, FV3_ARRAY, color3s.AsBytes()) {}
+    ShaderParameter::ShaderParameter(Str name, Span<const Math::fColor>  colors)  : ShaderParameter(name, FV4_ARRAY, colors.AsBytes()) {}
+    ShaderParameter::ShaderParameter(Str name, const Texture&       tex)    : ShaderParameter(name, tex.Slot()) {}
+
+    ShaderArgs::ShaderArgs(IList<ShaderParameter> p) {
+        for (const auto& param : p) {
+            Then(param);
         }
     }
 
-    ShaderValueVariant::ShaderValueVariant(const Texture& tex) : ShaderValueVariant(tex.Slot()) {}
-
-#define DEFINE_UNIF_FN(IN, S, ...) \
-    template <>\
-    void Shader::SetUniformAtLoc<ShaderUniformType::UNIF_##IN>(int uniformLoc, ShaderUniformArgOf<ShaderUniformType::UNIF_##IN> val) { \
-        QGLCall$(GL::Uniform##S(uniformLoc, __VA_ARGS__)); \
+    ShaderArgs& ShaderArgs::Then(const ShaderParameter& val) {
+        rawBytes.Push((u8)val.utype);
+        if (Shader::IsArrayUnif(val.utype) || Shader::IsMatrixUnif(val.utype)) {
+            Bytes pay = val.payload.As<Bytes>();
+            const usize len = pay.Length();
+            const byte* dat = pay.Data();
+            rawBytes.Extend(Bytes::BytesOf(len));
+            rawBytes.Extend(Bytes::BytesOf(dat));
+        } else {
+            rawBytes.Extend(Bytes::BytesOf(val.payload.As<Array<u32, 4>>()));
+        }
+        rawBytes.Extend(val.name.AsBytes());
+        rawBytes.Push('\0');
+        return *this;
     }
-
-    DEFINE_UNIF_FN(1I,  1i,  val) DEFINE_UNIF_FN(2I,  2i,  val.x, val.y) DEFINE_UNIF_FN(3I,  3i,  val.x, val.y, val.z) DEFINE_UNIF_FN(4I,  4i,  val.x, val.y, val.z, val.w)
-    DEFINE_UNIF_FN(1UI, 1ui, val) DEFINE_UNIF_FN(2UI, 2ui, val.x, val.y) DEFINE_UNIF_FN(3UI, 3ui, val.x, val.y, val.z) DEFINE_UNIF_FN(4UI, 4ui, val.x, val.y, val.z, val.w)
-    DEFINE_UNIF_FN(1F,  1f,  val) DEFINE_UNIF_FN(2F,  2f,  val.x, val.y) DEFINE_UNIF_FN(3F,  3f,  val.x, val.y, val.z) DEFINE_UNIF_FN(4F,  4f,  val.x, val.y, val.z, val.w)
-    DEFINE_UNIF_FN(1I_ARR,  1iv,  (int)val.Length(), val.Data())
-    DEFINE_UNIF_FN(2I_ARR,  2iv,  (int)val.Length(), Memory::TransmutePtr<const int>(val.Data()))
-    DEFINE_UNIF_FN(3I_ARR,  3iv,  (int)val.Length(), Memory::TransmutePtr<const int>(val.Data()))
-    DEFINE_UNIF_FN(4I_ARR,  4iv,  (int)val.Length(), Memory::TransmutePtr<const int>(val.Data()))
-    DEFINE_UNIF_FN(1UI_ARR, 1uiv, (int)val.Length(), val.Data())
-    DEFINE_UNIF_FN(2UI_ARR, 2uiv, (int)val.Length(), Memory::TransmutePtr<const uint> (val.Data()))
-    DEFINE_UNIF_FN(3UI_ARR, 3uiv, (int)val.Length(), Memory::TransmutePtr<const uint> (val.Data()))
-    DEFINE_UNIF_FN(4UI_ARR, 4uiv, (int)val.Length(), Memory::TransmutePtr<const uint> (val.Data()))
-    DEFINE_UNIF_FN(1F_ARR,  1fv,  (int)val.Length(), val.Data())
-    DEFINE_UNIF_FN(2F_ARR,  2fv,  (int)val.Length(), Memory::TransmutePtr<const float>(val.Data()))
-    DEFINE_UNIF_FN(3F_ARR,  3fv,  (int)val.Length(), Memory::TransmutePtr<const float>(val.Data()))
-    DEFINE_UNIF_FN(4F_ARR,  4fv,  (int)val.Length(), Memory::TransmutePtr<const float>(val.Data()))
-
-    DEFINE_UNIF_FN(MAT2x2, Matrix2fv,   (int)val.Length(), false, (const float*)val.Data())
-    DEFINE_UNIF_FN(MAT2x3, Matrix2x3fv, (int)val.Length(), false, (const float*)val.Data())
-    DEFINE_UNIF_FN(MAT2x4, Matrix2x4fv, (int)val.Length(), false, (const float*)val.Data())
-    DEFINE_UNIF_FN(MAT3x2, Matrix3x2fv, (int)val.Length(), false, (const float*)val.Data())
-    DEFINE_UNIF_FN(MAT3x3, Matrix3fv,   (int)val.Length(), false, (const float*)val.Data())
-    DEFINE_UNIF_FN(MAT3x4, Matrix3x4fv, (int)val.Length(), false, (const float*)val.Data())
-    DEFINE_UNIF_FN(MAT4x2, Matrix4x2fv, (int)val.Length(), false, (const float*)val.Data())
-    DEFINE_UNIF_FN(MAT4x3, Matrix4x3fv, (int)val.Length(), false, (const float*)val.Data())
-    DEFINE_UNIF_FN(MAT4x4, Matrix4fv,   (int)val.Length(), false, (const float*)val.Data())
 }

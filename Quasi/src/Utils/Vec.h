@@ -67,7 +67,7 @@ namespace Quasi {
 
         usize Capacity()   const { return capacity; }
         bool IsEmpty()     const { return size == 0; }
-        operator bool()    const { return !IsEmpty(); }
+        explicit operator bool() const { return !IsEmpty(); }
     private:
         void ReserveNext() { AllocToNew(Vecs::GrowCap(capacity)); }
         void MoveBuffer(T* buffer) {

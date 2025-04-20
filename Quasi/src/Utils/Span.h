@@ -32,13 +32,13 @@ namespace Quasi {
 
         template <usize N> static Span FromArray(T (&arr) [N]) { return { arr, N }; }
         static Span Slice(T* dat, usize len) { return { dat, len }; }
-        static Span Single(T& obj) { return { &obj, 1 }; }
+        static Span Only(T& obj) { return { &obj, 1 }; }
         static Span Empty() { return {}; }
 
         template <IsMut U> requires SameAs<T, byte>
-        static Span BytesOf(U& memRead)       { return { Memory::DowncastPtr(&memRead), sizeof(U) }; }
+        static Span BytesOf(U& memRead)       { return { (byte*)&memRead, sizeof(U) }; }
         template <class U> requires SameAs<T, const byte>
-        static Span BytesOf(const U& memRead) { return { Memory::DowncastPtr(&memRead), sizeof(U) }; }
+        static Span BytesOf(const U& memRead) { return { (const byte*)&memRead, sizeof(U) }; }
 
         Str              AsStr() const requires SameAs<const T, const char>;
         StrMut           AsStrMut() requires SameAs<T, char>;
@@ -60,7 +60,7 @@ namespace Quasi {
 
         usize ByteSize()   const { return size * sizeof(T); }
         bool IsEmpty()     const { return size == 0; }
-        operator bool()    const { return !IsEmpty(); }
+        explicit operator bool() const { return !IsEmpty(); }
 
         MutT& FirstMut() mut   { return data[0]; }
         MutT& LastMut()  mut   { return data[size - 1]; }
@@ -140,7 +140,7 @@ namespace Quasi {
         //
         // ChunkByIter           ChunkBy(Fn<bool, T&, T&> pred)
         Iter::SplitIter<Span> Split(const T& sep) const {
-            return Iter::SplitIter<Span>::New(*this, Single(sep));
+            return Iter::SplitIter<Span>::New(*this, Only(sep));
         }
         Iter::SplitIter<Span> Split(Span<const T> sep) const {
             return Iter::SplitIter<Span>::New(*this, sep);
@@ -153,7 +153,7 @@ namespace Quasi {
         // SplitAtmostIfIter     SplitIfAtmost(usize maxLen, Fn<bool, T&, T&> pred)
         // RevSplitAtmostIfIter  RevSplitIfAtmost(usize maxLen, Fn<bool, T&, T&> pred)
 
-        Span& Advance(usize num)    { data += num;    return *this; }
+        Span& Advance(usize num)    { data += num; size -= num; return *this; }
         Span& Shorten(usize amount) { size -= amount; return *this; }
         Span<MutT> TakeFirstMut(usize num) { Span<MutT> first    = FirstMut(num); data += num; size -= num; return first; }
         Span<MutT> TakeLastMut(usize num)  { Span<MutT> last     = LastMut(num);  size -= num;              return last; }
@@ -227,10 +227,10 @@ namespace Quasi {
         OptionUsize RevFindIf(Predicate<T> auto&& pred) const {
             for (usize i = size; i --> 0; )  if (pred(data[i])) return i; return nullptr;
         }
-        bool Contains     (const T& target) const { return Find(target); }
-        bool RevContains  (const T& target) const { return RevFind(target); }
-        bool ContainsIf   (Predicate<T> auto&& pred) const { return FindIf(pred); }
-        bool RevContainsIf(Predicate<T> auto&& pred) const { return RevFindIf(pred); }
+        bool Contains     (const T& target) const { return Find(target).HasValue(); }
+        bool RevContains  (const T& target) const { return RevFind(target).HasValue(); }
+        bool ContainsIf   (Predicate<T> auto&& pred) const { return FindIf(pred).HasValue(); }
+        bool RevContainsIf(Predicate<T> auto&& pred) const { return RevFindIf(pred).HasValue(); }
         OptionUsize Find   (Span<const T> target) const {
             for (usize i = 0; i <= size - target.size; ++i)
                 if (Subspan(i, target.size) == target) return i;
@@ -241,8 +241,8 @@ namespace Quasi {
                 if (Subspan(i, target.size) == target) return i;
             return nullptr;
         }
-        bool  Contains   (Span<const T> target) const { return Find   (target); }
-        bool  RevContains(Span<const T> target) const { return RevFind(target); }
+        bool  Contains   (Span<const T> target) const { return Find   (target).HasValue(); }
+        bool  RevContains(Span<const T> target) const { return RevFind(target).HasValue(); }
         Tuple<OptionUsize, OptionUsize> FindOneOf   (Span<const T> anytarget) const {
             for (usize i = 0; i < size; ++i)
                 if (OptionUsize j = anytarget.Find(data[i])) return { i, j };
@@ -318,7 +318,7 @@ namespace Quasi {
             const usize i = SortedPartitionPointBy(idx, cmp);
             return PartitionAt(i);
         }
-        Tuple<Span, Ref<T>, Span> SortedPartitionByKey(usize idx, FnArgs<const T&> auto&& keyf) mut;
+        Tuple<Span, T&, Span> SortedPartitionByKey(usize idx, FnArgs<const T&> auto&& keyf) mut;
 
         usize PartitionDupPoint() mut { return PartitionDupPointBy(Cmp::Equality {}); }
         usize PartitionDupPointBy(EqualPred<T> auto&& eq) mut;
@@ -364,7 +364,13 @@ namespace Quasi {
         // Vec<ConcatResult<T>> Concat() const requires CanConcat<T>;
         // Vec<ConcatResult<T>> Join(const auto& sep) const requires CanConcat<T> && CanConcat<T, decltype(sep)>;
 
-        Hashing::Hash GetHashCode() const;
+        Hashing::Hash GetHashCode() const {
+            usize seed = LengthImpl();
+            for (const T& value : *this) {
+                seed ^= HashObject(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            }
+            return Hashing::AsHash(seed);
+        }
 
         template <class U>
         Tuple<Span, Span<AddConstIf<U, T>>, Span> TransmuteAligned() const requires SameAs<const T, const byte> {
@@ -379,6 +385,10 @@ namespace Quasi {
 
         template <class U> requires (sizeof(T) % sizeof(U) == 0) || (sizeof(U) % sizeof(T) == 0)
         Span<AddConstIf<U, T>> Transmute() const { return { Memory::TransmutePtr<AddConstIf<U, T>>(data), size * sizeof(T) / sizeof(U) }; }
+        template <class U> requires (sizeof(U) % sizeof(T) == 0)
+        AddConstIf<U, T>& ReadFirst() const { return *Memory::TransmutePtr<AddConstIf<U, T>>(data); }
+        template <class U> requires (sizeof(U) % sizeof(T) == 0)
+        AddConstIf<U, T>& Read() { auto& x = *Memory::TransmutePtr<AddConstIf<U, T>>(data); data += sizeof(U) / sizeof(T); size -= sizeof(U) / sizeof(T); return x; }
 
         Span<MutT>      AsMut()   const { return { Memory::AsMutPtr(data),   size }; }
         Span<const T>   AsConst() const { return { Memory::AsConstPtr(data), size }; }
@@ -393,6 +403,8 @@ namespace Quasi {
     using BytesMut = Span<byte>;
 
     namespace Spans {
+        template <class T>
+        Span<T> Only(T& unit) { return Span<T>::Only(unit); }
         template <class T>
         Span<T> Slice(T* data, usize size) { return Span<T>::Slice(data, size); }
         template <class T>
@@ -429,8 +441,8 @@ namespace Quasi {
     template <class T, class Super>
     Span<byte>       IContinuousCollection<T, Super>::AsBytesMut() mut { return AsSpan().AsBytesMut(); }
 
-    template <class T, class A> Span<const T> Box<T, A>::AsSpan() const { return data ? Span<const T>::Single(*data) : nullptr; }
-    template <class T, class A> Span<T>       Box<T, A>::AsSpanMut()    { return data ? Span<T>::Single(*data)       : nullptr; }
+    template <class T, class A> Span<const T> Box<T, A>::AsSpan() const { return data ? Span<const T>::Only(*data) : nullptr; }
+    template <class T, class A> Span<T>       Box<T, A>::AsSpanMut()    { return data ? Span<T>::Only(*data)       : nullptr; }
 
 #undef mut
 }

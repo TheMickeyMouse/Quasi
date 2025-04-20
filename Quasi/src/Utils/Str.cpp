@@ -3,6 +3,7 @@
 #include "Hash.h"
 #include "Span.h"
 #include "String.h"
+#include "CStr.h"
 #include "Iter/LinesIter.h"
 #include "Iter/SplitIter.h"
 #include "Text/StringWriter.h"
@@ -47,11 +48,11 @@ namespace Quasi {
 
         usize WriteEscape(char c, char* out) {
             if (const auto escVer = EscapeRepr(c)) {
-                Memory::WriteU16('\\' << 8 | *escVer, out);
+                Memory::WriteU16(*escVer << 8 | '\\', out);
                 return 2;
             } else if (!IsPrintable(c)) {
                 static constexpr char hexdig[17] = "0123456789ABCDEF";
-                Memory::WriteU32(R"(\x)"_u32 << 16 | hexdig[c >> 4] << 8 | hexdig[c & 0xF], out);
+                Memory::WriteU32(hexdig[c & 0xF] << 24 | hexdig[c >> 4] << 16 | "x\\"_u32 , out);
                 return 4;
             } else {
                 out[0] = c;
@@ -96,7 +97,6 @@ namespace Quasi {
 
 
         Set::Set(Span<const char> chars) {
-            u64 bitmask[4] {};
             for (const char c : chars) {
                 bitmask[(uchar)c / 64] |= 1 << ((uchar)c & 63);
             }
@@ -112,44 +112,52 @@ namespace Quasi {
 #define strcls StringHolder<Char, Super>
 
     strdef Hashing::Hash strcls::GetHashCode() const {
-        return Hashing::HashBytes(Data(), sizeof(char) * Length());
+        return Hashing::HashBytes(AsBytes());
     }
 
-    strdef BufferIterator<const char&> strcls::Iter()    const        { return { Data(), Length() }; }
-    strdef BufferIterator<char&>       strcls::IterMut() requires mut { return { Data(), Length() }; }
+    strdef BufferIterator<const char&> strcls::Iter()    const        { return { this->Data(), this->DataEnd() }; }
+    strdef BufferIterator<char&>       strcls::IterMut() requires mut { return { this->Data(), this->DataEnd() }; }
 
-    strdef Iter::SplitIter<Super> strcls::Split(Str sep) const { return Iter::SplitIter<Super>::New(AsStr(), sep); }
+    strdef Iter::SplitIter<Str> strcls::Split(Str sep) const { return Iter::SplitIter<Str>::New(AsStr(), sep); }
     strdef Iter::LinesIter strcls::Lines() const { return Iter::LinesIter::New(AsStr()); }
+    strdef usize strcls::CountLines() const { return CountChars('\n'); }
+    strdef usize strcls::CountChars(char c) const {
+        usize zeroCount = 0;
+        for (usize i = 0; i < this->Length(); ++i) {
+            zeroCount += this->Data()[i] == c;
+        }
+        return zeroCount;
+    }
 
-    strdef Str              strcls::AsStr()      const        { return Str   ::Slice(Data(),    Length()); }
-    strdef StrMut           strcls::AsStrMut()   requires mut { return StrMut::Slice(DataMut(), Length()); }
-    strdef Span<const char> strcls::AsSpan()     const        { return Span<const char>::Slice(Data(),    Length()); }
-    strdef Span<char>       strcls::AsSpanMut()  requires mut { return Span<char>      ::Slice(DataMut(), Length()); }
-    strdef Span<const byte> strcls::AsBytes()    const        { return Span<const byte>::Slice((const byte*)Data(), Length()); }
-    strdef Span<byte>       strcls::AsBytesMut() requires mut { return Span<byte>      ::Slice((byte*)DataMut(),    Length()); }
+    strdef Str              strcls::AsStr()      const        { return Str   ::Slice(this->Data(), this->Length()); }
+    strdef StrMut           strcls::AsStrMut()   requires mut { return StrMut::Slice(this->Data(), this->Length()); }
+    strdef Span<const char> strcls::AsSpan()     const        { return Span<const char>::Slice(this->Data(), this->Length()); }
+    strdef Span<char>       strcls::AsSpanMut()  requires mut { return Span<char>      ::Slice(this->Data(), this->Length()); }
+    strdef Span<const byte> strcls::AsBytes()    const        { return Span<const byte>::Slice((const byte*)this->Data(), this->Length()); }
+    strdef Span<byte>       strcls::AsBytesMut() requires mut { return Span<byte>      ::Slice((byte*)this->Data(),       this->Length()); }
     strdef strcls::operator Str()    const        { return AsStr(); }
     strdef strcls::operator StrMut() requires mut { return AsStrMut(); }
 
-    strdef OptRef<char> strcls::TryFirstMut() requires mut { return Length() ? OptRefs::SomeRef(At(0))            : nullptr; }
-    strdef OptRef<char> strcls::TryLastMut()  requires mut { return Length() ? OptRefs::SomeRef(At(Length() - 1)) : nullptr; }
-    strdef OptRef<const char> strcls::TryFirst() const     { return Length() ? OptRefs::SomeRef(At(0))            : nullptr; }
-    strdef OptRef<const char> strcls::TryLast()  const     { return Length() ? OptRefs::SomeRef(At(Length() - 1)) : nullptr; }
+    strdef OptRef<char> strcls::TryFirstMut() requires mut { return this->Length() ? OptRefs::SomeRef(At(0))                  : nullptr; }
+    strdef OptRef<char> strcls::TryLastMut()  requires mut { return this->Length() ? OptRefs::SomeRef(At(this->Length() - 1)) : nullptr; }
+    strdef OptRef<const char> strcls::TryFirst() const     { return this->Length() ? OptRefs::SomeRef(At(0))                  : nullptr; }
+    strdef OptRef<const char> strcls::TryLast()  const     { return this->Length() ? OptRefs::SomeRef(At(this->Length() - 1)) : nullptr; }
 
-    strdef Span<const char> strcls::Subspan   (usize start) const              { return Subspan(start, Length() - start); }
-    strdef Str              strcls::Substr    (usize start) const              { return Substr (start, Length() - start); }
-    strdef Span<const char> strcls::Subspan   (usize start, usize count) const { return Span<const char>::Slice(Data() + start, count); }
-    strdef Str              strcls::Substr    (usize start, usize count) const { return Str             ::Slice     (Data() + start, count); }
-    strdef Span<char>       strcls::SubspanMut(usize start) requires mut { return SubspanMut(start, Length() - start); }
-    strdef StrMut           strcls::SubstrMut (usize start) requires mut { return SubstrMut (start, Length() - start); }
-    strdef Span<char>       strcls::SubspanMut(usize start, usize count) requires mut { return Span<char>::Slice(DataMut() + start, count); }
-    strdef StrMut           strcls::SubstrMut (usize start, usize count) requires mut { return StrMut    ::Slice     (DataMut() + start, count); }
+    strdef Span<const char> strcls::Subspan   (usize start) const              { return Subspan(start, this->Length() - start); }
+    strdef Str              strcls::Substr    (usize start) const              { return Substr (start, this->Length() - start); }
+    strdef Span<const char> strcls::Subspan   (usize start, usize count) const { return Span<const char>::Slice(this->Data() + start, count); }
+    strdef Str              strcls::Substr    (usize start, usize count) const { return Str             ::Slice(this->Data() + start, count); }
+    strdef Span<char>       strcls::SubspanMut(usize start) requires mut { return SubspanMut(start, this->Length() - start); }
+    strdef StrMut           strcls::SubstrMut (usize start) requires mut { return SubstrMut (start, this->Length() - start); }
+    strdef Span<char>       strcls::SubspanMut(usize start, usize count) requires mut { return Span<char>::Slice(this->Data() + start, count); }
+    strdef StrMut           strcls::SubstrMut (usize start, usize count) requires mut { return StrMut    ::Slice(this->Data() + start, count); }
 
     strdef StrMut strcls::FirstMut(usize num) requires mut { return SubstrMut(0, num); }
     strdef StrMut strcls::SkipMut(usize len)  requires mut { return SubstrMut(len); }
     strdef StrMut strcls::TailMut()           requires mut { return SubstrMut(1); }
-    strdef StrMut strcls::LastMut(usize num)  requires mut { return SubstrMut(Length() - num, num); }
-    strdef StrMut strcls::TruncMut(usize len) requires mut { return SubstrMut(0, Length() - len); }
-    strdef StrMut strcls::InitMut()           requires mut { return SubstrMut(Length() - 1); }
+    strdef StrMut strcls::LastMut(usize num)  requires mut { return SubstrMut(this->Length() - num, num); }
+    strdef StrMut strcls::TruncMut(usize len) requires mut { return SubstrMut(0, this->Length() - len); }
+    strdef StrMut strcls::InitMut()           requires mut { return SubstrMut(this->Length() - 1); }
     strdef Tuple<char&,  StrMut>        strcls::SplitFirstMut()          requires mut { return { FirstMut(),   TailMut() }; }
     strdef Tuple<StrMut, char&>         strcls::SplitLastMut()           requires mut { return { InitMut(),    LastMut() }; }
     strdef Tuple<StrMut, StrMut>        strcls::CutAtMut(usize at)       requires mut { return { FirstMut(at), SkipMut(at) }; }
@@ -158,65 +166,67 @@ namespace Quasi {
     strdef Str strcls::First(usize num) const { return Substr(0, num); }
     strdef Str strcls::Skip(usize len)  const { return Substr(len); }
     strdef Str strcls::Tail()           const { return Substr(1); }
-    strdef Str strcls::Last(usize num)  const { return Substr(Length() - num, num); }
-    strdef Str strcls::Trunc(usize len) const { return Substr(0, Length() - len); }
-    strdef Str strcls::Init()           const { return Substr(Length() - 1); }
+    strdef Str strcls::Last(usize num)  const { return Substr(this->Length() - num, num); }
+    strdef Str strcls::Trunc(usize len) const { return Substr(0, this->Length() - len); }
+    strdef Str strcls::Init()           const { return Substr(this->Length() - 1); }
     strdef Tuple<const char&, Str>      strcls::SplitFirst()          const { return { First(),   Tail() }; }
     strdef Tuple<Str, const char&>      strcls::SplitLast()           const { return { Init(),    Last() }; }
     strdef Tuple<Str, Str>              strcls::CutAt(usize at)       const { return { First(at), Skip(at) }; }
     strdef Tuple<Str, Str>              strcls::SplitAt(usize at)     const { return { First(at), Skip(at + 1) }; }
     strdef Tuple<Str, const char&, Str> strcls::PartitionAt(usize at) const { return { First(at), At(at), Skip(at + 1) }; }
 
-    strdef Tuple<Str, Str> strcls::SplitOnce(char c)  const { return SplitAt(Find(c).UnwrapOr(Length())); }
-    strdef Tuple<Str, Str> strcls::SplitOnce(Str sep) const { const usize i = Find(sep); return { First(i), Skip(i + sep.Length()) }; }
+    strdef Tuple<Str, Str> strcls::SplitOnce(char c)  const { return SplitAt(Find(c).UnwrapOr(this->Length())); }
+    strdef Tuple<Str, Str> strcls::SplitOnce(Str sep) const { const OptionUsize i = Find(sep); if (i) return { First(*i), Skip(*i + sep.Length()) }; else return { *this, {} }; }
 
-    strdef bool strcls::RefEquals     (Str other) const { return Data() == other.Data() && Length() == other.Length(); }
-    strdef bool strcls::ContainsBuffer(Str buf)   const { return buf.Data() >= Data() && Data() + Length() >= buf.Data() + buf.Length(); }
+    strdef bool strcls::RefEquals     (Str other) const { return this->Data() == other.Data() && this->Length() == other.Length(); }
+    strdef bool strcls::ContainsBuffer(Str buf)   const { return buf.Data() >= this->Data() && this->DataEnd() >= buf.DataEnd(); }
     strdef bool strcls::OverlapsBuffer(Str buf)   const {
-        const char* end = Data() + Length(), *bufEnd = buf.Data() + buf.Length();
-        return end >= buf.Data() && bufEnd >= Data();
+        const char* end = this->DataEnd(), *bufEnd = buf.DataEnd();
+        return end >= buf.Data() && bufEnd >= this->Data();
     }
 
     strdef bool strcls::Equals(Str other) const {
-        if (Length() != other.Length()) return false;
+        if (this->Length() != other.Length()) return false;
         usize i = 0;
-        for (; i < Length() - 7; i += 8)
-            if (Memory::ReadU64(Data() + i) != Memory::ReadU64(other.Data() + i)) return false;
+        for (; i < (this->Length() & -8); i += 8)
+            if (Memory::ReadU64Native(this->Data() + i) != Memory::ReadU64Native(other.Data() + i)) return false;
 
-        for (usize j = 0; j < Length() & 7; ++j)
-            if (At(i - 8 + j) != other.At(i - 8 + j)) return false;
+        for (; i < this->Length(); ++i)
+            if (At(i) != other.At(i)) return false;
         return true;
     }
 
     strdef bool strcls::EqualsIgnoreCase(Str other) const {
-        if (Length() != other.Length()) return false;
-        for (usize i = 0; i < Length(); ++i)
+        if (this->Length() != other.Length()) return false;
+        for (usize i = 0; i < this->Length(); ++i)
             if (Chr::ToUpper(At(i)) != Chr::ToUpper(other.At(i))) return false;
         return true;
     }
 
     strdef bool strcls::operator==(Str other) const { return Equals(other); }
+    strdef bool strcls::operator==(const String& other) const { return Equals(other); }
+    strdef bool strcls::operator==(const char* other) const { return Equals(other); }
 
     strdef Comparison strcls::Cmp(Str other) const {
         usize i = 0;
-        for (; i < Length(); i += 8) {
-            const auto cmp = Cmp::Between(Memory::ReadU64(Data() + i), Memory::ReadU64(other.Data() + i));
+        for (; i < this->Length(); i += 8) {
+            const auto cmp = Cmp::Between(Memory::ReadU64Native(this->Data() + i), Memory::ReadU64Native(other.Data() + i));
             if (cmp != Cmp::EQUAL) return cmp;
         }
-        for (usize j = 0; j < Length() & 7; ++j) {
+        for (usize j = 0; j < this->Length() & 7; ++j) {
             const auto cmp = Cmp::Between(At(i - 8 + j), other.At(i - 8 + j));
             if (cmp != Cmp::EQUAL) return cmp;
         }
-        return Cmp::Between(Length(), other.Length());
+        return Cmp::Between(this->Length(), other.Length());
     }
     strdef Comparison strcls::CmpSized(Str other) const {
-        if (Length() != other.Length()) return Cmp::Between(Length(), other.Length());
+        if (this->Length() != other.Length()) return Cmp::Between(this->Length(), other.Length());
         usize i = 0;
-        for (; i < Length(); i += 8) {
-            const auto cmp = Cmp::Between(Memory::ReadU64(Data() + i), Memory::ReadU64(other.Data() + i));
+        for (; i < this->Length(); i += 8) {
+            const auto cmp = Cmp::Between(Memory::ReadU64(this->Data() + i), Memory::ReadU64(other.Data() + i));
             if (cmp != Cmp::EQUAL) return cmp;
         }
-        for (usize j = 0; j < Length() & 7; ++j) {
+        for (usize j = 0; j < this->Length() & 7; ++j) {
             const auto cmp = Cmp::Between(At(i - 8 + j), other.At(i - 8 + j));
             if (cmp != Cmp::EQUAL) return cmp;
         }
@@ -226,17 +236,17 @@ namespace Quasi {
 
     strdef void  strcls::Reverse() requires mut { AsSpanMut().Reverse(); }
 
-    strdef OptionUsize strcls::Find   (char c)  const { for (usize i = 0; i < Length(); ++i) if (At(i) == c) return i; return nullptr; }
-    strdef OptionUsize strcls::RevFind(char c)  const { for (usize i = Length(); i --> 0; )  if (At(i) == c) return i; return nullptr; }
-    strdef bool    strcls::Contains   (char c)  const { return Find   (c); }
-    strdef bool    strcls::RevContains(char c)  const { return RevFind(c); }
+    strdef OptionUsize strcls::Find   (char c)  const { for (usize i = 0; i < this->Length(); ++i) if (At(i) == c) return i; return nullptr; }
+    strdef OptionUsize strcls::RevFind(char c)  const { for (usize i = this->Length(); i --> 0; )  if (At(i) == c) return i; return nullptr; }
+    strdef bool    strcls::Contains   (char c)  const { return Find   (c).HasValue(); }
+    strdef bool    strcls::RevContains(char c)  const { return RevFind(c).HasValue(); }
     strdef OptionUsize strcls::Find   (Str str) const {
-        for (usize i = 0; i < Length() - str.Length(); ++i)
+        for (usize i = 0; i < this->Length() - str.Length(); ++i)
             if (Substr(i, str.Length()) == str) return i;
         return nullptr;
     }
     strdef OptionUsize strcls::RevFind(Str str) const {
-        for (usize i = Length() - str.Length(); i --> 0; )
+        for (usize i = this->Length() - str.Length(); i --> 0; )
             if (Substr(i, str.Length()) == str) return i;
         return nullptr;
     }
@@ -244,37 +254,37 @@ namespace Quasi {
     strdef bool  strcls::RevContains(Str str) const { return RevFind(str) != -1; }
     strdef Tuple<OptionUsize, OptionUsize> strcls::FindOneOf(Span<const char> anyc) const {
         const OptionUsize i = FindIf(Chr::Set { anyc });
-        return { i, i.And(anyc.Find(At(i))) };
+        return { i, i ? anyc.Find(At(*i)) : nullptr };
     }
     strdef Tuple<OptionUsize, OptionUsize> strcls::RevFindOneOf(Span<const char> anyc) const {
         const OptionUsize i = RevFindIf(Chr::Set { anyc });
-        return { i, i.And(anyc.Find(At(i))) };
+        return { i, i ? anyc.Find(At(*i)) : nullptr };
     }
     strdef OptionUsize strcls::ContainsOneOf   (Span<const char> anyc) const { const auto [i, m] = FindOneOf(anyc);    return i.And(m); }
     strdef OptionUsize strcls::RevContainsOneOf(Span<const char> anyc) const { const auto [i, m] = RevFindOneOf(anyc); return i.And(m); }
     strdef Tuple<OptionUsize, OptionUsize> strcls::FindOneOf(Span<const Str> anystr) const {
-        for (usize i = 0; i < Length(); ++i) {
+        for (usize i = 0; i < this->Length(); ++i) {
             for (usize j = 0; j < anystr.Length(); ++j)
-                if (Skip(i).StartsWith(anystr)) return { i, j };
+                if (Skip(i).StartsWith(anystr[j])) return { i, j };
         }
         return { nullptr, nullptr };
     }
     strdef Tuple<OptionUsize, OptionUsize> strcls::RevFindOneOf(Span<const Str> anystr) const {
-        for (usize i = Length(); i --> 0; ) {
+        for (usize i = this->Length(); i --> 0; ) {
             for (usize j = 0; j < anystr.Length(); ++j)
-                if (Skip(i).StartsWith(anystr)) return { i, j };
+                if (Skip(i).StartsWith(anystr[j])) return { i, j };
         }
         return { nullptr, nullptr };
     }
     strdef OptionUsize strcls::ContainsOneOf   (Span<const Str> anystr) const { const auto [i, m] = FindOneOf(anystr);    return i.And(m); }
     strdef OptionUsize strcls::RevContainsOneOf(Span<const Str> anystr) const { const auto [i, m] = RevFindOneOf(anystr); return i.And(m); }
 
-    strdef bool  strcls::StartsWith(char prefix) const { return Length() >= 1 && First() == prefix; }
-    strdef bool  strcls::EndsWith  (char suffix) const { return Length() >= 1 && Last()  == suffix; }
-    strdef bool  strcls::StartsWith(Str prefix)  const { return Length() >= prefix.Length() && First(prefix.Length()) == prefix; }
-    strdef bool  strcls::EndsWith  (Str suffix)  const { return Length() >= suffix.Length() && Last (suffix.Length()) == suffix; }
-    strdef OptionUsize strcls::StartsWithOneOf(Span<const char> anyprefix) const { return Length() >= 1 ? anyprefix.Find(First()) : -1; }
-    strdef OptionUsize strcls::EndsWithOneOf  (Span<const char> anysuffix) const { return Length() >= 1 ? anysuffix.Find(Last())  : -1; }
+    strdef bool  strcls::StartsWith(char prefix) const { return this->Length() >= 1 && First() == prefix; }
+    strdef bool  strcls::EndsWith  (char suffix) const { return this->Length() >= 1 && Last()  == suffix; }
+    strdef bool  strcls::StartsWith(Str prefix)  const { return this->Length() >= prefix.Length() && First(prefix.Length()) == prefix; }
+    strdef bool  strcls::EndsWith  (Str suffix)  const { return this->Length() >= suffix.Length() && Last (suffix.Length()) == suffix; }
+    strdef OptionUsize strcls::StartsWithOneOf(Span<const char> anyprefix) const { return this->Length() >= 1 ? anyprefix.Find(First()) : -1; }
+    strdef OptionUsize strcls::EndsWithOneOf  (Span<const char> anysuffix) const { return this->Length() >= 1 ? anysuffix.Find(Last())  : -1; }
     strdef OptionUsize strcls::StartsWithOneOf(Span<const Str> anyprefix)  const { for (usize i = 0; i < anyprefix.Length(); ++i) if (StartsWith(anyprefix[i])) return i; return nullptr; }
     strdef OptionUsize strcls::EndsWithOneOf  (Span<const Str> anysuffix)  const { for (usize i = 0; i < anysuffix.Length(); ++i) if (StartsWith(anysuffix[i])) return i; return nullptr; }
 
@@ -302,18 +312,18 @@ namespace Quasi {
     strdef Str strcls::RemoveSuffix(char suffix) const { return Trunc(EndsWith(suffix));   }
     strdef Str strcls::RemovePrefix(Str prefix)  const { return Skip (StartsWith(prefix) ? prefix.Length() : 0); }
     strdef Str strcls::RemoveSuffix(Str suffix)  const { return Trunc(EndsWith(suffix)   ? suffix.Length() : 0); }
-    strdef Str strcls::RemovePrefixOneOf(Span<const char> prefix) const { const usize i = StartsWithOneOf(prefix); return Skip (i != -1); }
-    strdef Str strcls::RemoveSuffixOneOf(Span<const char> suffix) const { const usize i = EndsWithOneOf  (suffix); return Trunc(i != -1); }
-    strdef Str strcls::RemovePrefixOneOf(Span<const Str> prefix)  const { const usize i = StartsWithOneOf(prefix); return Skip (i == -1 ? 0 : prefix.Length()); }
-    strdef Str strcls::RemoveSuffixOneOf(Span<const Str> suffix)  const { const usize i = EndsWithOneOf  (suffix); return Trunc(i == -1 ? 0 : suffix.Length()); }
+    strdef Str strcls::RemovePrefixOneOf(Span<const char> prefix) const { return Skip ((bool)StartsWithOneOf(prefix)); }
+    strdef Str strcls::RemoveSuffixOneOf(Span<const char> suffix) const { return Trunc((bool)EndsWithOneOf  (suffix)); }
+    strdef Str strcls::RemovePrefixOneOf(Span<const Str> prefix)  const { return Skip (StartsWithOneOf(prefix) ? prefix.Length() : 0); }
+    strdef Str strcls::RemoveSuffixOneOf(Span<const Str> suffix)  const { return Trunc(EndsWithOneOf  (suffix) ? suffix.Length() : 0); }
     strdef StrMut strcls::RemovePrefixMut(char prefix) requires mut { return SkipMut (StartsWith(prefix)); }
     strdef StrMut strcls::RemoveSuffixMut(char suffix) requires mut { return TruncMut(EndsWith(suffix));   }
     strdef StrMut strcls::RemovePrefixMut(Str prefix)  requires mut { return SkipMut (StartsWith(prefix) ? prefix.Length() : 0); }
     strdef StrMut strcls::RemoveSuffixMut(Str suffix)  requires mut { return TruncMut(EndsWith(suffix)   ? suffix.Length() : 0); }
-    strdef StrMut strcls::RemovePrefixOneOfMut(Span<const char> prefix) requires mut { const usize i = StartsWithOneOf(prefix); return SkipMut (i != -1); }
-    strdef StrMut strcls::RemoveSuffixOneOfMut(Span<const char> suffix) requires mut { const usize i = EndsWithOneOf  (suffix); return TruncMut(i != -1); }
-    strdef StrMut strcls::RemovePrefixOneOfMut(Span<const Str> prefix)  requires mut { const usize i = StartsWithOneOf(prefix); return SkipMut (i == -1 ? 0 : prefix.Length()); }
-    strdef StrMut strcls::RemoveSuffixOneOfMut(Span<const Str> suffix)  requires mut { const usize i = EndsWithOneOf  (suffix); return TruncMut(i == -1 ? 0 : suffix.Length()); }
+    strdef StrMut strcls::RemovePrefixOneOfMut(Span<const char> prefix) requires mut { return SkipMut ((bool)StartsWithOneOf(prefix)); }
+    strdef StrMut strcls::RemoveSuffixOneOfMut(Span<const char> suffix) requires mut { return TruncMut((bool)EndsWithOneOf  (suffix)); }
+    strdef StrMut strcls::RemovePrefixOneOfMut(Span<const Str> prefix)  requires mut { return SkipMut (StartsWithOneOf(prefix) ? prefix.Length() : 0); }
+    strdef StrMut strcls::RemoveSuffixOneOfMut(Span<const Str> suffix)  requires mut { return TruncMut(EndsWithOneOf  (suffix) ? suffix.Length() : 0); }
 
     strdef Iter::SplitIter<Str> strcls::Split(Str sep) {
         return Iter::SplitIter<Str>::New(AsStr(), sep);
@@ -324,19 +334,19 @@ namespace Quasi {
     }
 
     strdef String strcls::Reversed() const {
-        String rev = String::WithCap(Length());
-        for (usize i = Length(); i --> 0; )
+        String rev = String::WithCap(this->Length());
+        for (usize i = this->Length(); i --> 0; )
             rev.Append(At(i));
         return rev;
     }
 
     strdef String strcls::ToUpper() const {
-        String upper = String::WithCap(Length());
+        String upper = String::WithCap(this->Length());
         for (const char c : super()) upper.Append(Chr::ToUpper(c));
         return upper;
     }
     strdef String strcls::ToLower() const {
-        String lower = String::WithCap(Length());
+        String lower = String::WithCap(this->Length());
         for (const char c : super()) lower.Append(Chr::ToLower(c));
         return lower;
     }
@@ -350,7 +360,7 @@ namespace Quasi {
     }
 
     strdef String strcls::Repeat(usize n) const {
-        String rep = String::WithCap(Length() * n);
+        String rep = String::WithCap(this->Length() * n);
         for (usize i = 0; i < n; ++i)
             for (const char c : super())
                 rep.Append(c);
@@ -375,8 +385,8 @@ namespace Quasi {
     strdef String strcls::ReplaceAnyOf(Span<const Str> from, Str to) const {
         if (from.IsEmpty()) return ToString();
         return ReplaceIf([&] (Str str) {
-            const usize i = str.StartsWithOneOf(from);
-            return i == -1 ? 0 : from[i].Length();
+            const OptionUsize i = str.StartsWithOneOf(from);
+            return i ? from[*i].Length() : 0;
         }, to);
     }
 
@@ -422,7 +432,7 @@ namespace Quasi {
     }
 
     String Str::Escape() const {
-        String ss = String::WithCap(Length() + 2);
+        String ss = String::WithCap(this->Length() + 2);
         ss += '"';
         for (const char c : *this) {
             char buf[4];
@@ -447,8 +457,8 @@ namespace Quasi {
         // early check, so that we never have to check again
         if (Last() == '\\') return nullptr;
 
-        String ss = String::WithCap(Length());
-        for (usize i = 0; i < Length(); ++i) {
+        String ss = String::WithCap(this->Length());
+        for (usize i = 0; i < this->Length(); ++i) {
             if (At(i) == '\\') {
                 ss += Chr::UnescapeRepr(At(i + 1)).UnwrapOr(At(i + 1));
                 ++i;
@@ -531,4 +541,9 @@ namespace Quasi {
         size = i;
         return after;
     }
+
+    template struct StringHolder<const char, Str>;
+    template struct StringHolder<char, StrMut>;
+    template struct StringHolder<char, String>;
+    template struct StringHolder<const char, CStr>;
 } // Quasi

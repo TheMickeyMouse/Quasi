@@ -5,6 +5,7 @@
 #include "Utils/Str.h"
 
 namespace Quasi::Text {
+    enum ConsoleColor : u32;
     template <class... Ts> struct FormatResult;
 
     struct StringWriter {
@@ -16,17 +17,17 @@ namespace Quasi::Text {
         static StringWriter WriteTo(String& string);
         static StringWriter WriteToFile(std::FILE* file);
         static StringWriter WriteToConsole();
+        static StringWriter WriteToError();
 
-        static void FileWriteCallback(std::FILE* file, Str str);
+        static void StringWriteCallback(void* s, Str str);
+        static void FileWriteCallback(void* file, Str str);
 
         usize Write(Str str);
         usize Write(char c);
         usize WriteRepeat(char c, usize n);
+        usize SetColor(ConsoleColor col);
 
         usize operator()(Str str) { return Write(str); }
         usize operator()(char c)  { return Write(c); }
-
-        template <class... Ts>
-        usize Write(const FormatResult<Ts...>&);
     };
 }

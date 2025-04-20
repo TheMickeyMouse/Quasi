@@ -1,4 +1,6 @@
 #pragma once
+#include <algorithm>
+
 #include "Macros.h"
 #include "MacroIteration.h"
 #include "Type.h"
@@ -81,12 +83,9 @@ namespace Quasi::Matching {
 
     template <class T>
     bool In(const T& value, Collection<T> auto& list) {
-        if constexpr (requires { { list.contains(value) } -> SameAs<bool>; })
-            return list.contains(value);
-        else if constexpr (requires { { list.find(value) } -> SameAs<decltype(list.begin())>; }) {
-            const auto it = list.find(value);
-            return it == list.end() ? false : true;
-        } else {
+        if constexpr (requires { { list.Contains(value) } -> SameAs<bool>; })
+            return list.Contains(value);
+        else {
             const auto it = std::find(std::begin(list), std::end(list), value);
             return it == std::end(list) ? false : true;
         }

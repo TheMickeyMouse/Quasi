@@ -49,7 +49,7 @@ namespace Quasi {
             void Reset() {
                 while (listToFree) {
                     const LinkedListPtr next = Next(listToFree);
-                    Free(listToFree);
+                    FreeRaw(listToFree);
                     listToFree = next;
                 }
                 usableMemory = nullptr;
@@ -75,7 +75,7 @@ namespace Quasi {
                 // calculate number of available elements in ptr
                 if (bytes < ALIGNMENT + ALIGNED_SIZE) {
                     // not enough data for at least one element.
-                    Free(ptr);
+                    FreeRaw(ptr);
                 } else {
                     Add(ptr, bytes);
                 }
@@ -139,7 +139,7 @@ namespace Quasi {
         struct NodeAllocator {
             // we dont use the memory
             void AddIfEnough(void* ptr, usize /*unused*/) {
-                Free(ptr);
+                FreeRaw(ptr);
             }
         };
 
@@ -187,8 +187,8 @@ namespace Quasi {
 
         // members are sorted so no padding occurs
         u64      hashMultiplier  = 0xc4ceb9fe1a85ec53;   // 8 byte  8
-        Node*    kvData          = BadAddress();         // 8 byte 16
-        u8*      infoData        = BadAddress();         // 8 byte 24
+        Node*    kvData          = (Node*)BadAddress();  // 8 byte 16
+        u8*      infoData        = (u8*)BadAddress();    // 8 byte 24
         usize    elmCount        = 0;                    // 8 byte 32
         usize    mask            = 0;                    // 8 byte 40
         usize    maxElmsAllowed  = 0;                    // 8 byte 48
@@ -266,6 +266,7 @@ namespace Quasi {
         // generic iterator for keys, values, valuesmut, pairs, and pairsmut
         template <class T>
         struct TableIter : IIterator<AddConstIf<PairType, T>&, TableIter<T>> {
+            friend IIterator<AddConstIf<PairType, T>&, TableIter>;
         private:
             friend struct HashTable;
             T* kvData = nullptr;
@@ -290,7 +291,7 @@ namespace Quasi {
 
             void FastForward() {
                 usize n;
-                while ((n = Memory::ReadU64(infoData)) == 0) {
+                while ((n = Memory::ReadU64Native(infoData)) == 0) {
                     infoData += sizeof(u64);
                     kvData += sizeof(u64);
                 }
@@ -317,8 +318,6 @@ namespace Quasi {
             bool CanNextImpl() { return kvData != kvEnd; }
         };
     public:
-        HashTable() = default;
-
         // Creates an empty hash map. Nothing is allocated yet, this happens at the first insert.
         // This tremendously speeds up ctor & dtor of a map that never receives an element. The
         // penalty is payed at the first insert, and not before. Lookup of this empty map works
@@ -340,7 +339,7 @@ namespace Quasi {
             return ht;
         }
 
-        void MemberwiseCopy(HashTable&& t) {
+        void MemberwiseCopy(HashTable& t) {
             hashMultiplier = t.hashMultiplier;
             kvData         = t.kvData;
             infoData       = t.infoData;
@@ -418,7 +417,7 @@ namespace Quasi {
                 // no luck: we don't have the same array size allocated, so we need to realloc.
                 if (mask != 0) {
                     // only deallocate if we actually have data!
-                    Memory::Free(kvData);
+                    Memory::FreeRaw(kvData);
                 }
 
                 const usize elmsWithBuf = GetElmsWithBuffer(t.mMask + 1);
@@ -488,7 +487,7 @@ namespace Quasi {
             DestroyNodes(*this);
             const usize numElmsWithBuf = GetElmsWithBuffer(mask + 1);
             // clear everything, then set the sentinel again
-            Memory::RangeSet(infoData, 0, CalcNumBytesInfo(numElmsWithBuf));
+            Memory::MemSet(infoData, 0, CalcNumBytesInfo(numElmsWithBuf));
             infoData[numElmsWithBuf] = 1;
 
             infoInc = InitialInfoInc;
@@ -503,7 +502,7 @@ namespace Quasi {
         usize Count()   const { return elmCount; }
         static usize MaxCount() { return u64s::MAX; }
         bool IsEmpty()  const { return elmCount == 0; }
-        operator bool() const { return elmCount != 0; }
+        explicit operator bool() const { return elmCount != 0; }
 
         static float MaxLoadFactor() { return HashTable::MaxLoadFactorPer100 / 100.0F; }
         // Average number of elements per bucket. Since we allow only 1 per bucket
@@ -545,12 +544,17 @@ namespace Quasi {
             const OptionUsize i = FindIndexOf(key);
             return i ? kvData[*i].GetValue() : nullptr;
         }
+        OptRef<const Value> operator[](const auto& kview) const { return Get(kview); }
+        OptRef<const Value> Get(const auto& kview) const {
+            const OptionUsize i = FindIndexOf(kview);
+            return i ? OptRefs::SomeRef(kvData[*i].GetValue()) : nullptr;
+        }
 
     private:
         // highly performance relevant code.
         // Lower bits are used for indexing into the array (2^n size)
         // The upper 1-5 bits need to be a reasonable good hash, to save comparisons.
-        void HashKeyToIndex(const Key& key, usize* idx, InfoType* info) const {
+        void HashKeyToIndex(const auto& key, usize* idx, InfoType* info) const {
             // In addition to whatever hash is used, add another mul & shift so we get better hashing.
             // This serves as a bad hash prevention, if the given data is
             // badly mixed.
@@ -577,7 +581,7 @@ namespace Quasi {
 
         // shift everything up by one element. Tries to move stuff around.
         void ShiftUp(usize startIdx, usize insertIdx) {
-            new (&kvData[startIdx]) Node(std::move(kvData[startIdx - 1]));
+            new (&kvData[startIdx]) Node(*this, std::move(kvData[startIdx - 1]));
             for (usize i = startIdx; --i != insertIdx; ) {
                 kvData[i] = std::move(kvData[i - 1]);
             }
@@ -605,7 +609,7 @@ namespace Quasi {
             kvData[idx].~Node();
         }
 
-        OptionUsize FindIndexOf(const Key& key) const {
+        OptionUsize FindIndexOf(const auto& key) const {
             usize index = 0;
             InfoType inf = 0;
             HashKeyToIndex(key, &index, &inf);
@@ -658,7 +662,7 @@ namespace Quasi {
 
             auto& l = kvData[insertIndex];
             if (index == insertIndex) {
-                new (&l) Node(std::move(node));
+                new (&l) Node(*this, std::move(node));
             } else {
                 ShiftUp(index, insertIndex);
                 l = std::move(node);
@@ -684,10 +688,10 @@ namespace Quasi {
         void InitOrWriteNode(usize index, Key k, Value v, InsertResult r) {
             switch (r) {
                 case InsertResult::New:
-                    new (&kvData[index]) Node(std::move(k), std::move(v));
+                    new (&kvData[index]) Node(*this, std::move(k), std::move(v));
                     break;
                 case InsertResult::Overwrite:
-                    kvData[index] = Node(std::move(k), std::move(v));
+                    kvData[index] = Node(*this, std::move(k), std::move(v));
                     break;
                 default:;
             }
@@ -849,6 +853,9 @@ namespace Quasi {
         bool Contains(const Key& key) const {
             return FindIndexOf(key).HasValue();
         }
+        bool Contains(const auto& kview) const {
+            return FindIndexOf(kview).HasValue();
+        }
     protected:
         TableIter<const PairType> IterImpl() const { return { kvData, KvEnd(), infoData }; }
         TableIter<PairType>    IterMutImpl()       { return { kvData, KvEnd(), infoData }; }
@@ -856,7 +863,7 @@ namespace Quasi {
         TableIter<const PairType> IterStartingAt(const Key& k) const {
             const OptionUsize i = FindIndexOf(k);
             if (!i) return {};
-            return { &kvData[i], KvEnd(), &infoData[i] };
+            return { &kvData[*i], KvEnd(), &infoData[*i] };
         }
 
         TableIter<const Key>   Keys()   const { return { kvData, KvEnd(), infoData }; }
@@ -964,7 +971,7 @@ namespace Quasi {
             if (oldKeyVals != BadAddress()) {
                 // don't destroy old data: put it into the pool instead
                 if (forceFree) {
-                    Memory::Free(oldKeyVals);
+                    Memory::FreeRaw(oldKeyVals);
                 } else {
                     DataPool::AddIfEnough(oldKeyVals, GetTotalBytes(oldMaxElms));
                 }
@@ -982,7 +989,7 @@ namespace Quasi {
 
             kvData = (Node*)Memory::AllocateRaw(numBytesTotal);
             infoData    = reinterpret_cast<u8*>(kvData + numElmWithBuf);
-            Memory::RangeSet(infoData, 0, numBytesTotal - numElmWithBuf * sizeof(Node));
+            Memory::MemSet(infoData, 0, numBytesTotal - numElmWithBuf * sizeof(Node));
             // set sentinel
             infoData[numElmWithBuf] = 1;
 
@@ -1004,9 +1011,9 @@ namespace Quasi {
             const usize numElmsWithBuf = GetElmsWithBuffer(mask + 1);
 
             for (usize i = 0; i < numElmsWithBuf; i += 8) {
-                u64 x = Memory::ReadU64(infoData + i);
+                u64 x = Memory::ReadU64Native(infoData + i);
                 x = (x >> 1U) & 0x7f7f7f7f7f7f7f7f;
-                Memory::WriteU64(x, infoData + i);
+                Memory::WriteU64Native(x, infoData + i);
             }
             // update sentinel, which might have been cleared out!
             infoData[numElmsWithBuf] = 1;
@@ -1056,13 +1063,13 @@ namespace Quasi {
             // reports a compile error: attempt to free a non-heap object 'fm'
             // [-Werror=free-nonheap-object]
             if (kvData != BadAddress()) {
-                Memory::Free(kvData);
+                Memory::FreeRaw(kvData);
             }
         }
 
         void Init() {
-            kvData         = BadAddress();
-            infoData       = BadAddress();
+            kvData         = (Node*)BadAddress();
+            infoData       = (u8*)BadAddress();
             elmCount       = 0;
             mask           = 0;
             maxElmsAllowed = 0;

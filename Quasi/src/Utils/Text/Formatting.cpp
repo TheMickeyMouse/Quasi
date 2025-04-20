@@ -4,9 +4,9 @@
 #include "Debug/Logger.h"
 
 namespace Quasi::Text {
-    usize FormatToDynamic(StringWriter output, Str fmt,
-        const void* argParams[], FuncPtr<usize, StringWriter, const void*, Str> writerParams[], usize n) {
-        static constexpr auto WriteNth = [&] (usize i, Str opt) {
+    usize FormatToDynamic(StringWriter output, Str fmt, const void* const argParams[],
+        const FuncPtr<usize, StringWriter, const void*, Str> writerParams[], usize n) {
+        const auto WriteNth = [&] (usize i, Str opt) {
             Debug::QAssert$(i < n, "tried formatting argument number #{} when there are only {} arguments", i + 1, n);
             return writerParams[i](output, argParams[i], opt);
         };
@@ -14,10 +14,11 @@ namespace Quasi::Text {
         usize i = 0, prev = 0, currentWriteIndex = 0, writeLen = 0;
         while (i < fmt.Length()) {
             const char c = fmt[i];
-            if (c != '{' && c != '}') { ++i; }
+            if (c != '{' && c != '}') { ++i; continue; }
             if (i + 1 < fmt.Length() && fmt[i + 1] == c) {
                 writeLen += output.Write(c);
                 i = (prev = i + 2);
+                continue;
             }
 
             writeLen += output.Write(fmt.Substr(prev, i - prev));
@@ -41,7 +42,7 @@ namespace Quasi::Text {
                 const usize specifiedIndex = Parse<usize>(fmt.Substr(i + 1, p - i - 1)).UnwrapOr(currentWriteIndex);
                 writeLen += WriteNth(specifiedIndex, fmt.Substr(p + 1, q - p - 1));
             }
-            prev = q + 1;
+            i = prev = q + 1;
             ++currentWriteIndex;
         }
         writeLen += output.Write(fmt.Substr(prev));
@@ -52,11 +53,14 @@ namespace Quasi::Text {
         // the format specifier follows: (?'char'.)?(?'align'[<^>])(?'len'[0-9]+)
         // 'char': fill character, 'align': left, middle (prioritize filling right) or right, 'len' is len
         TextFormatOptions options;
+        if (!opt) return options;
+
         if (opt[0] != '<' && opt[0] != '^' && opt[0] != '>') {
             options.pad = opt[0];
             opt.Advance(1);
         }
 
+        if (!opt) return options;
         if (opt[0] == '^') {
             options.alignment = CENTER;
         } else {
@@ -67,6 +71,8 @@ namespace Quasi::Text {
             options.escape = true;
             opt.Shorten(1);
         }
+        if (!opt) return options;
+
         options.targetLength = Parse<usize>(opt.Tail()).Assert();
 
         return options;
@@ -91,11 +97,11 @@ namespace Quasi::Text {
     usize Formatter<Str>::FormatNoEscape(StringWriter sw, Str input, const FormatOptions& options) {
         usize padLen = options.targetLength - input.Length();
         padLen &= -(padLen <= options.targetLength); // fun bithacks that turn negative numbers into 0
-        const usize left = padLen * (usize)options.alignment / 2;
+        const usize right = padLen * (usize)options.alignment / 2;
 
-        return sw.WriteRepeat(options.pad, left) +
+        return sw.WriteRepeat(options.pad, padLen - right) +
                sw.Write(input) +
-               sw.WriteRepeat(options.pad, padLen - left);
+               sw.WriteRepeat(options.pad, right);
     }
 
     usize Formatter<char>::FormatTo(StringWriter sw, char c, const FormatOptions& options) {
@@ -136,7 +142,7 @@ namespace Quasi::Text {
 
     template struct Formatter<Str>;
 
-    usize Formatter<void*>::FormatTo(StringWriter sw, void* fres, Empty) {
+    usize Formatter<void*>::FormatTo(StringWriter sw, void* fres, Str) {
         sw.Write("(address at 0x");
         NumberConversion::WriteU64Hex(sw, reinterpret_cast<u64>(fres), u64s::HEX_DIGITS, true);
         sw.Write(')');

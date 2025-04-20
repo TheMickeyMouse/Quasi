@@ -26,7 +26,7 @@ namespace Quasi::Text {
         static constexpr usize T_START_IDX = [] {
             const char* templateString = t<int>();
             for (usize i = 0; templateString[i]; ++i) if (templateString[i] == 'i') return i;
-            return 0;
+            return 0_usize;
         } ();
         static constexpr usize T_TOTAL_SIZE = [] {
             const char* templateString = t<int>();
@@ -54,7 +54,7 @@ namespace Quasi::Text {
     };
     template <usize N> FixedString(const char (&)[N]) -> FixedString<N - 1>;
 
-    enum ConsoleColor {
+    enum ConsoleColor : u32 {
         RESET = 0,
 
         BLACK   = 0, H_BLACK   = 60,
@@ -108,8 +108,7 @@ namespace Quasi::Text {
 
     template <>
     struct Formatter<ConsoleColor> {
-        using FormatOptions = Empty;
-        static usize FormatTo(StringWriter output, ConsoleColor c, Empty);
+        static usize FormatTo(StringWriter output, ConsoleColor c, Str);
     };
 
     template <>

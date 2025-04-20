@@ -7,41 +7,44 @@ namespace Quasi::Graphics {
     class VertexArray;
 
     enum class BufferBit {
-        COLOR = 0x00004000, DEPTH = 0x00000100, STENCIL = 0x00000400, ACCUM = 0x00000200,
+        COLOR   = 0x00004000,
+        DEPTH   = 0x00000100,
+        STENCIL = 0x00000400,
+        ACCUM   = 0x00000200,
         ALL = COLOR | DEPTH | STENCIL,
     };
 
     enum class Capability {
-        BLEND = 0xBE2,
-        CLIP_DIST_0 = 0x3000, CLIP_DIST_1, CLIP_DIST_2, CLIP_DIST_3, CLIP_DIST_4, CLIP_DIST_5, CLIP_DIST_6, CLIP_DIST_7,
-        COLOR_LOGIC_OP = 0xBF2,
-        CULL_FACE = 0xB44,
-        DEPTH_CLAMP = 0x864F,
-        DEPTH = 0xB71,
-        DITHER = 0xBD0,
-        SRGB_FRAMEBUFFER = 0x8DB9,
-        SMOOTH_LINES = 0xB20,
-        MULTISAMPLE = 0x809D,
-        POLYGON_FILL_OFFSET = 0x8037, POLYGON_LINE_OFFSET = 0x2A02, POLYGON_POINT_OFFSET = 0x2A01, SMOOTH_POLYGON = 0xB41,
-        RESTART_PRIMITIVE = 0x8F9D,
+        BLEND                 = 0xBE2,
+        CLIP_DIST_0           = 0x3000, CLIP_DIST_1, CLIP_DIST_2, CLIP_DIST_3, CLIP_DIST_4, CLIP_DIST_5, CLIP_DIST_6, CLIP_DIST_7,
+        COLOR_LOGIC_OP        = 0xBF2,
+        CULL_FACE             = 0xB44,
+        DEPTH_CLAMP           = 0x864F,
+        DEPTH                 = 0xB71,
+        DITHER                = 0xBD0,
+        SRGB_FRAMEBUFFER      = 0x8DB9,
+        SMOOTH_LINES          = 0xB20,
+        MULTISAMPLE           = 0x809D,
+        POLYGON_FILL_OFFSET   = 0x8037, POLYGON_LINE_OFFSET = 0x2A02, POLYGON_POINT_OFFSET = 0x2A01, SMOOTH_POLYGON = 0xB41,
+        RESTART_PRIMITIVE     = 0x8F9D,
         SAMPLE_ALPHA_COVERAGE = 0x809E,
-        SAMPLE_ALPHA_ONE = 0x809F,
-        SAMPLE_COVERAGE = 0x80A0,
-        SCISSOR = 0xC11,
-        STENCIL = 0xB90,
-        SEAMLESS_CUBE_MAP = 0x884F,
-        SHADER_POINT_SIZE = 0x8642,
+        SAMPLE_ALPHA_ONE      = 0x809F,
+        SAMPLE_COVERAGE       = 0x80A0,
+        SCISSOR               = 0xC11,
+        STENCIL               = 0xB90,
+        SEAMLESS_CUBE_MAP     = 0x884F,
+        SHADER_POINT_SIZE     = 0x8642,
     };
 
     enum class CmpOperation {
-        NEVER = 0x0200,
-        LESS  = 0x0201,
-        EQUAL = 0x0202,
-        LEQUAL = 0x0203,
-        GREATER = 0x0204,
+        NEVER    = 0x0200,
+        LESS     = 0x0201,
+        EQUAL    = 0x0202,
+        LEQUAL   = 0x0203,
+        GREATER  = 0x0204,
         NOTEQUAL = 0x0205,
-        GEQUAL = 0x0206,
-        ALWAYS = 0x0207,
+        GEQUAL   = 0x0206,
+        ALWAYS   = 0x0207,
     };
 
     enum class StencilOperation {
@@ -105,10 +108,10 @@ namespace Quasi::Graphics {
 namespace Quasi::Graphics::Render {
     void Draw(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader);
     void DrawInstanced(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader, int instances);
-    inline void Draw(const RenderData& dat, const Shader& s);
-    inline void Draw(const RenderData& dat);
-    inline void DrawInstanced(const RenderData& dat, const Shader& s, int instances);
-    inline void DrawInstanced(const RenderData& dat, int instances);
+    void Draw(const RenderData& dat, const Shader& s);
+    void Draw(const RenderData& dat);
+    void DrawInstanced(const RenderData& dat, const Shader& s, int instances);
+    void DrawInstanced(const RenderData& dat, int instances);
 
 #pragma region GL Functions
 #define GL_SWITCH(F, NAME, E) inline void F##NAME() { F(E); }

@@ -1,6 +1,5 @@
 #include "CameraController.h"
 
-#include "Constants.h"
 #include "GraphicsDevice.h"
 
 namespace Quasi::Graphics {
@@ -11,7 +10,7 @@ namespace Quasi::Graphics {
         using namespace IO;
         const auto& Keyboard = gd.GetIO().Keyboard;
         auto& Mouse = gd.GetIO().Mouse;
-        if(Keyboard.KeyOnPress(Key::ESCAPE)) Toggle(gd);
+        if(Keyboard.KeyOnPress(ESCAPE)) Toggle(gd);
 
         if (UsesSmoothZoom()) {
             viewFov = std::lerp(viewFov, fov, std::exp2f(-smoothZoom * dt));
@@ -22,20 +21,20 @@ namespace Quasi::Graphics {
         if (!enabled) { return; }
         const fVector3 localRight = -(Right() * std::cos(yaw) + worldFront * std::sin(yaw));
         const fVector3 localFront = -localRight.cross(worldUp);
-        if (Keyboard.KeyPressed(Key::W))      position += localFront * speed * dt;
-        if (Keyboard.KeyPressed(Key::S))      position -= localFront * speed * dt;
-        if (Keyboard.KeyPressed(Key::D))      position += localRight * speed * dt;
-        if (Keyboard.KeyPressed(Key::A))      position -= localRight * speed * dt;
-        if (Keyboard.KeyPressed(Key::SPACE))  position += fVector3::UP()   * speed * dt;
-        if (Keyboard.KeyPressed(Key::LSHIFT)) position += fVector3::DOWN() * speed * dt;
+        if (Keyboard.KeyPressed(W))      position += localFront * speed * dt;
+        if (Keyboard.KeyPressed(S))      position -= localFront * speed * dt;
+        if (Keyboard.KeyPressed(D))      position += localRight * speed * dt;
+        if (Keyboard.KeyPressed(A))      position -= localRight * speed * dt;
+        if (Keyboard.KeyPressed(SPACE))  position += fVector3::UP()   * speed * dt;
+        if (Keyboard.KeyPressed(LSHIFT)) position += fVector3::DOWN() * speed * dt;
 
-        if (Keyboard.KeyOnPress(Key::CAPS_LOCK)) fov = fovRange.max * zoomRatio;
-        if (Keyboard.KeyOnRelease(Key::CAPS_LOCK)) fov = fovRange.max;
+        if (Keyboard.KeyOnPress(CAPS_LOCK)) fov = fovRange.max * zoomRatio;
+        if (Keyboard.KeyOnRelease(CAPS_LOCK)) fov = fovRange.max;
 
-        if (Keyboard.KeyOnPress(Key::LCONTROL)) speed *= 2;
-        if (Keyboard.KeyOnRelease(Key::LCONTROL)) speed /= 2;
+        if (Keyboard.KeyOnPress(LCONTROL)) speed *= 2;
+        if (Keyboard.KeyOnRelease(LCONTROL)) speed /= 2;
 
-        if (Keyboard.KeyPressed(Key::CAPS_LOCK)) {
+        if (Keyboard.KeyPressed(CAPS_LOCK)) {
             fov -= (float)Mouse.GetMouseScrollDelta().y;
             fov = fovRange.clamp(fov);
         }

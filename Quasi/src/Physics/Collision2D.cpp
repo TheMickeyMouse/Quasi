@@ -467,7 +467,7 @@ namespace Quasi::Physics2D {
             case TAG(2, true,  true ): DynamicResolveFor<2, true,  true >(body, target, manifold); break;
             case TAG(2, true,  false): DynamicResolveFor<2, true,  false>(body, target, manifold); break;
             case TAG(2, false, true ): DynamicResolveFor<2, false, true >(body, target, manifold); break;
-            default: Debug::Error("bad collision response");
+            default: Debug::QError$("bad collision response");
         }
     }
 

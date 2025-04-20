@@ -12,7 +12,7 @@ namespace Quasi::Graphics {
     FontDevice::FontDevice() {
         if (Instance) return;
         if (const int error = FT_Init_FreeType(&libHandle)) {
-            GLLogger().Error("Freetype Init failed with err code {}", error);
+            GLLogger().QError$("Freetype Init failed with err code {}", error);
             return;
         }
         Instance = *this;

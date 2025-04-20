@@ -42,13 +42,13 @@ namespace Quasi::Graphics {
         void ParseProperty(Str line);
         void ParseProperties(Str string);
 
-        template <class MTL>
-        static MTLProperty CreateProperty(Str data);
+        // template <class MTL>
+        // static MTLProperty CreateProperty(Str data);
 
         void CreateMaterial(Span<const MTLProperty> matprop);
         void CreateMaterials();
 
-        String DebugStr() const;
+        // String DebugStr() const;
 
         friend class OBJModelLoader;
     };

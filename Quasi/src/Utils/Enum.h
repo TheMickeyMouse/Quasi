@@ -60,7 +60,7 @@ namespace Quasi {
         const E* operator->() const requires (!IS_FLAG) { return value; }
         const E& operator*()  const requires (!IS_FLAG) { return *value; }
 
-        operator bool() const requires IS_NULLABLE { return value != Null().value; }
+        explicit operator bool() const requires IS_NULLABLE { return value != Null().value; }
         explicit operator u32() const { return Ord(); }
 
 #pragma region Operators

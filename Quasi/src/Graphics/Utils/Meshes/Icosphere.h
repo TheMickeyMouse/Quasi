@@ -3,8 +3,7 @@
 #include "MeshConstructor.h"
 #include "Graphicals/Mesh.h"
 #include "Math/Vector.h"
-#include "Utils/Array.h"
-#include "Utils/Numeric.h"
+#include "Utils/Algorithm.h"
 
 namespace Quasi::Graphics {
     struct TriIndices;

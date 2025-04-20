@@ -114,10 +114,9 @@ namespace Quasi::Math {
 
 namespace Quasi::Text {
     template <>
-    struct Formatter<Math::Quaternion> : Formatter<float> {
-        void FormatTo(const Math::Quaternion& q, StringOutput output) {
-            return FormatOnto(
-                output,
+    struct Formatter<Math::Quaternion> {
+        static usize FormatTo(StringWriter sw, const Math::Quaternion& q, Str) {
+            return Text::FormatTo(sw,
                 "{} {} {}i {} {}j {} {}k",
                 q.w,
                 q.x < 0 ? '-' : '+', q.x,

@@ -1,19 +1,10 @@
 #pragma once
-#include "Iterator.h"
-#include "Numeric.h"
-#include "Tuple.h"
-#include "Type.h"
+#include "Str.h"
 
 namespace Quasi {
-    template <class T> struct Option;
-    struct Str;
-    struct String;
-
-    namespace Text {
-        struct StringWriter;
-    }
-
-    struct CStr {
+    struct CStr : StringHolder<const char, CStr> {
+        friend IContinuousCollection;
+        friend StringHolder;
     private:
         const char* data = nullptr;
         usize size = 0;
@@ -21,8 +12,11 @@ namespace Quasi {
     public:
         CStr() = default;
         CStr(Nullptr) : CStr() {}
-        CStr(const char* zstr) : data(zstr) { while (data[size++]); }
-
+        CStr(const char* zstr) : data(zstr) { while (data[size]) ++size; }
+    protected:
+        const char* DataImpl() const { return data; }
+        usize LengthImpl()     const { return size; }
+    public:
         static CStr Empty() { return nullptr; }
         static Option<CStr> TrySlice(const char* data, usize size);
         static CStr SliceUnchecked(const char* data, usize size);
@@ -31,12 +25,11 @@ namespace Quasi {
         static Option<CStr> TryFromWithNull(Str zs);
         static CStr FromUnchecked(Str s);
 
-        const char* Data()    const { return data; }
-        const char* DataEnd() const { return data + size; }
-        usize Length()        const { return size; }
+        const char* DataEndWithNull() const { return data + size + 1; }
+        usize LengthWithNull() const { return size + 1; }
 
-        bool  IsEmpty() const { return Length() == 0; }
-        operator bool() const { return Length() != 0; }
+        bool IsEmpty()           const { return size == 0; }
+        explicit operator bool() const { return size != 0; }
 
         Hashing::Hash GetHashCode() const;
 
@@ -59,12 +52,6 @@ namespace Quasi {
 
         const char& First() const { return At(0); }
         const char& Last()  const { return At(Length() - 1); }
-
-        Span<const char> Subspan(usize start) const;
-        Span<const char> Subspan(usize start, usize count) const;
-        Str              Substr (usize start) const;
-        Str              Substr (usize start, usize count) const;
-
         Str  First(usize num) const;
         CStr Skip(usize len)  const;
         CStr Tail()           const;
@@ -83,18 +70,6 @@ namespace Quasi {
             const usize i = RevFindIf(pred);
             return SplitAt(i == -1 ? 0 : i + 1);
         }
-
-        bool RefEquals     (CStr other) const;
-
-        bool Equals          (Str other) const;
-        bool EqualsIgnoreCase(Str other) const;
-        bool operator==      (Str other) const;
-
-        Comparison Cmp(Str other) const;
-        Comparison CmpSized(Str other) const;
-        Comparison operator<=>(Str other) const;
-
-        String  ToString() const;
 
         CStr&       Advance(usize num);
         Str         TakeFirst(usize i);

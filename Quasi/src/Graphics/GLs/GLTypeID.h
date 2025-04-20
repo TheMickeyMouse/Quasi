@@ -18,13 +18,13 @@ namespace Quasi::Graphics {
         NULLABLE, (0, 0))
     };
 
-    template <class T> GLTypeID GLGetTypeID()  { return GLTypeID::NONE; }
-    template <> inline GLTypeID GLGetTypeID<float>()  { return GLTypeID::FLOAT; }
-    template <> inline GLTypeID GLGetTypeID<double>() { return GLTypeID::DOUBLE; }
-    template <> inline GLTypeID GLGetTypeID<int>()    { return GLTypeID::INT; }
-    template <> inline GLTypeID GLGetTypeID<uint>()   { return GLTypeID::UINT; }
-    template <> inline GLTypeID GLGetTypeID<sbyte>()  { return GLTypeID::SBYTE; }
-    template <> inline GLTypeID GLGetTypeID<byte>()   { return GLTypeID::BYTE; }
-    template <> inline GLTypeID GLGetTypeID<short>()  { return GLTypeID::SHORT; }
-    template <> inline GLTypeID GLGetTypeID<ushort>() { return GLTypeID::USHORT; }
+    template <class T> GLTypeID GetTypeIDFor()  { return GLTypeID::NONE; }
+    template <> inline GLTypeID GetTypeIDFor<float>()  { return GLTypeID::FLOAT; }
+    template <> inline GLTypeID GetTypeIDFor<double>() { return GLTypeID::DOUBLE; }
+    template <> inline GLTypeID GetTypeIDFor<int>()    { return GLTypeID::INT; }
+    template <> inline GLTypeID GetTypeIDFor<uint>()   { return GLTypeID::UINT; }
+    template <> inline GLTypeID GetTypeIDFor<sbyte>()  { return GLTypeID::SBYTE; }
+    template <> inline GLTypeID GetTypeIDFor<byte>()   { return GLTypeID::BYTE; }
+    template <> inline GLTypeID GetTypeIDFor<short>()  { return GLTypeID::SHORT; }
+    template <> inline GLTypeID GetTypeIDFor<ushort>() { return GLTypeID::USHORT; }
 }
