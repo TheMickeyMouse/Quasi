@@ -309,8 +309,6 @@ namespace Quasi::Algorithm {
                     const bool leftNonEmpty = left < leftEnd;
                     T* lastSrc = leftNonEmpty ? left : right;
                     Memory::ConstructMoveAt(dest, std::move(*lastSrc));
-                    left  +=  leftNonEmpty;
-                    right += !leftNonEmpty;
                 }
             }
 
@@ -358,7 +356,7 @@ namespace Quasi::Algorithm {
                 //     intrinsics::abort();
                 // }
 
-                T* stackArray = (T*)_alloca(sizeof(T) * SMALL_SORT_GENERAL_SCRATCH_LEN);
+                T stackArray[SMALL_SORT_GENERAL_SCRATCH_LEN];
 
                 const bool noMerge = len < 18;
 
@@ -388,7 +386,7 @@ namespace Quasi::Algorithm {
                 // Should is_less panic v was not modified in parity_merge and retains it's original input.
                 // scratch and v must not alias and scratch has v.len() space.
                 SmallSortBidirMerge(Spans::Slice(begin, len), stackArray, cmp);
-                Memory::RangeMoveNoOverlap(begin, stackArray, len);
+                Memory::MemCopyNoOverlap(begin, stackArray, len * sizeof(T));
             }
 
             template <class T>
@@ -407,9 +405,9 @@ namespace Quasi::Algorithm {
                 // The goal is to generate cmov instructions here.
                 T* leftSwap  = shouldSwap ? rightBeg : leftBeg;
                 T* rightSwap = shouldSwap ? leftBeg : rightBeg; // opposite of leftswap
-                T left = std::move(*leftSwap), right = std::move(*rightSwap);
-                Memory::ConstructMoveAt(leftSwap,  std::move(left));
-                Memory::ConstructMoveAt(rightSwap, std::move(right));
+                T tmp = std::move(*rightSwap);
+                if (shouldSwap) Memory::ConstructMoveAt(leftBeg, std::move(*leftSwap));
+                Memory::ConstructMoveAt(rightBeg, std::move(tmp));
             }
 
             template <class T>
@@ -856,7 +854,7 @@ namespace Quasi::Algorithm {
         bool IsSorted(Span<T> span, Comparator<T> auto&& cmp) {
             if (span.Length() < 2) return true;
             for (usize i = 0; i < span.Length() - 1; ++i) {
-                if (cmp(span[i], span[i + 1]) >= 0) return false;
+                if (cmp(span[i], span[i + 1]) > 0) return false;
             }
             return true;
         }
@@ -961,7 +959,7 @@ namespace Quasi {
 
     template <class T>
     void Span<T>::SortByKey(FnArgs<const T&> auto&& keyf) requires IsMut<T> {
-        return SortBy(Cmp::LessThanKeyed { keyf });
+        return SortBy(Cmp::CompareKeyed { keyf });
     }
 
     template <class T> bool Span<T>::IsSortedBy(Comparator<T> auto&& cmp) const {
@@ -969,7 +967,7 @@ namespace Quasi {
     }
 
     template <class T> bool Span<T>::IsSortedByKey(FnArgs<const T&> auto&& keyf) const {
-        return IsSortedBy(Cmp::LessThanKeyed { keyf });
+        return IsSortedBy(Cmp::CompareKeyed { keyf });
     }
 
     template <class T>
@@ -979,12 +977,12 @@ namespace Quasi {
 
     template <class T>
     usize Span<T>::SortedPartitionPointByKey(usize idx, FnArgs<const T&> auto&& keyf) requires IsMut<T> {
-        return SortedPartitionPointBy(idx, Cmp::LessThanKeyed { keyf });
+        return SortedPartitionPointBy(idx, Cmp::CompareKeyed { keyf });
     }
 
     template <class T>
     Tuple<Span<T>, T&, Span<T>> Span<T>::SortedPartitionByKey(usize idx, FnArgs<const T&> auto&& keyf) requires IsMut<T> {
-        return SortedPartitionBy(idx, Cmp::LessThanKeyed { keyf });
+        return SortedPartitionBy(idx, Cmp::CompareKeyed { keyf });
     }
 
     template <class T>

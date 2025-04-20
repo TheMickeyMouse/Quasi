@@ -46,6 +46,7 @@ namespace Quasi {
         bool HasValue() const { return super().HasValueImpl(); }
         bool IsNull() const { return !HasValue(); }
         explicit operator bool() const { return HasValue(); }
+        explicit operator bool() { return HasValue(); }
 
         void SetNull() { super().SetNull(); }
         void Set(const T& value)              { super().SetImpl(value); }

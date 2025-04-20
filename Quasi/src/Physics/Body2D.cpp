@@ -82,8 +82,8 @@ namespace Quasi::Physics2D {
 
     BodyHandle::BodyHandle(Body& b) : index(b.world->bodies.Unaddress(&b)), world(b.world) {}
 
-    Body& BodyHandle::ValueImpl() { return world->BodyAt(index); }
-    const Body& BodyHandle::ValueImpl() const { return world->BodyAt(index); }
+    Body& BodyHandle::ValueImpl() { return world->bodies[index]; }
+    const Body& BodyHandle::ValueImpl() const { return world->bodies[index]; }
 
     bool BodyHandle::HasValueImpl() const {
         return (bool)world;

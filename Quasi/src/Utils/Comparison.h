@@ -50,12 +50,12 @@ namespace Quasi {
         struct LessThanWith  { const T& x; bool operator()(const auto& other) const { return other < x; } };
         template <class F>
         struct LessThanKeyed {
-            F&& keyer;
+            F& keyer;
             bool operator()(const auto& lhs, const auto& rhs) { return keyer(lhs) < keyer(rhs); }
         };
         template <class F, class T>
         struct LessThanWithKeyed {
-            F&& keyer;
+            F& keyer;
             const T& target;
             bool operator()(const auto& x) { return keyer(x) < target; }
         };
@@ -65,7 +65,7 @@ namespace Quasi {
         struct Equals        { const T& x; auto operator()(const auto& other) const { return x == other; } };
         template <class F>
         struct EqualityKeyed {
-            F&& keyer;
+            F& keyer;
             bool operator()(const auto& lhs, const auto& rhs) { return keyer(lhs) == keyer(rhs); }
         };
 
@@ -74,14 +74,14 @@ namespace Quasi {
         struct ComparedTo    { const T& rhs; Comparison operator()(const auto& other) const { return IntoComparison(other <=> rhs); } };
         template <class F>
         struct CompareKeyed {
-            F&& keyer;
-            bool operator()(const auto& lhs, const auto& rhs) { return IntoOrdering(keyer(lhs) <=> keyer(rhs)); }
+            F& keyer;
+            Comparison operator()(const auto& lhs, const auto& rhs) { return IntoComparison(keyer(lhs) <=> keyer(rhs)); }
         };
         template <class F, class T>
         struct ComparedToKeyed {
-            F&& keyer;
+            F& keyer;
             T target;
-            bool operator()(const auto& x) { return IntoOrdering(keyer(x) <=> target); }
+            Comparison operator()(const auto& x) { return IntoComparison(keyer(x) <=> target); }
         };
 #pragma endregion
     }

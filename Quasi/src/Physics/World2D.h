@@ -7,31 +7,15 @@ namespace Quasi::Physics2D {
     class World {
     public:
         Vec<Body> bodies;
-        Vec<usize> bodySparseEnabled;
-        Vec<u32> bodyIndicesSorted;
-        u32 bodyCount = 0;
-        static constexpr u32 BITS_IN_USIZE = 8 * sizeof(usize);
-
+        Vec<usize> bodySweptIndices;
         fVector2 gravity;
     public:
         World() = default;
         World(const fVector2& gravity) : gravity(gravity) {}
-        ~World();
-        World(const World& w) = delete;
-        World& operator=(const World& w) = delete;
-        World(World&& w) noexcept;
-        World& operator=(World&& w) noexcept;
-
-        World Clone() const;
-    private:
-        const Body& BodyDirectAt(u32 i) const { return bodies[i]; }
-        Body& BodyDirectAt(u32 i) { return bodies[i]; }
-        void SortBodyIndices();
     public:
-        usize BodyCount() const { return bodyCount; }
+        usize BodyCount() const { return bodies.Length(); }
         void Reserve(usize size);
         void Clear();
-        u32 FindVacantIndex() const;
 
         BodyHandle CreateBody(const BodyCreateOptions& options, Shape shape);
         template <class S, class... Rs> BodyHandle CreateBody(const BodyCreateOptions& options, Rs&&... args) {
@@ -44,7 +28,6 @@ namespace Quasi::Physics2D {
 
         OptRef<Body> BodyAt(usize i);
         OptRef<const Body> BodyAt(usize i) const;
-        bool BodyIsValid(usize i) const;
 
         friend struct BodyHandle;
     };

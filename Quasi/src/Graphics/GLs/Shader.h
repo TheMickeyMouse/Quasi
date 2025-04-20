@@ -196,26 +196,26 @@ namespace Quasi::Graphics {
         ShaderParameter(Str name, const Math::fVector2& v2s)      : ShaderParameter(name, FV2,    { v2s.x, v2s.y, 0.f, 0.f }) {}
         ShaderParameter(Str name, const Math::fVector3& v3s)      : ShaderParameter(name, FV3,    { v3s.x, v3s.y, v3s.z, 0.f }) {}
         ShaderParameter(Str name, const Math::fVector4& v4s)      : ShaderParameter(name, FV4,    { v4s.x, v4s.y, v4s.z, v4s.w }) {}
-        ShaderParameter(Str name, Span<const float> xs)           : ShaderParameter(name, F_ARRAY, xs.AsBytes()) {}
-        ShaderParameter(Str name, Span<const Math::fVector2> v2s) : ShaderParameter(name, FV2,    v2s.AsBytes()) {}
-        ShaderParameter(Str name, Span<const Math::fVector3> v3s) : ShaderParameter(name, FV3,    v3s.AsBytes()) {}
-        ShaderParameter(Str name, Span<const Math::fVector4> v4s) : ShaderParameter(name, FV4,    v4s.AsBytes()) {}
+        ShaderParameter(Str name, Span<const float> xs)           : ShaderParameter(name, F_ARRAY,   xs.AsBytes()) {}
+        ShaderParameter(Str name, Span<const Math::fVector2> v2s) : ShaderParameter(name, FV2_ARRAY, v2s.AsBytes()) {}
+        ShaderParameter(Str name, Span<const Math::fVector3> v3s) : ShaderParameter(name, FV3_ARRAY, v3s.AsBytes()) {}
+        ShaderParameter(Str name, Span<const Math::fVector4> v4s) : ShaderParameter(name, FV4_ARRAY, v4s.AsBytes()) {}
         ShaderParameter(Str name, int x)                          : ShaderParameter(name, I_UNIT, { (u32)x, 0u, 0u, 0u }) {}
         ShaderParameter(Str name, const Math::iVector2& v2s)      : ShaderParameter(name, IV2,    { (u32)v2s.x, (u32)v2s.y, 0u, 0u }) {}
         ShaderParameter(Str name, const Math::iVector3& v3s)      : ShaderParameter(name, IV3,    { (u32)v3s.x, (u32)v3s.y, (u32)v3s.z, 0u }) {}
         ShaderParameter(Str name, const Math::iVector4& v4s)      : ShaderParameter(name, IV4,    { (u32)v4s.x, (u32)v4s.y, (u32)v4s.z, (u32)v4s.w }) {}
-        ShaderParameter(Str name, Span<const int> xs)             : ShaderParameter(name, I_ARRAY, xs.AsBytes()) {}
-        ShaderParameter(Str name, Span<const Math::iVector2> v2s) : ShaderParameter(name, IV2,    v2s.AsBytes()) {}
-        ShaderParameter(Str name, Span<const Math::iVector3> v3s) : ShaderParameter(name, IV3,    v3s.AsBytes()) {}
-        ShaderParameter(Str name, Span<const Math::iVector4> v4s) : ShaderParameter(name, IV4,    v4s.AsBytes()) {}
+        ShaderParameter(Str name, Span<const int> xs)             : ShaderParameter(name, I_ARRAY,   xs.AsBytes()) {}
+        ShaderParameter(Str name, Span<const Math::iVector2> v2s) : ShaderParameter(name, IV2_ARRAY, v2s.AsBytes()) {}
+        ShaderParameter(Str name, Span<const Math::iVector3> v3s) : ShaderParameter(name, IV3_ARRAY, v3s.AsBytes()) {}
+        ShaderParameter(Str name, Span<const Math::iVector4> v4s) : ShaderParameter(name, IV4_ARRAY, v4s.AsBytes()) {}
         ShaderParameter(Str name, uint x)                         : ShaderParameter(name, I_UNIT, { x, 0u, 0u, 0u }) {}
         ShaderParameter(Str name, const Math::uVector2& v2s)      : ShaderParameter(name, IV2,    { v2s.x, v2s.y, 0u, 0u }) {}
         ShaderParameter(Str name, const Math::uVector3& v3s)      : ShaderParameter(name, IV3,    { v3s.x, v3s.y, v3s.z, 0u }) {}
         ShaderParameter(Str name, const Math::uVector4& v4s)      : ShaderParameter(name, IV4,    { v4s.x, v4s.y, v4s.z, v4s.w }) {}
-        ShaderParameter(Str name, Span<const uint> xs)            : ShaderParameter(name, U_ARRAY, xs.AsBytes()) {}
-        ShaderParameter(Str name, Span<const Math::uVector2> v2s) : ShaderParameter(name, UV2,    v2s.AsBytes()) {}
-        ShaderParameter(Str name, Span<const Math::uVector3> v3s) : ShaderParameter(name, UV3,    v3s.AsBytes()) {}
-        ShaderParameter(Str name, Span<const Math::uVector4> v4s) : ShaderParameter(name, UV4,    v4s.AsBytes()) {}
+        ShaderParameter(Str name, Span<const uint> xs)            : ShaderParameter(name, U_ARRAY,   xs.AsBytes()) {}
+        ShaderParameter(Str name, Span<const Math::uVector2> v2s) : ShaderParameter(name, UV2_ARRAY, v2s.AsBytes()) {}
+        ShaderParameter(Str name, Span<const Math::uVector3> v3s) : ShaderParameter(name, UV3_ARRAY, v3s.AsBytes()) {}
+        ShaderParameter(Str name, Span<const Math::uVector4> v4s) : ShaderParameter(name, UV4_ARRAY, v4s.AsBytes()) {}
         ShaderParameter(Str name, const Math::fColor3& color3);
         ShaderParameter(Str name, const Math::fColor&  color);
         ShaderParameter(Str name, Span<const Math::fColor3> color3s);
