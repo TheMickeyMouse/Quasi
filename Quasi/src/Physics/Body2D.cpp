@@ -79,17 +79,4 @@ namespace Quasi::Physics2D {
     fRect2D Body::BoundingBox() const {
         return boundingBox;
     }
-
-    BodyHandle::BodyHandle(Body& b) : index(b.world->bodies.Unaddress(&b)), world(b.world) {}
-
-    Body& BodyHandle::ValueImpl() { return world->bodies[index]; }
-    const Body& BodyHandle::ValueImpl() const { return world->bodies[index]; }
-
-    bool BodyHandle::HasValueImpl() const {
-        return (bool)world;
-    }
-
-    void BodyHandle::Remove() {
-        world->DeleteBody(index);
-    }
 } // Physics2D

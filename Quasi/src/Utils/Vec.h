@@ -116,8 +116,10 @@ namespace Quasi {
         [[nodiscard]] ArrayBox<T> IntoBoxWhole() { return ArrayBox<T>::Own(Release(), capacity); } // releases
         ArrayBox<T> CloneToBox()   { return AsSpan().CollectToBox(); } // copies without extra cap
 
-        T& First() const { return data[0]; }
-        T& Last() const { return data[size - 1]; }
+        const T& First() const { return data[0]; }
+        const T& Last() const { return data[size - 1]; }
+        T& First() { return data[0]; }
+        T& Last() { return data[size - 1]; }
 
         Span<T> AsSpan()             { return Span<T>      ::Slice(data, size); }
         Span<const T> AsSpan() const { return Span<const T>::Slice(data, size); }

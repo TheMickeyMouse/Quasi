@@ -63,7 +63,7 @@ namespace Quasi {
         bool Equals(Ref r) const {
             return *r == *obj;
         }
-        bool RefEquals(Ref r) const { return r.obj == obj; }
+        bool RefEquals(ConstRef r) const { return r.obj == obj; }
         void SetRef(T& r) { obj = &r; }
 
         bool operator==(ConstRef r) const { return this->Equals(r); }
@@ -75,8 +75,8 @@ namespace Quasi {
 
         operator ConstRef() const { return AsConst(); }
         explicit operator Ref<RemConst<T>>() { return AsMut(); }
-        template <Extends<T> Base> requires DifferentTo<T, Base> operator OptRef<const Base>() const { return obj; }
-        template <Extends<T> Base> requires DifferentTo<T, Base> && IsMut<Base> operator OptRef<Base>() { return obj; }
+        template <Extends<T> Base> requires DifferentTo<T, Base> operator OptRef<const Base>() const;
+        template <Extends<T> Base> requires DifferentTo<T, Base> && IsMut<T> operator OptRef<Base>();
 
         template <Extends<T> U>
         OptRef<const U> As() const { return dynamic_cast<const U*>(obj); }
@@ -140,7 +140,7 @@ namespace Quasi {
         operator ConstRef() const { return AsConst(); }
         explicit operator OptRef<RemConst<T>>() { return AsMut(); }
         template <Extends<T> Base> requires DifferentTo<T, Base> operator OptRef<const Base>() const { return obj; }
-        template <Extends<T> Base> requires DifferentTo<T, Base> && IsMut<Base> operator OptRef<Base>() { return obj; }
+        template <Extends<T> Base> requires DifferentTo<T, Base> && IsMut<T> operator OptRef<Base>() { return obj; }
 
         template <Extends<T> U>
         OptRef<const U> As() const { return dynamic_cast<const U*>(obj); }
@@ -163,4 +163,9 @@ namespace Quasi {
         template <class T> OptRef<T> SomeRef(T& val) { return { val }; }
         template <class T> OptRef<T> DerefPtr(T* val) { return OptRef<T>::Deref(val); }
     }
+
+    template <class T> template <Extends<T> Base> requires DifferentTo<T, Base>
+    Ref<T>::operator OptRef<const Base>() const { return OptRefs::DerefPtr(obj); }
+    template <class T> template <Extends<T> Base> requires DifferentTo<T, Base> && IsMut<T>
+    Ref<T>::operator OptRef<Base>() { return OptRefs::DerefPtr(obj); }
 }

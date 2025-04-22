@@ -146,6 +146,41 @@ namespace Quasi::Memory {
             out[i] = std::move(in[i]);
     }
 
+    template <class T> constexpr void RangeConstruct(T* out, const T& fill, usize count) {
+        for (usize i = 0; i < count; ++i)
+            Memory::ConstructCopyAt(&out[i], fill);
+    }
+
+    template <class T> constexpr void RangeConstructCopy(T* out, const T* in, usize count) {
+        for (usize i = 0; i < count; ++i)
+            Memory::ConstructCopyAt(&out[i], in[i]);
+    }
+
+    // WARNING: undefined behavior on overlapping pointer ranges
+    template <class T> constexpr void RangeConstructCopyNoOverlap(T* __restrict__ out, const T* __restrict__ in, usize count) {
+        RangeConstructCopy(out, in, count);
+    }
+
+    template <class T> constexpr void RangeConstructCopyRev(T* out, const T* in, usize count) {
+        for (usize i = count; i --> 0; )
+            Memory::ConstructCopyAt(&out[i], in[i]);
+    }
+
+    template <class T> constexpr void RangeConstructMove(T* out, T* in, usize count) {
+        for (usize i = 0; i < count; ++i)
+            Memory::ConstructMoveAt(&out[i], std::move(in[i]));
+    }
+
+    // WARNING: undefined behavior on overlapping pointer ranges
+    template <class T> constexpr void RangeConstructMoveNoOverlap(T* __restrict__ out, T* __restrict__ in, usize count) {
+        RangeConstructMove(out, in, count);
+    }
+
+    template <class T> constexpr void RangeConstructMoveRev(T* out, T* in, usize count) {
+        for (usize i = count; i --> 0;)
+            Memory::ConstructMoveAt(&out[i], std::move(in[i]));
+    }
+
     template <class T> constexpr void RangeSwap(T* out, T* in, usize count) {
         for (usize i = 0; i < count; ++i)
             std::swap(out[i], in[i]);

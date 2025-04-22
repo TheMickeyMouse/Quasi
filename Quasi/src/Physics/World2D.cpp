@@ -5,62 +5,65 @@
 namespace Quasi::Physics2D {
     void World::Reserve(usize size) {
         bodies.Reserve(size);
-        bodySweptIndices.Reserve(size);
     }
 
     void World::Clear() {
         bodies.Clear();
-        bodySweptIndices.Clear();
     }
 
-    BodyHandle World::CreateBody(const BodyCreateOptions& options, Shape shape) {
+    Body& World::CreateBody(const BodyCreateOptions& options, Shape shape) {
         const float area = shape.ComputeArea();
         const bool isStatic = options.type == BodyType::STATIC;
-        bodySweptIndices.Push(bodies.Length());
-        return bodies.Push(Body {
+        return *bodies.Push(Box<Body>::Build(
             options.position,
             fComplex::rotate(RAD2DEG * options.rotAngle),
             isStatic ? 0 : area * options.density,
             options.type,
             *this,
             std::move(shape)
-        });
+        ));
     }
 
     void World::DeleteBody(usize i) {
         bodies.Pop(i);
     }
 
-    void World::Update(float dt) {
-        for (Body& b : bodies) {
-            if (!b.enabled) continue;
+    void World::DeleteBody(Ref<Body> body) {
+        const OptionUsize i = bodies.FindIf([=] (const Box<Body>& b) { return b.RefEquals(body); });
+        if (!i) return;
+        bodies.Pop(*i);
+    }
 
-            if (b.type == BodyType::DYNAMIC)
-                b.velocity += gravity * dt;
-            b.Update(dt);
+    void World::Update(float dt) {
+        for (Body* b : bodies) {
+            if (!b->enabled) continue;
+
+            if (b->type == BodyType::DYNAMIC)
+                b->velocity += gravity * dt;
+            b->Update(dt);
         }
 
-        bodySweptIndices.SortByKey([&] (usize i) { return bodies[i].boundingBox.min.x; });
+
+        bodies.SortByKey([&] (const Box<Body>& b) { return b->boundingBox.min.x; });
         // std::ranges::sort(bodyIndicesSorted, [&](u32 i, u32 j) { return cmpr(bodies[i]) < cmpr(bodies[j]); });
 
         // sweep impl
         // std::vector<std::tuple<Body*, Body*, Collision::Event>> collisionPairs;
-        Vec<usize> active;
-        for (usize i : bodySweptIndices) {
-            Body& b = bodies[i];
-            if (!b.enabled) continue;
-            const float min = b.boundingBox.min.x;
+        Vec<Ref<Body>> active;
+        for (Body* b : bodies) {
+            if (!b->enabled) continue;
+            const float min = b->boundingBox.min.x;
             for (u32 j = 0; j < active.Length();) {
-                Body& c = bodies[active[j]];
-                if (c.boundingBox.max.x > min) {
-                    const bool bDyn = b.IsDynamic(), cDyn = c.IsDynamic();
-                    if ((bDyn || cDyn) && c.boundingBox.yrange().overlaps(b.boundingBox.yrange())) {
-                        const Manifold manifold = b.CollideWith(c);
+                Body* c = active[j].Address();
+                if (c->boundingBox.max.x > min) {
+                    const bool bDyn = b->IsDynamic(), cDyn = c->IsDynamic();
+                    if ((bDyn || cDyn) && c->boundingBox.yrange().overlaps(b->boundingBox.yrange())) {
+                        const Manifold manifold = b->CollideWith(*c);
                         if (manifold.contactCount && std::max(manifold.contactDepth[0], manifold.contactDepth[1]) > f32s::EPSILON) {
-                            StaticResolve(b, c, manifold);
-                            DynamicResolve(b, c, manifold);
-                            if (bDyn) b.TryUpdateTransforms();
-                            if (cDyn) c.TryUpdateTransforms();
+                            StaticResolve (*b, *c, manifold);
+                            DynamicResolve(*b, *c, manifold);
+                            if (bDyn) b->TryUpdateTransforms();
+                            if (cDyn) c->TryUpdateTransforms();
                         }
                     }
                     ++j;
@@ -68,7 +71,7 @@ namespace Quasi::Physics2D {
                     active.PopUnordered(j);
                 }
             }
-            active.Push(i);
+            active.Push(*b);
         }
 
         // for (const auto& [base, target, event] : collisionPairs) {
@@ -103,6 +106,6 @@ namespace Quasi::Physics2D {
     }
 
     OptRef<const Body> World::BodyAt(usize i) const {
-        return i < bodies.Length() ? OptRefs::SomeRef(bodies[i]) : nullptr;
+        return i < bodies.Length() ? OptRefs::SomeRef(*bodies[i]) : nullptr;
     }
 } // Physics

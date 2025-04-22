@@ -72,7 +72,7 @@ namespace Quasi::Text {
                         goto rawChar;
                     }
                     str.AddTag(Style::CODE_BLOCK, { 1 });
-                    str.Append(markdown.Substr(1, *endTick - 1));
+                    str.Append(markdown.Substr(1, *endTick));
                     str.AddTag(Style::CODE_BLOCK, { 0 });
                     markdown.Advance(*endTick + 1);
                     goto end;
@@ -136,7 +136,7 @@ namespace Quasi::Text {
                 isStartLine = false;
                 if (styleFlags & QUOTE_FLAG) {
                     styleFlags &= ~QUOTE_FLAG;
-                    str.AddTag(Style::BLOCKQUOTE, false, -1);
+                    str.AddTag(Style::BLOCKQUOTE, false);
                 }
             }
         }
@@ -154,14 +154,14 @@ namespace Quasi::Text {
         return {};
     }
 
-    void RichString::AddTag(Style s, IList<byte> data, int off) {
-        rawString.Insert(DELIMITER, off);
+    void RichString::AddTag(Style s, IList<byte> data) {
+        rawString.Append(DELIMITER);
         stylings.Push((byte)s.Ord());
         for (byte byte : data) stylings.Push(byte);
     }
 
-    void RichString::AddTag(Style s, bool state, int off) {
-        rawString.Insert(DELIMITER, off);
+    void RichString::AddTag(Style s, bool state) {
+        rawString.Append(DELIMITER);
         stylings.Push((byte)(s + !state).Ord()); // off is encoded as the next enum val
     }
 

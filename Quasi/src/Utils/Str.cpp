@@ -213,7 +213,7 @@ namespace Quasi {
             const auto cmp = Cmp::Between(Memory::ReadU64Native(this->Data() + i), Memory::ReadU64Native(other.Data() + i));
             if (cmp != Cmp::EQUAL) return cmp;
         }
-        for (usize j = 0; j < this->Length() & 7; ++j) {
+        for (usize j = 0; j < (this->Length() & 7); ++j) {
             const auto cmp = Cmp::Between(At(i - 8 + j), other.At(i - 8 + j));
             if (cmp != Cmp::EQUAL) return cmp;
         }
@@ -226,7 +226,7 @@ namespace Quasi {
             const auto cmp = Cmp::Between(Memory::ReadU64(this->Data() + i), Memory::ReadU64(other.Data() + i));
             if (cmp != Cmp::EQUAL) return cmp;
         }
-        for (usize j = 0; j < this->Length() & 7; ++j) {
+        for (usize j = 0; j < (this->Length() & 7); ++j) {
             const auto cmp = Cmp::Between(At(i - 8 + j), other.At(i - 8 + j));
             if (cmp != Cmp::EQUAL) return cmp;
         }
@@ -241,13 +241,13 @@ namespace Quasi {
     strdef bool    strcls::Contains   (char c)  const { return Find   (c).HasValue(); }
     strdef bool    strcls::RevContains(char c)  const { return RevFind(c).HasValue(); }
     strdef OptionUsize strcls::Find   (Str str) const {
-        for (usize i = 0; i < this->Length() - str.Length(); ++i)
+        for (usize i = 0; i + str.Length() < this->Length(); ++i)
             if (Substr(i, str.Length()) == str) return i;
         return nullptr;
     }
     strdef OptionUsize strcls::RevFind(Str str) const {
-        for (usize i = this->Length() - str.Length(); i --> 0; )
-            if (Substr(i, str.Length()) == str) return i;
+        for (usize i = this->Length() + 1; --i >= str.Length(); )
+            if (Substr(i - str.Length(), str.Length()) == str) return i;
         return nullptr;
     }
     strdef bool  strcls::Contains   (Str str) const { return Find   (str) != -1; }

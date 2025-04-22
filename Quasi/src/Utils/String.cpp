@@ -244,6 +244,7 @@ namespace Quasi {
             small.AddSize(1);
         } else {
             large.data[large.sizePackedFlag >> 1] = c;
+            large.AddSize(1);
         }
     }
 
@@ -286,6 +287,11 @@ namespace Quasi {
 
     void String::AddNullTerm() {
         return Append('\0');
+    }
+
+    void String::TruncNullTerm() {
+        if (Last() == '\0')
+            Truncate(Length() - 1);
     }
 
     CStr String::IntoCStr() {

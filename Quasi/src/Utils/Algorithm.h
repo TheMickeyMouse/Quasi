@@ -104,8 +104,8 @@ namespace Quasi::Algorithm {
             template <class T> void SortStable4(T* begin, T* dest, Comparator<T> auto&& cmp);
             template <class T> void SortStable8(T* begin, T* dest, T* scratchBegin, Comparator<T> auto&& cmp);
             template <class T> void SmallSortBidirMerge(Span<T> span, T* dest, Comparator<T> auto&& cmp);
-            template <class T> void SmallSortMergeUp  (T*& leftSrc, T*& rightSrc, T*& dest, Comparator<T> auto&& cmp);
-            template <class T> void SmallSortMergeDown(T*& leftSrc, T*& rightSrc, T*& dest, Comparator<T> auto&& cmp);
+            template <class T> void SmallSortMergeUp  (T*& leftSrc, T*& rightSrc, usize rem[2], T*& dest, Comparator<T> auto&& cmp);
+            template <class T> void SmallSortMergeDown(T*& leftSrc, T*& rightSrc, usize rem[2], T*& dest, Comparator<T> auto&& cmp);
             template <class T> void SwapIfLess(T* leftBeg, T* rightBeg, Comparator<T> auto&& cmp);
             template <class T> void SmallSortOptimal9(T* begin, Comparator<T> auto&& cmp);
             template <class T> void SmallSortOptimal13(T* begin, Comparator<T> auto&& cmp);
@@ -296,24 +296,20 @@ namespace Quasi::Algorithm {
                 T* left    = src,               * right    = src + halfLen,
                  * leftRev = src + halfLen - 1, * rightRev = src + len - 1,
                  * destRev = dest + len - 1;
+                //               left,    right
+                usize rem[2] = { halfLen, len - halfLen };
 
-                for (usize i = 0; i < halfLen; ++i) {
-                    SmallSortMergeUp  (left,    right,    dest,    cmp);
-                    SmallSortMergeDown(leftRev, rightRev, destRev, cmp);
+                while (rem[0] && rem[1]) {
+                    SmallSortMergeUp(left, right, rem, dest, cmp);
+                    if (rem[0] && rem[1]) {
+                        SmallSortMergeDown(leftRev, rightRev, rem, destRev, cmp);
+                    } else break;
                 }
-
-                T* leftEnd = leftRev + 1;
-
-                // Odd length, so one element is left unconsumed in the input.
-                if (len & 1) {
-                    const bool leftNonEmpty = left < leftEnd;
-                    T* lastSrc = leftNonEmpty ? left : right;
-                    Memory::ConstructMoveAt(dest, std::move(*lastSrc));
-                }
+                Memory::RangeConstructMoveNoOverlap(dest, rem[0] ? left : right, rem[0] | rem[1]);
             }
 
             template <class T>
-            void SmallSortMergeUp(T*& leftSrc, T*& rightSrc, T*& dest, Comparator<T> auto&& cmp) {
+            void SmallSortMergeUp(T*& leftSrc, T*& rightSrc, usize rem[2], T*& dest, Comparator<T> auto&& cmp) {
                 // This is a branchless merge utility function.
                 // The equivalent code with a branch would be:
                 //
@@ -333,16 +329,18 @@ namespace Quasi::Algorithm {
                 Memory::ConstructMoveAt(dest, std::move(*src));
                 rightSrc += !isLeft;
                 leftSrc  +=  isLeft;
+                --rem[!isLeft];
                 ++dest;
             }
 
             template <class T>
-            void SmallSortMergeDown(T*& leftSrc, T*& rightSrc, T*& dest, Comparator<T> auto&& cmp) {
+            void SmallSortMergeDown(T*& leftSrc, T*& rightSrc, usize rem[2], T*& dest, Comparator<T> auto&& cmp) {
                 const bool isRight = cmp(*rightSrc, *leftSrc) >= 0;
                 T* src = isRight ? rightSrc : leftSrc;
                 Memory::ConstructMoveAt(dest, std::move(*src));
                 rightSrc -=  isRight;
                 leftSrc  -= !isRight;
+                --rem[isRight];
                 --dest;
             }
 
@@ -386,7 +384,7 @@ namespace Quasi::Algorithm {
                 // Should is_less panic v was not modified in parity_merge and retains it's original input.
                 // scratch and v must not alias and scratch has v.len() space.
                 SmallSortBidirMerge(Spans::Slice(begin, len), stackArray, cmp);
-                Memory::MemCopyNoOverlap(begin, stackArray, len * sizeof(T));
+                Memory::RangeConstructMoveNoOverlap(begin, stackArray, len);
             }
 
             template <class T>
@@ -866,14 +864,14 @@ namespace Quasi::Algorithm {
             T* begin = mid - left;
             if (left < right) {
                 T* temp = _alloca(sizeof(T) * left);
-                Memory::RangeMoveNoOverlap(temp, begin, left);
-                Memory::RangeMove         (begin, mid, right);
-                Memory::RangeMoveNoOverlap(begin + right, temp, left);
+                Memory::RangeConstructMoveNoOverlap(temp, begin, left);
+                Memory::RangeMove                  (begin, mid, right);
+                Memory::RangeMoveNoOverlap         (begin + right, temp, left);
             } else {
                 T* temp = _alloca(sizeof(T) * right);
-                Memory::RangeMoveNoOverlap(temp, mid, right);
-                Memory::RangeMove         (mid, begin, left);
-                Memory::RangeMoveNoOverlap(begin, temp, right);
+                Memory::RangeConstructMoveNoOverlap(temp, mid, right);
+                Memory::RangeMove                  (mid, begin, left);
+                Memory::RangeMoveNoOverlap         (begin, temp, right);
             }
         } else {
             T* begin = mid - left;

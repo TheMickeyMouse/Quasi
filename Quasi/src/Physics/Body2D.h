@@ -71,36 +71,6 @@ namespace Quasi::Physics2D {
         friend void DynamicResolve(Body&, Body&, const Manifold&);
     };
 
-    struct BodyHandle : INullable<Body&, BodyHandle>, IReference<Body, BodyHandle> {
-        u32 index = 0;
-        OptRef<World> world = nullptr;
-
-        using IReference::operator->;
-        using IReference::operator*;
-
-    private:
-        BodyHandle(u32 i, OptRef<World> w) : index(i), world(w) {}
-    public:
-        BodyHandle() = default;
-        BodyHandle(Nullptr) : BodyHandle() {}
-        BodyHandle(Body& b);
-        BodyHandle(const Body& b) : BodyHandle(Memory::AsMut(b)) {}
-
-        static BodyHandle At(World& w, u32 i) { return { i, w }; }
-
-        Body& ValueImpl();
-        const Body& ValueImpl() const;
-        Body& UnwrapImpl() { return Value(); }
-        const Body& UnwrapImpl() const { return Value(); }
-
-        bool HasValueImpl() const;
-
-        static BodyHandle NoneImpl() { return {}; }
-        static BodyHandle SomeImpl(const Body& b) { return { b }; }
-
-        void Remove();
-    };
-
     struct BodyCreateOptions {
         fVector2 position {};
         float rotAngle = 0.0f;

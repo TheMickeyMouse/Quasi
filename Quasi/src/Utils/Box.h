@@ -86,6 +86,7 @@ namespace Quasi {
 
         Ref<const T> AsRef() const { return Ref<const T>::Deref(data); }
         Ref<T> AsRef() { return Ref<T>::Deref(data); }
+        bool RefEquals(Ref<const T> other) const { return data == other.Address(); }
 
         const T* Data() const { return data; }
         T* Data() { return data; }

@@ -121,6 +121,7 @@ namespace Quasi {
         void InsertStr(Str str, usize i);
 
         void AddNullTerm();
+        void TruncNullTerm();
         CStr IntoCStr();
 
         char Pop();

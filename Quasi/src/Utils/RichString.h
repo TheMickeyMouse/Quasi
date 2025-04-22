@@ -46,8 +46,8 @@ namespace Quasi::Text {
 
         void Append(const char c) { rawString += c; }
         void Append(Str s) { rawString += s; }
-        void AddTag(Style s, IList<byte> data, int off = 0);
-        void AddTag(Style s, bool state, int off = 0);
+        void AddTag(Style s, IList<byte> data);
+        void AddTag(Style s, bool state);
 
         uint Lines() const;
 

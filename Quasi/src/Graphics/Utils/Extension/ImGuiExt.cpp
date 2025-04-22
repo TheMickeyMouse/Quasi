@@ -12,8 +12,6 @@
 #include "Math/Transform3D.h"
 #include "Utils/Text/Formatting.h"
 
-struct InputTextCallback_UserData;
-
 namespace ImGui {
     static const Quasi::Math::Color COLOR_X_AXIS = Quasi::Math::Color::BETTER_RED();
     static const Quasi::Math::Color COLOR_Y_AXIS = Quasi::Math::Color::BETTER_GREEN();
@@ -79,15 +77,17 @@ namespace ImGui {
     }
 
     void EditString(Q Str label, Q String& string) {
+        string.AddNullTerm();
         auto* const callback = +[] (ImGuiInputTextCallbackData* data) -> int {
             Q String* s = (Q String*)data->UserData;
             if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
-                s->Resize(data->BufTextLen);
+                s->Resize(data->BufTextLen + 1);
                 data->Buf = (char*)s->Data();
             }
             return 0;
         };
         InputTextMultiline(label.Data(), string.Data(), string.Capacity(), ImVec2(0, 0), ImGuiInputTextFlags_CallbackResize, callback, &string);
+        string.TruncNullTerm();
     }
 
     template <class T> ImGuiDataType ImGuiDataEnum() {
