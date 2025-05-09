@@ -19,7 +19,7 @@ namespace Quasi::Graphics {
     private:
         Vec<RenderHandle> renders;
 
-        Math::iVector2 windowSize;
+        Math::iv2 windowSize;
         GLFWwindow* mainWindow;
 
         struct GLRenderOptions {
@@ -39,7 +39,7 @@ namespace Quasi::Graphics {
         inline static OptRef<GraphicsDevice> Instance;
         inline static bool ShowDebugMenu = false;
     public:
-        explicit GraphicsDevice(GLFWwindow* window, Math::iVector2 winSize);
+        explicit GraphicsDevice(GLFWwindow* window, Math::iv2 winSize);
 
         void Quit();
         void Terminate();
@@ -76,7 +76,7 @@ namespace Quasi::Graphics {
         bool IsClosed() const { return !mainWindow; }
         bool WindowIsOpen() const;
     
-        Math::iVector2 GetWindowSize() const { return windowSize; }
+        Math::iv2 GetWindowSize() const { return windowSize; }
         float GetAspectRatio() const { return (float)windowSize.x / (float)windowSize.y; }
         GLFWwindow* GetWindow() { return mainWindow; }
         const GLFWwindow* GetWindow() const { return mainWindow; }
@@ -100,7 +100,7 @@ namespace Quasi::Graphics {
         Math::RandomGenerator& GetRand() { return randDevice; }
         const Math::RandomGenerator& GetRand() const { return randDevice; }
 
-        static GraphicsDevice Initialize(Math::iVector2 winSize = { 640, 480 });
+        static GraphicsDevice Initialize(Math::iv2 winSize = { 640, 480 });
 
         friend class Texture;
     };

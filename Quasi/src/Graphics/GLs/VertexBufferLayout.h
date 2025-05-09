@@ -1,10 +1,10 @@
 ﻿#pragma once
-#include <vector>
 
 #include "GLTypeID.h"
 #include "Math/Vector.h"
 #include "Math/Color.h"
 #include "Utils/Vec.h"
+#include "Utils/Type.h"
 
 namespace Quasi::Graphics {
     struct VertexBufferComponent {
@@ -34,8 +34,9 @@ namespace Quasi::Graphics {
         template <class T> static VertexBufferComponent Type() {
             if constexpr (Floating<T>) return { GetTypeIDFor<T>(), 1 };
             if constexpr (Integer<T>) return { GetTypeIDFor<T>(), 1, false, true };
-            if constexpr (Math::IVector<T> || Math::ColorLike<T>)
-                return { GetTypeIDFor<typename T::scalar>(), T::dimension };
+            if constexpr (requires (T x) { { Math::Vector { x } } -> SameAs<T>; } ||
+                          requires (T x) { { Math::IColor { x } } -> SameAs<T>; })
+                return { GetTypeIDFor<typename T::Elm>(), T::Dim };
             return { GLTypeID::NONE, 0 };
         }
     };
@@ -56,18 +57,18 @@ namespace Quasi::Graphics {
         void Push(VertexBufferComponent comp);
         void PushLayout(const VertexBufferLayout& layout);
 
-        void PushFloat()      { Push(VertexBufferComponent::Float());  }
-        void PushDouble()     { Push(VertexBufferComponent::Double()); }
-        void PushInt()        { Push(VertexBufferComponent::Int());    }
-        void PushUInt()       { Push(VertexBufferComponent::Uint());   }
-        void PushChar()       { Push(VertexBufferComponent::SByte());  }
-        void PushByte()       { Push(VertexBufferComponent::Byte());   }
-        void PushVector2()    { Push(VertexBufferComponent::Vec2());   }
-        void PushVector3()    { Push(VertexBufferComponent::Vec3());   }
-        void PushVector4()    { Push(VertexBufferComponent::Vec4());   }
-        void PushVector2Int() { Push(VertexBufferComponent::IVec2());  }
-        void PushVector3Int() { Push(VertexBufferComponent::IVec3());  }
-        void PushVector4Int() { Push(VertexBufferComponent::IVec4());  }
+        void PushFloat()  { Push(VertexBufferComponent::Float());  }
+        void PushDouble() { Push(VertexBufferComponent::Double()); }
+        void PushInt()    { Push(VertexBufferComponent::Int());    }
+        void PushUInt()   { Push(VertexBufferComponent::Uint());   }
+        void PushChar()   { Push(VertexBufferComponent::SByte());  }
+        void PushByte()   { Push(VertexBufferComponent::Byte());   }
+        void PushFv2()    { Push(VertexBufferComponent::Vec2());   }
+        void PushFv3()    { Push(VertexBufferComponent::Vec3());   }
+        void PushFv4()    { Push(VertexBufferComponent::Vec4());   }
+        void PushIv2()    { Push(VertexBufferComponent::IVec2());  }
+        void PushIv3()    { Push(VertexBufferComponent::IVec3());  }
+        void PushIv4()    { Push(VertexBufferComponent::IVec4());  }
 
         const Vec<VertexBufferComponent>& GetComponents() const { return components; }
         u32 GetStride() const { return stride; }

@@ -20,19 +20,33 @@ namespace Quasi::Graphics::MeshUtils {
 
         template <FnArgs<MData> F>
         void MergeImpl(F&& f, Mesh<ResultingV<F>>& mesh) {
-            for (u32 i = 0; i < 6; ++i) {
+            using namespace Math;
+            static constexpr u16 cornerData[6] {
+                0b000'010'100'110,
+                0b001'011'101'111,
+                0b000'001'100'101,
+                0b010'011'110'111,
+                0b000'010'001'011,
+                0b100'110'101'111,
+            };
+            for (usize i = 0; i < 6; ++i) {
                 auto meshp = mesh.NewBatch();
-
                 meshp.PushI(0, 1, 2);
                 meshp.PushI(1, 2, 3);
 
-                const Math::fVector3 norm = Math::fVector3::from_direction(i, 1);
-                const u32 n = i / 2, flip = (i & 1) << n;
-                const u32 t1 = 0, t2 = n == 0 ? 2 : 1, t3 = n == 2 ? 2 : 4, t4 = t2 + t3;
-                meshp.PushV(f(MData { .Position = Math::fVector3::from_corner(t1 ^ flip, 1), .Normal = norm }));
-                meshp.PushV(f(MData { .Position = Math::fVector3::from_corner(t2 ^ flip, 1), .Normal = norm }));
-                meshp.PushV(f(MData { .Position = Math::fVector3::from_corner(t3 ^ flip, 1), .Normal = norm }));
-                meshp.PushV(f(MData { .Position = Math::fVector3::from_corner(t4 ^ flip, 1), .Normal = norm }));
+                fv3 n;
+                n[i / 2] = i % 2 ? 1 : -1;
+                const u32 quad = cornerData[i];
+                const bool corners[4][3] {
+                    { (quad >> 0 & 1) == 1, (quad >> 1  & 1) == 1, (quad >> 2  & 1) == 1 },
+                    { (quad >> 3 & 1) == 1, (quad >> 4  & 1) == 1, (quad >> 5  & 1) == 1 },
+                    { (quad >> 6 & 1) == 1, (quad >> 7  & 1) == 1, (quad >> 8  & 1) == 1 },
+                    { (quad >> 9 & 1) == 1, (quad >> 10 & 1) == 1, (quad >> 11 & 1) == 1 },
+                };
+                meshp.PushV(f(MData { .Position = fv3::FromCorner(corners[0]), .Normal = n }));
+                meshp.PushV(f(MData { .Position = fv3::FromCorner(corners[1]), .Normal = n }));
+                meshp.PushV(f(MData { .Position = fv3::FromCorner(corners[2]), .Normal = n }));
+                meshp.PushV(f(MData { .Position = fv3::FromCorner(corners[3]), .Normal = n }));
             }
         }
     };

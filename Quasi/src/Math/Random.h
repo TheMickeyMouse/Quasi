@@ -2,8 +2,6 @@
 #include <random>
 #include <chrono>
 
-#include "Quaternion.h"
-#include "Complex.h"
 #include "Constants.h"
 
 namespace Quasi::Math {
@@ -15,9 +13,10 @@ namespace Quasi::Math {
         };
         std::mt19937 device { GetSeed() };
 
-        template <class T> using int_dist_t = std::uniform_int_distribution<T>;
-        template <class T> using real_dist_t = std::uniform_real_distribution<T>;
-        using bool_dist_t = std::bernoulli_distribution;
+        template <class T> using IntDistribution   = std::uniform_int_distribution<T>;
+        template <class T> using RealDistribution  = std::uniform_real_distribution<T>;
+        template <class T> using GaussDistribution = std::normal_distribution<T>;
+        using BoolDistribution = std::bernoulli_distribution;
 
         RandomGenerator() = default;
 
@@ -26,60 +25,35 @@ namespace Quasi::Math {
         template <class Sq> void SetSeed(Sq& newSeeder) { device.seed(newSeeder()); }
         void Reseed() { device.seed(seeder); }
 
-        void Discard(Integer auto num) { device.discard((u64)num); }
+        void Discard(u64 num) { device.discard(num); }
         u32 GetRaw() { return device(); }
 
-        template <Integer I> I Get(
-            I min = std::numeric_limits<I>::min(),
-            I max = std::numeric_limits<I>::max()) { return GetIncl(min, (I)(max - 1)); }
-        template <Integer I> I GetIncl(
-            I min = std::numeric_limits<I>::min(),
-            I max = std::numeric_limits<I>::max()) { return int_dist_t<I> { min, max } (device); }
+        template <Integer I> I Get(I min, I max) { return GetIncl(min, (I)(max - 1)); }
+        template <Integer I> I GetIncl(I min, I max) { return IntDistribution<I> { min, max } (device); }
 
-        template <Floating F> F Get(F min = 0, F max = 1)
-        { return real_dist_t<F> { min, max } (device); }
-        template <Floating F> F GetIncl(F min = 0, F max = 1)
-        { return getf(min, std::nextafter(max, std::numeric_limits<F>::max())); }
+        template <Floating F> F Get(F min = 0, F max = 1) { return RealDistribution<F> { min, max } (device); }
 
         template <Floating F> F GetLogarithmic(F min = 0, F max = 1)
         { return std::log(Get(std::exp(min), std::exp(max))); }
-        template <Floating F> F GetLogarithmicIncl(F min = 0, F max = 1)
-        { return std::log(GetIncl(std::exp(min), std::exp(max))); }
-
         template <Floating F> F GetExponential(F min = 0, F max = 1)
         { return std::exp(Get(std::log(min), std::log(max))); }
-        template <Floating F> F GetExponentialIncl(F min = 0, F max = 1)
-        { return std::exp(GetIncl(std::log(min), std::log(max))); }
 
-        char Get    (const char min, const char max) { return (char)Get<i16>(min, max); }
-        char GetIncl(const char min, const char max) { return (char)Get<i16>(min, (i16)(max + 1)); }
-        byte Get    (const byte min, const byte max) { return (byte)Get<u16>(min, max); }
-        byte GetIncl(const byte min, const byte max) { return (byte)Get<u16>(min, (u16)max + 1); }
+        template <Floating F> F GetGaussian(F mean, F stddev) { return GaussDistribution<F> { mean, stddev } (device); }
 
-        template <class N, class M>
-        requires Numeric<N> && Numeric<M> && DistantTo<N, M>
-        Common<N, M> Get(N min, M max) {
-            using T = Common<N, M>;
-            return Get<T>((T)min, (T)max);
-        }
-        template <class N, class M>
-        requires Numeric<N> && Numeric<M> && DistantTo<N, M>
-        Common<N, M> GetIncl(N min, M max) {
-            using T = Common<N, M>;
-            return GetIncl<T>((T)min, (T)max);
-        }
+        u8 GetByte(u8 min, u8 max) { return (u8)Get<u16>(min, max); }
 
-        bool GetBool(std::floating_point auto probability = 0.5f) { return bool_dist_t { probability } (device); }
+        bool GetBool(f32 probability = 0.5f) { return BoolDistribution { probability } (device); }
+        bool GetBool(int num, int denom) { return Get(0, denom) >= num; }
 
-        template <class F> auto Get(F f) -> decltype(f(0)) { return f(device); }
+        template <class F> auto GetForDistribution(F f) -> decltype(f(0)) { return f(device); }
 
         template <class T>
         T Choose(IList<T> ilist) { return Choose(Spans::FromIList(ilist)); }
 
         template <ContinuousCollectionAny C>
-        CollectionItem<C>&       Choose(C& arr)       { return arr[Get(0, arr.Length())]; }
+        CollectionItem<C>&       Choose(C& arr)       { return arr[Get<usize>(0, arr.Length())]; }
         template <ContinuousCollectionAny C>
-        const CollectionItem<C>& Choose(const C& arr) { return arr[Get(0, arr.Length())]; }
+        const CollectionItem<C>& Choose(const C& arr) { return arr[Get<usize>(0, arr.Length())]; }
 
         template <class T, template <typename> class C = Vec> C<T> Generate(T min, T max, usize size) {
             C arr = C<T>::WithCap(size);
@@ -87,52 +61,47 @@ namespace Quasi::Math {
             return arr;
         }
 
-        template <class T, usize N> Array<T, N> Generate(T min, T max) {
+        template <class T, usize N> Array<T, N> GenerateArray(T min, T max) {
             Array<T, N> arr;
             for (usize i = 0; i < N; ++i) arr[i] = Get(min, max);
             return arr;
         }
 
         template <class F, template <typename> class C = Vec>
-        auto Gen(F f, usize size) -> C<decltype(f(0))> {
+        auto GenerateWith(F f, usize size) -> C<decltype(f(0))> {
             C arr = C<decltype(f(0))>::WithCap(size);
             for (usize i = 0; i < size; ++i) arr.Push(Get(f));
             return arr;
         }
 
-        template <class F, usize N> auto Gen(F f) -> Array<decltype(f(0)), N> {
+        template <class F, usize N> auto GenerateArrayWith(F f) -> Array<decltype(f(0)), N> {
             Array<decltype(f(0)), N> arr;
             for (usize i = 0; i < N; ++i) arr[i] = Get(f);
             return arr;
         }
-
-        template <class T> T& Choose(Span<T> span) { return span[Get<usize>(0, span.Length())]; }
     };
 
-    template <u32 N, class T>
-    typename details::vecn_base<N, T>::vect details::vecn_base<N, T>::random(RandomGenerator& rg, const RectN<N, T>& range) {
-        return [&]<u32... Is>(std::integer_sequence<u32, Is...>) {
-            return VectorN<N, T> { rg.Get(range.min[Is], range.max[Is])... };
-        }(std::make_integer_sequence<u32, N> {});
+    template <class T, usize N>
+    Vector<T, N> IVector<T, N>::Random(RandomGenerator& rand, const Super& min, const Super& max) {
+        Super v;
+        for (usize i = 0; i < N; ++i) v[i] = rand.Get(min[i], max[i]);
+        return v;
+    }
+    template <class T, usize N>
+    Vector<T, N> IVector<T, N>::Random(RandomGenerator& rand) { return Random(rand, 0, 1); }
+    template <class T, usize N>
+    Vector<T, N> IVector<T, N>::Random(RandomGenerator& rand, const Rect<T, N>& range) {
+        return Random(rand, range.min, range.max);
+    }
+    template <class T, usize N>
+    Vector<T, N> IVector<T, N>::RandomOnUnit(RandomGenerator& rand) requires Floating<T> {
+        Super v;
+        for (usize i = 0; i < N; ++i) v[i] = rand.GetGaussian<T>(0, 1);
+        return v.Norm();
     }
 
-    template <u32 N, class T>
-    typename details::vecn_base<N, T>::vect details::vecn_base<N, T>::random_on_unit(RandomGenerator& rg) requires traits_float {
-        return random(rg, { -1, 1 }).norm(); // also uniform
-    }
-
-    template <u32 N, class T>
-    typename details::vecn_base<N, T>::vect details::vecn_base<N, T>::random_in_unit(RandomGenerator& rg) requires traits_float {
-        return random_on_unit(rg) * std::pow(rg.Get((T)0, (T)1), (T)1 / (T)N); // uniform distribution
-    }
-
-    template <class T> Complex<T> Complex<T>::random_rot(RandomGenerator& rg) {
-        return rotate(rg.Get(0, TAU));
-    }
-
-    inline Quaternion Quaternion::random_rot(RandomGenerator& rg) {
-        const auto [u, v, w] = fVector3::random(rg, { 0, 1 });
-        return { std::sqrt(1 - u) * std::sin(TAU * v), std::sqrt(1 - u) * std::cos(TAU * v),
-                 std::sqrt(u)     * std::sin(TAU * w), std::sqrt(u)     * std::sin(TAU * w) };
+    template <class T, usize N>
+    Vector<T, N> IVector<T, N>::RandomInUnit(RandomGenerator& rand) requires Floating<T> {
+        return RandomOnUnit(rand) * std::pow(rand.Get<T>(), (T)1 / N);
     }
 }

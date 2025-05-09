@@ -2,6 +2,5 @@
 
 namespace Quasi::Math {
     template struct Complex<int>;
-    template struct Complex<float>;
-    template struct Complex<double>;
+    template struct Complex<f32>;
 }

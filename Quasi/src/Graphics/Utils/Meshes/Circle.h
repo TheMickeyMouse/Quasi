@@ -26,9 +26,9 @@ namespace Quasi::Graphics::MeshUtils {
             const float angle = Math::TAU / (float)opt.subdivisions;
 
             auto meshp = mesh.NewBatch();
-            meshp.PushV(f(MData { Math::fVector2::ZERO() }));
-            for (uint i = 0; i < opt.subdivisions; ++i) {
-                meshp.PushV(f(MData { Math::fVector2::from_polar(1.0f, angle * (float)i) }));
+            meshp.PushV(f(MData { Math::fv2::Zero() }));
+            for (u32 i = 0; i < opt.subdivisions; ++i) {
+                meshp.PushV(f(MData { Math::fv2::FromPolar(1.0f, Math::Radians(angle * (float)i)) }));
                 meshp.PushI(0, i + 1, (i + 1) % opt.subdivisions + 1);
             }
         }

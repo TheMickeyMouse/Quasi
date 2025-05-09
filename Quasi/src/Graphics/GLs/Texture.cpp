@@ -25,9 +25,9 @@ namespace Quasi::Graphics {
         Slots.Resize(SlotCount, nullptr);
     }
 
-    Texture::Texture(GraphicsID id, const Math::uVector3& size) : GLObject(id), size(size), textureSlot(TextureSlot::Unset()) {}
+    Texture::Texture(GraphicsID id, const Math::uv3& size) : GLObject(id), size(size), textureSlot(TextureSlot::Unset()) {}
 
-    Texture Texture::New(const byte* raw, const Math::uVector3& size, const TextureInitParams& init) {
+    Texture Texture::New(const byte* raw, const Math::uv3& size, const TextureInitParams& init) {
         GraphicsID rendererID;
         QGLCall$(GL::GenTextures(1, &rendererID));
         Texture t { rendererID, size };
@@ -69,7 +69,7 @@ namespace Quasi::Graphics {
         SetWrapping(TextureBorder::CLAMP_TO_EDGE);
     }
 
-    void Texture::TexImage(const byte* data, const Math::uVector3& dim, const TextureLoadParams& params, TextureTarget overrideTarget) {
+    void Texture::TexImage(const byte* data, const Math::uv3& dim, const TextureLoadParams& params, TextureTarget overrideTarget) {
         const int newTarget = overrideTarget == TextureTarget::NONE ? TargetI() : (int)overrideTarget;
         switch (Dimension()) {
             case 1:
@@ -96,21 +96,21 @@ namespace Quasi::Graphics {
 
 
     Texture Texture::LoadPNGBytes(Span<const byte> datapng, const TextureInitParams& init) {
-        Math::iVector2 size;
+        Math::iv2 size;
         int BPPixel;
         stbi_set_flip_vertically_on_load(1);
         const auto localTexture = STBIImage::Own(stbi_load_from_memory(datapng.Data(), (int)datapng.Length(), &size.x, &size.y, &BPPixel, 4));
-        Texture tex = New(localTexture, { size.x, size.y }, init);
+        Texture tex = New(localTexture, (Math::uv2)size, init);
         
         return tex;
     }
 
     Texture Texture::LoadPNG(CStr fname, const TextureInitParams& init) {
-        Math::iVector2 size;
+        Math::iv2 size;
         int BPPixel;
         stbi_set_flip_vertically_on_load(1);
         const auto localTexture = STBIImage::Own(stbi_load(fname.Data(), &size.x, &size.y, &BPPixel, 4));
-        Texture tex = New(localTexture, { size.x, size.y }, init);
+        Texture tex = New(localTexture, (Math::uv2)size, init);
 
         return tex;
     }
@@ -128,7 +128,7 @@ namespace Quasi::Graphics {
             const auto localTexture = STBIImage::Own(stbi_load(face.Data(), &sx, &sy, &bpx, 4));
             Texture dummy {};
             dummy.SetTarget((TextureTarget)faceTarget);
-            dummy.TexImage(localTexture, { sx, sy }, init.load);
+            dummy.TexImage(localTexture, { (u32)sx, (u32)sy }, init.load);
             ++faceTarget;
         }
         cubemap.DefaultParams();
@@ -206,11 +206,11 @@ namespace Quasi::Graphics {
     void Texture::SetSubTexture(const void* data, const Math::uRect3D& rect, const TextureLoadParams& params) {
         switch (Dimension()) {
             case 1:
-                return QGLCall$(GL::TexSubImage1D(TargetI(), params.level, rect.min.x, rect.width(), (int)params.format, params.type->glID, data));
+                return QGLCall$(GL::TexSubImage1D(TargetI(), params.level, rect.min.x, rect.Width(), (int)params.format, params.type->glID, data));
             case 2:
-                return QGLCall$(GL::TexSubImage2D(TargetI(), params.level, rect.min.x, rect.min.y, rect.width(), rect.height(), (int)params.format, params.type->glID, data));
+                return QGLCall$(GL::TexSubImage2D(TargetI(), params.level, rect.min.x, rect.min.y, rect.Width(), rect.Height(), (int)params.format, params.type->glID, data));
             case 3:
-                return QGLCall$(GL::TexSubImage3D(TargetI(), params.level, rect.min.x, rect.min.y, rect.min.z, rect.width(), rect.height(), rect.depth(), (int)params.format, params.type->glID, data));
+                return QGLCall$(GL::TexSubImage3D(TargetI(), params.level, rect.min.x, rect.min.y, rect.min.z, rect.Width(), rect.Height(), rect.Depth(), (int)params.format, params.type->glID, data));
             default:;
         }
     }

@@ -8,13 +8,11 @@ namespace Quasi {
     template <class T>
     using IList = std::initializer_list<T>;
 
-    template <class T> using IterOf = typename T::const_iterator;
-    template <class T> using IterMutOf = typename T::iterator;
-
 	template <class T> using NoInfer = std::type_identity_t<T>;
 
 	struct Empty {
 		Empty(auto&&...) {}
+		bool operator==(const Empty&) const { return true; }
 	};
 
 	template <class T> using Nullable = T;
@@ -22,7 +20,11 @@ namespace Quasi {
 	template <class T> using InOut = T;
 	template <class T> using Out = T;
 	using Nullptr = std::nullptr_t;
-    inline struct UncheckedMarker {} Unchecked;
+
+	enum UncheckedMarker { Unchecked };
+	enum UninitMarker    { Uninit };
+	enum CheckedMarker   { Checked };
+	template <class T> struct TypeMarker {};
 
 	template <class> concept AlwaysTrue  = true;
 	template <class> concept AlwaysFalse = false;
@@ -47,6 +49,7 @@ namespace Quasi {
 
 	template <class T> using   ToConstRef  = const RemRef<T>&;
 	template <class T> using   ToMutRef    = RemConstRef<T>&;
+	template <class T> const T& AsConst(T&& x) { return x; }
 
 	template <class T> using   RemQual = std::remove_cvref_t<T>;
 
@@ -79,20 +82,7 @@ namespace Quasi {
 	template <class T, class ConstIf>   using AddConstIf = IfElse<IsConst<ConstIf>,   const T, T>;
 	template <class T, class NoConstIf> using RemConstIf = IfElse<IsConst<NoConstIf>, T, RemConst<T>>;
 
-	template <class T, class U> using Common = decltype(false ? std::declval<T>() : std::declval<U>());
-
-	template <bool Packed> struct MakeCommonResult {
-		template <class T, class... Ts>
-		using Result = decltype(false ?
-			std::declval<T>() :
-			std::declval<typename MakeCommonResult<(sizeof...(Ts) > 1)>::template Result<Ts...>>());
-	};
-	template <> struct MakeCommonResult<false> { template <class T> using Result = T; };
-
-	template <class F, class... Ts> using CommonResult =
-		typename MakeCommonResult<(sizeof...(Ts) > 1)>::template Result<
-			decltype(std::declval<F>()(std::declval<const Ts&>()))...
-		>;
+	template <class T, class U> using Common = RemQual<decltype(false ? std::declval<const T&>() : std::declval<const U&>())>;
 
 	template <class T> concept TrivialCopy     = std::is_trivially_copyable_v<T>;
 	template <class T> concept TrivialDestruct = std::is_trivially_destructible_v<T>;

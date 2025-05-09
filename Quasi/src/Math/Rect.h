@@ -3,218 +3,175 @@
 #include "Vector.h"
 
 namespace Quasi::Math {
-    template <u32 N, class T> struct RectN;
+    template <class T, usize N> struct Rect {
+        using fT     = Common<T, f32>;
+        using VecT   = Vector<T, N>;
+        using RangeT = Range<T>;
+        VecT min, max;
 
-    namespace details {
-        template <class V> struct rect_origin_t {
-            using scalar = typename V::scalar;
-            static constexpr u32 dimension = V::dimension;
-            using rect_t = RectN<dimension, scalar>;
-            V pos;
-            rect_t rect(const V& size) const;
-        };
-
-        template <class V> struct rect_size_t { V pos; };
-    }
-
-    template <class> struct IsRectType : std::false_type {};
-    template <u32 N, class T> struct IsRectType<RectN<N, T>> : std::true_type {};
-    template <class T> concept RectLike = IsRectType<T>::value;
-
-    template <RectLike> struct RectIter;
-
-#define RECT_OP(OP) \
-    template <class U> auto operator OP(U v) const { \
-        static_assert(std::is_arithmetic_v<U> || IVector<U>, "rect::operator" #OP " not supported"); \
-        return RectN<N, decltype((min OP v).x)> { min OP v, max OP v }; \
-    } \
-    template <class U> RectN& operator OP##=(U v) { return *this = *this OP v; }
-
-#define NODISC [[nodiscard]]
-
-    namespace details {
-        template <class T>
-        rect_size_t<T> as_size(const T& val) {
-             return { val };
-         }
-
-        template <class T>
-        rect_origin_t<T> as_origin(const T& val) {
-            return { val };
-        }
-    }
-    
-    template <u32 N, class T>
-    struct RectN {
-        static u32 constexpr dimension = N;
-        static bool constexpr is1D = N == 1;
-        using scalar = T;
-        using vec = VectorN<N, T>;
-        vec min, max;
-
-        RectN() : min(0), max(0) {}
-        RectN(T min, T max) requires is1D : min(min), max(max) {}
-        RectN(T minX, T maxX, T minY, T maxY) requires (N == 2) : min(minX, minY), max(maxX, maxY) {}
-        RectN(T minX, T maxX, T minY, T maxY, T minZ, T maxZ) requires (N == 3) : min(minX, minY, minZ), max(maxX, maxY, maxZ) {}
-        RectN(T minX, T maxX, T minY, T maxY, T minZ, T maxZ, T minW, T maxW) requires (N == 4) : min(minX, minY, minZ, minW), max(maxX, maxY, maxZ, maxW) {}
-        RectN(const vec& min, const vec& max) requires (!is1D) : min(min), max(max) {}
-        RectN(const vec& min, const details::rect_size_t<vec>& size) : min(min), max(min + size.pos) {}
-        RectN(const details::rect_origin_t<vec>& origin, const vec& size) { *this = origin.rect(size); }
-
-        static RectN empty() { return {}; }
-        static RectN whole() { return { std::numeric_limits<T>::lowest(), std::numeric_limits<T>::max() }; }
-        static RectN unrange() { return { std::numeric_limits<T>::max(), std::numeric_limits<T>::lowest() }; }
-        static RectN at(const vec& point) { return { point, point }; }
-        static RectN over(const Collection<vec> auto& nums);
-
-        NODISC bool operator==(const RectN& other) const { return min == other.min && max == other.max; }
-        NODISC vec operator[](const usize i) const { return corner(i); }
-        
-        RECT_OP(+)
-        RECT_OP(-)
-        RECT_OP(*)
-        RECT_OP(/)
-        
-        NODISC scalar n_distance(int n) const { return max[n] - min[n]; }
-        NODISC scalar width()    const { return n_distance(0); }
-        NODISC scalar height()   const requires (N >= 2) { return n_distance(1); }
-        NODISC scalar depth()    const requires (N >= 3) { return n_distance(2); }
-        NODISC scalar duration() const requires (N >= 4) { return n_distance(3); }
-
-        NODISC scalar n_volume() const {
-            static_assert(1 <= N && N <= 4, "invalid dimension");
-            if constexpr (N == 1) return width();
-            else if constexpr (N == 2) return width() * height();
-            else if constexpr (N == 3) return width() * height() * depth();
-            else if constexpr (N == 4) return width() * height() * depth() * duration();
-            else return 0;
-        }
-        NODISC scalar area()        const requires (N == 2) { return n_volume(); }
-        NODISC scalar volume()      const requires (N == 3) { return n_volume(); }
-        NODISC scalar hypervolume() const requires (N == 4) { return n_volume(); }
-        
-        NODISC vec size()   const { return (vec)(max - min); }
-        NODISC vec center() const { return (vec)((max + min) / 2); }
-        NODISC vec corner(usize i) const {
-            vec result;
-            for (uint b = 0; b < N; ++b) {
-                result[b] = i & (1 << b) ? max[b] : min[b];
+        Rect() : min(0), max(0) {}
+        Rect(const RangeT (&bounds)[N]) {
+            for (usize i = 0; i < N; ++i) {
+                min[i] = bounds[i].min;
+                max[i] = bounds[i].max;
             }
+        }
+        Rect(const VecT& min, const VecT& max) : min(min), max(max) {}
+        Rect(const RangeT (&bounds)[N], CheckedMarker) {
+            for (usize i = 0; i < N; ++i) {
+                min[i] = bounds[i].RecheckedMin();
+                max[i] = bounds[i].RecheckedMax();
+            }
+        }
+        Rect(const VecT& min, const VecT& max, CheckedMarker) : min(VecT::Min(min, max)), max(VecT::Min(min, max)) {}
+        Rect(const VecT& min, const VecT& max, InclusiveMarker) requires Integer<T>  : min(min), max(max + 1) {}
+        Rect(const VecT& min, const VecT& max, InclusiveMarker) requires Floating<T> : min(min), max(max) {}
+
+        static Rect FromSize  (const VecT& min,    const VecT& size) { return { min, min + size }; }
+        static Rect FromCenter(const VecT& center, const VecT& size) { return { center - size, center + size, Inclusive }; }
+        static Rect Empty()      { return {}; }
+        static Rect FullDomain() { return { NumInfo<T>::MIN, NumInfo<T>::MAX }; }
+        static Rect AntiDomain() { return { NumInfo<T>::MIN, NumInfo<T>::MAX }; }
+        static Rect On(const VecT& point) { return { point, point, Inclusive }; }
+        static Rect Over(const Collection<VecT> auto& nums) {
+            Rect r = AntiDomain();
+            for (const auto& v : nums) r.ExpandToFit(v);
+            return r;
+        }
+
+        VecT Size()   const { return max - min; }
+        VecT Center() const { return (max + min) / 2; }
+        VecT RecheckedMin() const { return VecT::Min(min, max); }
+        VecT RecheckedMax() const { return VecT::Max(min, max); }
+
+        RangeT RangeX() const requires (N >= 1) { return { min.x, max.x }; }
+        RangeT RangeY() const requires (N >= 2) { return { min.y, max.y }; }
+        RangeT RangeZ() const requires (N >= 3) { return { min.z, max.z }; }
+        RangeT RangeW() const requires (N >= 4) { return { min.w, max.w }; }
+        RangeT RangeN(usize n) const { return { min[n], max[n] }; }
+        RangeT operator[](usize n) const { return RangeN(n); }
+
+        template <usize M>
+        Rect<T, M> SwizzleRect(const char (&swizzle)[M + 1]) const {
+            Rect<T, M> swizzled;
+            for (usize i = 0; i < M; ++i) {
+                const usize comp = VecT::CompFromName(swizzle[i]);
+                if (comp == -1) continue;
+                swizzled.min[i] = min[i];
+                swizzled.max[i] = max[i];
+            }
+            return swizzled;
+        }
+        template <usize M> Rect<T, M> operator[](const char (&swizzle)[M + 1]) { return SwizzleRect(swizzle); }
+
+        T Width()    const                   { return max[0] - min[0]; }
+        T Height()   const requires (N >= 2) { return max[1] - min[1]; }
+        T Depth()    const requires (N >= 3) { return max[2] - min[2]; }
+        T Duration() const requires (N >= 4) { return max[3] - min[3]; }
+        T LengthX()  const                   { return max[0] - min[0]; }
+        T LengthY()  const requires (N >= 2) { return max[1] - min[1]; }
+        T LengthZ()  const requires (N >= 3) { return max[2] - min[2]; }
+        T LengthW()  const requires (N >= 4) { return max[3] - min[3]; }
+        T LengthN(usize n) const { return max[n] - min[n]; }
+
+        T Volume() const {
+            T volume = Width();
+            for (usize i = 1; i < N; ++i) volume *= (max[N] - min[N]);
+            return volume;
+        }
+        T Area() const requires (N == 2) { return Volume(); }
+
+        VecT Corner(const bool (&rel)[N]) const { // each bool is a y/n decision on min or max (0 = min, 1 is max)
+            VecT result;
+            for (usize i = 0; i < N; ++i) result[i] = rel[i] ? max[i] : min[i];
             return result;
-        } // each bit is a y/n decision on min or max (0 = min, 1 is max)
+        }
+        VecT Anchor(const int (&rel)[N]) const { // each int is a ternary decision on min (-1), center (0) or max (1)
+            VecT result;
+            for (usize i = 0; i < N; ++i)
+                result[i] = rel[i] == -1 ? min[i] :
+                            rel[i] == 0 ? (min[i] + max[i]) / 2 :
+                            max[i];
+            return result;
+        }
+        VecT Relative(const Vector<fT, N>& rel) const {
+            VecT result;
+            for (usize i = 0; i < N; ++i)
+                result[i] = std::lerp(min[i], max[i], rel[i]);
+            return result;
+        }
+        VecT Unmap(const VecT& x) { return (x - min) / (max - min); }
 
-        NODISC vec clamp(const vec& val) const { return vec::max(vec::min(val, max), min); }
-
-        RectN& correct() { vec m = min; min = vec::min(min, max); max = vec::max(m, max); return *this; } // fixes min max errors
-        NODISC RectN corrected() const { return { vec::min(min, max), vec::max(min, max) }; }
-        
-        NODISC bool contains(const RectN& other) const { return min < other.min && other.max < max; }
-        NODISC bool contains(const vec&   other) const { return min < other && other < max; }
-        
-        RectN& offset(const vec& off) { max += off; min += off; return *this; }
-        NODISC RectN offseted(const vec& off) const { return { (vec)(min + off), (vec)(max + off) }; }
-
-        NODISC RectN expand(const RectN& other)     const { return { vec::min(min, other.min), vec::max(max, other.max) }; }
-        NODISC RectN expand_until(const vec& other) const { return { vec::min(min, other),     vec::max(max, other)     }; }
-        NODISC RectN intersect(const RectN& other)  const { return { vec::max(min, other.min), vec::min(max, other.max) }; }
-
-        NODISC RectN inset  (T radius)          const { return { (vec)(min + radius), (vec)(max - radius) }; }
-        NODISC RectN inset  (const vec& radius) const { return { (vec)(min + radius), (vec)(max - radius) }; }
-        NODISC RectN extrude(T radius)          const { return { (vec)(min - radius), (vec)(max + radius) }; }
-        NODISC RectN extrude(const vec& radius) const { return { (vec)(min - radius), (vec)(max + radius) }; }
-
-        NODISC bool overlaps(const RectN& other) const { return (min < other.max) && (max > other.min); }
-        NODISC vec  overlap (const RectN& other) const { return vec::max(max - other.min, other.max - min); }
-
-        NODISC RectN<1, scalar> xrange() const requires (N >= 1) { return { min.x, max.x }; }
-        NODISC RectN<1, scalar> yrange() const requires (N >= 2) { return { min.y, max.y }; }
-        NODISC RectN<1, scalar> zrange() const requires (N >= 3) { return { min.z, max.z }; }
-        NODISC RectN<1, scalar> wrange() const requires (N >= 4) { return { min.w, max.w }; }
-
-        NODISC RectIter<RectN> begin() const;
-        NODISC RectIter<RectN> end() const;
-    };
-
-    template <class T, u32 D, u32 N>
-    RectN<N - 1, T> operator%(const RectN<D, T>& rect, const char (&swizz)[N]) {
-        return { rect.min % swizz, rect.max % swizz };
-    }
-
-#undef RECT_OP
-    template <RectLike R>
-    struct RectIter {
-        using value_t = typename R::vec;
-        const R* rect;
-        value_t curr;
-
-        RectIter& incr() {
-            ++curr[0];
-            u32 i = 0;
-            while (i < R::dimension - 1) {
-                if (curr[i] >= rect->max[i]) {
-                    curr[i] = rect->min[i];
-                    ++curr[++i];
-                    continue;
-                }
-                return *this;
-            }
-            return *this;
+        Rect Move(const VecT& offset) const { return { min + offset, max + offset }; }
+        Rect RelativeTo(const VecT& offset) const { return { min - offset, max - offset }; }
+        Rect RelativeTo(const Rect& other) const {
+            const VecT m = (T)1 / other.Size();
+            return { (min - other.min) * m, (max - other.max) * m };
+        }
+        Rect Scale(T scale)  const { return { min * scale, max * scale }; }
+        Rect Scale(fT scale) const requires Integer<T> { return { (VecT)(min * scale), (VecT)(max * scale) }; }
+        Rect ScaleCentered(T scale) const { const VecT off = Size() * (scale - 1); return { min - off, max + off }; }
+        Rect ScaleAnchored(T scale, const VecT& anchor) const {
+            const VecT toMin = (min - anchor) * (scale - 1), toMax = (max - anchor) * (scale - 1);
+            return { min + toMin, max + toMax };
         }
 
-        NODISC bool operator==(const RectIter& other) const { return rect == other.rect && curr == other.curr; }
-        RectIter& operator++() { return incr(); }
-        NODISC const value_t& operator*() const { return curr; }
+        Rect operator+(const VecT& offset)   const { return Move(offset); }
+        Rect operator-(const VecT& offset)   const { return { min - offset, max - offset }; }
+        Rect operator*(T scale)              const { return Scale(scale); }
+        Rect operator/(T invScale)           const { return { min / invScale, max / invScale }; }
+        Rect operator*(const VecT& scale)    const { return { min * scale, max * scale }; }
+        Rect operator/(const VecT& invScale) const { return { min / invScale, max / invScale }; }
+
+        VecT Clamp(const VecT& val) const { return val.Clamp(min, max); }
+
+        Rect Fixed() const { return { VecT::Min(min, max), VecT::Max(min, max) }; }
+        
+        bool Contains(const Rect& other) const requires Integer<T>  { return min.AllLessEq(other.min) && other.max.AllLess(max); }
+        bool Contains(const VecT& other) const requires Integer<T>  { return min.AllLessEq(other)     && other.AllLess(max); }
+        bool Contains(const Rect& other) const requires Floating<T> { return min.AllLessEq(other.min) && other.max.AllLessEq(max); }
+        bool Contains(const VecT& other) const requires Floating<T> { return min.AllLessEq(other)     && other.AllLessEq(max); }
+
+        void ExpandToFit(const VecT& newPoint) {
+            min = VecT::Min(min, newPoint); max = VecT::Max(max, newPoint);
+        }
+        Rect Union(const Rect& other)     const { return { VecT::Min(min, other.min), VecT::Max(max, other.max) }; }
+        Rect Expand(const VecT& other)    const { return { VecT::Min(min, other),     VecT::Max(max, other)     }; }
+        Rect intersect(const Rect& other) const { return { VecT::Max(min, other.min), VecT::Min(max, other.max) }; }
+
+        Rect Inset  (T radius)           const { return { min + radius, max - radius }; }
+        Rect Inset  (const VecT& radius) const { return { min + radius, max - radius }; }
+        Rect Extrude(T radius)           const { return { min - radius, max + radius }; }
+        Rect Extrude(const VecT& radius) const { return { min - radius, max + radius }; }
+
+        bool Overlaps(const Rect& other) const requires Integer<T>  { return min.AllLess(other.max) && max.AllGreater(other.min); }
+        bool Overlaps(const Rect& other) const requires Floating<T> { return min.AllLessEq(other.max) && max.AllGreaterEq(other.min); }
+        VecT OverlappingSize(const Rect& other) const { return VecT::Max(max - other.min, other.max - min); }
     };
-
-    template <class V> typename details::rect_origin_t<V>::rect_t
-    details::rect_origin_t<V>::rect(const V& size) const {
-        return { (V)(pos + size / 2), (V)(pos - size / 2) };
+    template <class T, usize N>
+    Vector<T, N> IVector<T, N>::Clamp(const Rect<T, N>& rect) const {
+        return Clamp(rect.min, rect.max);
     }
 
-    template <u32 N, class T> RectN<N, T> RectN<N, T>::over(const Collection<VectorN<N, T>> auto& nums) {
-        RectN r = unrange();
-        for (const auto& v : nums) r = r.expand_until(v);
-        return r;
+    template <class T, usize N>
+    bool IVector<T, N>::IsIn(const Rect<T, N>& rect) const { return rect.Contains(super()); }
+
+    template <class T, usize N>
+    Vector<T, N> IVector<T, N>::MapCoords(const Rect<T, N>& source, const Rect<T, N>& dest) const {
+        return dest.min + (dest.Size() / source.Size()) * (super() - source.min);
+    }
+    template <class T, usize N>
+    Vector<T, N> IVector<T, N>::MapFromUnit(const Rect<T, N>& dest) const {
+        return dest.Relative(super());
+    }
+    template <class T, usize N>
+    Vector<T, N> IVector<T, N>::UnmapToUnit(const Rect<T, N>& source) const {
+        return (super() - source.min) / (source.max - source.min);
     }
 
-    template <u32 N, class T> RectIter<RectN<N, T>> RectN<N, T>::begin() const {
-        return { this, min };
-    }
-
-    template <u32 N, class T> RectIter<RectN<N, T>> RectN<N, T>::end() const {
-        return { this, max };
-    }
-
-    template <u32 N, class T>
-    typename details::vecn_base<N, T>::vect details::vecn_base<N, T>::clamp(const RectN<N, T>& r, const vect& x) {
-        return r.clamp(x);
-    }
-
-    template <u32 N, class T>
-    bool details::vecn_base<N, T>::is_in(const RectN<N, T>& region) const {
-        return region.min <= as_vec() && as_vec() <= region.max;
-    }
-
-    template <u32 N, class T>
-    typename details::vecn_base<N, T>::vect details::vecn_base<N, T>::map(const RectN<N, T>& input, const RectN<N, T>& output) const {
-        return (as_vec() - input.min) / input.size() * output.size() + output.min;
-    }
-
-    template <u32 N, class T> details::rect_origin_t<typename details::vecn_base<N, T>::vect> details::vecn_base<N, T>::as_origin() const { return { as_vec() }; }
-    template <u32 N, class T> details::rect_size_t<typename details::vecn_base<N, T>::vect> details::vecn_base<N, T>::as_size() const { return { as_vec() }; }
-    template <u32 N, class T> RectN<N, T> details::vecn_base<N, T>::to(const vect& other) const { return { as_vec(), other }; }
-    template <u32 N, class T> RectN<N, T> details::vecn_base<N, T>::to(const rect_size_t<vect>& other) const { return { as_vec(), other }; }
-
-    template <class T> using Range  = RectN<1, T>;
-    template <class T> using Rect2D = RectN<2, T>;
-    template <class T> using Rect3D = RectN<3, T>;
-    template <class T> using Rect4D = RectN<4, T>;
-    using iRange = Range<int>;
-    using uRange = Range<uint>;
-    using bRange = Range<byte>;
-    using zRange = Range<usize>;
-    using fRange = Range<float>;
-    using dRange = Range<double>;
+    template <class T> using Rect2D = Rect<T, 2>;
+    template <class T> using Rect3D = Rect<T, 3>;
+    template <class T> using Rect4D = Rect<T, 4>;
     using fRect2D = Rect2D<float>;
     using fRect3D = Rect3D<float>;
     using fRect4D = Rect4D<float>;
@@ -230,26 +187,4 @@ namespace Quasi::Math {
     using bRect2D = Rect2D<byte>;
     using bRect3D = Rect3D<byte>;
     using bRect4D = Rect4D<byte>;
-
-    template struct RectN<1, int>;
-    template struct RectN<1, uint>;
-    template struct RectN<1, byte>;
-    template struct RectN<1, usize>;
-    template struct RectN<1, float>;
-    template struct RectN<1, double>;
-    template struct RectN<2, float>;
-    template struct RectN<3, float>;
-    template struct RectN<4, float>;
-    template struct RectN<2, double>;
-    template struct RectN<3, double>;
-    template struct RectN<4, double>;
-    template struct RectN<2, int>;
-    template struct RectN<3, int>;
-    template struct RectN<4, int>;
-    template struct RectN<2, uint>;
-    template struct RectN<3, uint>;
-    template struct RectN<4, uint>;
-    template struct RectN<2, byte>;
-    template struct RectN<3, byte>;
-    template struct RectN<4, byte>;
 }

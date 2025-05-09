@@ -3,8 +3,8 @@
 #include "Font.h"
 
 namespace Quasi::Graphics {
-    TextAlign& TextAlign::Move(Math::fVector2 offset) {
-        rect += offset;
+    TextAlign& TextAlign::Move(Math::fv2 offset) {
+        rect = rect + offset;
         return *this;
     }
 
@@ -37,12 +37,12 @@ namespace Quasi::Graphics {
     }
 
     float TextAlign::GetXOff(float width) const {
-        const float emptySpace = rect.width() - width;
+        const float emptySpace = rect.Width() - width;
         return emptySpace * (float)(!(alignOptions & ALIGN_LEFT) + !!(alignOptions & ALIGN_RIGHT)) / 2;
     }
 
     float TextAlign::GetYOff(float height) const {
-        const float emptySpace = rect.height() - height;
+        const float emptySpace = rect.Height() - height;
         return emptySpace * (float)(!(alignOptions & VERTICAL_TOP) + !!(alignOptions & VERTICAL_BOTTOM)) / 2;
     }
 

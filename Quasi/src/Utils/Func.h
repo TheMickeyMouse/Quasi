@@ -122,33 +122,36 @@ namespace Quasi {
             void operator()(T& t) const { t.~T(); }
         };
 
-#define Q_CREATE_UNARY_OPERATOR_FUNCTOR(NAME, OP) struct NAME { auto operator()(auto&& x) const { return x.operator OP; } };
-#define Q_CREATE_OPERATOR_FUNCTOR(NAME, OP) struct NAME { auto operator()(auto&& x, auto&& y) const { return x OP (y); } };
+#define Q_CREATE_UNARY_OPERATOR_FUNCTOR(NAME, OP) struct NAME { auto operator()(auto&& x) const { return OP; } };
+#define Q_CREATE_OPERATOR_FUNCTOR(NAME, OP) struct NAME { auto operator()(auto&& x, auto&& y) const { return OP; } };
         // arithmetic
-        Q_CREATE_UNARY_OPERATOR_FUNCTOR(UPos, +())
-        Q_CREATE_UNARY_OPERATOR_FUNCTOR(UNeg, -())
-        Q_CREATE_OPERATOR_FUNCTOR(Add, +) Q_CREATE_OPERATOR_FUNCTOR(AddAssign, +=)
-        Q_CREATE_OPERATOR_FUNCTOR(Sub, -) Q_CREATE_OPERATOR_FUNCTOR(SubAssign, -=)
-        Q_CREATE_OPERATOR_FUNCTOR(Mul, *) Q_CREATE_OPERATOR_FUNCTOR(MulAssign, *=)
-        Q_CREATE_OPERATOR_FUNCTOR(Div, /) Q_CREATE_OPERATOR_FUNCTOR(DivAssign, /=)
-        Q_CREATE_OPERATOR_FUNCTOR(Mod, %) Q_CREATE_OPERATOR_FUNCTOR(ModAssign, %=)
-        Q_CREATE_UNARY_OPERATOR_FUNCTOR(Inc, ++()) Q_CREATE_UNARY_OPERATOR_FUNCTOR(PostInc, ++(0))
-        Q_CREATE_UNARY_OPERATOR_FUNCTOR(Dec, --()) Q_CREATE_UNARY_OPERATOR_FUNCTOR(PostDec, --(0))
+        Q_CREATE_UNARY_OPERATOR_FUNCTOR(UPos, +x)
+        Q_CREATE_UNARY_OPERATOR_FUNCTOR(UNeg, -x)
+        Q_CREATE_OPERATOR_FUNCTOR(Add, x + y) Q_CREATE_OPERATOR_FUNCTOR(AddAssign, x += y)
+        Q_CREATE_OPERATOR_FUNCTOR(Sub, x - y) Q_CREATE_OPERATOR_FUNCTOR(SubAssign, x -= y)
+        Q_CREATE_OPERATOR_FUNCTOR(Mul, x * y) Q_CREATE_OPERATOR_FUNCTOR(MulAssign, x *= y)
+        Q_CREATE_OPERATOR_FUNCTOR(Div, x / y) Q_CREATE_OPERATOR_FUNCTOR(DivAssign, x /= y)
+        Q_CREATE_OPERATOR_FUNCTOR(Mod, x % y) Q_CREATE_OPERATOR_FUNCTOR(ModAssign, x %= y)
+        Q_CREATE_UNARY_OPERATOR_FUNCTOR(Inc, ++x) Q_CREATE_UNARY_OPERATOR_FUNCTOR(PostInc, x++)
+        Q_CREATE_UNARY_OPERATOR_FUNCTOR(Dec, --x) Q_CREATE_UNARY_OPERATOR_FUNCTOR(PostDec, x--)
         // bitwise
-        Q_CREATE_OPERATOR_FUNCTOR(BitAnd, &)  Q_CREATE_OPERATOR_FUNCTOR(BitAndAssign, &=)
-        Q_CREATE_OPERATOR_FUNCTOR(BitOr,  |)  Q_CREATE_OPERATOR_FUNCTOR(BitOrAssign,  |=)
-        Q_CREATE_OPERATOR_FUNCTOR(BitXor, ^)  Q_CREATE_OPERATOR_FUNCTOR(BitXorAssign, ^=)
-        Q_CREATE_OPERATOR_FUNCTOR(BitShl, <<) Q_CREATE_OPERATOR_FUNCTOR(BitShlAssign, <<=)
-        Q_CREATE_OPERATOR_FUNCTOR(BitShr, >>) Q_CREATE_OPERATOR_FUNCTOR(BitShrAssign, >>=)
-        Q_CREATE_UNARY_OPERATOR_FUNCTOR(Compl, ~())
+        Q_CREATE_OPERATOR_FUNCTOR(BitAnd, x &  y) Q_CREATE_OPERATOR_FUNCTOR(BitAndAssign, x &=  y)
+        Q_CREATE_OPERATOR_FUNCTOR(BitOr,  x |  y) Q_CREATE_OPERATOR_FUNCTOR(BitOrAssign,  x |=  y)
+        Q_CREATE_OPERATOR_FUNCTOR(BitXor, x ^  y) Q_CREATE_OPERATOR_FUNCTOR(BitXorAssign, x ^=  y)
+        Q_CREATE_OPERATOR_FUNCTOR(BitShl, x << y) Q_CREATE_OPERATOR_FUNCTOR(BitShlAssign, x <<= y)
+        Q_CREATE_OPERATOR_FUNCTOR(BitShr, x >> y) Q_CREATE_OPERATOR_FUNCTOR(BitShrAssign, x >>= y)
+        Q_CREATE_UNARY_OPERATOR_FUNCTOR(Compl, ~x)
         // logical
-        Q_CREATE_UNARY_OPERATOR_FUNCTOR(Not, !)
-        Q_CREATE_OPERATOR_FUNCTOR(And, &&)
-        Q_CREATE_OPERATOR_FUNCTOR(Or,  ||)
+        Q_CREATE_UNARY_OPERATOR_FUNCTOR(Not, !x)
+        Q_CREATE_OPERATOR_FUNCTOR(And, x && y)
+        Q_CREATE_OPERATOR_FUNCTOR(Or,  x || y)
         // other
-        Q_CREATE_OPERATOR_FUNCTOR(Index, .operator[])
+        Q_CREATE_OPERATOR_FUNCTOR(Index, x[y])
 #undef Q_CREATE_OPERATOR_FUNCTOR
 #undef Q_CREATE_UNARY_OPERATOR_FUNCTOR
+
+        // the difference between mod and numericModulo is that modulo supports fmod.
+        struct NumericModulo { template <class T> T operator()(T x, T y) const { return NumInfo<T>::Modulo(x, y); } };
     }
 
     template <class F, class O, class... I>

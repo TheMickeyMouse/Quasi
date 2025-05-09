@@ -10,7 +10,7 @@ namespace Quasi::Graphics {
         explicit RenderBuffer(GraphicsID id);
     public:
         RenderBuffer() = default;
-        static RenderBuffer New(TextureIFormat format, Math::iVector2 size);
+        static RenderBuffer New(TextureIFormat format, Math::iv2 size);
         static void DestroyObject(GraphicsID id);
         static void BindObject(GraphicsID id);
         static void UnbindObject();

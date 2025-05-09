@@ -7,7 +7,7 @@ flat in int v_texID;
 flat in int v_texCorner;
 
 uniform sampler2D tex;
-uniform iVector2 texSize;
+uniform iv2 texSize;
 
 void main()
 {

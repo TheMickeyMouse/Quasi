@@ -1,19 +1,29 @@
 #include "Vector.h"
 
 namespace Quasi::Math {
-    template struct VectorN<2, float>;
-    template struct VectorN<3, float>;
-    template struct VectorN<4, float>;
-    template struct VectorN<2, double>;
-    template struct VectorN<3, double>;
-    template struct VectorN<4, double>;
-    template struct VectorN<2, int>;
-    template struct VectorN<3, int>;
-    template struct VectorN<4, int>;
-    template struct VectorN<2, uint>;
-    template struct VectorN<3, uint>;
-    template struct VectorN<4, uint>;
-    template struct VectorN<2, byte>;
-    template struct VectorN<3, byte>;
-    template struct VectorN<4, byte>;
+    template struct Vector<int,    2>;
+    template struct Vector<int,    3>;
+    template struct Vector<int,    4>;
+    template struct Vector<uint,   2>;
+    template struct Vector<uint,   3>;
+    template struct Vector<uint,   4>;
+    template struct Vector<float,  2>;
+    template struct Vector<float,  3>;
+    template struct Vector<float,  4>;
+    template struct Vector<double, 2>;
+    template struct Vector<double, 3>;
+    template struct Vector<double, 4>;
+
+    VectorFormatter::FormatOptions VectorFormatter::ConfigureOptions(Str opt) {
+        if (!opt.StartsWith('(')) return {};
+        opt.Advance(1);
+
+        OptionUsize captureEnd = opt.Find(')');
+        if (!captureEnd) return {};
+
+        FormatOptions options;
+        options.elementFmt = opt.First(*captureEnd);
+        options.separator = opt.Skip(*captureEnd + 1);
+        return options;
+    }
 }

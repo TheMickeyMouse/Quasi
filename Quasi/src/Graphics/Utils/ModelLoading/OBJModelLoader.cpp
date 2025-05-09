@@ -44,16 +44,16 @@ namespace Quasi::Graphics {
         OBJProperty prop = { Empty {} };
 
         switch (Memory::ReadZeroExtU64Big(prefix.Data(), prefix.Length())) {
-            case "v"_u64:  prop.Set(Vertex       { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 { Math::NaN }) }); break;
-            case "vt"_u64: prop.Set(VertexTex    { Math::fVector2::parse(data, " ", "", "").UnwrapOr(Math::fVector2 { Math::NaN }) }); break;
-            case "vn"_u64: prop.Set(VertexNormal { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 { Math::NaN }) }); break;
-            case "vp"_u64: prop.Set(VertexParam  { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 { Math::NaN }) }); break;
+            case "v"_u64:  prop.Set(Vertex       { Math::fv3::Parse(data, " ").UnwrapOr(Math::fv3 { Math::NaN }) }); break;
+            case "vt"_u64: prop.Set(VertexTex    { Math::fv2::Parse(data, " ").UnwrapOr(Math::fv2 { Math::NaN }) }); break;
+            case "vn"_u64: prop.Set(VertexNormal { Math::fv3::Parse(data, " ").UnwrapOr(Math::fv3 { Math::NaN }) }); break;
+            case "vp"_u64: prop.Set(VertexParam  { Math::fv3::Parse(data, " ").UnwrapOr(Math::fv3 { Math::NaN }) }); break;
             case "f"_u64: {
                 Face face;
                 u32 i = 0;
                 for (const Str idx : data.Split(" ")) {
                     if (i >= 3) break;
-                    const auto [v, t, n] = Math::iVector3::parse(idx, "/", "", "",
+                    const auto [v, t, n] = Math::iv3::Parse(idx, "/",
                         [](Str x) -> Option<int> { return Text::Parse<int>(x).UnwrapOr(-1); }).UnwrapOr({ -1 });
                     face.indices[i][0] = v; face.indices[i][1] = t; face.indices[i][2] = n;
                     ++i;
@@ -135,7 +135,7 @@ namespace Quasi::Graphics {
 
     void OBJModelLoader::ResolveObjectIndices(OBJObject& obj) {
         struct Cmp3 {
-            Comparison operator()(const Math::iVector3& tripleA, const Math::iVector3& tripleB) const {
+            Comparison operator()(const Math::iv3& tripleA, const Math::iv3& tripleB) const {
                 const auto [ax, ay, az] = tripleA;
                 const auto [bx, by, bz] = tripleB;
                 return ax != bx ? Cmp::Between(ax, bx) : ay != by ? Cmp::Between(ay, by) : Cmp::Between(az, bz);
@@ -143,7 +143,7 @@ namespace Quasi::Graphics {
         };
 
         // a hashset is actually worse than a vector lol, cuz i need indices
-        Vec<Math::iVector3> indices;
+        Vec<Math::iv3> indices;
         for (const Face& f : faces) {
             indices.Push({ f.indices[0][0], f.indices[0][1], f.indices[0][2] });
             indices.Push({ f.indices[1][0], f.indices[1][1], f.indices[1][2] });
@@ -152,11 +152,11 @@ namespace Quasi::Graphics {
         indices.SortBy(Cmp3 {});
         indices.RemoveDups();
         obj.mesh.vertices = indices.MapEach(
-            [&] (Math::uVector3 triple) {
+            [&] (const Math::iv3& triple) {
                 return OBJVertex {
-                    triple.x == -1 ? Math::fVector3 {} : vertex[triple.x - 1],
-                    triple.y == -1 ? Math::fVector2 {} : vertexTexture[triple.y - 1],
-                    triple.z == -1 ? Math::fVector3 {} : vertexNormal[triple.z - 1]
+                    triple.x == -1 ? Math::fv3 {} : vertex[triple.x - 1],
+                    triple.y == -1 ? Math::fv2 {} : vertexTexture[triple.y - 1],
+                    triple.z == -1 ? Math::fv3 {} : vertexNormal[triple.z - 1]
                 };
             }
         );
@@ -164,12 +164,12 @@ namespace Quasi::Graphics {
         Vec<TriIndices>& ind = obj.mesh.indices;
         ind.Reserve(faces.Length());
         for (const Face& f : faces) {
-            Math::iVector3 v1 { f.indices[0][0], f.indices[0][1], f.indices[0][2] };
-            Math::iVector3 v2 { f.indices[1][0], f.indices[1][1], f.indices[1][2] };
-            Math::iVector3 v3 { f.indices[2][0], f.indices[2][1], f.indices[2][2] };
-            const auto [_1, i1] = indices.BinarySearchWith([&] (const Math::iVector3& x) { return Cmp3 {}(x, v1); });
-            const auto [_2, i2] = indices.BinarySearchWith([&] (const Math::iVector3& x) { return Cmp3 {}(x, v2); });
-            const auto [_3, i3] = indices.BinarySearchWith([&] (const Math::iVector3& x) { return Cmp3 {}(x, v3); });
+            Math::iv3 v1 { f.indices[0][0], f.indices[0][1], f.indices[0][2] };
+            Math::iv3 v2 { f.indices[1][0], f.indices[1][1], f.indices[1][2] };
+            Math::iv3 v3 { f.indices[2][0], f.indices[2][1], f.indices[2][2] };
+            const auto [_1, i1] = indices.BinarySearchWith([&] (const Math::iv3& x) { return Cmp3 {}(x, v1); });
+            const auto [_2, i2] = indices.BinarySearchWith([&] (const Math::iv3& x) { return Cmp3 {}(x, v2); });
+            const auto [_3, i3] = indices.BinarySearchWith([&] (const Math::iv3& x) { return Cmp3 {}(x, v3); });
             ind.Push({ (u32)i1, (u32)i2, (u32)i3 });
         }
 
@@ -203,4 +203,3 @@ namespace Quasi::Graphics {
     //     return ss;
     // }
 }
-

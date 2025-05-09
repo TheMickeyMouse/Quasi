@@ -146,11 +146,11 @@ class QuasiArrayBoxPrinter:
         self.val = val
 
     def to_string(self):
-        return f'ArrayBox({self.val["data"]}, len={self.val["size"]})' if self.val['data'] else 'nullptr'
+        return f'ArrayBox({self.val["buf"]}, len={self.val["size"]})' if self.val['buf'] else 'nullptr'
 
     def children(self):
-        if self.val['data']:
-            yield '*', self.val['data']
+        if self.val['buf']:
+            yield '*', self.val['buf']
         return
 
 

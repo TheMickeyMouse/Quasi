@@ -1,106 +1,378 @@
 ﻿#pragma once
-
 #include "Rect.h"
 
 namespace Quasi::Math {
-#define NODISC [[nodiscard]]
-    // column major mat
-    namespace details {
-        template <u32 D>
-        using rotation_scalar = IfElse<(D == 2), float, IfElse<(D == 3), fVector3, Empty>>;
-    }
+    struct Rotation3D;
+    template <usize N, usize M = N> struct Matrix;
 
-    template <u32 N, u32 M> // N is the dimension of each vector, M is the number of vectors
-    struct Matrix {
-        using col = VectorN<N, float>;
-        using row = VectorN<M, float>;
-        using vec  = VectorN<N - 1, float>;
-        using rvec = VectorN<M - 1, float>;
-        static constexpr bool is_square = N == M;
+    template <usize N, usize M> // N is the dimension of each vector, M is the number of vectors
+    struct IMatrix {
+        using Column    = Vector<float, N>;
+        using ColumnAff = Vector<float, N - 1>;
+        using Row       = Vector<float, M>;
+        using RowAff    = Vector<float, M - 1>;
+        using Super     = Matrix<N, M>;
+        Vector<float, N> unitVectors[M];
 
-        VectorN<M, col> mat { col::ZERO() };
-
+        static constexpr bool SquareMatrix = N == M;
     private:
-        void construct_identity() requires is_square;
+        void ConstructIdentity() requires SquareMatrix {
+            for (usize i = 0; i < N; ++i) { unitVectors[i][i] = 1.0f; }
+        }
     public:
-        Matrix() requires is_square { construct_identity(); }
-        template <class... Vs>
-        Matrix(const Vs&... cols) requires (ConvTo<Vs, col> && ...) : mat { cols... } {}
-        Matrix(const VectorN<M, col>& mat) : mat(mat) {}
+        IMatrix() requires SquareMatrix { ConstructIdentity(); }
+        IMatrix(UninitMarker) {} // the uninitialized initializer
+        IMatrix(const float (&values) [N * M]) { CopyTransposed(values); }
 
-        static Matrix identity() requires is_square { return Matrix {}; }
-        static Matrix from_span(Span<const float> data); // column major
+        void CopyTransposed(Span<const float> transposedData) {
+            for (usize i = 0; i < M; ++i)
+                for (usize j = 0; j < N; j++)
+                    unitVectors[i][j] = transposedData[j * M + i];
+        }
 
-        NODISC Span<const float> data() const;
-        NODISC Span<const col> get_cols() const;
+        static Super FromColumns(const Column (&units)[M]) {
+            Super mat { Uninit };
+            Memory::MemCopy(&mat.unitVectors[0], units, N * M * sizeof(float));
+            return mat;
+        }
+        static Super Identity() requires SquareMatrix { return Super {}; }
+        static Super Zero() { return Super { Uninit }; }
+        static Super FromColumnMatrix(const float (&entries)[N * M]) {
+            Super mat { Uninit };
+            Memory::MemCopy(&mat.unitVectors[0], entries, N * M * sizeof(float));
+            return mat;
+        }
+        static Super FromRowMatrix(const float (&entries)[N * M]) {
+            Super mat { Uninit };
+            mat.CopyTransposed(Spans::Slice(entries, N * M));
+            return mat;
+        }
 
-        NODISC vec translation() const { return (vec)mat.last(); }
-        NODISC Matrix<N - 1, M - 1> linear_matrix() const;
-        NODISC Matrix<N + 1, M + 1> affine_matrix() const;
+        const float* Data() const { return &unitVectors[0][0]; }
+        float* Data() { return &unitVectors[0][0]; }
+        Span<const float> AsSpan() const { return Spans::Slice(&unitVectors[0][0], N * M); }
+        Span<const Vector<float, N>> Columns() const { return Spans::Slice(unitVectors, M); }
 
-        Matrix& translate(const vec& translation);
-        Matrix& scale(const vec& scale);
-        Matrix& scale_linear(const col& scale) requires is_square;
-        Matrix& rotate(const details::rotation_scalar<N - 1>& rotation) requires (is_square && (N == 3 || N == 4));
-        Matrix& rotate_linear(const details::rotation_scalar<N>& rotation) requires (is_square && (N == 2 || N == 3));
-        static Matrix translate_mat(const vec& translation) requires is_square;
-        static Matrix scale_mat(const vec& scale) requires is_square;
-        static Matrix scale_mat_linear(const col& scale) requires is_square;
-        static Matrix rotate_mat(const details::rotation_scalar<N - 1>& rotation) requires (is_square && (N == 3 || N == 4));
-        static Matrix rotate_mat_linear(const details::rotation_scalar<N>& rotation) requires (is_square && (N == 2 || N == 3));
+        static Super Translation(const ColumnAff& translation) {
+            Super t;
+            t[M - 1] = translation.AddComponent(1);
+            return t;
+        }
+        Super& TranslateBy(const ColumnAff& translation) {
+            unitVectors[M - 1] += translation;
+            return *this;
+        }
+        ColumnAff GetTranslation() const { return unitVectors[M - 1].RemoveComponent(); }
+        static Super Scaling(const ColumnAff& scale) requires SquareMatrix { return Scaling(scale.AddComponent(1)); }
+        static Super Scaling(const Column& scale) requires SquareMatrix {
+            Super t = { Uninit };
+            for (usize i = 0; i < M; ++i)
+                t.unitVectors[i][i] = scale[i];
+            return t;
+        }
+        Super& ScaleBy(const ColumnAff& scale) { return ScaleBy(scale.AddComponent(1)); }
+        Super& ScaleBy(const Column& scale) {
+            for (usize i = 0; i < M; ++i)
+                unitVectors[i] *= scale[i];
+            return *this;
+        }
+        ColumnAff GetScaleSq() const requires SquareMatrix {
+            ColumnAff scaleSq;
+            for (usize i = 0; i < M; ++i) {
+                for (usize j = 0; j < N - 1; ++j)
+                    scaleSq[j] += unitVectors[i][j] * unitVectors[i][j];
+            }
+            return scaleSq;
+        }
+        Column GetScaleLinearSq() const requires SquareMatrix {
+            Column scaleSq;
+            for (usize i = 0; i < M; ++i) {
+                for (usize j = 0; j < N; ++j)
+                    scaleSq[j] += unitVectors[i][j] * unitVectors[i][j];
+            }
+            return scaleSq;
+        }
+        ColumnAff GetScale() const requires SquareMatrix { return GetScaleSq().Map(Qfn$(std::sqrt)); }
 
-        static Matrix rotate_x_linear(float roll)  requires (is_square &&  N == 3);
-        static Matrix rotate_y_linear(float pitch) requires (is_square &&  N == 3);
-        static Matrix rotate_z_linear(float yaw)   requires (is_square && (N == 2 || N == 3));
-        static Matrix rotate_x(float roll)  requires (is_square &&  N == 4) { return Matrix<N - 1, M - 1>::rotate_x_linear(roll).affine_matrix(); }
-        static Matrix rotate_y(float pitch) requires (is_square &&  N == 4) { return Matrix<N - 1, M - 1>::rotate_y_linear(pitch).affine_matrix(); }
-        static Matrix rotate_z(float yaw)   requires (is_square && (N == 3 || N == 4)) { return Matrix<N - 1, M - 1>::rotate_z_linear(yaw).affine_matrix(); }
+        Matrix<M, N> Transpose() const {
+            Matrix<M, N> transposed;
+            for (usize i = 0; i < M; ++i)
+                for (usize j = 0; j < N; ++j)
+                    transposed[j][i] = unitVectors[i][j];
+            return transposed;
+        }
+        float Det() const requires SquareMatrix { // determinate
+            const float* m = &unitVectors[0][0];
+            if constexpr (N == 2) {
+                return m[0] * m[3] - m[1] * m[2];
+            } else if constexpr (N == 3) {
+                return m[0] * (m[4] * m[8] - m[5] * m[7])
+                     - m[1] * (m[3] * m[8] - m[5] * m[6])
+                     + m[2] * (m[3] * m[7] - m[4] * m[6]);
+            } else if constexpr (N == 4) {
+                // 28 multiplications, 17 additions
+                const float m2x2[] {
+                    m[10] * m[15] - m[11] * m[14], // remove 0, 1 -> [0]
+                    m[ 9] * m[15] - m[11] * m[13], // remove 0, 2 -> [1]
+                    m[ 9] * m[14] - m[10] * m[13], // remove 0, 3 -> [2]
+                    m[ 8] * m[15] - m[11] * m[12], // remove 1, 2 -> [3]
+                    m[ 8] * m[14] - m[10] * m[12], // remove 1, 3 -> [4]
+                    m[ 8] * m[13] - m[ 9] * m[12], // remove 2, 3 -> [5]
+                };
+                return m[0] * (m[5] * m2x2[0] - m[6] * m2x2[1] + m[7] * m2x2[2])
+                     - m[1] * (m[4] * m2x2[0] - m[6] * m2x2[3] + m[7] * m2x2[4])
+                     + m[2] * (m[4] * m2x2[1] - m[5] * m2x2[3] + m[7] * m2x2[5])
+                     - m[3] * (m[4] * m2x2[2] - m[5] * m2x2[4] + m[6] * m2x2[5]);
+            } else {
+                static_assert(true, "not implemented yet. use gaussian elimination or smth");
+                return NaN;
+            }
+        }
+        Super Inverse() const requires SquareMatrix {
+            const float* m = &unitVectors[0][0];
+            if constexpr (N == 2) {
+                const float invDet = 1.0f / Det();
+                return { m[3] * invDet, -m[2] * invDet,
+                         m[1] * invDet,  m[0] * invDet,};
+            } else if constexpr (N == 3) {
+                const float m2x2[3] {
+                    m[4] * m[8] - m[5] * m[7], // 0, 0
+                    m[3] * m[8] - m[5] * m[6], // 0, 1
+                    m[3] * m[7] - m[4] * m[6], // 0, 2
+                };
+                const float invDet = 1.0f / (m[0] * m2x2[0] - m[1] * m2x2[1] + m[2] * m2x2[2]);
+                return {  m2x2[0] * invDet,                     -m2x2[1] * invDet,                      m2x2[2] * invDet,
+                         -(m[1] * m[8] - m[2] * m[7]) * invDet,  (m[0] * m[8] - m[2] * m[6]) * invDet, -(m[0] * m[7] - m[1] * m[6]) * invDet,
+                          (m[1] * m[5] - m[2] * m[4]) * invDet, -(m[0] * m[5] - m[2] * m[3]) * invDet,  (m[0] * m[4] - m[1] * m[3]) * invDet };
+            } else if constexpr (N == 4) {
+                // 104 multiplications, 50 additions
+                const float m2x2[] {
+                    m[2+4*2] * m[3+4*3] - m[2+4*3] * m[3+4*2], // (2 | 3, 2 | 3) -> [0]
+                    m[2+4*1] * m[3+4*3] - m[2+4*3] * m[3+4*1], // (1 | 3, 2 | 3) -> [1]
+                    m[2+4*1] * m[3+4*2] - m[2+4*2] * m[3+4*1], // (1 | 2, 2 | 3) -> [2]
+                    m[2+4*0] * m[3+4*3] - m[2+4*3] * m[3+4*0], // (0 | 3, 2 | 3) -> [3]
+                    m[2+4*0] * m[3+4*2] - m[2+4*2] * m[3+4*0], // (0 | 2, 2 | 3) -> [4]
+                    m[2+4*0] * m[3+4*1] - m[2+4*1] * m[3+4*0], // (0 | 1, 2 | 3) -> [5]
+                    m[1+4*2] * m[3+4*3] - m[1+4*3] * m[3+4*2], // (2 | 3, 1 | 3) -> [6]
+                    m[1+4*1] * m[3+4*3] - m[1+4*3] * m[3+4*1], // (1 | 3, 1 | 3) -> [7]
+                    m[1+4*1] * m[3+4*2] - m[1+4*2] * m[3+4*1], // (1 | 2, 1 | 3) -> [8]
+                    m[1+4*2] * m[2+4*3] - m[1+4*3] * m[2+4*2], // (2 | 3, 1 | 2) -> [9]
+                    m[1+4*1] * m[2+4*3] - m[1+4*3] * m[2+4*1], // (1 | 3, 1 | 2) -> [10]
+                    m[1+4*1] * m[2+4*2] - m[1+4*2] * m[2+4*1], // (1 | 2, 1 | 2) -> [11]
+                    m[1+4*0] * m[3+4*3] - m[1+4*3] * m[3+4*0], // (0 | 3, 1 | 3) -> [12]
+                    m[1+4*0] * m[3+4*2] - m[1+4*2] * m[3+4*0], // (0 | 2, 1 | 3) -> [13]
+                    m[1+4*0] * m[2+4*3] - m[1+4*3] * m[2+4*0], // (0 | 3, 1 | 2) -> [14]
+                    m[1+4*0] * m[2+4*2] - m[1+4*2] * m[2+4*0], // (0 | 2, 1 | 2) -> [15]
+                    m[1+4*0] * m[3+4*1] - m[1+4*1] * m[3+4*0], // (0 | 1, 1 | 3) -> [16]
+                    m[1+4*0] * m[2+4*1] - m[1+4*1] * m[2+4*0], // (0 | 1, 1 | 2) -> [17]
+                };
+                const float m3x3[4] {
+                    m[5] * m2x2[0] - m[6] * m2x2[1] + m[7] * m2x2[2], // remove (0, 0)
+                    m[4] * m2x2[0] - m[6] * m2x2[3] + m[7] * m2x2[4], // remove (0, 1)
+                    m[4] * m2x2[1] - m[5] * m2x2[3] + m[7] * m2x2[5], // remove (0, 2)
+                    m[4] * m2x2[2] - m[5] * m2x2[4] + m[6] * m2x2[5], // remove (0, 3)
+                };
+                const float invDet = 1.0f / (m[0] * m3x3[0] - m[1] * m3x3[1] + m[2] * m3x3[2] - m[3] * m3x3[3]);
+                return {
+                     m3x3[0]                                              * invDet, -m3x3[1]                                               * invDet,  m3x3[2]                                                * invDet, -m3x3[3]                                               * invDet,
+                   -(m[4] * m2x2[0] - m[8] * m2x2[ 1] + m[12] * m2x2[ 2]) * invDet,  (m[0] * m2x2[0] - m[8] * m2x2[ 3] + m[12] * m2x2[ 4]) * invDet, -(m[0] * m2x2[ 1] - m[4] * m2x2[ 3] + m[12] * m2x2[ 5]) * invDet,  (m[0] * m2x2[ 2] - m[4] * m2x2[ 4] + m[8] * m2x2[ 5]) * invDet,
+                    (m[4] * m2x2[6] - m[8] * m2x2[ 7] + m[12] * m2x2[ 8]) * invDet, -(m[0] * m2x2[6] - m[8] * m2x2[12] + m[12] * m2x2[13]) * invDet,  (m[0] * m2x2[ 7] - m[4] * m2x2[12] + m[12] * m2x2[16]) * invDet, -(m[0] * m2x2[ 8] - m[4] * m2x2[13] + m[8] * m2x2[16]) * invDet,
+                   -(m[4] * m2x2[9] - m[8] * m2x2[10] + m[12] * m2x2[11]) * invDet,  (m[0] * m2x2[9] - m[8] * m2x2[14] + m[12] * m2x2[15]) * invDet, -(m[0] * m2x2[10] - m[4] * m2x2[14] + m[12] * m2x2[17]) * invDet,  (m[0] * m2x2[11] - m[4] * m2x2[15] + m[8] * m2x2[17]) * invDet,
+                };
+            } else {
+                static_assert(true, "not implemented yet. use gaussian elimination or smth");
+                return NaN;
+            }
+        }
+        // assumes a linear rotation (linear vs affine doesnt matter). equivalent a transpose
+        Super InvRot() const requires SquareMatrix { return Transpose(); }
+        // assumes the matrix has only rotation and scaling elements (linear vs affine doesnt matter)
+        // and calculates the inverse (much faster than the naive method)
+        Super InvRotScale() const requires SquareMatrix {
+            Column scaleSq = GetScaleLinearSq();
+            Super inv = *this;
+            for (usize i = 0; i < M; ++i)
+                inv.unitVectors[i] *= 1 / scaleSq[i];
+            Transpose();
+            return inv;
+        }
+        // assumes the matrix has only rotation and translation elements
+        Super InvTransRot() const requires SquareMatrix {
+            // https://math.stackexchange.com/questions/1234948/inverse-of-a-rigid-transformation
+            Super inv { Uninit };
+            // transpose rotation part
+            for (usize i = 0; i < M - 1; ++i)
+                for (usize j = 0; j < N - 1; ++j)
+                    inv.unitVectors[j][i] = unitVectors[i][j];
 
-        static Matrix ortho_projection(const RectN<N - 1, float>& box) requires is_square;
-        static Matrix perspective_projection(const RectN<N - 1, float>& box) requires is_square;
-        static Matrix perspective_fov(float fovDeg, float aspect, float near, float far) requires (is_square && N == 4);
-        static Matrix transform(const vec& translate, const vec& scale, const details::rotation_scalar<N - 1>& rotate) requires (is_square && (N == 3 || N == 4));
-        static Matrix look_at(const fVector3& eye, const fVector3& center, const fVector3& worldUp) requires (is_square && N == 4);
+            for (usize i = 0; i < N; ++i)
+                for (usize j = 0; j < N - 1; ++j)
+                    inv.unitVectors[M - 1][i] -= unitVectors[i][j] * unitVectors[N - 1][j];
+            inv[M - 1][N - 1] = 1.0f;
+            return inv;
+        }
+        // assumes the matrix is a standard affine transformation matrix (TRS)
+        Super InvTRS() const requires SquareMatrix {
+            // let A = [ R t ] * [ S 0 ]
+            //         [ 0 1 ]   [ 0 1 ]
+            // A'    = [ S' 0 ] * [ R^T -R^T . t ]
+            //         [ 0  1 ]   [ 0    1       ]
+            //       = [ S' R^T -S' (R^T . t) ]
+            //         [ 0       1            ]
+            Super inv { Uninit };
+            const Column invScaleSq = 1.0f / GetScaleSq();
+            // transpose rotation part
+            for (usize i = 0; i < M - 1; ++i)
+                for (usize j = 0; j < N - 1; ++j)
+                    inv.unitVectors[j][i] = unitVectors[i][j] * invScaleSq[j];
 
-        NODISC Matrix<M, N> transpose() const;
-        NODISC float det() const requires is_square; // determinate
-        NODISC Matrix inv() const requires is_square; // inverse
-        NODISC float trace() const requires is_square;
+            for (usize i = 0; i < N; ++i) {
+                for (usize j = 0; j < N - 1; ++j)
+                    inv.unitVectors[M - 1][i] -= unitVectors[i][j] *= unitVectors[N - 1][j];
+                inv.unitVectors[M - 1][i] *= invScaleSq[i];
+            }
+            inv[M - 1][N - 1] = 1.0f;
+            return inv;
+        }
+        float Trace() const requires SquareMatrix { // diagonal sum
+            float result = 0;
+            for (usize i = 0; i < N; ++i)
+                result += unitVectors[i][i];
+            return result;
+        }
 
-        template <u32 P> NODISC Matrix<P, M> then(const Matrix<P, N>& next) const;
+        Column Transform(const Row& vector) const {
+            Column result;
+            for (usize i = 0; i < N; ++i) {
+                for (usize j = 0; j < M; ++j) {
+                    result[i] += vector[j] * unitVectors[j][i];
+                }
+            }
+            return result;
+        }
+        Column TransformAffine(const RowAff& vector) const {
+            Column result;
+            for (usize i = 0; i < N; ++i) {
+                for (usize j = 0; j < M - 1; ++j) {
+                    result[i] += vector[j] * unitVectors[j][i];
+                }
+                result[i] += unitVectors[M - 1][i]; // translation is always applied
+            }
+            return result;
+        }
 
-        NODISC Matrix squared() const requires is_square;
+        Super ScalarMul(float s) const {
+            Super result { Uninit };
+            for (usize i = 0; i < N * M; ++i) {
+                result.GetElm(i) = GetElm(i) * s;
+            }
+            return result;
+        }
+        Super& ScalarMulAssign(float s) {
+            float* m = &unitVectors[0][0];
+            for (usize i = 0; i < N * M; ++i) m[i] *= s;
+            return *this;
+        }
+        // NxM -> can transform M-d vectors -> MxP matrices
+        template <usize P> Matrix<M, P> Mul(const Matrix<P, N>& other) const {
+            Matrix<P, M> result { Uninit };
+            for (usize i = 0; i < P; ++i) {
+                for (usize j = 0; j < M; ++j) {
+                    for (usize k = 0; k < N; ++k) {
+                        result.unitVectors[i][j] += unitVectors[k][j] * other[i][k];
+                    }
+                }
+            }
+            return result;
+        }
+        Super Squared() const requires SquareMatrix {
+            const float* m = &unitVectors[0][0];
+            if constexpr (N == 2) {
+                const float bc = m[1] * m[2], sAD = m[0] + m[3];
+                return { m[0] * m[0] + bc, sAD  * m[1],
+                         sAD  * m[2],      m[3] * m[3] + bc };
+            } else if constexpr (N == 3) {
+                const float bd  = m[1] * m[3], cg  = m[2] * m[6], fh  = m[5] * m[7];
+                const float sAI = m[0] + m[8], sAE = m[0] + m[4], sEI = m[4] + m[8];
+                return {
+                    m[0] * m[0] + bd + cg, m[3] * sAE + m[5] * m[6], m[6] * sAI + m[3] * m[7],
+                    m[1] * sAE + m[2] * m[7], m[4] * m[4] + bd + fh, m[5] * sEI + m[1] * m[6],
+                    m[2] * sAI + m[1] * m[5], m[5] * sEI + m[2] * m[3], m[8] * m[8] + cg + fh
+                };
+            } else return Mul(*this);
+        }
 
-        template <u32 Ig> NODISC Matrix<N - Ig, M - Ig> skip(Array<u8, Ig> skipped) const;
+        const float& GetElm(usize i) const { return *(&unitVectors[0][0] + i); }
+        float& GetElm(usize i) { return *(&unitVectors[0][0] + i); }
+        const Column& GetCol(usize i) const { return unitVectors[i]; }
+        Column& GetCol(usize i) { return unitVectors[i]; }
+        const Column& operator[](usize i) const { return unitVectors[i]; }
+        Column& operator[](usize i) { return unitVectors[i]; }
+        Row GetRow(usize i) const {
+            Row r;
+            for (usize j = 0; j < M; ++j)
+                r[j] = unitVectors[j][i];
+            return r;
+        }
 
-        NODISC const col& operator[](usize i) const { return mat[i]; }
-        col& operator[](usize i) { return mat[i]; }
+        Super  operator* (float s) const { return ScalarMul(s); }
+        Super& operator*=(float s) { return ScalarMulAssign(s); }
 
-        NODISC Matrix  operator* (float s) const;
-               Matrix& operator*=(float s);
+        Column operator*(const Row& vector) const { return Transform(vector); }
+        Column operator*(const RowAff& vector) const { return TransformAffine(vector); }
 
-        NODISC Matrix  operator+ (const Matrix& m) const;
-               Matrix& operator+=(const Matrix& m);
-
-        NODISC vec operator*(const rvec& v) const;
-        NODISC col operator*(const row&  r) const;
-
-        template <u32 P> NODISC Matrix<N, P> operator*(const Matrix<M, P>& m) const;
-
-        // this APPLIES m to this. not the other way around. essentially: this = m * this;
-        Matrix& operator*=(const Matrix<N, N>& m) { *this = m * *this; return *this; }
+        template <usize P> Matrix<N, P> operator*(const Matrix<M, P>& m) const { return Mul(m); }
     };
-#undef NODISC
 
-    using Matrix2x2 = Matrix<2, 2>;
+    template <usize N, usize M> struct Matrix : IMatrix<N, M> {
+        using IMatrix<N, M>::IMatrix;
+    };
+
+    template <> struct Matrix<2, 2> : IMatrix<2, 2> {
+        using IMatrix::IMatrix;
+
+        static Matrix RotationLin(const Rotation2D& rotation);
+        Matrix& RotateByLin(const Rotation2D& rotation);
+        Rotation2D GetRotationLin() const;
+    };
+
+    template <> struct Matrix<3, 3> : IMatrix<3, 3> {
+        using IMatrix::IMatrix;
+
+        static Matrix Rotation(const Rotation2D& rotation);
+        Matrix& RotateBy(const Rotation2D& rotation);
+        Rotation2D GetRotation() const;
+        static Matrix RotationLin(const Rotation3D& rotation);
+        Matrix& RotateByLin(const Rotation3D& rotation);
+        Rotation3D GetRotationLin() const;
+
+        static Matrix Transform(const fv2& translate, const fv2& scale, const Rotation2D& rotate);
+    };
+
+    template <> struct Matrix<4, 4> : IMatrix<4, 4> {
+        using IMatrix::IMatrix;
+        Matrix Transpose() const;
+
+        static Matrix Rotation(const Rotation3D& rotation);
+        Matrix& RotateBy(const Rotation3D& rotation);
+        Rotation3D GetRotation() const;
+
+        static Matrix OrthoProjection(const fRect3D& box);
+        static Matrix PerspectiveProjection(const fRect3D& box);
+        static Matrix PerspectiveFov(Radians fovDeg, float aspect, float near, float far);
+        static Matrix Transform(const fv3& translate, const fv3& scale, const Rotation3D& rotate);
+        static Matrix LookAt(const fv3& eye, const fv3& direction, const fv3& worldUp);
+    };
+
+    using Matrix2x2 = Matrix<2>;
     using Matrix2x3 = Matrix<2, 3>;
     using Matrix2x4 = Matrix<2, 4>;
     using Matrix3x2 = Matrix<3, 2>;
-    using Matrix3x3 = Matrix<3, 3>;
+    using Matrix3x3 = Matrix<3>;
     using Matrix3x4 = Matrix<3, 4>;
     using Matrix4x2 = Matrix<4, 2>;
     using Matrix4x3 = Matrix<4, 3>;
-    using Matrix4x4 = Matrix<4, 4>;
+    using Matrix4x4 = Matrix<4>;
 
     using Matrix2D = Matrix3x3;
     using Matrix3D = Matrix4x4;

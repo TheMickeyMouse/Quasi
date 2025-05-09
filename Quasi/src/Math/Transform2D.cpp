@@ -1,104 +1,70 @@
 #include "Transform2D.h"
 
+#include "Random.h"
 #include "Transform3D.h"
 
 namespace Quasi::Math {
-    void Transform2D::Translate(const fVector2& p) { position += p; }
-    void Transform2D::Scale(const fVector2& s) { scale *= s; }
-    void Transform2D::Rotate(float r) { Rotate(fComplex::rotate(r)); }
-    void Transform2D::Rotate(const fComplex& r) { rotation *= r; }
+    Radians Rotation2D::Angle() const { return Atan2(im, re); }
+    Radians Rotation2D::AngleBetween(const Rotation2D& other) const { return Arccos(re * other.re + im * other.im); }
 
-    Transform2D Transform2D::Translated(const fVector2& p) const {
-        return { position + p, scale, rotation };
-    }
-    Transform2D Transform2D::Scaled(const fVector2& s) const {
-        return { position, scale * s, rotation };
-    }
-    Transform2D Transform2D::Rotated(float r) const {
-        return Rotated(fComplex::rotate(r));
-    }
-    Transform2D Transform2D::Rotated(const fComplex& r) const {
-        return { position, scale, rotation * r };
-    }
+    Rotation2D Rotation2D::RotateCCW90() const { return fComplex { -im,  re }; }
+    Rotation2D Rotation2D::RotateCW90()  const { return fComplex {  im, -re }; }
+    Rotation2D Rotation2D::Rotate180()   const { return fComplex { -re, -im }; }
+    Rotation2D Rotation2D::RotateBy(Radians theta) const { return RotateBy(Rotation2D { theta }); }
+    Rotation2D Rotation2D::RotateBy   (const Rotation2D& r) const { return fComplex { re * r.re - im * r.im, re * r.im + im * r.re }; }
+    Rotation2D Rotation2D::RotateByInv(const Rotation2D& r) const { return fComplex { re * r.re + im * r.im, im * r.re - re * r.im }; }
 
-    Transform2D Transform2D::Translation(const fVector2& p) { return { p }; }
-    Transform2D Transform2D::Scaling(const fVector2& s)     { return { 0, s }; }
-    Transform2D Transform2D::Rotation(float r)              { return Rotation(fComplex::rotate(r)); }
-    Transform2D Transform2D::Rotation(const fComplex& q)    { return { 0, 1, q }; }
+    Rotation2D Rotation2D::Halved() const {
+        const f32 x = 1 + re, imul = 1.0f / std::sqrt(x * x + im * im);
+        return fComplex { x * imul, im * imul };
+    }
+    Rotation2D Rotation2D::Mul(f32 p) const { return ExpImag(*Angle() * p); }
 
-    Transform2D Transform2D::NormalTransform() const {
-        return { 0, 1.0f / scale, rotation };
+    fv2 Rotation2D::Rotate   (const fv2& v) const { return { v.x * re - v.y * im, v.x * im + v.y * re }; }
+    fv2 Rotation2D::InvRotate(const fv2& v) const { return { v.x * re + v.y * im, v.y * re - v.x * im }; }
+
+    Rotation2D Rotation2D::Lerp(const Rotation2D& z, f32 t) const {
+        const Radians theta = AngleBetween(z);
+        const f32 inv = 1 / Sin(theta), p = Sin(theta * (1 - t)) * inv, q = Sin(theta * t) * inv;
+        return AsComplex() * p + z.AsComplex() * q;
     }
 
-    fVector2 Transform2D::Transform(const fVector2& point) const {
-        return (point * scale).rotated_by(rotation) + position;
+    Rotation2D Rotation2D::Random(RandomGenerator& rg) {
+        return Radians { rg.Get<f32>(0, TAU) };
     }
 
-    void Transform2D::TransformInplace(fVector2& point) const {
-        point *= scale;
-        point.rotate_by(rotation);
-        point += position;
-    }
+    Transform2D Transform2D::Translate(const fv2& p)        { return { p }; }
+    Transform2D Transform2D::Scale    (const fv2& s)        { return { 0, s }; }
+    Transform2D Transform2D::Rotation (const Rotation2D& r) { return { 0, 1, r }; }
 
-    fVector2 Transform2D::TransformInverse(const fVector2& point) const {
-        return rotation.invrotate(point - position) / scale;
-    }
+    Transform2D Transform2D::NormalTransform() const { return { 0, 1.0f / scale, rotation }; }
 
-    void Transform2D::TransformInverseInplace(fVector2& point) const {
-        point -= position;
-        point = rotation.invrotate(point);
-        point /= scale;
-    }
-
-    fVector2 Transform2D::TransformNormal(const fVector2& normal) const {
-        return (normal / scale).rotated_by(rotation).norm();
-    }
-
-    void Transform2D::TransformNormalInplace(fVector2& normal) const {
-        normal /= scale;
-        normal.rotate_by(rotation);
-        normal /= normal.len();
-    }
-
-    fVector2 Transform2D::TransformInverseNormal(const fVector2& normal) const {
-        return (rotation.invrotate(normal) * scale).norm();
-    }
-
-    void Transform2D::TransformInverseNormalInplace(fVector2& normal) const {
-        normal = rotation.invrotate(normal);
-        normal *= scale;
-        normal /= normal.len();
-    }
+    fv2 Transform2D::Transform             (const fv2& point)  const { return rotation.Rotate(point * scale) + position; }
+    fv2 Transform2D::TransformInverse      (const fv2& point)  const { return rotation.InvRotate(point - position) / scale;}
+    fv2 Transform2D::TransformNormal       (const fv2& normal) const { return rotation.Rotate(normal / scale).Norm(); }
+    fv2 Transform2D::TransformInverseNormal(const fv2& normal) const { return (rotation.InvRotate(normal) * scale).Norm(); }
 
     Transform2D Transform2D::Applied(const Transform2D& transformer) const {
-        return { transformer.Transform(position), scale * transformer.scale, rotation * transformer.rotation };
+        return { transformer.Transform(position), scale * transformer.scale, rotation + transformer.rotation };
     }
-
     Transform2D& Transform2D::Apply(const Transform2D& transformer) {
-        position.transform_by(transformer);
-        scale *= transformer.scale;
-        rotation *= transformer.rotation;
+        position = transformer.Transform(position);
+        scale    *= transformer.scale;
+        rotation += transformer.rotation;
         return *this;
     }
 
     Transform3D Transform2D::As3D() const {
-        return { position.with_z(0), scale.with_z(1), Quaternion::rotate_axis({ 0, 0, 1 }, rotation) };
+        return { position.AddZ(0), scale.AddZ(1), Rotation3D::RotateZ(rotation) };
     }
-
-    void Transform2D::Reset() {
-        position = 0;
-        scale = 1;
-        rotation = 1;
-    }
-
+    void Transform2D::Reset() { position = 0; scale = 1; rotation = {}; }
     Matrix2x2 Transform2D::LinearMatrix() const {
-        return { fVector2 {  rotation.re * scale.x, rotation.im * scale.x },
-                 fVector2 { -rotation.im * scale.y, rotation.re * scale.y }};
+        return Matrix2x2::FromColumns({ rotation.IHat() * scale.x, rotation.JHat() * scale.y });
     }
-
     Matrix2D Transform2D::TransformMatrix() const {
-        return { fVector3 {  rotation.re * scale.x, rotation.im * scale.x, 0 },
-                 fVector3 { -rotation.im * scale.y, rotation.re * scale.y, 0 },
-                 fVector3 {  position.x,            position.y           , 1 } };
+        const fComplex& r = rotation.AsComplex();
+        return {{ r.re * scale.x, -r.im * scale.x, position.x,
+                  r.im * scale.y,  r.re * scale.y, position.y,
+                  0,               0             , 1 }};
     }
 } // Quasi

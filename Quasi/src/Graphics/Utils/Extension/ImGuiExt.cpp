@@ -5,7 +5,6 @@
 #include "Utils/Array.h"
 
 #include "Complex.h"
-#include "Math/Quaternion.h"
 #include "Graphicals/CameraController.h"
 #include "Graphicals/Light.h"
 #include "Math/Transform2D.h"
@@ -13,14 +12,14 @@
 #include "Utils/Text/Formatting.h"
 
 namespace ImGui {
-    static const Quasi::Math::Color COLOR_X_AXIS = Quasi::Math::Color::BETTER_RED();
-    static const Quasi::Math::Color COLOR_Y_AXIS = Quasi::Math::Color::BETTER_GREEN();
-    static const Quasi::Math::Color COLOR_Z_AXIS = Quasi::Math::Color::BETTER_BLUE();
-    static const Quasi::Math::Color COLOR_W_AXIS = Quasi::Math::Color::BETTER_YELLOW();
-    static const Quasi::Math::Color COLOR_ALPHA  = Quasi::Math::Color::BETTER_GRAY();
-    static const Quasi::Math::Color COLOR_X_ANGLE = Quasi::Math::Color::BETTER_ORANGE();
-    static const Quasi::Math::Color COLOR_Y_ANGLE = Quasi::Math::Color::BETTER_CYAN();
-    static const Quasi::Math::Color COLOR_Z_ANGLE = Quasi::Math::Color::BETTER_PURPLE();
+    static const Quasi::Math::fColor3 COLOR_X_AXIS  = Quasi::Math::fColor3::FromColorID(Quasi::Math::Colors::BETTER_RED);
+    static const Quasi::Math::fColor3 COLOR_Y_AXIS  = Quasi::Math::fColor3::FromColorID(Quasi::Math::Colors::BETTER_GREEN);
+    static const Quasi::Math::fColor3 COLOR_Z_AXIS  = Quasi::Math::fColor3::FromColorID(Quasi::Math::Colors::BETTER_BLUE);
+    static const Quasi::Math::fColor3 COLOR_W_AXIS  = Quasi::Math::fColor3::FromColorID(Quasi::Math::Colors::BETTER_YELLOW);
+    static const Quasi::Math::fColor3 COLOR_ALPHA   = Quasi::Math::fColor3::FromColorID(Quasi::Math::Colors::BETTER_GRAY);
+    static const Quasi::Math::fColor3 COLOR_X_ANGLE = Quasi::Math::fColor3::FromColorID(Quasi::Math::Colors::BETTER_ORANGE);
+    static const Quasi::Math::fColor3 COLOR_Y_ANGLE = Quasi::Math::fColor3::FromColorID(Quasi::Math::Colors::BETTER_CYAN);
+    static const Quasi::Math::fColor3 COLOR_Z_ANGLE = Quasi::Math::fColor3::FromColorID(Quasi::Math::Colors::BETTER_PURPLE);
 
     float GetUsableWidth() {
         return GetWindowWidth() - 2 * GetStyle().WindowPadding.x;
@@ -51,8 +50,8 @@ namespace ImGui {
 #define Q Quasi::
 #define Q_IMGUI_EDITOR(NAME, ...) void NAME(Q Str title, __VA_ARGS__, float width)
 
-    void DisplaySimpleIcon(const char* text, const Q Math::Color& bgColor) {
-        const ImVec4 c = { (float)bgColor.r / 255.0f, (float)bgColor.g / 255.0f, (float)bgColor.b / 255.0f, 1 };
+    void DisplaySimpleIcon(const char* text, const Q Math::fColor3& bgColor) {
+        const ImVec4 c = { bgColor.r, bgColor.g, bgColor.b, 1 };
         PushStyleColor(ImGuiCol_Button,        c);
         PushStyleColor(ImGuiCol_ButtonActive,  c);
         PushStyleColor(ImGuiCol_ButtonHovered, c);
@@ -104,8 +103,8 @@ namespace ImGui {
         return ImGuiDataType_COUNT;
     }
 
-    template <class T> requires std::is_arithmetic_v<T>
-    Q_IMGUI_EDITOR(EditScalar, T& value, float speed, Q NoInfer<Q Option<Q Math::Range<T>>> range) {
+    template <Q Numeric T>
+    Q_IMGUI_EDITOR(EditScalar, T& value, float speed, Q NoInfer<Q Option<Q Range<T>>> range) {
         width = GetRemWidth(width);
 
         DisplayTextCropped(title, GetItemRemainingWidth(width) - GetSpacingWidth());
@@ -115,12 +114,12 @@ namespace ImGui {
 
         PushID(title.Data());
         DragScalar("", ImGuiDataEnum<T>(), &value, speed,
-            range ? &range->min.x : nullptr, range ? &range->max.x : nullptr);
+            range ? &range->min : nullptr, range ? &range->max : nullptr);
         PopID();
     }
 
-    template <Q u32 N, class T>
-    Q_IMGUI_EDITOR(EditVector, Q Math::VectorN<N, T>& vector, float speed, Q NoInfer<const Q Option<Q Math::RectN<N, T>>&> range) {
+    template <class T, Q usize N>
+    Q_IMGUI_EDITOR(EditVector, Q Math::Vector<T, N>& vector, float speed, Q NoInfer<const Q Option<Q Math::Rect<T, N>>&> range) {
         width = GetRemWidth(width);
 
         DisplayTextCropped(title, GetItemRemainingWidth(width) - GetSpacingWidth());
@@ -130,14 +129,13 @@ namespace ImGui {
                     unitWidth = fullWidth / (float)N;
 
         for (Q u32 i = 0; i < N; ++i) {
-
             PushID(title.Data());
             EditScalarWithIcon(
                 &"X:\0Y:\0Z:\0W:"[i * 3],
                 Q Array { COLOR_X_AXIS, COLOR_Y_AXIS, COLOR_Z_AXIS, COLOR_W_AXIS }[i], // amazing hack
                 vector[i],
                 speed,
-                range ? Q Options::Some(Q Math::Range<T> { range->min[i], range->max[i] }) : nullptr,
+                range ? Q Options::Some(range->RangeN(i)) : nullptr,
                 {},
                 unitWidth
             );
@@ -147,7 +145,7 @@ namespace ImGui {
     }
 
     template <class T>
-    Q_IMGUI_EDITOR(EditRange, Q Math::Range<T>& range, float speed, Q NoInfer<const Q Option<Q Math::Range<T>>&> constraint) {
+    Q_IMGUI_EDITOR(EditRange, Q Range<T>& range, float speed, Q NoInfer<const Q Option<Q Range<T>>&> constraint) {
         width = GetRemWidth(width);
 
         DisplayTextCropped(title, GetItemRemainingWidth(width) - GetSpacingWidth());
@@ -155,14 +153,14 @@ namespace ImGui {
         SameLine(0, GetItemRemainingWidth(width) - GetLastItemWidth());
         const float fullWidth = GetItemDefaultWidth(width) - GetSpacingWidth();
         PushID(title.Data());
-        EditScalarWithIcon("Min", COLOR_ALPHA, range.min.x, speed, constraint, {}, fullWidth * 0.5f);
+        EditScalarWithIcon("Min", COLOR_ALPHA, range.min, speed, constraint, {}, fullWidth * 0.5f);
         SameLine();
-        EditScalarWithIcon("Max", COLOR_ALPHA, range.max.x, speed, constraint, {}, fullWidth * 0.5f);
+        EditScalarWithIcon("Max", COLOR_ALPHA, range.max, speed, constraint, {}, fullWidth * 0.5f);
         PopID();
     }
 
-    template <Q u32 N, class T>
-    Q_IMGUI_EDITOR(EditRect, Q Math::RectN<N, T>& range, float speed, Q NoInfer<const Q Option<Q Math::RectN<N, T>>&> constraint) {
+    template <class T, Q usize N>
+    Q_IMGUI_EDITOR(EditRect, Q Math::Rect<T, N>& range, float speed, Q NoInfer<const Q Option<Q Math::Rect<T, N>>&> constraint) {
         width = GetRemWidth(width);
 
         DisplayTextCropped(title, GetItemRemainingWidth(width) - GetSpacingWidth());
@@ -177,107 +175,104 @@ namespace ImGui {
         Unindent(GetItemRemainingWidth(width));
     }
 
-    Q_IMGUI_EDITOR(EditComplexRotation, Q Math::fComplex& complex) {
+    Q_IMGUI_EDITOR(EditRotation2D, Q Math::Rotation2D& rot2) {
         width = GetRemWidth(width);
 
-        float rotation = complex.angle() * Q Math::RAD2DEG;
+        float theta = rot2.Angle().InDegrees();
         DisplayTextCropped(title, GetItemRemainingWidth(width) - GetSpacingWidth());
 
         SameLine(0, GetItemRemainingWidth(width) - GetLastItemWidth());
 
         const float w = GetItemDefaultWidth(width);
         PushID(title.Data());
-        EditScalarWithIcon((const char*)u8"θ:", COLOR_Z_ANGLE, rotation, 1, Q Math::fRange { -180, 180 }, "%f°", w);
+        EditScalarWithIcon((const char*)u8"θ:", COLOR_Z_ANGLE, theta, 1, Q fRange { -180, 180 }, "%f°", w);
         PopID();
 
-        complex = Q Math::fComplex::rotate(rotation * Quasi::Math::DEG2RAD);
+        rot2 = { Q Math::Radians::FromDegrees(theta) };
     }
 
-    Q_IMGUI_EDITOR(EditQuatRotation, Q Math::Quaternion& quaternion) {
+    Q_IMGUI_EDITOR(EditRotation3D, Q Math::Rotation3D& rot3) {
         width = GetRemWidth(width);
 
-        auto [xrot, yrot, zrot] = quaternion.xyzrot() * Q Math::RAD2DEG;
+        auto [xrot, yrot, zrot] = rot3.EulerAngles();
+        float xr = xrot.InDegrees(), yr = yrot.InDegrees(), zr = zrot.InDegrees();
         DisplayTextCropped(title, GetItemRemainingWidth(width) - GetSpacingWidth());
 
         SameLine(0, GetItemRemainingWidth(width) - GetLastItemWidth());
 
         const float w = (GetItemDefaultWidth(width) - 2 * GetSpacingWidth()) / 3;
         PushID(title.Data());
-        EditScalarWithIcon((const char*)u8"θ:", COLOR_X_ANGLE, xrot, 1, Q Math::fRange {  -90,  90 }, "%f°", w); SameLine();
-        EditScalarWithIcon((const char*)u8"Ψ:", COLOR_Y_ANGLE, yrot, 1, Q Math::fRange { -180, 180 }, "%f°", w); SameLine();
-        EditScalarWithIcon((const char*)u8"φ:", COLOR_Z_ANGLE, zrot, 1, Q Math::fRange { -180, 180 }, "%f°", w);
+        EditScalarWithIcon((const char*)u8"θ:", COLOR_X_ANGLE, xr, 1, Q fRange {  -90,  90 }, "%f°", w); SameLine();
+        EditScalarWithIcon((const char*)u8"Ψ:", COLOR_Y_ANGLE, yr, 1, Q fRange { -180, 180 }, "%f°", w); SameLine();
+        EditScalarWithIcon((const char*)u8"φ:", COLOR_Z_ANGLE, zr, 1, Q fRange { -180, 180 }, "%f°", w);
         PopID();
 
-        quaternion = Q Math::Quaternion::rotate_xyz(
-            { xrot * Q Math::DEG2RAD,
-              yrot * Q Math::DEG2RAD,
-              zrot * Q Math::DEG2RAD }
-        );
+        rot3 = { Q Math::Radians::FromDegrees(xr),
+                 Q Math::Radians::FromDegrees(yr),
+                 Q Math::Radians::FromDegrees(zr) };
     }
 
-    Q_IMGUI_EDITOR(EditRotation, float& yaw, float& pitch) {
+    Q_IMGUI_EDITOR(EditYawPitch, float& yaw, float& pitch) {
         const float iw = (GetItemDefaultWidth(width) - GetSpacingWidth()) / 2;
         DisplayTextCropped(title, GetItemRemainingWidth(width) - GetSpacingWidth());
         SameLine(0, GetItemRemainingWidth(width) - GetLastItemWidth());
-        EditScalarWithIcon("Yaw",   COLOR_X_ANGLE, yaw,   0.01f, Q Math::fRange { -Q Math::PI,             Q Math::PI }, {}, iw);
+        EditScalarWithIcon("Yaw",   COLOR_X_ANGLE, yaw,   0.01f, Q fRange { -Q Math::PI,             Q Math::PI }, {}, iw);
         SameLine();
-        EditScalarWithIcon("Pitch", COLOR_Y_ANGLE, pitch, 0.01f, Q Math::fRange { -Q Math::HALF_PI * 0.9f, Q Math::HALF_PI * 0.9f }, {}, iw);
+        EditScalarWithIcon("Pitch", COLOR_Y_ANGLE, pitch, 0.01f, Q fRange { -Q Math::HALF_PI * 0.9f, Q Math::HALF_PI * 0.9f }, {}, iw);
     }
 
-    template <Q Math::ColorLike C>
-    Q_IMGUI_EDITOR(EditColor, C& color) {
+    template <class T, bool A>
+    Q_IMGUI_EDITOR(EditColor, Q Math::IColor<T, A>& color) {
         width = GetRemWidth(width);
         DisplayTextCropped(title, GetItemRemainingWidth(width) - GetSpacingWidth());
 
         SameLine(0, GetItemRemainingWidth(width) - GetLastItemWidth());
-        const float fullWidth = GetItemDefaultWidth(width) - (float)C::dimension * GetSpacingWidth() - GetFrameHeight(),
-                    unitWidth = fullWidth / (float)C::dimension;
+        const float fullWidth = GetItemDefaultWidth(width) - (float)color.Dimensions() * GetSpacingWidth() - GetFrameHeight(),
+                    unitWidth = fullWidth / (float)color.Dimensions();
 
-        for (Q u32 i = 0; i < C::dimension; ++i) {
-
-            Q Math::Color c = Q Array<Q Math::Color, 4> { COLOR_X_AXIS, COLOR_Y_AXIS, COLOR_Z_AXIS, COLOR_ALPHA }[i];
-
-            const Q Math::Range<typename C::scalar> range = { 0, (typename C::scalar)(C::traits_is_floating ? 1 : 255) };
+        static Q Math::fColor3 CHANNEL_COLORS[4] = { COLOR_X_AXIS, COLOR_Y_AXIS, COLOR_Z_AXIS, COLOR_ALPHA };
+        for (Q usize i = 0; i < Q Math::IColor<T, A>::Dim; ++i) {
+            const Q Range<T> range = { 0, T(Q Floating<T> ? 1 : 255) };
             PushID(title.Data());
-            EditScalarWithIcon(&"R:\0G:\0B:\0A:"[i * 3], c, color[i],
-                C::traits_is_floating ? 0.005f : 1.0f, range, {}, unitWidth);
+            EditScalarWithIcon(&"R:\0G:\0B:\0A:"[i * 3], CHANNEL_COLORS[i], color[i],
+                Q Floating<T> ? 0.005f : 1.0f, range, {}, unitWidth);
             SameLine();
             PopID();
         }
 
         PushID(title.Data(), "button");
         static constexpr Q u32 FLAGS = ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreviewHalf;
-        if constexpr (C::traits_is_floating) {
-            if constexpr (C::dimension == 3) {
-                ColorEdit3("", color.begin(), FLAGS);
+        if constexpr (Q Floating<T>) {
+            if constexpr (!A) {
+                ColorEdit3("", color.Data(), FLAGS);
             } else {
-                ColorEdit4("", color.begin(), FLAGS);
+                ColorEdit4("", color.Data(), FLAGS);
             }
         } else {
-            Q Math::ColorFrom<C::traits_has_alpha, true> floatColor = color;
-            if constexpr (C::dimension == 3) {
-                ColorEdit3("", floatColor.begin(), FLAGS);
+            Q Math::IColor<float, A> floatColor = (Q Math::IColor<float, A>)color;
+            if constexpr (!A) {
+                ColorEdit3("", floatColor.Data(), FLAGS);
             } else {
-                ColorEdit4("", floatColor.begin(), FLAGS);
+                ColorEdit4("", floatColor.Data(), FLAGS);
             }
-            color = floatColor;
+            color = (Q Math::IColor<T, A>)floatColor;
         }
         PopID();
     }
 
     Q_IMGUI_EDITOR(EditTransform, Q Math::Transform2D& transform, float speed) {
         if (!TreeNode(title.Data())) return;
-        EditVector         ("Position", transform.position, speed);
-        EditVector         ("Scale",    transform.scale, speed);
-        EditComplexRotation("Rotation", transform.rotation);
+        EditVector    ("Position", transform.position, speed);
+        EditVector    ("Scale",    transform.scale, speed);
+        EditRotation2D("Rotation", transform.rotation);
         TreePop();
     }
 
     Q_IMGUI_EDITOR(EditTransform, Q Math::Transform3D& transform, float speed) {
         if (!TreeNode(title.Data())) return;
-        EditVector      ("Position", transform.position, speed);
-        EditVector      ("Scale",    transform.scale, speed);
-        EditQuatRotation("Rotation", transform.rotation);
+        EditVector    ("Position", transform.position, speed);
+        EditVector    ("Scale",    transform.scale, speed);
+        EditRotation3D("Rotation", transform.rotation);
         TreePop();
     }
 
@@ -291,21 +286,21 @@ namespace ImGui {
         TextDisabled(camera.enabled ? " (press Esc to disable!)" : " (press Esc to enable!)");
 
         EditVector("Position", camera.position, 0.5f);
-        EditRotation("Rotation", camera.yaw, camera.pitch);
+        EditYawPitch("Rotation", camera.yaw, camera.pitch);
 
         if (TreeNode("Controls")) {
             EditScalar("Speed", camera.speed, 0.5f);
-            EditScalar("Sensitivity", camera.sensitivity, 0.01, Q Math::fRange { 0, 1 });
+            EditScalar("Sensitivity", camera.sensitivity, 0.01, Q fRange { 1 });
             EditScalar("FOV", camera.fov, 0.5, camera.fovRange);
-            EditRange("FOV Range", camera.fovRange, 0.5f, Q Math::fRange { 0.0f, 90.0f });
+            EditRange("FOV Range", camera.fovRange, 0.5f, Q fRange { 90.0f });
 
             {
                 const float iw = (GetItemDefaultWidth(width) - GetSpacingWidth()) / 2;
                 DisplayTextCropped("Zoom", GetItemRemainingWidth(width) - GetSpacingWidth());
                 SameLine(0, GetItemRemainingWidth(width) - GetLastItemWidth());
-                EditScalarWithIcon("Lerp",   COLOR_ALPHA, camera.smoothZoom, 0.01f, Q Math::fRange { 0, 1 }, {}, iw);
+                EditScalarWithIcon("Lerp",   COLOR_ALPHA, camera.smoothZoom, 0.01f, Q fRange { 1 }, {}, iw);
                 SameLine();
-                EditScalarWithIcon("Factor", COLOR_ALPHA, camera.zoomRatio,  0.01f, Q Math::fRange { 0, 1 }, {}, iw);
+                EditScalarWithIcon("Factor", COLOR_ALPHA, camera.zoomRatio,  0.01f, Q fRange { 1 }, {}, iw);
 
                 bool sz = camera.UsesSmoothZoom();
                 Checkbox("Use Smooth Zoom", &sz);
@@ -317,7 +312,7 @@ namespace ImGui {
 
         if (Button("Copy State to Clipboard")) {
             SetClipboardText(Quasi::Text::Format(
-                "camera.position = fVector3 {:($),};\n"
+                "camera.position = fv3 {{{($),}}};\n"
                 "camera.yaw = {}; camera.pitch = {};\n"
                 "camera.speed = {};\n"
                 "camera.sensitivity = {};\n"
@@ -330,7 +325,7 @@ namespace ImGui {
                 camera.speed,
                 camera.sensitivity,
                 camera.fov,
-                camera.fovRange.min.value(), camera.fovRange.max.value(),
+                camera.fovRange.min, camera.fovRange.max,
                 camera.zoomRatio,
                 camera.smoothZoom)
             .Data());
@@ -380,24 +375,24 @@ namespace ImGui {
                 .quadratic = 0.001f
             });
         if (TabItemButton("Spot") && !light.Is<FlashLight>()) {
-            const auto [_, yaw, pitch] = light.Direction().spheric();
+            const auto [_, yaw, pitch] = light.Direction().SphericCoords();
             light.Set(FlashLight {
                 .position = light.Position(),
                 .yaw = yaw, .pitch = pitch,
-                .innerCut = 12.5_degf, .outerCut = 20.0_degf
+                .innerCut = 12.5_deg, .outerCut = 20.0_deg
             });
         }
 
         EditColor("Color + Intensity", light.color);
         light.VisitMut(
             [](SunLight& sun) {
-                auto [len, yaw, pitch] = sun.direction.spheric();
-                yaw   = std::isnan(yaw)   ? 0 : yaw;
-                pitch = std::isnan(pitch) ? 0 : pitch;
-                EditScalar("Yaw",    yaw,   0.01, fRange { -PI,      PI });
-                EditScalar("Pitch",  pitch, 0.01, fRange { -HALF_PI, HALF_PI });
-                EditScalar("Length", len, 0.1, fRange { 0, 10 });
-                sun.direction = fVector3::from_spheric(len, yaw, pitch);
+                auto [len, yaw, pitch] = sun.direction.SphericCoords();
+                yaw   = std::isnan(*yaw)   ? 0.0_rad : yaw;
+                pitch = std::isnan(*pitch) ? 0.0_rad : pitch;
+                EditScalar("Yaw",    *yaw,   0.01, Q fRange { -PI,      PI });
+                EditScalar("Pitch",  *pitch, 0.01, Q fRange { -HALF_PI, HALF_PI });
+                EditScalar("Length", len, 0.1, Q fRange { 0, 10 });
+                sun.direction = fv3::FromSpheric(len, yaw, pitch);
             },
             [](PointLight& point) {
                 EditVector("Position", point.position);
@@ -411,13 +406,13 @@ namespace ImGui {
             [](FlashLight& flash) {
                 EditVector("Position", flash.position);
 
-                flash.yaw   = std::isnan(flash.yaw)   ? 0 : flash.yaw;
-                flash.pitch = std::isnan(flash.pitch) ? 0 : flash.pitch;
-                EditScalar("Yaw",   flash.yaw,   0.01, fRange { -PI,      PI });
-                EditScalar("Pitch", flash.pitch, 0.01, fRange { -HALF_PI, HALF_PI });
+                flash.yaw   = std::isnan(*flash.yaw)   ? 0.0_rad : flash.yaw;
+                flash.pitch = std::isnan(*flash.pitch) ? 0.0_rad : flash.pitch;
+                EditScalar("Yaw",   *flash.yaw,   0.01, Q fRange { -PI,      PI });
+                EditScalar("Pitch", *flash.pitch, 0.01, Q fRange { -HALF_PI, HALF_PI });
 
-                EditScalar("Inner Cutoff", flash.innerCut, 0.01, fRange { 0, PI });
-                EditScalar("Outer Cutoff", flash.outerCut, 0.01, fRange { 0, PI });
+                EditScalar("Inner Cutoff", *flash.innerCut, 0.01, Q fRange { 0, PI });
+                EditScalar("Outer Cutoff", *flash.outerCut, 0.01, Q fRange { 0, PI });
             }
         );
 
@@ -427,7 +422,7 @@ namespace ImGui {
                 [&](const SunLight& sun) {
                     return Quasi::Text::Format(
                         "light = Graphics::SunLight {{\n"
-                        "   .direction = fVector3 {:($),},\n"
+                        "   .direction = fv3 {:($),},\n"
                         "}};\n"
                         "light.color = fColor {:($),};\n\0",
                         sun.direction,
@@ -436,7 +431,7 @@ namespace ImGui {
                 [&](const PointLight& point) {
                     return Quasi::Text::Format(
                         "light = Graphics::PointLight {{\n"
-                        "   .position = fVector3 {:($),},\n"
+                        "   .position = fv3 {:($),},\n"
                         "   .constant = {},\n"
                         "   .linear = {},\n"
                         "   .quadratic = {},\n"
@@ -449,14 +444,14 @@ namespace ImGui {
                 [&](const FlashLight& flash) {
                     return Quasi::Text::Format(
                         "light = Graphics::FlashLight {{\n"
-                        "   .position = fVector3 {:($),},\n"
+                        "   .position = fv3 {{{($),}}},\n"
                         "   .yaw = {}, .pitch = {},\n"
                         "   .innerCut = {}, .outerCut = {}\n"
                         "}};\n"
                         "light.color = fColor {:($),};\n\0",
                         flash.position,
-                        flash.yaw, flash.pitch,
-                        flash.innerCut, flash.outerCut,
+                        *flash.yaw, *flash.pitch,
+                        *flash.innerCut, *flash.outerCut,
                         light.color);
                 }
             ).Data());
@@ -476,59 +471,59 @@ namespace ImGui {
     template ImGuiDataType ImGuiDataEnum<Q u64> ();
     template ImGuiDataType ImGuiDataEnum<Q i64> ();
 
-    template void EditScalar<float> (Q Str, float&,  float, Q NoInfer<Q Option<Q Math::Range<float>>>,  float);
-    template void EditScalar<double>(Q Str, double&, float, Q NoInfer<Q Option<Q Math::Range<double>>>, float);
-    template void EditScalar<Q u8 > (Q Str, Q u8 &,  float, Q NoInfer<Q Option<Q Math::Range<Q u8 >>>,  float);
-    template void EditScalar<Q i8 > (Q Str, Q i8 &,  float, Q NoInfer<Q Option<Q Math::Range<Q i8 >>>,  float);
-    template void EditScalar<Q u16> (Q Str, Q u16&,  float, Q NoInfer<Q Option<Q Math::Range<Q u16>>>,  float);
-    template void EditScalar<Q i16> (Q Str, Q i16&,  float, Q NoInfer<Q Option<Q Math::Range<Q i16>>>,  float);
-    template void EditScalar<Q u32> (Q Str, Q u32&,  float, Q NoInfer<Q Option<Q Math::Range<Q u32>>>,  float);
-    template void EditScalar<Q i32> (Q Str, Q i32&,  float, Q NoInfer<Q Option<Q Math::Range<Q i32>>>,  float);
-    template void EditScalar<Q u64> (Q Str, Q u64&,  float, Q NoInfer<Q Option<Q Math::Range<Q u64>>>,  float);
-    template void EditScalar<Q i64> (Q Str, Q i64&,  float, Q NoInfer<Q Option<Q Math::Range<Q i64>>>,  float);
+    template void EditScalar<float> (Q Str, float&,  float, Q NoInfer<Q Option<Q Range<float>>>,  float);
+    template void EditScalar<double>(Q Str, double&, float, Q NoInfer<Q Option<Q Range<double>>>, float);
+    template void EditScalar<Q u8 > (Q Str, Q u8 &,  float, Q NoInfer<Q Option<Q Range<Q u8 >>>,  float);
+    template void EditScalar<Q i8 > (Q Str, Q i8 &,  float, Q NoInfer<Q Option<Q Range<Q i8 >>>,  float);
+    template void EditScalar<Q u16> (Q Str, Q u16&,  float, Q NoInfer<Q Option<Q Range<Q u16>>>,  float);
+    template void EditScalar<Q i16> (Q Str, Q i16&,  float, Q NoInfer<Q Option<Q Range<Q i16>>>,  float);
+    template void EditScalar<Q u32> (Q Str, Q u32&,  float, Q NoInfer<Q Option<Q Range<Q u32>>>,  float);
+    template void EditScalar<Q i32> (Q Str, Q i32&,  float, Q NoInfer<Q Option<Q Range<Q i32>>>,  float);
+    template void EditScalar<Q u64> (Q Str, Q u64&,  float, Q NoInfer<Q Option<Q Range<Q u64>>>,  float);
+    template void EditScalar<Q i64> (Q Str, Q i64&,  float, Q NoInfer<Q Option<Q Range<Q i64>>>,  float);
 
-    template void EditVector<2, float>  (Q Str, Q Math::VectorN<2, float>&,   float, Q NoInfer<const Q Option<Q Math::RectN<2, float>>&>,  float);
-    template void EditVector<3, float>  (Q Str, Q Math::VectorN<3, float>&,   float, Q NoInfer<const Q Option<Q Math::RectN<3, float>>&>,  float);
-    template void EditVector<4, float>  (Q Str, Q Math::VectorN<4, float>&,   float, Q NoInfer<const Q Option<Q Math::RectN<4, float>>&>,  float);
-    template void EditVector<2, double> (Q Str, Q Math::VectorN<2, double>&,  float, Q NoInfer<const Q Option<Q Math::RectN<2, double>>&>, float);
-    template void EditVector<3, double> (Q Str, Q Math::VectorN<3, double>&,  float, Q NoInfer<const Q Option<Q Math::RectN<3, double>>&>, float);
-    template void EditVector<4, double> (Q Str, Q Math::VectorN<4, double>&,  float, Q NoInfer<const Q Option<Q Math::RectN<4, double>>&>, float);
-    template void EditVector<2, Q i32>  (Q Str, Q Math::VectorN<2, Q i32>&,   float, Q NoInfer<const Q Option<Q Math::RectN<2, Q i32>>&>,  float);
-    template void EditVector<3, Q i32>  (Q Str, Q Math::VectorN<3, Q i32>&,   float, Q NoInfer<const Q Option<Q Math::RectN<3, Q i32>>&>,  float);
-    template void EditVector<4, Q i32>  (Q Str, Q Math::VectorN<4, Q i32>&,   float, Q NoInfer<const Q Option<Q Math::RectN<4, Q i32>>&>,  float);
-    template void EditVector<2, Q u32>  (Q Str, Q Math::VectorN<2, Q u32>&,   float, Q NoInfer<const Q Option<Q Math::RectN<2, Q u32>>&>,  float);
-    template void EditVector<3, Q u32>  (Q Str, Q Math::VectorN<3, Q u32>&,   float, Q NoInfer<const Q Option<Q Math::RectN<3, Q u32>>&>,  float);
-    template void EditVector<4, Q u32>  (Q Str, Q Math::VectorN<4, Q u32>&,   float, Q NoInfer<const Q Option<Q Math::RectN<4, Q u32>>&>,  float);
-    template void EditVector<2, Q byte> (Q Str, Q Math::VectorN<2, Q byte>&,  float, Q NoInfer<const Q Option<Q Math::RectN<2, Q byte>>&>, float);
-    template void EditVector<3, Q byte> (Q Str, Q Math::VectorN<3, Q byte>&,  float, Q NoInfer<const Q Option<Q Math::RectN<3, Q byte>>&>, float);
-    template void EditVector<4, Q byte> (Q Str, Q Math::VectorN<4, Q byte>&,  float, Q NoInfer<const Q Option<Q Math::RectN<4, Q byte>>&>, float);
+    template void EditVector<float, 2> (Q Str, Q Math::Vector<float, 2>&,  float, Q NoInfer<const Q Option<Q Math::Rect<float, 2>>&>,  float);
+    template void EditVector<float, 3> (Q Str, Q Math::Vector<float, 3>&,  float, Q NoInfer<const Q Option<Q Math::Rect<float, 3>>&>,  float);
+    template void EditVector<float, 4> (Q Str, Q Math::Vector<float, 4>&,  float, Q NoInfer<const Q Option<Q Math::Rect<float, 4>>&>,  float);
+    template void EditVector<double, 2>(Q Str, Q Math::Vector<double, 2>&, float, Q NoInfer<const Q Option<Q Math::Rect<double, 2>>&>, float);
+    template void EditVector<double, 3>(Q Str, Q Math::Vector<double, 3>&, float, Q NoInfer<const Q Option<Q Math::Rect<double, 3>>&>, float);
+    template void EditVector<double, 4>(Q Str, Q Math::Vector<double, 4>&, float, Q NoInfer<const Q Option<Q Math::Rect<double, 4>>&>, float);
+    template void EditVector<Q i32, 2> (Q Str, Q Math::Vector<Q i32, 2>&,  float, Q NoInfer<const Q Option<Q Math::Rect<Q i32, 2>>&>,  float);
+    template void EditVector<Q i32, 3> (Q Str, Q Math::Vector<Q i32, 3>&,  float, Q NoInfer<const Q Option<Q Math::Rect<Q i32, 3>>&>,  float);
+    template void EditVector<Q i32, 4> (Q Str, Q Math::Vector<Q i32, 4>&,  float, Q NoInfer<const Q Option<Q Math::Rect<Q i32, 4>>&>,  float);
+    template void EditVector<Q u32, 2> (Q Str, Q Math::Vector<Q u32, 2>&,  float, Q NoInfer<const Q Option<Q Math::Rect<Q u32, 2>>&>,  float);
+    template void EditVector<Q u32, 3> (Q Str, Q Math::Vector<Q u32, 3>&,  float, Q NoInfer<const Q Option<Q Math::Rect<Q u32, 3>>&>,  float);
+    template void EditVector<Q u32, 4> (Q Str, Q Math::Vector<Q u32, 4>&,  float, Q NoInfer<const Q Option<Q Math::Rect<Q u32, 4>>&>,  float);
+    template void EditVector<Q byte, 2>(Q Str, Q Math::Vector<Q byte, 2>&, float, Q NoInfer<const Q Option<Q Math::Rect<Q byte, 2>>&>, float);
+    template void EditVector<Q byte, 3>(Q Str, Q Math::Vector<Q byte, 3>&, float, Q NoInfer<const Q Option<Q Math::Rect<Q byte, 3>>&>, float);
+    template void EditVector<Q byte, 4>(Q Str, Q Math::Vector<Q byte, 4>&, float, Q NoInfer<const Q Option<Q Math::Rect<Q byte, 4>>&>, float);
 
-    template void EditRange<float>  (Q Str, Q Math::Range<float>&,  float, Q NoInfer<const Q Option<Q Math::Range<float>>&>,  float);
-    template void EditRange<double> (Q Str, Q Math::Range<double>&, float, Q NoInfer<const Q Option<Q Math::Range<double>>&>, float);
-    template void EditRange<Q i32>  (Q Str, Q Math::Range<Q i32>&,  float, Q NoInfer<const Q Option<Q Math::Range<Q i32>>&>,  float);
-    template void EditRange<Q u32>  (Q Str, Q Math::Range<Q u32>&,  float, Q NoInfer<const Q Option<Q Math::Range<Q u32>>&>,  float);
-    template void EditRange<Q byte> (Q Str, Q Math::Range<Q byte>&, float, Q NoInfer<const Q Option<Q Math::Range<Q byte>>&>, float);
+    template void EditRange<float> (Q Str, Q Range<float>&,  float, Q NoInfer<const Q Option<Q Range<float>>&>,  float);
+    template void EditRange<double>(Q Str, Q Range<double>&, float, Q NoInfer<const Q Option<Q Range<double>>&>, float);
+    template void EditRange<Q i32> (Q Str, Q Range<Q i32>&,  float, Q NoInfer<const Q Option<Q Range<Q i32>>&>,  float);
+    template void EditRange<Q u32> (Q Str, Q Range<Q u32>&,  float, Q NoInfer<const Q Option<Q Range<Q u32>>&>,  float);
+    template void EditRange<Q byte>(Q Str, Q Range<Q byte>&, float, Q NoInfer<const Q Option<Q Range<Q byte>>&>, float);
 
-    template void EditRect<2, float>  (Q Str, Q Math::RectN<2, float>&,  float, Q NoInfer<const Q Option<Q Math::RectN<2, float>>&>,  float);
-    template void EditRect<3, float>  (Q Str, Q Math::RectN<3, float>&,  float, Q NoInfer<const Q Option<Q Math::RectN<3, float>>&>,  float);
-    template void EditRect<4, float>  (Q Str, Q Math::RectN<4, float>&,  float, Q NoInfer<const Q Option<Q Math::RectN<4, float>>&>,  float);
-    template void EditRect<2, double> (Q Str, Q Math::RectN<2, double>&, float, Q NoInfer<const Q Option<Q Math::RectN<2, double>>&>, float);
-    template void EditRect<3, double> (Q Str, Q Math::RectN<3, double>&, float, Q NoInfer<const Q Option<Q Math::RectN<3, double>>&>, float);
-    template void EditRect<4, double> (Q Str, Q Math::RectN<4, double>&, float, Q NoInfer<const Q Option<Q Math::RectN<4, double>>&>, float);
-    template void EditRect<2, Q i32>  (Q Str, Q Math::RectN<2, Q i32>&,  float, Q NoInfer<const Q Option<Q Math::RectN<2, Q i32>>&>,  float);
-    template void EditRect<3, Q i32>  (Q Str, Q Math::RectN<3, Q i32>&,  float, Q NoInfer<const Q Option<Q Math::RectN<3, Q i32>>&>,  float);
-    template void EditRect<4, Q i32>  (Q Str, Q Math::RectN<4, Q i32>&,  float, Q NoInfer<const Q Option<Q Math::RectN<4, Q i32>>&>,  float);
-    template void EditRect<2, Q u32>  (Q Str, Q Math::RectN<2, Q u32>&,  float, Q NoInfer<const Q Option<Q Math::RectN<2, Q u32>>&>,  float);
-    template void EditRect<3, Q u32>  (Q Str, Q Math::RectN<3, Q u32>&,  float, Q NoInfer<const Q Option<Q Math::RectN<3, Q u32>>&>,  float);
-    template void EditRect<4, Q u32>  (Q Str, Q Math::RectN<4, Q u32>&,  float, Q NoInfer<const Q Option<Q Math::RectN<4, Q u32>>&>,  float);
-    template void EditRect<2, Q byte> (Q Str, Q Math::RectN<2, Q byte>&, float, Q NoInfer<const Q Option<Q Math::RectN<2, Q byte>>&>, float);
-    template void EditRect<3, Q byte> (Q Str, Q Math::RectN<3, Q byte>&, float, Q NoInfer<const Q Option<Q Math::RectN<3, Q byte>>&>, float);
-    template void EditRect<4, Q byte> (Q Str, Q Math::RectN<4, Q byte>&, float, Q NoInfer<const Q Option<Q Math::RectN<4, Q byte>>&>, float);
+    template void EditRect<float, 2> (Q Str, Q Math::Rect<float, 2>&, float, Q NoInfer<const Q Option<Q Math::Rect<float, 2>>&>,  float);
+    template void EditRect<float, 3> (Q Str, Q Math::Rect<float, 3>&, float, Q NoInfer<const Q Option<Q Math::Rect<float, 3>>&>,  float);
+    template void EditRect<float, 4> (Q Str, Q Math::Rect<float, 4>&, float, Q NoInfer<const Q Option<Q Math::Rect<float, 4>>&>,  float);
+    template void EditRect<double, 2>(Q Str, Q Math::Rect<double, 2>&,float, Q NoInfer<const Q Option<Q Math::Rect<double, 2>>&>, float);
+    template void EditRect<double, 3>(Q Str, Q Math::Rect<double, 3>&,float, Q NoInfer<const Q Option<Q Math::Rect<double, 3>>&>, float);
+    template void EditRect<double, 4>(Q Str, Q Math::Rect<double, 4>&,float, Q NoInfer<const Q Option<Q Math::Rect<double, 4>>&>, float);
+    template void EditRect<Q i32, 2> (Q Str, Q Math::Rect<Q i32, 2>&, float, Q NoInfer<const Q Option<Q Math::Rect<Q i32, 2>>&>,  float);
+    template void EditRect<Q i32, 3> (Q Str, Q Math::Rect<Q i32, 3>&, float, Q NoInfer<const Q Option<Q Math::Rect<Q i32, 3>>&>,  float);
+    template void EditRect<Q i32, 4> (Q Str, Q Math::Rect<Q i32, 4>&, float, Q NoInfer<const Q Option<Q Math::Rect<Q i32, 4>>&>,  float);
+    template void EditRect<Q u32, 2> (Q Str, Q Math::Rect<Q u32, 2>&, float, Q NoInfer<const Q Option<Q Math::Rect<Q u32, 2>>&>,  float);
+    template void EditRect<Q u32, 3> (Q Str, Q Math::Rect<Q u32, 3>&, float, Q NoInfer<const Q Option<Q Math::Rect<Q u32, 3>>&>,  float);
+    template void EditRect<Q u32, 4> (Q Str, Q Math::Rect<Q u32, 4>&, float, Q NoInfer<const Q Option<Q Math::Rect<Q u32, 4>>&>,  float);
+    template void EditRect<Q byte, 2>(Q Str, Q Math::Rect<Q byte, 2>&,float, Q NoInfer<const Q Option<Q Math::Rect<Q byte, 2>>&>, float);
+    template void EditRect<Q byte, 3>(Q Str, Q Math::Rect<Q byte, 3>&,float, Q NoInfer<const Q Option<Q Math::Rect<Q byte, 3>>&>, float);
+    template void EditRect<Q byte, 4>(Q Str, Q Math::Rect<Q byte, 4>&,float, Q NoInfer<const Q Option<Q Math::Rect<Q byte, 4>>&>, float);
 
-    template void EditColor<Q Math::Color  >(Q Str, Q Math::Color&,   float);
-    template void EditColor<Q Math::Color3 >(Q Str, Q Math::Color3&,  float);
-    template void EditColor<Q Math::fColor >(Q Str, Q Math::fColor&,  float);
-    template void EditColor<Q Math::fColor3>(Q Str, Q Math::fColor3&, float);
+    template void EditColor<float,  true >(Q Str, Q Math::fColor&,  float);
+    template void EditColor<float,  false>(Q Str, Q Math::fColor3&, float);
+    template void EditColor<Q byte, true >(Q Str, Q Math::uColor&,  float);
+    template void EditColor<Q byte, false>(Q Str, Q Math::uColor3&, float);
 
     #pragma endregion
 } // ImGui

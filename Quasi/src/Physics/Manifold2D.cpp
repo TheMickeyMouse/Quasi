@@ -1,7 +1,6 @@
 #include "Manifold2D.h"
 
 #include "SeperatingAxisSolver.h"
-#include "IShape2D.h"
 #include "Shape2D.h"
 
 namespace Quasi::Physics2D {
@@ -14,12 +13,12 @@ namespace Quasi::Physics2D {
     Manifold Manifold::From(const SeperatingAxisSolver& sat) {
         const Shape&            base = sat.base, & target = sat.target;
         const PhysicsTransform& bXf  = sat.baseXf, tXf    = sat.targetXf;
-        const fVector2& n = sat.seperatingAxis;
+        const fv2& n = sat.seperatingAxis;
 
         const fLine2D baseClips   = bXf.TransformLine(base  .BestEdgeFor(bXf.TransformInverseDir(n))),
                       targetClips = tXf.TransformLine(target.BestEdgeFor(tXf.TransformInverseDir(-n)));
 
-        const bool flip = std::abs(baseClips.forward().dot(n)) > std::abs(targetClips.forward().dot(n));
+        const bool flip = std::abs(baseClips.forward.Dot(n)) > std::abs(targetClips.forward.Dot(n));
         const fLine2D& ref = flip ? targetClips : baseClips, &inc = flip ? baseClips : targetClips;
 
         Manifold manifold = FromEdges(ref, inc, flip ? n : -n);
@@ -28,29 +27,29 @@ namespace Quasi::Physics2D {
         return manifold;
     }
 
-    Manifold Manifold::FromEdges(const fLine2D& ref, const fLine2D& inc, const fVector2& n) {
-        const fVector2 refFwd = ref.forward().norm();
+    Manifold Manifold::FromEdges(const fLine2D& ref, const fLine2D& inc, const fv2& n) {
+        const fv2 refFwd = ref.forward.Norm();
 
-        Manifold manifold = Clip(inc.start, inc.end, refFwd, refFwd.dot(ref.start));
+        Manifold manifold = Clip(inc.start, inc.End(), refFwd, refFwd.Dot(ref.start));
 
-        manifold = Clip(manifold.contactPoint[0], manifold.contactPoint[1], -refFwd, -refFwd.dot(ref.end));
+        manifold = Clip(manifold.contactPoint[0], manifold.contactPoint[1], -refFwd, -refFwd.Dot(ref.End()));
 
         Manifold result = None();
-        const fVector2 refNorm = n;
-        const float max = ref.start.dot(refNorm);
+        const fv2 refNorm = n;
+        const float max = ref.start.Dot(refNorm);
 
-        if (const float d = refNorm.dot(manifold.contactPoint[0]) - max; d > 0) {
+        if (const float d = refNorm.Dot(manifold.contactPoint[0]) - max; d > 0) {
             result.AddPoint(manifold.contactPoint[0], d);
         }
-        if (const float d = refNorm.dot(manifold.contactPoint[1]) - max; d > 0) {
+        if (const float d = refNorm.Dot(manifold.contactPoint[1]) - max; d > 0) {
             result.AddPoint(manifold.contactPoint[1], d);
         }
         // return the valid points
         return result;
     }
 
-    Manifold Manifold::Clip(const fVector2& v0, const fVector2& v1, const fVector2& normal, float threshold) {
-        const float d0 = v0.dot(normal) - threshold, d1 = v1.dot(normal) - threshold;
+    Manifold Manifold::Clip(const fv2& v0, const fv2& v1, const fv2& normal, float threshold) {
+        const float d0 = v0.Dot(normal) - threshold, d1 = v1.Dot(normal) - threshold;
 
         Manifold manifold {};
 
@@ -60,7 +59,7 @@ namespace Quasi::Physics2D {
             manifold.AddPoint(v1);
 
         if (d0 * d1 < 0.0f) { // different sides
-            manifold.AddPoint(fLine2D { v0, v1 }.lerp(d0 / (d0 - d1)));
+            manifold.AddPoint(fLine2D { v0, v1 }.Lerp(d0 / (d0 - d1)));
         }
 
         return manifold;
@@ -75,7 +74,7 @@ namespace Quasi::Physics2D {
         return m;
     }
 
-    void Manifold::AddPoint(const fVector2& point, float depth) {
+    void Manifold::AddPoint(const fv2& point, float depth) {
         contactPoint[contactCount] = point;
         contactDepth[contactCount] = depth;
         ++contactCount;

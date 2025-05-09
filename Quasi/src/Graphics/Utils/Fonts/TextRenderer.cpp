@@ -55,7 +55,7 @@ namespace Quasi::Graphics {
         spaceAdvance = align.GetAdvance(font.GetGlyphRect(' '), scaleRatio); // this gets used alot, just here
 
         totalHeight = lineSpacing * (((float)lineCount - 1) * align.lineSpacing + 1);
-        pen = align.rect.corner(2);
+        pen = align.rect.Corner({ false, true });
         pen.y -= font.GetDefaultMetric().ascend.pointsf() * scaleRatio;
         pen.y -= align.IsVerticalJustified() ? 0 : align.GetYOff(totalHeight);
     }
@@ -87,7 +87,7 @@ namespace Quasi::Graphics {
             const float restWidth   = align.GetXOff(lineWidth - align.letterSpacing.pointsf());
             const bool shallCrop    = align.IsCropX();
             bool isVisible          = false;
-            const bool isAllVisible = lineWidth <= align.rect.width();
+            const bool isAllVisible = lineWidth <= align.rect.Width();
             int visibleStart = ~(int)lastLineIndex, visibleEnd = ~(int)(meshIndex - 1); // store 'sign' as an indicator for 'undefined'
             for (u32 i = lastLineIndex; i < meshIndex; ++i) {
                 CharAt(i).MoveX(restWidth); // offset all for centering
@@ -123,7 +123,7 @@ namespace Quasi::Graphics {
     }
 
     bool TextRenderer::WordWrap(float advance, const char*& it, const char* begin) {
-        if (!align.IsWordWrap() || lineWidth + advance <= align.rect.width()) return false;
+        if (!align.IsWordWrap() || lineWidth + advance <= align.rect.Width()) return false;
 
         // word wrapping (complex part over here)
         if (it == begin) return false;
@@ -165,24 +165,24 @@ namespace Quasi::Graphics {
     void TextRenderer::ClipY(Math::fRect2D& pos, Math::fRect2D& tex, bool clipTop, bool clipBottom) const {
         if (clipTop && pos.max.y > align.rect.max.y) {
             const float offset = pos.max.y - align.rect.max.y;
-            const float percentage = offset / pos.height();
+            const float percentage = offset / pos.Height();
             pos.max.y -= offset;
-            tex.min.y += percentage * tex.height();
+            tex.min.y += percentage * tex.Height();
         }
 
         if (clipBottom && pos.min.y < align.rect.min.y) {
             const float offset = align.rect.min.y - pos.min.y;
-            const float percentage = offset / pos.height();
+            const float percentage = offset / pos.Height();
             pos.min.y += offset;
-            tex.max.y -= percentage * tex.height();
+            tex.max.y -= percentage * tex.Height();
         }
     }
 
     void TextRenderer::PushCharQuad(const Math::fRect2D& pos, const Math::fRect2D& tex) {
-        textVertices.Push({ pos.corner(0), tex.corner(0), 1.0f, Vertex::RENDER_TEXT }); // y flipped cuz opengl textures are flipped
-        textVertices.Push({ pos.corner(1), tex.corner(1), 1.0f, Vertex::RENDER_TEXT });
-        textVertices.Push({ pos.corner(2), tex.corner(2), 1.0f, Vertex::RENDER_TEXT }); // NOLINT(clang-diagnostic-xor-used-as-pow)
-        textVertices.Push({ pos.corner(3), tex.corner(3), 1.0f, Vertex::RENDER_TEXT });
+        textVertices.Push({ pos.Corner({ false, false }), tex.Corner({ false, false }), 1.0f, Vertex::RENDER_TEXT }); // y flipped cuz opengl textures are flipped
+        textVertices.Push({ pos.Corner({ true,  false }), tex.Corner({ true,  false }), 1.0f, Vertex::RENDER_TEXT });
+        textVertices.Push({ pos.Corner({ false, true  }), tex.Corner({ false, true  }), 1.0f, Vertex::RENDER_TEXT }); // NOLINT(clang-diagnostic-xor-used-as-pow)
+        textVertices.Push({ pos.Corner({ true,  true  }), tex.Corner({ true,  true  }), 1.0f, Vertex::RENDER_TEXT });
     }
 
     void TextRenderer::AddChar(const char*& it, const char* begin) {
@@ -205,13 +205,13 @@ namespace Quasi::Graphics {
 
         const Glyph& rect = font.GetGlyphRect(glyph); // the information for glyphs
         const float advance = align.GetAdvance(rect, scaleRatio); // pre-check if word will overflow
-        if (align.IsLetterWrap() && lineWidth + advance > align.rect.width()) { // if too long then wrap this character
+        if (align.IsLetterWrap() && lineWidth + advance > align.rect.Width()) { // if too long then wrap this character
             TriggerNewLine(); // new line for wrapping
         }
 
-        const fVector2 rsize = rect.rect.size() * font.textureSize.as<float>(); // real-scale size of the quad
+        const fv2 rsize = rect.rect.Size() * (fv2)font.textureSize; // real-scale size of the quad
         fRect2D texture = rect.rect;
-        fRect2D pos = rect.offset.as<float>().to(fVector2 { rsize.x, -rsize.y }.as_size()) * scaleRatio + pen;
+        fRect2D pos = fRect2D::FromSize((fv2)rect.offset, fv2 { rsize.x, -rsize.y }) * scaleRatio + pen;
 
         if (align.IsCropY() && !align.IsVerticalJustified()) {
             ClipY(pos, texture, wouldClipTop, wouldClipBottom);
@@ -251,13 +251,13 @@ namespace Quasi::Graphics {
 
         const Glyph& rect = font.GetGlyphRect(glyph, fntStyle, fntID); // the information for glyphs
         const float advance = align.GetAdvance(rect, scaleRatio); // pre-check if word will overflow
-        if (align.IsLetterWrap() && lineWidth + advance > align.rect.width()) { // if too long then wrap this character
+        if (align.IsLetterWrap() && lineWidth + advance > align.rect.Width()) { // if too long then wrap this character
             TriggerNewLine(); // new line for wrapping
         }
 
-        const fVector2 rsize = rect.rect.size() * font.textureSize.as<float>(); // real-scale size of the quad
+        const fv2 rsize = rect.rect.Size() * (fv2)font.textureSize; // real-scale size of the quad
         fRect2D texture = rect.rect;
-        fRect2D pos = rect.offset.asf().to(fVector2 { rsize.x, -rsize.y }.as_size()) * scaleRatio + pen;
+        fRect2D pos = fRect2D::FromSize((fv2)rect.offset, fv2 { rsize.x, -rsize.y }) * scaleRatio + pen;
 
         if (align.IsCropY() && !align.IsVerticalJustified()) {
             ClipY(pos, texture, wouldClipTop, wouldClipBottom);
@@ -336,9 +336,9 @@ namespace Quasi::Graphics {
                 for (const fRange monoSpan : monos) {
                     const auto [_, ascend, descent] = font.GetDefaultMetric();
                     AddRoundedRect(
-                        { monoSpan.min + restWidth, monoSpan.max + restWidth,
-                          pen.y + descent.pointsf() * scaleRatio, pen.y + ascend.pointsf() * scaleRatio },
-                        fontSize.pointsf() * 0.3f, fColor::from_hex("27303d")
+                        {{ monoSpan + restWidth,
+                           { pen.y + descent.pointsf() * scaleRatio, pen.y + ascend.pointsf() * scaleRatio } }},
+                        fontSize.pointsf() * 0.3f, 0x27303d_fColor
                     );
                 }
                 monos.Clear();
@@ -357,34 +357,41 @@ namespace Quasi::Graphics {
         for (const fRange monoSpan : monos) {
             const auto [_, ascend, descent] = font.GetDefaultMetric();
             AddRoundedRect(
-                { monoSpan.min + restWidth, monoSpan.max + restWidth,
-                  pen.y + descent.pointsf() * scaleRatio, pen.y + ascend.pointsf() * scaleRatio },
-                fontSize.pointsf() * 0.3f, fColor::from_hex("27303d")
+                {{ monoSpan + restWidth,
+                   { pen.y + descent.pointsf() * scaleRatio, pen.y + ascend.pointsf() * scaleRatio } }},
+                fontSize.pointsf() * 0.3f, 0x27303d_fColor
             );
         }
     }
 
     void TextRenderer::AddRoundedRect(const Math::fRect2D& region, float roundRadius, const Math::fColor& color) {
         using namespace Math;
+
+        const fv2 corners[4] = {
+            region.Corner({ false, false }),
+            region.Corner({ true,  false }),
+            region.Corner({ false, true  }),
+            region.Corner({ true,  true  }),
+        };
         // rectangle
-        const fVector2 y = fVector2::unit_y(roundRadius);
+        const fv2 y = { 0, roundRadius };
         constexpr int renderType = Vertex::RENDER_FILL;
         const u32 off = (u32)bgVertices.Length();
-        bgVertices.Push({ region.corner(0) + y, 0.0f, color, renderType });
-        bgVertices.Push({ region.corner(1) + y, 0.0f, color, renderType });
-        bgVertices.Push({ region.corner(2) - y, 0.0f, color, renderType });
-        bgVertices.Push({ region.corner(3) - y, 0.0f, color, renderType });
+        bgVertices.Push({ corners[0] + y, 0.0f, color, renderType });
+        bgVertices.Push({ corners[1] + y, 0.0f, color, renderType });
+        bgVertices.Push({ corners[2] - y, 0.0f, color, renderType });
+        bgVertices.Push({ corners[3] - y, 0.0f, color, renderType });
 
-        const fVector2 x = fVector2::unit_x(roundRadius);
-        bgVertices.Push({ region.corner(2) + x,     0.0f, color, renderType });
-        bgVertices.Push({ region.corner(2) + x - y, 0.0f, color, renderType });
-        bgVertices.Push({ region.corner(3) - x,     0.0f, color, renderType });
-        bgVertices.Push({ region.corner(3) - x - y, 0.0f, color, renderType });
+        const fv2 x = { roundRadius, 0 };
+        bgVertices.Push({ corners[2] + x,     0.0f, color, renderType });
+        bgVertices.Push({ corners[2] + x - y, 0.0f, color, renderType });
+        bgVertices.Push({ corners[3] - x,     0.0f, color, renderType });
+        bgVertices.Push({ corners[3] - x - y, 0.0f, color, renderType });
 
-        bgVertices.Push({ region.corner(0) + x,     0.0f, color, renderType });
-        bgVertices.Push({ region.corner(0) + x + y, 0.0f, color, renderType });
-        bgVertices.Push({ region.corner(1) - x,     0.0f, color, renderType });
-        bgVertices.Push({ region.corner(1) - x + y, 0.0f, color, renderType });
+        bgVertices.Push({ corners[0] + x,     0.0f, color, renderType });
+        bgVertices.Push({ corners[0] + x + y, 0.0f, color, renderType });
+        bgVertices.Push({ corners[1] - x,     0.0f, color, renderType });
+        bgVertices.Push({ corners[1] - x + y, 0.0f, color, renderType });
 
         bgIndices.Push(TriIndices { 0,  1,  2 } + off);
         bgIndices.Push(TriIndices { 1,  2,  3 } + off);
@@ -397,18 +404,18 @@ namespace Quasi::Graphics {
         constexpr float angle = HALF_PI / (float)cuts;
         u32 ind = 12 + off;
         for (int corner = 0; corner < 4; ++corner) {
-            fVector2 origin = region.inset(roundRadius).corner(corner);
+            fv2 origin = region.Inset(roundRadius).Corner({ (corner & 1) == 1, (corner & 2) == 2 });
             bgVertices.Push({ origin, 0.0f, color, renderType });
             for (int i = 0; i < cuts; ++i) {
                 bgVertices.Push({
-                    fVector2::from_polar(roundRadius,
-                        angle * (float)i + HALF_PI * (float)(map >> corner * 8 & 255))
+                    fv2::FromPolar(roundRadius,
+                        Radians(angle * (float)i + HALF_PI * (float)(map >> corner * 8 & 255)))
                     + origin, 0.0f, color, renderType });
                 bgIndices.Push({ ind, ind + 1 + i, ind + 2 + i });
             }
             bgVertices.Push({
-                fVector2::from_polar(roundRadius,
-                    HALF_PI * (float)(1 + (map >> corner * 8 & 255)))
+                fv2::FromPolar(roundRadius,
+                    Radians(HALF_PI * (float)(1 + (map >> corner * 8 & 255))))
                 + origin, 0.0f, color, renderType });
             ind += cuts + 2;
         }

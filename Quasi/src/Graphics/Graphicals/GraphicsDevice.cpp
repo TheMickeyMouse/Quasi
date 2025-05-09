@@ -18,7 +18,7 @@
 namespace Quasi::Graphics {
     class RenderData;
 
-    GraphicsDevice::GraphicsDevice(GLFWwindow* window, Math::iVector2 winSize) :
+    GraphicsDevice::GraphicsDevice(GLFWwindow* window, Math::iv2 winSize) :
         windowSize(winSize), mainWindow{ window }, ioDevice(*this) {
         Instance = *this;
         Texture::Init();
@@ -196,7 +196,7 @@ namespace Quasi::Graphics {
 
             {
                 const Math::fColor prevClearColor = renderOptions.clearColor;
-                ImGui::ColorEdit4("Clear Color", renderOptions.clearColor.begin());
+                ImGui::ColorEdit4("Clear Color", renderOptions.clearColor.Data());
                 if (renderOptions.clearColor != prevClearColor)
                     Render::SetClearColor(renderOptions.clearColor);
             }
@@ -277,7 +277,7 @@ namespace Quasi::Graphics {
         ImGui::End();
     }
 
-    GraphicsDevice GraphicsDevice::Initialize(Math::iVector2 winSize) {
+    GraphicsDevice GraphicsDevice::Initialize(Math::iv2 winSize) {
         InitGLDebugTools();
         /* Initialize the library */
         if (!glfwInit()) {
@@ -308,7 +308,7 @@ namespace Quasi::Graphics {
 
         Render::EnableBlend();
         Render::UseBlendFunc(BlendFactor::SRC_ALPHA, BlendFactor::INVERT_SRC_ALPHA);
-        Render::UseBlendConstColor(1);
+        Render::UseBlendConstColor({ 1, 1, 1 });
 
         Render::EnableDepth();
         Render::UseDepthFunc(CmpOperation::LEQUAL);

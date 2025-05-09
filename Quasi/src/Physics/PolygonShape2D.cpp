@@ -11,7 +11,7 @@ namespace Quasi::Physics2D {
     }
 
     template <class T> void BasicPolygonShape<T>::FixCenterOfMass() {
-        const fVector2 centroid = CenterOfMass();
+        const fv2 centroid = CenterOfMass();
         for (u32 i = 0; i < Size(); ++i) {
             PointAt(i) -= centroid;
         }
@@ -30,16 +30,16 @@ namespace Quasi::Physics2D {
     }
 
     template <class T> fRect2D BasicPolygonShape<T>::ComputeBoundingBox() const {
-        fRect2D rect = fRect2D::unrange();
-        for (u32 i = 0; i < Size(); ++i) rect = rect.expand_until(PointAt(i));
+        fRect2D rect = fRect2D::AntiDomain();
+        for (u32 i = 0; i < Size(); ++i) rect.ExpandToFit(PointAt(i));
         return rect;
     }
 
-    template <class T> fVector2 BasicPolygonShape<T>::CenterOfMass() const {
+    template <class T> fv2 BasicPolygonShape<T>::CenterOfMass() const {
         float x = 0.0f, y = 0.0f, area = 0.0f;
         u32 i = 0;
         for (; i < Size() - 1; i++) {
-            const fVector2& p0 = PointAt(i), &p1 = PointAt(i + 1);
+            const fv2& p0 = PointAt(i), &p1 = PointAt(i + 1);
             const float areaSum = (p0.x * p1.y) - (p1.x * p0.y);
 
             x += (p0.x + p1.x) * areaSum;
@@ -47,7 +47,7 @@ namespace Quasi::Physics2D {
             area += areaSum;
         }
         // split modulo branch
-        const fVector2& p0 = PointAt(i), &p1 = PointAt(0);
+        const fv2& p0 = PointAt(i), &p1 = PointAt(0);
         const float areaSum = (p0.x * p1.y) - (p1.x * p0.y);
 
         x += (p0.x + p1.x) * areaSum;
@@ -62,19 +62,19 @@ namespace Quasi::Physics2D {
         float inertNum = 0.0f, inertDen = 0.0f;
         u32 i = 0;
         for (; i < Size() - 1; ++i) {
-            const float z = PointAt(i + 1).zcross(PointAt(i));
+            const float z = PointAt(i + 1).CrossZ(PointAt(i));
             inertDen += z;
-            const float uSquared = PointAt(i).lensq(), vSquared = PointAt(i + 1).lensq();
+            const float uSquared = PointAt(i).LenSq(), vSquared = PointAt(i + 1).LenSq();
             inertNum += z * (uSquared + vSquared + std::sqrt(uSquared * vSquared));
         }
         return inertNum / (inertDen * 6);
     }
 
-    template <class T> fVector2 BasicPolygonShape<T>::NearestPointTo(const fVector2& point) const {
+    template <class T> fv2 BasicPolygonShape<T>::NearestPointTo(const fv2& point) const {
         u32 nearest = 0;
-        float mindist = point.distsq(PointAt(0));
+        float mindist = point.DistSq(PointAt(0));
         for (u32 i = 1; i < Size(); ++i) {
-            if (const float d = point.distsq(PointAt(i)); d < mindist) {
+            if (const float d = point.DistSq(PointAt(i)); d < mindist) {
                 mindist = d;
                 nearest = i;
             }
@@ -82,11 +82,11 @@ namespace Quasi::Physics2D {
         return PointAt(nearest);
     }
 
-    template <class T> fVector2 BasicPolygonShape<T>::FurthestAlong(const fVector2& normal) const {
+    template <class T> fv2 BasicPolygonShape<T>::FurthestAlong(const fv2& normal) const {
         u32 furthest = 0;
-        float m = normal.dot(PointAt(0));
+        float m = normal.Dot(PointAt(0));
         for (u32 i = 1; i < Size(); ++i) {
-            if (const float d = normal.dot(PointAt(i)); d > m) {
+            if (const float d = normal.Dot(PointAt(i)); d > m) {
                 m = d;
                 furthest = i;
             }
@@ -94,40 +94,40 @@ namespace Quasi::Physics2D {
         return PointAt(furthest);
     }
 
-    template <class T> fLine2D BasicPolygonShape<T>::BestEdgeFor(const fVector2& normal) const {
-        float maxDepth = normal.dot(PointAt(0));
+    template <class T> fLine2D BasicPolygonShape<T>::BestEdgeFor(const fv2& normal) const {
+        float maxDepth = normal.Dot(PointAt(0));
         i32 furthest = 0;
         for (i32 i = 1; i < Size(); ++i) {
-            if (const float d = normal.dot(PointAt(i)); d > maxDepth) {
+            if (const float d = normal.Dot(PointAt(i)); d > maxDepth) {
                 maxDepth = d;
                 furthest = i;
             }
         }
 
-        const fVector2 &f     = PointAt(furthest),
+        const fv2 &f     = PointAt(furthest),
                        &edge0 = PointAtWrap(furthest + 1),
                        &edge1 = PointAtWrap(furthest - 1);
-        if (std::abs((f - edge0).dot(normal)) * InvLenBtwn(furthest) >
-            std::abs((f - edge1).dot(normal)) * InvLenBtwnWrap(furthest - 1))
+        if (std::abs((f - edge0).Dot(normal)) * InvLenBtwn(furthest) >
+            std::abs((f - edge1).Dot(normal)) * InvLenBtwnWrap(furthest - 1))
             return { f, edge1 };
         return { f, edge0 };
     }
 
-    template <class T> fRange BasicPolygonShape<T>::ProjectOntoAxis(const fVector2& axis) const {
-        fRange range = fRange::unrange();
+    template <class T> fRange BasicPolygonShape<T>::ProjectOntoAxis(const fv2& axis) const {
+        fRange range = fRange::AntiDomain();
         for (u32 i = 0; i < Size(); ++i) {
-            const float d = axis.dot(PointAt(i));
-            range = range.expand_until(d);
+            const float d = axis.Dot(PointAt(i));
+            range.ExpandToFit(d);
         }
         return range;
     }
 
-    template <class T> fRange BasicPolygonShape<T>::ProjectOntoOwnAxis(u32 axisID, const fVector2& axis) const {
-        fRange range = fRange::at(axis.dot(PointAt(axisID)));
+    template <class T> fRange BasicPolygonShape<T>::ProjectOntoOwnAxis(u32 axisID, const fv2& axis) const {
+        fRange range = fRange::On(axis.Dot(PointAt(axisID)));
         for (u32 i = 0; i < Size(); ++i) {
             if (i == axisID || i == WrapIndex(axisID + 1)) continue;
-            const float d = axis.dot(PointAt(i));
-            range = range.expand_until(d);
+            const float d = axis.Dot(PointAt(i));
+            range.ExpandToFit(d);
         }
         return range;
     }
@@ -136,9 +136,9 @@ namespace Quasi::Physics2D {
         bool success = false;
         u32 i = 0;
         for (; i < Size() - 1; ++i) {
-            success |= sat.CheckAxis((PointAt(i + 1) - PointAt(i)).perpend() * InvLenBtwn(i));
+            success |= sat.CheckAxis((PointAt(i + 1) - PointAt(i)).Perpend() * InvLenBtwn(i));
         }
-        success |= sat.CheckAxis((PointAt(0) - PointAt(i)).perpend() * InvLenBtwn(i));
+        success |= sat.CheckAxis((PointAt(0) - PointAt(i)).Perpend() * InvLenBtwn(i));
         return success;
     }
 
@@ -148,21 +148,21 @@ namespace Quasi::Physics2D {
     template class BasicPolygonShape<StaticPolygonShape<4>>;
     template class BasicPolygonShape<DynPolygonShape>;
 
-    template <u32 N> StaticPolygonShape<N>::StaticPolygonShape(Span<const fVector2> ps) {
+    template <u32 N> StaticPolygonShape<N>::StaticPolygonShape(Span<const fv2> ps) {
         for (u32 i = 0; i < N; ++i) {
             points[i]   = ps[i];
-            invDists[i] = 1 / ps[(i + 1) % N].dist(ps[i]);
+            invDists[i] = 1 / ps[(i + 1) % N].Dist(ps[i]);
         }
         this->FixCenterOfMass();
     }
 
 
-    DynPolygonShape::DynPolygonShape(Span<const fVector2> points) : data(Vec<PointWithInvDist>::WithCap(points.Length())) {
+    DynPolygonShape::DynPolygonShape(Span<const fv2> points) : data(Vec<PointWithInvDist>::WithCap(points.Length())) {
         u32 i = 0;
         for (; i < points.Length() - 1; ++i) {
-            data.Push({ points[i], 1 / points[i + 1].dist(points[i]) });
+            data.Push({ points[i], 1 / points[i + 1].Dist(points[i]) });
         }
-        data.Push({ points[i], 1 / points[0].dist(points[i]) });
+        data.Push({ points[i], 1 / points[0].Dist(points[i]) });
         FixCenterOfMass();
     }
 
@@ -170,15 +170,15 @@ namespace Quasi::Physics2D {
         return data.Length();
     }
 
-    void DynPolygonShape::AddPoint(const fVector2& p) {
+    void DynPolygonShape::AddPoint(const fv2& p) {
         // needs to update last and first distances
-        data.Push({ p, 1 / p.dist(PointAt(0)) });
+        data.Push({ p, 1 / p.Dist(PointAt(0)) });
         UpdateLenBtwn((i32)(data.Length() - 2));
     }
 
-    void DynPolygonShape::AddPoint(const fVector2& p, u32 i) {
+    void DynPolygonShape::AddPoint(const fv2& p, u32 i) {
         // doesnt need i + 1 because length is not updated
-        data.Insert({ p, 1 / p.dist(PointAtWrap((i32)i)) }, i);
+        data.Insert({ p, 1 / p.Dist(PointAtWrap((i32)i)) }, i);
         UpdateLenBtwnWrap((i32)i - 1);
     }
 
@@ -192,8 +192,8 @@ namespace Quasi::Physics2D {
         UpdateLenBtwn(0);
     }
 
-    void DynPolygonShape::SetPoint(const fVector2& p, i32 i) {
+    void DynPolygonShape::SetPoint(const fv2& p, i32 i) {
         PointAt(i) = p;
-        InvLenBtwn(i) = 1 / p.dist(PointAtWrap(i + 1));
+        InvLenBtwn(i) = 1 / p.Dist(PointAtWrap(i + 1));
     }
 }

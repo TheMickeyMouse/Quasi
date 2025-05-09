@@ -205,30 +205,30 @@ namespace Quasi::Memory {
 namespace Quasi {
     constexpr u16 operator ""_u16(const char* s, usize n) {
         return n == 0 ? 0 :
-               n == 1 ? (u8)s[0] : Memory::ReadU16Big(s);
+               n == 1 ? (u8)s[0] : (u32)(u8)s[0] << 8  | (u32)(u8)s[1];
     }
 
     constexpr u32 operator ""_u32(const char* s, usize n) {
         switch (n) {
-            case 0: return 0;
-            case 1: return (u32)(u8)s[0];
-            case 2: return (u32)(u8)s[0] << 8  | (u32)(u8)s[1];
-            case 3: return (u32)(u8)s[0] << 16 | (u32)(u8)s[1] << 8 | (u32)(u8)s[2];
-            default: return Memory::ReadU32Big(s);
+            case 0:  return 0;
+            case 1:  return (u32)(u8)s[0];
+            case 2:  return (u32)(u8)s[0] << 8  | (u32)(u8)s[1];
+            case 3:  return (u32)(u8)s[0] << 16 | (u32)(u8)s[1] << 8 | (u32)(u8)s[2];
+            default: return (u32)(u8)s[0] << 24 | (u32)(u8)s[1] << 16 | (u32)(u8)s[2] << 8  | (u32)(u8)s[3];
         }
     }
 
     constexpr u64 operator ""_u64(const char* s, usize n) {
         switch (n) {
-            case 0: return 0;
-            case 1: return (u64)(u8)s[0];
-            case 2: return (u64)(u8)s[0] << 8  | (u64)(u8)s[1];
-            case 3: return (u64)(u8)s[0] << 16 | (u64)(u8)s[1] << 8  | (u64)(u8)s[2];
-            case 4: return (u64)(u8)s[0] << 24 | (u64)(u8)s[1] << 16 | (u64)(u8)s[2] << 8  | (u64)(u8)s[3];
-            case 5: return (u64)(u8)s[0] << 32 | (u64)(u8)s[1] << 24 | (u64)(u8)s[2] << 16 | (u64)(u8)s[3] << 8  | (u64)(u8)s[4];
-            case 6: return (u64)(u8)s[0] << 40 | (u64)(u8)s[1] << 32 | (u64)(u8)s[2] << 24 | (u64)(u8)s[3] << 16 | (u64)(u8)s[4] << 8  | (u64)(u8)s[5];
-            case 7: return (u64)(u8)s[0] << 48 | (u64)(u8)s[1] << 40 | (u64)(u8)s[2] << 32 | (u64)(u8)s[3] << 24 | (u64)(u8)s[4] << 16 | (u64)(u8)s[5] << 8 | (u64)(u8)s[6];
-            default: return Memory::ReadU64Big(s);
+            case 0:  return 0;
+            case 1:  return (u64)(u8)s[0];
+            case 2:  return (u64)(u8)s[0] << 8  | (u64)(u8)s[1];
+            case 3:  return (u64)(u8)s[0] << 16 | (u64)(u8)s[1] << 8  | (u64)(u8)s[2];
+            case 4:  return (u64)(u8)s[0] << 24 | (u64)(u8)s[1] << 16 | (u64)(u8)s[2] << 8  | (u64)(u8)s[3];
+            case 5:  return (u64)(u8)s[0] << 32 | (u64)(u8)s[1] << 24 | (u64)(u8)s[2] << 16 | (u64)(u8)s[3] << 8  | (u64)(u8)s[4];
+            case 6:  return (u64)(u8)s[0] << 40 | (u64)(u8)s[1] << 32 | (u64)(u8)s[2] << 24 | (u64)(u8)s[3] << 16 | (u64)(u8)s[4] << 8  | (u64)(u8)s[5];
+            case 7:  return (u64)(u8)s[0] << 48 | (u64)(u8)s[1] << 40 | (u64)(u8)s[2] << 32 | (u64)(u8)s[3] << 24 | (u64)(u8)s[4] << 16 | (u64)(u8)s[5] << 8 | (u64)(u8)s[6];
+            default: return (u64)(u8)s[0] << 56 | (u64)(u8)s[1] << 48 | (u64)(u8)s[2] << 40 | (u64)(u8)s[3] << 32 | (u64)(u8)s[4] << 24 | (u64)(u8)s[5] << 16 | (u64)(u8)s[6] <<  8 | (u64)(u8)s[7];
         }
     }
 }

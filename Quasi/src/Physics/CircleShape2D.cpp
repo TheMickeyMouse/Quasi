@@ -13,19 +13,19 @@ namespace Quasi::Physics2D {
         return 0.5f * radius * radius;
     }
 
-    fVector2 CircleShape::NearestPointTo(const fVector2& point) const {
-        return point.norm(radius);
+    fv2 CircleShape::NearestPointTo(const fv2& point) const {
+        return point.Norm(radius);
     }
 
-    fVector2 CircleShape::FurthestAlong(const fVector2& normal) const {
+    fv2 CircleShape::FurthestAlong(const fv2& normal) const {
         return normal * radius;
     }
 
-    fRange CircleShape::ProjectOntoAxis(const fVector2& axis) const {
+    fRange CircleShape::ProjectOntoAxis(const fv2& axis) const {
         return { -radius, +radius };
     }
 
-    fRange CircleShape::ProjectOntoOwnAxis(u32 axisID, const fVector2& axis) const {
+    fRange CircleShape::ProjectOntoOwnAxis(u32 axisID, const fv2& axis) const {
         return ProjectOntoAxis(axis);
     }
 } // Quasi

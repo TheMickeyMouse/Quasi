@@ -1,400 +1,227 @@
 ﻿#include "Matrix.h"
 
-#include "Constants.h"
+#include <xmmintrin.h>
+
+#include "Transform2D.h"
+#include "Transform3D.h"
 
 namespace Quasi::Math {
-    template <u32 N, u32 M> void Matrix<N, M>::construct_identity() requires is_square {
-        for (u32 i = 0; i < N; ++i) {
-            mat[i][i] = 1.0f;
-        }
+    Matrix<2> Matrix<2>::RotationLin(const Rotation2D& rotation) {
+        return rotation.AsMatrixLinear();
     }
 
-    template <u32 N, u32 M>
-    Matrix<N, M> Matrix<N, M>::from_span(Span<const float> data) {
-        return [&]<u32... I>(std::integer_sequence<u32, I...>) {
-            return Matrix { col::from_span(data.Subspan(N * I))... };
-        }(std::make_integer_sequence<u32, M> {});
-    }
-
-    template <u32 N, u32 M> Span<const float> Matrix<N, M>::data() const {
-        return Spans::Slice(mat.first().begin(), N * M);
-    }
-
-    template <u32 N, u32 M> auto Matrix<N, M>::get_cols() const -> Span<const col> {
-        return Spans::Slice(mat.begin(), M);
-    }
-
-    template <u32 N, u32 M> Matrix<N - 1, M - 1> Matrix<N, M>::linear_matrix() const {
-        return [&]<u32... I>(std::integer_sequence<u32, I...>) {
-            return Matrix<N - 1, M - 1> { mat[I].shrink()... };
-        }(std::make_integer_sequence<u32, M - 1> {});
-    }
-
-    template <u32 N, u32 M> Matrix<N + 1, M + 1> Matrix<N, M>::affine_matrix() const {
-        return [&]<u32... I>(std::integer_sequence<u32, I...>) {
-            Matrix<N + 1, M + 1> m { mat[I].extend(0.0f)..., VectorN<N + 1, float>::ZERO() };
-            m[M][N] = 1.0f;
-            return m;
-        }(std::make_integer_sequence<u32, M> {});
-    }
-
-    template <u32 N, u32 M> Matrix<N, M>& Matrix<N, M>::translate(const vec& translation) {
-        mat.last() += translation.extend(0.0f);
+    Matrix<2>& Matrix<2>::RotateByLin(const Rotation2D& rotation) {
+        const fComplex& z = rotation.AsComplex();
+        float* m = &unitVectors[0][0];
+        const float arr[4] = { m[0] * z.re - m[1] * z.im,
+                               m[0] * z.im + m[1] * z.re,
+                               m[2] * z.re - m[3] * z.im,
+                               m[2] * z.im + m[3] * z.re };
+        Memory::MemCopy(m, arr, sizeof(arr));
         return *this;
     }
 
-    template <u32 N, u32 M> Matrix<N, M> Matrix<N, M>::translate_mat(const vec& translation) requires is_square {
-        Matrix identity {};
-        identity.mat.last() = translation.extend(1.0f);
-        return identity;
+    Rotation2D Matrix<2>::GetRotationLin() const {
+        return Rotation2D::FromComplex(fComplex::FromVec2D(unitVectors[0]));
     }
 
-    template <u32 N, u32 M> Matrix<N, M>& Matrix<N, M>::scale(const vec& scale) {
-        for (u32 i = 0; i < M - 1; ++i)
-            mat[i] *= scale.extend(1);
+    Matrix<3> Matrix<3>::Rotation(const Rotation2D& rotation) {
+        return rotation.AsMatrix();
+    }
+
+    Matrix<3>& Matrix<3>::RotateBy(const Rotation2D& rotation) {
+        const fComplex& z = rotation.AsComplex();
+        float* m = &unitVectors[0][0];
+        const float arr[4] = { m[0] * z.re - m[1] * z.im,
+                               m[0] * z.im + m[1] * z.re,
+                               m[3] * z.re - m[4] * z.im,
+                               m[3] * z.im + m[4] * z.re };
+        m[0] = arr[0];
+        m[1] = arr[1];
+        m[3] = arr[2];
+        m[4] = arr[3];
         return *this;
     }
 
-    template <u32 N, u32 M> Matrix<N, M>& Matrix<N, M>::scale_linear(const col& scale) requires is_square {
-        for (u32 i = 0; i < M; ++i)
-            mat[i] *= scale;
+    Rotation2D Matrix<3>::GetRotation() const {
+        return Rotation2D::FromComplex(fComplex::FromVec2D(unitVectors[0].As2D()));
+    }
+
+    Matrix<3> Matrix<3>::RotationLin(const Rotation3D& rotation) {
+        return rotation.AsMatrixLinear();
+    }
+
+    Matrix<3>& Matrix<3>::RotateByLin(const Rotation3D& rotation) {
+        const Matrix3x3 matrixForm = rotation.AsMatrixLinear();
+        const fv3 columns[3] = { matrixForm * unitVectors[0],
+                                 matrixForm * unitVectors[1],
+                                 matrixForm * unitVectors[2] };
+        Memory::MemCopy(&unitVectors, &columns, sizeof(columns));
         return *this;
     }
 
-    template <u32 N, u32 M> Matrix<N, M> Matrix<N, M>::scale_mat(const vec& scale) requires is_square {
-        Matrix identity {};
-        for (u32 i = 0; i < N - 1; ++i) {
-            identity.mat[i][i] = scale[i];
-        }
-        return identity;
-    }
-
-    template <u32 N, u32 M> Matrix<N, M> Matrix<N, M>::scale_mat_linear(const col& scale) requires is_square {
-        Matrix identity {};
-        for (u32 i = 0; i < N; ++i) {
-            identity.mat[i][i] = scale[i];
-        }
-        return identity;
-    }
-
-    template <u32 N, u32 M> Matrix<N, M>& Matrix<N, M>::rotate(const details::rotation_scalar<N - 1>& rotation) requires (is_square && (N == 3 || N == 4)) {
-        return *this = rotate_mat(rotation) * *this;
-    }
-
-    template <u32 N, u32 M> Matrix<N, M>& Matrix<N, M>::rotate_linear(const details::rotation_scalar<N>& rotation) requires (is_square && (N == 2 || N == 3)) {
-        return *this = rotate_mat_linear(rotation) * *this;
-    }
-
-    template <u32 N, u32 M> Matrix<N, M> Matrix<N, M>::rotate_mat(const details::rotation_scalar<N - 1>& rotation) requires (is_square && (N == 3 || N == 4)) {
-        if      constexpr (N == 3) return Matrix::rotate_z(rotation);
-        else if constexpr (N == 4) return Matrix::rotate_z(rotation.z).then(Matrix::rotate_x(rotation.x)).then(Matrix::rotate_y(rotation.y));
-        else return nullptr;
-    }
-
-    template <u32 N, u32 M> Matrix<N, M> Matrix<N, M>::rotate_mat_linear(const details::rotation_scalar<N>& rotation) requires (is_square && (N == 2 || N == 3)) {
-        if      constexpr (N == 2) return Matrix::rotate_z_linear(rotation);
-        else if constexpr (N == 3) return Matrix::rotate_z_linear(rotation.z).then(Matrix::rotate_x_linear(rotation.x)).then(Matrix::rotate_y_linear(rotation.y));
-        else return nullptr;
-    }
-
-    template <u32 N, u32 M>
-    Matrix<N, M> Matrix<N, M>::rotate_x_linear(float roll) requires (is_square && N == 3) {
-        const float cos = std::cos(roll), sin = std::sin(roll);
-        return { col { 1,   0,    0 },
-                 col { 0, cos, -sin },
-                 col { 0, sin,  cos } };
-    }
-
-    template <u32 N, u32 M>
-    Matrix<N, M> Matrix<N, M>::rotate_y_linear(float pitch) requires (is_square && N == 3) {
-        const float cos = std::cos(pitch), sin = std::sin(pitch);
-        return { col { cos, 0, -sin },
-                 col {   0, 1,    0 },
-                 col { sin, 0,  cos } };
-    }
-
-    template <u32 N, u32 M>
-    Matrix<N, M> Matrix<N, M>::rotate_z_linear(float yaw) requires (is_square && (N == 2 || N == 3)) {
-        if constexpr (N == 3) {
-            const float cos = std::cos(yaw), sin = std::sin(yaw);
-            return { col {  cos, sin, 0 },
-                     col { -sin, cos, 0 },
-                     col {    0,   0, 1 } };
+    Rotation3D Matrix<3>::GetRotationLin() const {
+        const float* m = &unitVectors[0][0];
+        float trace;
+        Quaternion q;
+        if (m[8] < 0) {
+            if (m[0] > m[4]) {
+                trace = 1 + m[0] - m[4] - m[8];
+                q = { trace, m[1] + m[3], m[2] + m[6], m[7] - m[5] };
+            } else {
+                trace = 1 - m[0] + m[4] - m[8];
+                q = { m[1] + m[3], trace, m[5] + m[7], m[2] - m[6] };
+            }
         } else {
-            const float cos = std::cos(yaw), sin = std::sin(yaw);
-            return { col {  cos, sin },
-                     col { -sin, cos } };
+            if (m[0] < -m[4]) {
+                trace = 1 - m[0] - m[4] + m[8];
+                q = { m[2] + m[6], m[5] + m[7], trace, m[3] - m[1] };
+            } else {
+                trace = 1 + m[0] + m[4] + m[8];
+                q = { m[7] - m[5], m[2] - m[6], m[3] - m[1], trace };
+            }
         }
+        q *= 0.5f / std::sqrt(trace);
+        return Rotation3D::FromQuat(q);
     }
 
-    template <u32 N, u32 M>
-    Matrix<N, M> Matrix<N, M>::ortho_projection(const RectN<N - 1, float>& box) requires is_square {
-        // a bit of explaination: (dx is diff or `n_distance(I)`, sx is sum or `center()[I] * 2`)
+    Matrix<3> Matrix<3>::Transform(const fv2& translate, const fv2& scale, const Rotation2D& rotate) {
+        Matrix m = rotate.AsMatrix();
+        m[0].x *= scale.x; m[1].x *= scale.x;
+        m[0].y *= scale.y; m[1].y *= scale.y;
+        m[2] = translate.AddZ(1);
+        return m;
+    }
+
+    Matrix<4> Matrix<4>::Transpose() const {
+        // https://stackoverflow.com/a/16743203
+        Matrix result { Uninit };
+        __m128 row1 = _mm_load_ps(&unitVectors[0][0]);
+        __m128 row2 = _mm_load_ps(&unitVectors[1][0]);
+        __m128 row3 = _mm_load_ps(&unitVectors[2][0]);
+        __m128 row4 = _mm_load_ps(&unitVectors[3][0]);
+        _MM_TRANSPOSE4_PS(row1, row2, row3, row4);
+        _mm_store_ps(&result.unitVectors[0][0], row1);
+        _mm_store_ps(&result.unitVectors[1][0], row2);
+        _mm_store_ps(&result.unitVectors[2][0], row3);
+        _mm_store_ps(&result.unitVectors[3][0], row4);
+        return result;
+    }
+
+    Matrix<4> Matrix<4>::Rotation(const Rotation3D& rotation) {
+        return rotation.AsMatrix();
+    }
+
+    Matrix<4>& Matrix<4>::RotateBy(const Rotation3D& rotation) {
+        const Matrix3x3 matrixForm = rotation.AsMatrixLinear();
+        const fv4 columns[3] = { (fv4)(matrixForm * unitVectors[0].As3D()),
+                                 (fv4)(matrixForm * unitVectors[1].As3D()),
+                                 (fv4)(matrixForm * unitVectors[2].As3D()) };
+        Memory::MemCopy(&unitVectors, &columns, sizeof(columns));
+        return *this;
+    }
+
+    Rotation3D Matrix<4>::GetRotation() const {
+        const float* m = &unitVectors[0][0];
+        float trace;
+        Quaternion q;
+        if (m[10] < 0) {
+            if (m[0] > m[5]) {
+                trace = 1 + m[0] - m[5] - m[10];
+                q = { trace, m[1] + m[4], m[2] + m[8], m[9] - m[6] };
+            } else {
+                trace = 1 - m[0] + m[5] - m[10];
+                q = { m[1] + m[4], trace, m[6] + m[9], m[2] - m[8] };
+            }
+        } else {
+            if (m[0] < -m[5]) {
+                trace = 1 - m[0] - m[5] + m[10];
+                q = { m[2] + m[8], m[6] + m[9], trace, m[4] - m[1] };
+            } else {
+                trace = 1 + m[0] + m[5] + m[10];
+                q = { m[9] - m[6], m[2] - m[8], m[4] - m[1], trace };
+            }
+        }
+        q *= 0.5f / std::sqrt(trace);
+        return Rotation3D::FromQuat(q);
+    }
+
+    Matrix<4> Matrix<4>::OrthoProjection(const fRect3D& box) {
+        // a bit of explaination: (dx is diff, sx is sum)
         // [ 2 / dx ,   0    ,    0    , -sx / dx ]
         // [   0    , 2 / dy ,    0    , -sy / dy ]
         // [   0    ,   0    , -2 / dz , -sz / dz ]
         // [   0    ,   0    ,    0    ,     1    ]
-        return [&]<u32... I>(std::integer_sequence<u32, I...>) {
-            return Matrix {
-                col::from_direction((2 * I), (I == 2 ? -2.0f : 2.0f) / box.n_distance(I))..., // cols 1~next to last created in a direction
-                col { (-2 * box.center()[I] / box.n_distance(I))..., 1.0f } // last col with translation, and constant 1 w
-            };
-        }(std::make_integer_sequence<u32, N - 1> {});
+        const float rdx = 1 / box.Width(),  sx = box.min.x + box.max.x,
+                    rdy = 1 / box.Height(), sy = box.min.y + box.max.y,
+                    rdz = 1 / box.Depth(),  sz = box.min.z + box.max.z;
+        return {{
+            2 * rdx, 0, 0, -sx * rdx,
+            0, 2 * rdy, 0, -sy * rdy,
+            0, 0, 2 * rdz, -sz * rdz,
+            0, 0, 0,        1
+        }};
     }
 
-    template <u32 N, u32 M>
-    Matrix<N, M> Matrix<N, M>::perspective_projection(const RectN<N - 1, float>& box) requires is_square {
+    Matrix<4> Matrix<4>::PerspectiveProjection(const fRect3D& box) {
         // heres the math: http://www.songho.ca/opengl/gl_projectionMatrix.html
-        // (dx is diff or `n_distance(I)`, sx is sum or `center()[I] * 2`), n is near, f is far
+        // (dx is diff, sx is sum), n is near, f is far
         // { 2 * n / dx ,     0      ,  sx / dx ,       0         }
         // {     0      , 2 * n / dy ,  sy / dy ,       0         }
         // {     0      ,     0      , -sz / dz , -2 * n * f / dz }
         // {     0      ,     0      ,    -1    ,       0         }
-        const float near = box.min.last(), far = box.max.last();
-        return [&]<u32... I>(std::integer_sequence<u32, I...>) {
-            return Matrix {
-                // first few cols
-                col::from_direction((2 * I), 2 * near / box.n_distance(I))...,
-                // z component, first few are 0
-                col { (2 * box.center()[I] / box.n_distance(I))..., -2 * box.center()[N - 2] / box.n_distance(N - 2), -1 },
-                // w component
-                col { 0 * I..., -2 * near * far * box.n_distance(N - 2), 0 }
-            };
-        }(std::make_integer_sequence<u32, N - 2> {});
+        const float rdx = 1 / box.Width(),  sx = box.min.x + box.max.x,
+                    rdy = 1 / box.Height(), sy = box.min.y + box.max.y,
+                    rdz = 1 / box.Depth(),  sz = box.min.z + box.max.z,
+                    n = box.min.z, f = box.max.z;
+        return {{
+            2 * n * rdx, 0,  sx * rdx,  0,
+            0, 2 * n * rdy,  sy * rdy,  0,
+            0, 0,           -sz * rdz, -2 * n * f * rdz,
+            0, 0,           -1,         0,
+        }};
     }
 
-    template <u32 N, u32 M>
-    Matrix<N, M> Matrix<N, M>::perspective_fov(float fovDeg, float aspect, float near, float far) requires (is_square && N == 4) {
-        // y = 1 / tan(theta / 2),
-        // x = y / aspect,
-        // dz = far - near,
-        // zsum  = (far + near) / dz,
-        // zprod = (far * near) / dz,
-        // [ x , 0 ,   0   ,      0     ]
-        // [ 0 , y ,   0   ,      0     ]
-        // [ 0 , 0 , -zsum , -2 * zprod ]
-        // [ 0 , 0 ,  -1   ,      0     ]
-        const float y = 1.0f / std::tan(fovDeg * DEG2RAD / 2),
-                    x = y / aspect,
-                    dz = far - near,
-                    zsum  = (far + near) / dz,
-                    zprod = (far * near) / dz;
-        return Matrix {
-            col { x, 0,      0,      0 },
-            col { 0, y,      0,      0 },
-            col { 0, 0,   -zsum,    -1 },
-            col { 0, 0, -2 * zprod,  0 }
-        };
+    Matrix<4> Matrix<4>::PerspectiveFov(Radians fovDeg, float aspect, float near, float far) {
+        const float tan   = Math::Tan(fovDeg * 0.5f),
+                    y     = 1.0f /  tan,
+                    x     = 1.0f / (tan * aspect),
+                    rdz   = 1.0f / (far - near),
+                    zsum  = (far + near) / rdz,
+                    zprod = (far * near) / rdz;
+        return {{
+            x, 0,  0,    0,
+            0, y,  0,    0,
+            0, 0, -zsum, -2 * zprod,
+            0, 0, -1,    0
+        }};
     }
 
-    template <u32 N, u32 M>
-    Matrix<N, M> Matrix<N, M>::transform(const vec& translate, const vec& scale, const details::rotation_scalar<N - 1>& rotate) requires (is_square && (N == 3 || N == 4)) {
-        return scale_mat(scale).rotate(rotate).translate(translate);
+    Matrix<4> Matrix<4>::Transform(const fv3& translate, const fv3& scale, const Rotation3D& rotate) {
+        Matrix m = rotate.AsMatrix();
+        m[0].x *= scale.x; m[1].x *= scale.x; m[2].x *= scale.x;
+        m[0].y *= scale.y; m[1].y *= scale.y; m[2].y *= scale.y;
+        m[0].z *= scale.z; m[1].z *= scale.z; m[2].z *= scale.z;
+        m[3] = translate.AddW(1);
+        return m;
     }
 
-    template <u32 N, u32 M>
-    Matrix<N, M> Matrix<N, M>::look_at(const fVector3& eye, const fVector3& center, const fVector3& worldUp) requires (is_square && N == 4) {
+    Matrix<4> Matrix<4>::LookAt(const fv3& eye, const fv3& direction, const fv3& worldUp) {
         // from this answer: https://stackoverflow.com/a/21830596
         // z is front
-        const fVector3 viewZ = (eye - center).norm();
         // getting the vector perpendicular to the plane (eye -> center) and worldUp
-        const fVector3 viewX = worldUp.cross(viewZ).norm();
+        const fv3 viewX = worldUp.Cross(direction).Norm();
         // getting localUp from viewX and viewZ
-        const fVector3 viewY = viewZ.cross(viewX);
-        return {
-            col { viewX.x,          viewY.x,         viewZ.x,        0 },
-            col { viewX.y,          viewY.y,         viewZ.y,        0 },
-            col { viewX.z,          viewY.z,         viewZ.z,        0 },
-            col { -viewX.dot(eye), -viewY.dot(eye), -viewZ.dot(eye), 1 },
-        };
+        const fv3 viewY = direction.Cross(viewX);
+        return {{
+            viewX.x,     viewX.y,     viewX.z,     -viewX    .Dot(eye),
+            viewY.x,     viewY.y,     viewY.z,     -viewY    .Dot(eye),
+            direction.x, direction.y, direction.z, -direction.Dot(eye),
+            0,           0,           0,            1,
+        }};
     }
 
-    template <u32 N, u32 M> Matrix<M, N> Matrix<N, M>::transpose() const {
-        Matrix<M, N> t;
-        for (u32 i = 0; i < M; ++i) {
-            for (u32 j = 0; j < N; ++j) {
-                t[j][i] = mat[i][j];
-            }
-        }
-        return t;
-    }
-
-    template <u32 N, u32 M> float Matrix<N, M>::det() const requires is_square {
-        if constexpr (N == 1) return mat[0][0];
-        else if constexpr (N == 2) return mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0];
-        else if constexpr (N == 3) return mat[0].dot(mat[1].cross(mat[2]));
-        else {
-            // LU decomp
-            // https://www.youtube.com/watch?v=BFYFkn-eOQk
-            Matrix U = *this;
-            for (u32 col = 0; col < M; ++col) {
-                for (u32 row = col + 1; row < N; ++row) {
-                    float factor = U[col][row] / U[col][col];
-
-                    for (u32 i = col; i < M; ++i) U[i][row] -= U[i][col] * factor;
-                }
-            }
-
-            float deter = U[0][0];
-            for (u32 i = 1; i < N; ++i) deter *= U[i][i];
-            return deter;
-        }
-    }
-
-    template <u32 N, u32 M>
-    Matrix<N, M> Matrix<N, M>::inv() const requires is_square {
-        // a bit cheaty but fast
-        // https://en.wikipedia.org/wiki/Invertible_matrix#Analytic_solution
-        const float invdet = 1 / det();
-        const Matrix& self = *this;
-        if constexpr (N == 2) {
-            return Matrix {
-                col { +self[1][1] * invdet, -self[1][0] * invdet },
-                col { -self[0][1] * invdet, +self[0][0] * invdet },
-            };
-        } else if constexpr (N == 3) {
-            return Matrix {
-                self[1].cross(self[2]),
-                self[2].cross(self[0]),
-                self[0].cross(self[1])
-            }.transpose() * invdet;
-        } else if constexpr (N == 4) {
-            const Matrix A2 = squared(), A3 = A2 * self;
-            const float trA = trace(), trA2 = A2.trace(), trA3 = A3.trace();
-
-            float factors[4] = {
-                ((trA * trA * trA) - 3 * trA * trA2 + 2 * trA3) / +6.0f * invdet,
-                ((trA * trA)       -           trA2           ) / -2.0f * invdet,
-                trA                                                     * invdet,
-                -1.0f                                                   * invdet
-            };
-
-            return Matrix::identity() * factors[0] + self * factors[1] + A2 * factors[2] + A3 * factors[3];
-        } else {
-            return "haven't implemented this high of a dimension. bruh";
-        }
-    }
-
-    template <u32 N, u32 M> float Matrix<N, M>::trace() const requires is_square {
-        float tr = (*this)[0][0];
-        for (u32 i = 1; i < N; ++i) tr += (*this)[i][i];
-        return tr;
-    }
-
-    template <u32 N, u32 M> template <u32 P> Matrix<P, M> Matrix<N, M>::then(const Matrix<P, N>& next) const {
-        return next * (*this);
-    }
-
-    template <u32 N, u32 M> Matrix<N, M> Matrix<N, M>::squared() const requires is_square {
-        const Matrix& self = *this;
-        return self * self;
-    }
-
-    template <u32 N, u32 M> template <u32 Ig>
-    Matrix<N - Ig, M - Ig> Matrix<N, M>::skip(Array<u8, Ig> skipped) const {
-        Matrix<N - Ig, M - Ig> matrix;
-        u32 icol = 0, irow = 0;
-        u32 colMask = 0, rowMask = 0;
-
-        for (const u8 colRowPair : skipped) { // cache skipped into bitmask
-            colMask |= 1 << (colRowPair >> 4);
-            rowMask |= 1 << (colRowPair & 15);
-        }
-
-        for (u32 col = 0; col < M; ++col) {
-            if (colMask & (1 << col)) continue;
-            for (u32 row = 0; row < N; ++row) {
-                if (rowMask & (1 << row)) continue;
-                matrix[icol][irow] = (*this)[col][row];
-                ++irow;
-            }
-            ++icol;
-        }
-        return matrix;
-    }
-
-    template <u32 N, u32 M>
-    Matrix<N, M> Matrix<N, M>::operator*(float s) const {
-        return mat * s;
-    }
-
-    template <u32 N, u32 M>
-    Matrix<N, M>& Matrix<N, M>::operator*=(float s) {
-        mat *= s; return *this;
-    }
-
-    template <u32 N, u32 M> Matrix<N, M> Matrix<N, M>::operator+(const Matrix& m) const {
-        return [&]<u32... I>(std::integer_sequence<u32, I...>) {
-            return Matrix { (mat[I] + m[I])... };
-        } (std::make_integer_sequence<u32, M> {});
-    }
-
-    template <u32 N, u32 M> Matrix<N, M>& Matrix<N, M>::operator+=(const Matrix& m) {
-        [&]<u32... I>(std::integer_sequence<u32, I...>) {
-            Empty _ { (mat[I] += m[I])... };
-        } (std::make_integer_sequence<u32, M> {});
-        return *this;
-    }
-
-    template <u32 N, u32 M>
-    typename Matrix<N, M>::vec Matrix<N, M>::operator*(const rvec& v) const {
-        return (*this) * v.extend(1.0f);
-    }
-
-    template <u32 N, u32 M>
-    typename Matrix<N, M>::col Matrix<N, M>::operator*(const row& r) const {
-        col res = col::ZERO();
-        for (u32 i = 0; i < M; ++i) {
-            res += mat[i] * r[i];
-        }
-        return res;
-    }
-
-    template <u32 N, u32 M>
-    template <u32 P>
-    Matrix<N, P> Matrix<N, M>::operator*(const Matrix<M, P>& m) const {
-        Matrix<N, P> res;
-        for (u32 i = 0; i < P; ++i) {
-            res[i] = (*this) * m[i];
-        }
-        return res;
-    }
-
-    template struct Matrix<2, 2>;
-    template struct Matrix<2, 3>;
-    template struct Matrix<2, 4>;
-    template struct Matrix<3, 2>;
-    template struct Matrix<3, 3>;
-    template struct Matrix<3, 4>;
-    template struct Matrix<4, 2>;
-    template struct Matrix<4, 3>;
-    template struct Matrix<4, 4>;
-
-    template Matrix<2, 2> Matrix<2, 2>::then(const Matrix<2, 2>&) const;
-    template Matrix<3, 2> Matrix<2, 2>::then(const Matrix<3, 2>&) const;
-    template Matrix<4, 2> Matrix<2, 2>::then(const Matrix<4, 2>&) const;
-    template Matrix<2, 3> Matrix<2, 3>::then(const Matrix<2, 2>&) const;
-    template Matrix<3, 3> Matrix<2, 3>::then(const Matrix<3, 2>&) const;
-    template Matrix<4, 3> Matrix<2, 3>::then(const Matrix<4, 2>&) const;
-    template Matrix<2, 4> Matrix<2, 4>::then(const Matrix<2, 2>&) const;
-    template Matrix<3, 4> Matrix<2, 4>::then(const Matrix<3, 2>&) const;
-    template Matrix<4, 4> Matrix<2, 4>::then(const Matrix<4, 2>&) const;
-    template Matrix<2, 2> Matrix<3, 2>::then(const Matrix<2, 3>&) const;
-    template Matrix<3, 2> Matrix<3, 2>::then(const Matrix<3, 3>&) const;
-    template Matrix<4, 2> Matrix<3, 2>::then(const Matrix<4, 3>&) const;
-    template Matrix<2, 3> Matrix<3, 3>::then(const Matrix<2, 3>&) const;
-    template Matrix<3, 3> Matrix<3, 3>::then(const Matrix<3, 3>&) const;
-    template Matrix<4, 3> Matrix<3, 3>::then(const Matrix<4, 3>&) const;
-    template Matrix<2, 4> Matrix<3, 4>::then(const Matrix<2, 3>&) const;
-    template Matrix<3, 4> Matrix<3, 4>::then(const Matrix<3, 3>&) const;
-    template Matrix<4, 4> Matrix<3, 4>::then(const Matrix<4, 3>&) const;
-    template Matrix<2, 2> Matrix<4, 2>::then(const Matrix<2, 4>&) const;
-    template Matrix<3, 2> Matrix<4, 2>::then(const Matrix<3, 4>&) const;
-    template Matrix<4, 2> Matrix<4, 2>::then(const Matrix<4, 4>&) const;
-    template Matrix<2, 3> Matrix<4, 3>::then(const Matrix<2, 4>&) const;
-    template Matrix<3, 3> Matrix<4, 3>::then(const Matrix<3, 4>&) const;
-    template Matrix<4, 3> Matrix<4, 3>::then(const Matrix<4, 4>&) const;
-    template Matrix<2, 4> Matrix<4, 4>::then(const Matrix<2, 4>&) const;
-    template Matrix<3, 4> Matrix<4, 4>::then(const Matrix<3, 4>&) const;
-    template Matrix<4, 4> Matrix<4, 4>::then(const Matrix<4, 4>&) const;
+    template struct Matrix<2>;
+    template struct Matrix<3>;
+    template struct Matrix<4>;
 }

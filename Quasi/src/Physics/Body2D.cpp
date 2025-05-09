@@ -4,11 +4,11 @@
 #include "World2D.h"
 
 namespace Quasi::Physics2D {
-    void Body::AddMomentum(const fVector2& newtonSeconds) {
+    void Body::AddMomentum(const fv2& newtonSeconds) {
         velocity += newtonSeconds * invMass;
     }
 
-    // void Body::AddForce(const fVector2& newton) {
+    // void Body::AddForce(const fv2& newton) {
     //     acceleration += newton * invMass;
     // }
 
@@ -20,12 +20,12 @@ namespace Quasi::Physics2D {
     //     angularAcceleration += torque * invInertia;
     // }
 
-    void Body::AddRelativeVelocity(const fVector2& relPosition, const fVector2& vel) {
+    void Body::AddRelativeVelocity(const fv2& relPosition, const fv2& vel) {
         AddMomentum(vel);
-        AddAngularMomentum(relPosition.zcross(vel));
+        AddAngularMomentum(relPosition.CrossZ(vel));
     }
 
-    void Body::AddVelocityAt(const fVector2& absPosition, const fVector2& vel) {
+    void Body::AddVelocityAt(const fv2& absPosition, const fv2& vel) {
         return AddRelativeVelocity(absPosition - position, vel);
     }
 
@@ -58,7 +58,7 @@ namespace Quasi::Physics2D {
 
     void Body::Update(float dt) {
         position += velocity * dt;
-        rotation *= fComplex::rotate(angularVelocity * dt);
+        rotation += Radians(angularVelocity * dt);
         TryUpdateTransforms();
     }
 

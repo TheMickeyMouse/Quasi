@@ -1,128 +1,89 @@
 #pragma once
-#include "Matrix.h"
+#include "Transform2D.h"
 
 namespace Quasi::Math {
     template <class> struct Complex;
     using fComplex = Complex<float>;
 
     struct Quaternion {
-        float w, x, y, z;
+        f32 w, x, y, z;
 
         Quaternion(float w = 1) : w(w), x(0), y(0), z(0) {}
-    private:
-        Quaternion(float w, float x, float y, float z) : w(w), x(x), y(y), z(z) {}
-        Quaternion(float w, const fVector3& xyz) : w(w), x(xyz.x), y(xyz.y), z(xyz.z) {}
-        Quaternion(float x, float y, float z) : w(0), x(x), y(y), z(z) {}
-        Quaternion(const fVector3& xyz) : Quaternion(xyz.x, xyz.y, xyz.z) {}
-    public:
-        fVector3 xyz()  const { return { x, y, z }; }
-        fVector4 wxyz() const { return { w, x, y, z }; }
+        Quaternion(f32 w, f32 x, f32 y, f32 z) : w(w), x(x), y(y), z(z) {}
+        Quaternion(f32 w, const fv3& xyz) : w(w), x(xyz.x), y(xyz.y), z(xyz.z) {}
+        Quaternion(f32 x, f32 y, f32 z) : w(0), x(x), y(y), z(z) {}
+        Quaternion(const fv3& xyz) : Quaternion(xyz.x, xyz.y, xyz.z) {}
+
+        fv3 GetXYZ()  const { return { x, y, z }; }
+        fv4 GetWXYZ() const { return { w, x, y, z }; }
 
         static constexpr Str ROTATION_ORDER = "ZXY"; // readonly property thats not used
 
-        static Quaternion from_vec(const fVector4& q) { return { q.w, q.x, q.y, q.z }; }
-        static Quaternion from_vec(const fVector3& q) { return { 0,   q.x, q.y, q.z }; }
-        static Quaternion from_wxyz(float w, float x, float y, float z) { return { w, x, y, z }; }
-        static const Quaternion i;
-        static const Quaternion j;
-        static const Quaternion k;
+        static Quaternion From4D(const fv4& q) { return { q.w, q.x, q.y, q.z }; }
+        static Quaternion From3D(const fv3& q) { return { 0,   q.x, q.y, q.z }; }
+        static Quaternion FromWXYZ(float w, float x, float y, float z) { return { w, x, y, z }; }
 
-        static Quaternion rotate_axis(const fVector3& axis, float rotation);
-        static Quaternion rotate_axis(const fVector3& axis, fComplex rotation);
-        static Quaternion rotate_x(float xrot);
-        static Quaternion rotate_y(float yrot);
-        static Quaternion rotate_z(float zrot);
-        static Quaternion rotate_xyz(const fVector3& rotation);
-        static Quaternion rotate_to(const fVector3& from, const fVector3& to); // both vectors assumed to be normed
-        fVector3 xyzrot() const;
+        static Quaternion RotateAxis(const fv3& axis, const Rotation2D& rotation); // assumes normalized axis
+        static Quaternion RotateX(const Rotation2D& r);
+        static Quaternion RotateY(const Rotation2D& r);
+        static Quaternion RotateZ(const Rotation2D& r);
+        static Quaternion RotateXYZ(const Vec3<Rotation2D>& r);
+        static Quaternion RotateTo(const fv3& from, const fv3& to); // both vectors assumed to be normed
 
-        static Quaternion from_euler(const fVector3& rotation) { return rotate_xyz(rotation); }
-        fVector3 to_euler() const { return xyzrot(); }
+        static Quaternion FromEulerAngles(const Vec3<Rotation2D>& r) { return RotateXYZ(r); }
+        Vec3<Radians> ToEulerAngles() const;
 
-        static Quaternion look_at(const fVector3& fwd, const fVector3& worldFront); // both vectors assumed to be normed
+        static Quaternion LookAt(const fv3& direction, const fv3& worldFront); // both vectors assumed to be normed
 
-        Matrix3x3 as_matrix() const;
-        Matrix3D  as_rotation_matrix() const;
-        Matrix4x4 as_compute_matrix() const;
+        Matrix3x3 AsMatrixLinear() const;
+        Matrix3D  AsMatrix() const;
+        Matrix4x4 AsComputeMatrix() const;
 
-        float lensq() const;
-        float len() const;
-        float abs() const;
-        float distsq(const Quaternion& q) const;
-        float dist(const Quaternion& q) const;
-        Quaternion norm() const;
+        f32 LenSq() const;
+        f32 Len() const;
+        f32 Abs() const;
+        f32 DistSq(const Quaternion& q) const;
+        f32 Dist(const Quaternion& q) const;
+        f32 Dot(const Quaternion& q) const;
+        Quaternion Norm() const;
 
-        Quaternion exp() const;
-        Quaternion log() const;
-        Quaternion pow(float p) const;
+        Quaternion Exp() const;
+        Quaternion Log() const;
+        Quaternion Pow(f32 p) const;
 
         Quaternion operator+() const { return *this; }
         Quaternion operator-() const { return { -w, -x, -y, -z }; }
-        Quaternion conj() const;
-        Quaternion inv() const;
+        Quaternion Conj() const;
+        Quaternion Inv() const;
 
-        Quaternion muli() const;
-        Quaternion mulj() const;
-        Quaternion mulk() const;
+        Quaternion MulI() const;
+        Quaternion MulJ() const;
+        Quaternion MulK() const;
 
-        Quaternion lerp(const Quaternion& q, float t) const;
-        Quaternion slerp(const Quaternion& q, float t) const;
-        Quaternion slerp(const Quaternion& q, float t, int revolutions) const;
+        Quaternion Lerp (const Quaternion& q, f32 t) const;
+        Quaternion Slerp(const Quaternion& q, f32 t) const;
+        Quaternion Slerp(const Quaternion& q, f32 t, int revolutions) const;
 
         Quaternion operator+(const Quaternion& q) const;
         Quaternion operator-(const Quaternion& q) const;
-        Quaternion operator*(float v) const;
-        Quaternion operator/(float v) const;
+        Quaternion operator*(f32 v) const;
+        Quaternion operator/(f32 v) const;
         Quaternion operator*(const Quaternion& q) const;
         Quaternion operator/(const Quaternion& q) const;
         Quaternion& operator+=(const Quaternion& q);
         Quaternion& operator-=(const Quaternion& q);
-        Quaternion& operator*=(float v);
+        Quaternion& operator*=(f32 v);
         Quaternion& operator*=(const Quaternion& q);
-        Quaternion& operator/=(float v);
+        Quaternion& operator/=(f32 v);
         Quaternion& operator/=(const Quaternion& q);
-
-        Quaternion then(const Quaternion& q) const;
-        Quaternion& rotate_by(const Quaternion& q);
-        fVector3 rotate(const fVector3& v) const;
-        fVector3 invrotate(const fVector3& v) const;
-
-        bool operator==(const Quaternion&) const = default;
-
-        static Quaternion random_rot(RandomGenerator& rg);
     };
 
-    Quaternion operator+(float w, const Quaternion& q);
-    Quaternion operator-(float w, const Quaternion& q);
-    Quaternion operator*(float w, const Quaternion& q);
-    Quaternion operator/(float w, const Quaternion& q);
+    Quaternion operator+(f32 w, const Quaternion& q);
+    Quaternion operator-(f32 w, const Quaternion& q);
+    Quaternion operator*(f32 w, const Quaternion& q);
+    Quaternion operator/(f32 w, const Quaternion& q);
 
-    template <class T>
-    typename VectorN<3, T>::float_vec VectorN<3, T>::rotated_by(const Quaternion& rotation) const {
-        return rotation.rotate(*this);
-    }
-
-    template <class T>
-    VectorN<3, T>& VectorN<3, T>::rotate_by(const Quaternion& rotation) requires traits_float {
-        return *this = rotation.rotate(*this);
-    }
-
-    inline Quaternion operator""_qi(long double i) { return Quaternion::from_wxyz(0, (float)i, 0, 0); }
-    inline Quaternion operator""_qj(long double j) { return Quaternion::from_wxyz(0, 0, (float)j, 0); }
-    inline Quaternion operator""_qk(long double k) { return Quaternion::from_wxyz(0, 0, 0, (float)k); }
+    inline Quaternion operator""_qi(long double i) { return Quaternion::FromWXYZ(0, (float)i, 0, 0); }
+    inline Quaternion operator""_qj(long double j) { return Quaternion::FromWXYZ(0, 0, (float)j, 0); }
+    inline Quaternion operator""_qk(long double k) { return Quaternion::FromWXYZ(0, 0, 0, (float)k); }
 } // Quasi
-
-namespace Quasi::Text {
-    template <>
-    struct Formatter<Math::Quaternion> {
-        static usize FormatTo(StringWriter sw, const Math::Quaternion& q, Str) {
-            return Text::FormatTo(sw,
-                "{} {} {}i {} {}j {} {}k",
-                q.w,
-                q.x < 0 ? '-' : '+', q.x,
-                q.y < 0 ? '-' : '+', q.y,
-                q.z < 0 ? '-' : '+', q.z
-            );
-        }
-    };
-}

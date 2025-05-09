@@ -152,6 +152,8 @@ namespace Quasi {
             u32 approx10 = BitWidth(x) * Math::INV_LOG10_2_MUL >> 16;
             return approx10 - (x < Math::POWERS_OF_10[approx10]);
         }
+
+        N Modulo(N a, N b) { return a % b; } // used to overload floating modulo
     };
 
     enum class FpClassification {
@@ -258,6 +260,8 @@ namespace Quasi {
             bx ^= (SAME_SIZED_SIGNED)((SAME_SIZED)(bx >> (8 * sizeof(FLOAT) - 1)) >> 1); \
             return ax - bx; \
         } \
+        \
+        inline FLOAT Modulo(FLOAT a, FLOAT b) { return std::fmod(a, b); } \
     } \
     \
     template <> struct NumInfo<FLOAT> { \
@@ -283,6 +287,8 @@ namespace Quasi {
         static constexpr SAME_SIZED SIGN_MASK     =  (SAME_SIZED)1 << (sizeof(FLOAT) * 8 - 1); \
         static constexpr SAME_SIZED MANTISSA_MASK = ((SAME_SIZED)1 << MANTISSA_BITS) - 1; \
         static constexpr SAME_SIZED EXPONENT_MASK = ((SAME_SIZED)1 << EXPONENT_BITS) - MANTISSA_MASK - 1; \
+        \
+        inline static FLOAT Modulo(FLOAT a, FLOAT b) { return std::fmod(a, b); } \
     };
 
     QUASI_DEFINE_FLOATING(f32, FLT, u32, i32);
@@ -323,5 +329,8 @@ namespace Quasi {
         } NegInfinity;
 
         constexpr NegInfinityType InfinityType::operator-() const { return NegInfinity; }
+
+        template <class T>
+        T Clamp(T x, T min, T max) { return x < min ? min : (x > max ? max : x); }
     }
 }

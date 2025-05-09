@@ -1,149 +1,134 @@
 #pragma once
-#include <algorithm>
 
 #include "Constants.h"
 #include "Vector.h"
 
 namespace Quasi::Math {
     // TODO: ADD MATH METHODS
-    template <u32 N, class T>
+    template <class VecT>
     struct Line {
-        using vec_t = VectorN<N, T>;
-        vec_t start, end;
+        using T = decltype(VecT {}.x);
+        VecT start, forward;
 
-        Line() : start(), end() {}
-        Line(const vec_t& v) : start(0), end(v) {}
-        Line(const vec_t& s, const vec_t& e) : start(s), end(e) {}
+        Line() : start(), forward() {}
+        Line(const VecT& v) : start(0), forward(v) {}
+        Line(const VecT& s, const VecT& f) : start(s), forward(f) {}
 
-        vec_t forward() const { return end - start; }
+        static Line FromDirection(const VecT& s, const VecT& f) { return { s, f }; }
+        static Line FromEnd      (const VecT& s, const VecT& e) { return { s, e - s }; }
 
-        Line  operator+ (const vec_t& off) const { return { start + off, end + off }; }
-        Line& operator+=(const vec_t& off) { start += off; end += off; return *this; }
-        Line  operator- (const vec_t& off) const { return { start - off, end - off }; }
-        Line& operator-=(const vec_t& off) { start -= off; end -= off; return *this; }
+        VecT End() const { return start + forward; }
 
-        float len() const { return start.dist(end); }
-        float lensq() const { return start.distsq(end); }
+        Line  operator+ (const VecT& off) const { return { start + off, forward }; }
+        Line& operator+=(const VecT& off)       { start += off; return *this; }
+        Line  operator- (const VecT& off) const { return { start - off, forward }; }
+        Line& operator-=(const VecT& off)       { start -= off; return *this; }
 
-        vec_t lerp(float t) const { return start + (end - start) * t; }
-        Tuple<float, float> intersect_solutions(const Line& other) const {
-            const float det = (start.x - end.x) * (other.start.y - other.end.y) -
-                              (start.y - end.y) * (other.start.x - other.end.x);
-            const float t   = (start.x - other.start.x) * (other.start.y - other.end.y) -
-                              (start.y - other.start.y) * (other.start.x - other.end.x);
-            const float u   = (start.x - end.x) * (start.y - other.start.y) -
-                              (start.y - end.y) * (start.x - other.start.x);
+        T Len()   const { return forward.Len(); }
+        T LenSq() const { return forward.LenSq(); }
+
+        VecT Lerp(T t) const { return start + forward * t; }
+        Tuple<T, T> SolutionsForIntersections(const Line& other) const {
+            const float det = forward.x * other.forward.y -
+                              forward.y * other.forward.x;
+            const float t   = (start.y - other.start.y) * other.forward.x -
+                              (start.x - other.start.x) * other.forward.y;
+            const float u   = forward.x * (start.y - other.start.y) -
+                              forward.y * (start.x - other.start.x);
             if (std::abs(det) < f32s::EPSILON)
                 return { -1, -1 };
-            return { t / det, -u / det };
+            return { t / det, u / det };
         }
 
-        bool intersects(const Line& other) const {
-            const auto [t, u] = intersect_solutions(other);
+        bool Intersects(const Line& other) const {
+            const auto [t, u] = SolutionsForIntersections(other);
             return 0 <= u && u <= 1 && 0 <= t && t <= 1;
         }
-
-        Option<vec_t> intersection(const Line& other) const {
-            const auto [t, u] = intersect_solutions(other);
-            return 0 <= u && u <= 1 && 0 <= t && t <= 1 ? Some(lerp(t)) : nullptr;
+        Option<VecT> Intersection(const Line& other) const {
+            const auto [t, u] = SolutionsForIntersections(other);
+            return 0 <= u && u <= 1 && 0 <= t && t <= 1 ? Options::Some(Lerp(t)) : nullptr;
         }
 
-        float nearest_to_solution(const vec_t& p) const {
-            return (p - start).dot(end - start) / (end - start).lensq();
+        T SolutionForNearest(const VecT& p) const {
+            return (p - start).Dot(forward) / forward.LenSq();
+        }
+        VecT NearestTo(const VecT& p) const {
+            return Lerp(Math::Clamp(SolutionForNearest(p), 0.0f, 1.0f));
         }
 
-        vec_t nearest_to(const vec_t& p) const {
-            return lerp(std::clamp(nearest_to_solution(p), 0.0f, 1.0f));
+        T DistToSigned(const VecT& p) const {
+            return (p - start).Dot(forward.Norm().Perpend());
         }
+        T DistTo(const VecT& p) const { return std::abs(DistToSigned(p)); }
 
-        float dist_to_signed(const vec_t& p) const {
-            return (p - start).dot((end - start).norm().perpend());
-        }
-
-        float dist_to(const vec_t& p) const { return std::abs(dist_to_signed(p)); }
-
-        Tuple<float, float> nearest_between_solutions(const Line& other) const {
-            const auto [t, u] = intersect_solutions(other);
+        Tuple<T, T> SolutionsForNearestBetween(const Line& other) const {
+            const auto [t, u] = SolutionsForIntersections(other);
             const bool tOutBounds = t < 0 || t > 1, uOutBounds = u < 0 || u > 1;
             switch (tOutBounds * 2 + uOutBounds) {
                 case 0b00: return { t, u };
                 case 0b01:
-                    return { nearest_to_solution(u < 0 ? other.start : other.end), u < 0 ? 0.0f : 1.0f };
+                    return { SolutionForNearest(u < 0 ? other.start : other.End()), u < 0 ? 0.0f : 1.0f };
                 case 0b10:
-                    return { t < 0 ? 0.0f : 1.0f, other.nearest_to_solution(t < 0 ? start : end) };
+                    return { t < 0 ? 0.0f : 1.0f, other.SolutionForNearest(t < 0 ? start : End()) };
                 case 0b11: {
-                    const float uPrime = other.nearest_to_solution(t < 0 ? start : end);
+                    const float uPrime = other.SolutionForNearest(t < 0 ? start : End());
                     if (0 < uPrime && uPrime < 1)
                         return { t < 0 ? 0.0f : 1.0f, uPrime };
-                    const float tPrime = nearest_to_solution(u < 0 ? other.start : other.end);
-                    return { std::clamp(tPrime, 0.0f, 1.0f), u < 0.0f ? 0.0f : 1.0f };
+                    const float tPrime = SolutionForNearest(u < 0 ? other.start : other.End());
+                    return { Clamp(tPrime, 0.0f, 1.0f), u < 0.0f ? 0.0f : 1.0f };
                 }
                 default: return {};
             }
         }
 
-        Tuple<vec_t, vec_t> nearest_between(const Line& other) const {
-            const auto [t, u] = nearest_between_solutions(other);
-            return { lerp(t), other.lerp(u) };
+        Tuple<VecT, VecT> NearestBetween(const Line& other) const {
+            const auto [t, u] = SolutionsForNearestBetween(other);
+            return { Lerp(t), other.Lerp(u) };
         }
 
-        bool leftside(const vec_t& p) const {
-            return (end - start).zcross(p - start) > 0;
+        bool IsOnLeft(const VecT& p) const {
+            return forward.CrossZ(p - start) > 0;
         }
     };
 
-    template <class T = float> using Line2D = Line<2, T>;
-    template <class T = float> using Line3D = Line<3, T>;
-    template <class T = float> using Line4D = Line<4, T>;
-    using iLine2D = Line2D<int>;
-    using iLine3D = Line3D<int>;
-    using iLine4D = Line4D<int>;
-    using uLine2D = Line2D<uint>;
-    using uLine3D = Line3D<uint>;
-    using uLine4D = Line4D<uint>;
+    template <class T = float> using Line2D = Line<Vec2<T>>;
+    template <class T = float> using Line3D = Line<Vec3<T>>;
+    template <class T = float> using Line4D = Line<Vec4<T>>;
     using fLine2D = Line2D<float>;
     using fLine3D = Line3D<float>;
     using fLine4D = Line4D<float>;
     using dLine2D = Line2D<double>;
     using dLine3D = Line3D<double>;
     using dLine4D = Line4D<double>;
-    using bLine2D = Line2D<byte>;
-    using bLine3D = Line3D<byte>;
-    using bLine4D = Line4D<byte>;
 
     // TODO: ADD MATH METHODS
-    template <u32 N, class T>
+    template <class VecT>
     union Triangle {
-        using vec_t = VectorN<N, T>;
-        template <class U> using vec_of_t = VectorN<N, U>;
-        template <int M> using vec_of_n = VectorN<M, T>;
+        using T = decltype(VecT {}.x);
 
-        vec_t points[3];
+        VecT points[3];
         struct {
-            vec_t p1, p2, p3;
+            VecT p1, p2, p3;
         };
         struct {
             T x1, y1, x2, y2, x3, y3;
         };
 
-        Triangle(T radius) requires (N == 2 && std::is_floating_point_v<T>)
-        : p1(radius, 0),
-          p2(-HALF_ROOT_3 * radius,  radius * 0.5),
-          p3(-HALF_ROOT_3 * radius, -radius * 0.5) {}
+        Triangle(const VecT& a, const VecT& b, const VecT& c) : p1(a), p2(b), p3(c) {}
+        Line<VecT> LineAt(u32 i) const { return { points[i], points[(i + 1) % 3] }; }
 
-        Triangle(const vec_t& a, const vec_t& b, const vec_t& c) : p1(a), p2(b), p3(c) {}
+        T DoubledSArea() const { return x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2); }
+        T DoubledArea()  const { return std::abs(DoubledSArea()); }
+        T SArea()        const { return DoubledSArea() / 2; }
+        T Area()         const { return DoubledArea() / 2; }
 
-        Line<N, T> line(u32 i) const { return { points[i], points[(i + 1) % 3] }; }
+        VecT Centroid() const { return (p1 + p2 + p3) / (T)3; }
+        // VecT Incenter()     const;
+        // VecT Circumcenter() const;
+        // VecT Orthocenter()  const;
+        bool IsClockwise() const { return DoubledSArea() > 0; }
 
-        T signed_areaX2() const { return x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2); }
-        T areaX2() const { return std::abs(signed_areaX2()); }
-        T signed_area() const { return signed_areaX2() / 2; }
-        T area() const { return areaX2() / 2; }
-
-        vec_t center() const { return (p1 + p2 + p3) / (T)3; }
-        bool is_clockwise() const { return signed_areaX2() > 0; }
-
-        Vector3<T> barycentric(const vec_t& p) const requires (N == 2 && std::is_floating_point_v<T>) {
+        fv3 Barycentric(const VecT& p) const {
             const auto [x, y] = p;
             T det   =  (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
             T lamb1 = ((y2 - y3) * (x  - x3) + (x3 - x2) * (y  - y3)) / det;
@@ -151,66 +136,26 @@ namespace Quasi::Math {
             return { lamb1, lamb2, 1 - lamb1 - lamb2 };
         }
 
-        static bool is_valid_bary(const Vector3<T>& uvw) {
-            return 0 <= uvw && uvw <= 1;
+        static bool IsValidBary(const fv3& uvw) {
+            return uvw.AllGreaterEq(0) && uvw.AllLessEq(1);
         }
 
-        vec_t from_barycentric(float u, float v) const requires (N == 2 && std::is_floating_point_v<T>) {
-            return p1 * u + p2 * v + p3 * (1 - u - v);
+        VecT FromBarycentric(const fv3& uvw) const {
+            return p1 * uvw.x + p2 * uvw.y + p3 * uvw.z;
         }
 
-        u32 categorize(const vec_t& p) const { return categorize_bary(barycentric(p)); }
+        bool Contains(const VecT& p) const { return IsValidBary(Barycentric(p)); }
 
-        static u32 categorize_bary(const Vector3<T>& bc) {
-            const auto [u, v, w] = bc;
-            if (u < 1.0f / 3.0f)
-                return 1 + (v < u) - (w < u);
-            return v < w ? 2 : 0;
-        }
-
-        vec_t project(const vec_t& p) const { return project_bary(barycentric(p)); }
-
-        vec_t project_bary(const Vector3<T>& bc) const {
-            const auto [u, v, w] = bc;
-            const u32 cat = categorize_bary(bc);
-            switch (cat) { // see: https://www.desmos.com/calculator/gr29tnw1qx
-                case 0:  return p1 + (p2 - p1) * ((v - w) / (1 - 3 * w));
-                case 1:  return p2 + (p3 - p2) * ((u - v) / (1 - 3 * u));
-                case 2:  return p3 + (p1 - p3) * ((w - u) / (1 - 3 * v));
-                default: return 0;
-            }
-        }
-
-        bool contains(vec_t p) const {
-            const Vector3<T> bary = barycentric(p);
-            return is_valid_bary(bary);
-        }
-
-        vec_t* begin() { return points; }
-        vec_t* end() { return points + 3; }
-        const vec_t* begin() const { return points; }
-        const vec_t* end() const { return points + 3; }
-
-        vec_t& point(u32 i) { return points[i]; }
-        const vec_t& point(u32 i) const { return points[i]; }
-        vec_t& cyclic_point(u32 i) { return points[i % 3]; }
-        const vec_t& cyclic_point(u32 i) const { return points[i % 3]; }
-
-        auto asf() const { if constexpr (std::is_floating_point_v<T>) return *this; else return (Triangle<N, float>)*this; }
-        template <class U> operator Triangle<N, U>() const { return { (vec_of_t<U>)p1, (vec_of_t<U>)p2, (vec_of_t<U>)p3 }; }
-        template <uint M>  operator Triangle<M, T>() const { return { (vec_of_n<M>)p1, (vec_of_n<M>)p2, (vec_of_n<M>)p3 }; }
+        template <class V> operator Triangle<V>() const { return { (V)p1, (V)p2, (V)p3 }; }
     };
 
-    template <class T = float> using Triangle2D = Triangle<2, T>;
-    template <class T = float> using Triangle3D = Triangle<3, T>;
-    template <class T = float> using Triangle4D = Triangle<4, T>;
+    template <class T = float> using Triangle2D = Triangle<Vec2<T>>;
+    template <class T = float> using Triangle3D = Triangle<Vec3<T>>;
+    template <class T = float> using Triangle4D = Triangle<Vec4<T>>;
     using fTriangle2D = Triangle2D<float>;
     using fTriangle3D = Triangle3D<float>;
     using fTriangle4D = Triangle4D<float>;
     using dTriangle2D = Triangle2D<double>;
     using dTriangle3D = Triangle3D<double>;
     using dTriangle4D = Triangle4D<double>;
-    using iTriangle2D = Triangle2D<int>;
-    using iTriangle3D = Triangle3D<int>;
-    using iTriangle4D = Triangle4D<int>;
 }

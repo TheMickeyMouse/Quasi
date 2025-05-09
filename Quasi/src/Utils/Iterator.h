@@ -2,6 +2,7 @@
 #include "Comparison.h"
 #include "Type.h"
 #include "Option.h"
+#include "Range.h"
 #include "Tuple.h"
 
 namespace Quasi {
@@ -35,9 +36,9 @@ namespace Quasi {
         Iterator<const T&> auto Iter() const { return super().IterImpl(); }
         Iterator<T&> auto IterMut() requires IsMut<T> { return super().IterMutImpl(); }
 
-        /// Legacy methods:
-        /// CIter<Super> begin();
-        /// IteratorEndMarker end();
+        // Legacy methods:
+        // CIter<Super> begin();
+        // IteratorEndMarker end();
         Iterator<const T&> auto begin()  const { return Iter(); }
         Iterator<const T&> auto cbegin() const { return Iter(); }
         Iterator<T&> auto begin() requires IsMut<T> { return IterMut(); }
@@ -245,7 +246,6 @@ namespace Quasi {
         StrMut                    AsStrMut()   requires SameAs<char, T>;
         Span<const byte>          AsBytes()    const;
         Span<byte>                AsBytesMut() mut;
-        // Range<T*> AsPtrRange()
 
         usize ByteSize()         const { return super().AsSpan().ByteSize(); }
         bool IsEmpty()           const { return super().AsSpan().IsEmpty(); }
@@ -262,6 +262,7 @@ namespace Quasi {
 
         Span<MutT> SubspanMut(usize start)              mut { return super().AsSpan().SubspanMut(start); }
         Span<MutT> SubspanMut(usize start, usize count) mut { return super().AsSpan().SubspanMut(start, count); }
+        Span<MutT> SubspanMut(zRange range)             mut { return super().AsSpan().SubspanMut(range); }
         Span<MutT> FirstMut(usize num)                  mut { return super().AsSpan().FirstMut(num); }
         Span<MutT> SkipMut(usize len)                   mut { return super().AsSpan().SkipMut(len); }
         Span<MutT> TailMut()                            mut { return super().AsSpan().TailMut(); }
@@ -278,6 +279,7 @@ namespace Quasi {
         Tuple<Span<MutT>, Span<MutT>>        SplitOnceMut(const T& sep)                  mut { return super().AsSpan().SplitOnceMut(sep); }
         Span<const T> Subspan(usize start)              const { return super().AsSpan().Subspan(start); }
         Span<const T> Subspan(usize start, usize count) const { return super().AsSpan().Subspan(start, count); }
+        Span<const T> Subspan(zRange range)             const { return super().AsSpan().Subspan(range); }
         Span<const T> First(usize num)                  const { return super().AsSpan().First(num); }
         Span<const T> Skip(usize len)                   const { return super().AsSpan().Skip(len); }
         Span<const T> Tail()                            const { return super().AsSpan().Tail(); }
@@ -417,10 +419,12 @@ namespace Quasi {
         MutT& GetWrapMut(WrappingIndex i) mut   { return Data()[i(Length())]; }
         const T& GetWrap(WrappingIndex i) const { return Data()[i(Length())]; }
 
-        T& operator[](usize i)         { if constexpr (IsMut<T>) return GetMut(i);     else return Get(i); }
-        T& operator[](WrappingIndex i) { if constexpr (IsMut<T>) return GetWrapMut(i); else return GetWrap(i); }
+        T& operator[](usize i)         { if constexpr (IsMut<T>) return GetMut(i);         else return Get(i); }
+        T& operator[](WrappingIndex i) { if constexpr (IsMut<T>) return GetWrapMut(i);     else return GetWrap(i); }
+        T& operator[](zRange range)    { if constexpr (IsMut<T>) return SubspanMut(range); else return Subspan(range); }
         const T& operator[](usize i)         const { return Get(i); }
         const T& operator[](WrappingIndex i) const { return GetWrap(i); }
+        const T& operator[](zRange range)    const { return Subspan(range); }
     };
 
     template <class T, class Super>

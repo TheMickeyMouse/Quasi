@@ -12,10 +12,10 @@ namespace Quasi::Physics2D {
         fRect2D ComputeBoundingBox() const;
         float Inertia() const;
 
-        fVector2 NearestPointTo(const fVector2& point) const;
-        fVector2 FurthestAlong(const fVector2& normal) const;
-        fRange ProjectOntoAxis(const fVector2& axis) const;
-        fRange ProjectOntoOwnAxis(u32 axisID, const fVector2& axis) const;
+        fv2 NearestPointTo(const fv2& point) const;
+        fv2 FurthestAlong(const fv2& normal) const;
+        fRange ProjectOntoAxis(const fv2& axis) const;
+        fRange ProjectOntoOwnAxis(u32 axisID, const fv2& axis) const;
         bool AddSeperatingAxes(SeperatingAxisSolver& sat) const { return false; }
     };
 } // Quasi

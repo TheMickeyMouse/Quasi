@@ -16,7 +16,9 @@ namespace Quasi::Text {
 
     template <class T>
     OptionUsize ParseUntil(Str string, Out<T&> out, Str options) {
-        return Parser<T>::ParseUntil(string, out, Parser<T>::ConfigureOptions(options));
+        if constexpr (requires (Str x) { Parser<T>::ConfigureOptions(x); })
+            return Text::ParseUntil(string, out, Parser<T>::ConfigureOptions(options));
+        else return Parser<T>::ParseUntil(string, out, options);
     }
 
     template <class T>
@@ -28,7 +30,9 @@ namespace Quasi::Text {
 
     template <class T>
     Option<T> Parse(Str string, Str options) {
-        return Text::Parse<T>(string, Parser<T>::ConfigureOptions(options));
+        if constexpr (requires (Str x) { Parser<T>::ConfigureOptions(x); })
+            return Text::Parse<T>(string, Parser<T>::ConfigureOptions(options));
+        else return Text::Parse<T>(string, options);
     }
 
     template <class T>

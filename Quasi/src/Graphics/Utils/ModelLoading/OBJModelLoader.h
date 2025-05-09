@@ -14,10 +14,10 @@ namespace Quasi::Graphics {
         struct Object      { String name; };
         struct Group       { String name; }; // not impl
 
-        struct Vertex       { Math::fVector3 pos; };
-        struct VertexTex    { Math::fVector2 tex; };
-        struct VertexNormal { Math::fVector3 nrm; };
-        struct VertexParam  { Math::fVector3 prm; }; // not impl
+        struct Vertex       { Math::fv3 pos; };
+        struct VertexTex    { Math::fv2 tex; };
+        struct VertexNormal { Math::fv3 nrm; };
+        struct VertexParam  { Math::fv3 prm; }; // not impl
 
         struct Face { int indices[3][3]; };
         struct Line { Vec<int> indices; }; // not impl
@@ -35,9 +35,9 @@ namespace Quasi::Graphics {
         MTLMaterialLoader mats;
         OBJModel model;
 
-        Vec<Math::fVector3> vertex;
-        Vec<Math::fVector2> vertexTexture;
-        Vec<Math::fVector3> vertexNormal;
+        Vec<Math::fv3> vertex;
+        Vec<Math::fv2> vertexTexture;
+        Vec<Math::fv3> vertexNormal;
         Vec<Face> faces;
 
         String folder, filename;

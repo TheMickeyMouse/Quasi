@@ -16,7 +16,7 @@ namespace Quasi::Physics2D {
         const bool isStatic = options.type == BodyType::STATIC;
         return *bodies.Push(Box<Body>::Build(
             options.position,
-            fComplex::rotate(RAD2DEG * options.rotAngle),
+            Radians::FromDegrees(options.rotAngle),
             isStatic ? 0 : area * options.density,
             options.type,
             *this,
@@ -57,7 +57,7 @@ namespace Quasi::Physics2D {
                 Body* c = active[j].Address();
                 if (c->boundingBox.max.x > min) {
                     const bool bDyn = b->IsDynamic(), cDyn = c->IsDynamic();
-                    if ((bDyn || cDyn) && c->boundingBox.yrange().overlaps(b->boundingBox.yrange())) {
+                    if ((bDyn || cDyn) && c->boundingBox.RangeY().Overlaps(b->boundingBox.RangeY())) {
                         const Manifold manifold = b->CollideWith(*c);
                         if (manifold.contactCount && std::max(manifold.contactDepth[0], manifold.contactDepth[1]) > f32s::EPSILON) {
                             StaticResolve (*b, *c, manifold);
@@ -81,7 +81,7 @@ namespace Quasi::Physics2D {
 
         // for (uint i = 0; i < BodyCount(); ++i) {
         //     Body& base = bodies[i];
-        //     fVector2 prevPosition = base.position, prevVelocity = base.velocity;
+        //     fv2 prevPosition = base.position, prevVelocity = base.velocity;
         //     for (uint j = i + 1; j < BodyCount(); ++j) {
         //         Body& target = bodies[j];
         //         if (const Collision::Event event = base.CollideWith(target)) {

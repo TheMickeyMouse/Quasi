@@ -22,8 +22,8 @@ namespace Quasi::Graphics {
         // internal coords
         Math::fRect2D rect;
         // render data
-        Math::fVector2 advance;
-        Math::iVector2 offset;
+        Math::fv2 advance;
+        Math::iv2 offset;
     };
 
     class Font {
@@ -36,8 +36,8 @@ namespace Quasi::Graphics {
         };
 
         struct Vertex {
-            Math::fVector2 Position;
-            Math::fVector2 TextureCoord;
+            Math::fv2 Position;
+            Math::fv2 TextureCoord;
             Math::fColor Color;
             int RenderType;
             static constexpr int RENDER_TEXT = 1, RENDER_FILL = 0;
@@ -48,7 +48,7 @@ namespace Quasi::Graphics {
         static constexpr u32 NUM_GLYPHS = 127 - 32;
         Vec<Glyph> glyphs;
         Vec<FontMetrics> metrics;
-        Math::uVector2 textureSize;
+        Math::uv2 textureSize;
         Texture atlas;
     public:
         Font() { faceHandles.Push({ nullptr }); }

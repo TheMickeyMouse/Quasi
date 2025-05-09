@@ -15,7 +15,7 @@ namespace Quasi::Graphics {
         const Font& font;  // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
         float scaleRatio = 1;
         float lineSpacing = 0, spaceAdvance = 0;
-        Math::fVector2 pen;
+        Math::fv2 pen;
         u32 meshIndex = 0;
         u32 lineCount = 0;
         float totalHeight = 1;

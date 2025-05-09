@@ -15,37 +15,37 @@ namespace Quasi::Physics2D {
               / (PI * radius + 4 * length);
     }
 
-    void CapsuleShape::SetForward(const fVector2& f) {
+    void CapsuleShape::SetForward(const fv2& f) {
         forward = f;
-        length = f.len();
+        length = f.Len();
         invLength = 1 / length;
         invLenSq = invLength * invLength;
     }
 
     fRect2D CapsuleShape::ComputeBoundingBox() const {
-        return fRect2D { -forward, forward }.corrected().extrude(radius);
+        return fRect2D { -forward, forward }.Fixed().Extrude(radius);
     }
 
-    fVector2 CapsuleShape::NearestPointTo(const fVector2& point) const {
-        const float t = std::clamp(forward.dot(point) * invLenSq, -1.0f, 1.0f);
-        const fVector2 closest = forward * t;
-        return closest + (point - closest).norm(radius);
+    fv2 CapsuleShape::NearestPointTo(const fv2& point) const {
+        const float t = Math::Clamp(forward.Dot(point) * invLenSq, -1.0f, 1.0f);
+        const fv2 closest = forward * t;
+        return closest + (point - closest).Norm(radius);
     }
 
-    fVector2 CapsuleShape::FurthestAlong(const fVector2& normal) const {
-        return (0 > forward.dot(normal) ? -forward : forward) + normal * radius;
+    fv2 CapsuleShape::FurthestAlong(const fv2& normal) const {
+        return (0 > forward.Dot(normal) ? -forward : forward) + normal * radius;
     }
 
-    fRange CapsuleShape::ProjectOntoAxis(const fVector2& axis) const {
-        const float f = std::abs(forward.dot(axis));
-        return fRange { -f, f }.extrude(radius);
+    fRange CapsuleShape::ProjectOntoAxis(const fv2& axis) const {
+        const float f = std::abs(forward.Dot(axis));
+        return fRange { -f, f }.Extrude(radius);
     }
 
-    fRange CapsuleShape::ProjectOntoOwnAxis(u32 axisID, const fVector2& axis) const {
+    fRange CapsuleShape::ProjectOntoOwnAxis(u32 axisID, const fv2& axis) const {
         return { -radius, +radius };
     }
 
     bool CapsuleShape::AddSeperatingAxes(SeperatingAxisSolver& sat) const {
-        return sat.CheckAxis(forward.perpend() * invLength);
+        return sat.CheckAxis(forward.Perpend() * invLength);
     }
 } // Quasi

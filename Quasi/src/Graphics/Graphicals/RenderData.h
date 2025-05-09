@@ -20,7 +20,7 @@ namespace Quasi::Graphics {
 		VertexBuffer vbo;
 		IndexBuffer ibo;
 
-	    Math::Matrix3D projection = Math::Matrix3D::ortho_projection({ -4, 4, -3, 3, 0.1f, 100 });
+	    Math::Matrix3D projection = Math::Matrix3D::OrthoProjection({{ { -4.0f, 4.0f }, { -3.0f, 3.0f }, { 0.1f, 100.0f } }});
 	    Math::Matrix3D camera {};
 	    Shader shader = {}; // shader can be null if renderId is 0
 	private:

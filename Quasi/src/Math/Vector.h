@@ -1,617 +1,562 @@
 ﻿#pragma once
 #include <cmath>
 
-#include "Utils/Option.h"
+#include "Angles.h"
 #include "Utils/Text/Num.h"
 
 #include "Utils/Array.h"
-#include "Utils/Iterator.h"
-#include "Utils/Ref.h"
+#include "Utils/Iter/SplitIter.h"
+#include "Utils/Iter/EnumerateIter.h"
 
 namespace Quasi::Math {
-#pragma region Concepts and Decls
-    namespace details {
-        template <u32 N, class T> struct vecn_base;
-    }
-
-    template <u32 N, class T> struct VectorN : details::vecn_base<N, T> {
-        Array<T, N> elems;
-
-        VectorN(T base = 0) { elems.Fill(base); }
-        template <class... R> VectorN(R... args)
-        requires ((std::is_convertible_v<T, R> && ...) && sizeof...(R) == N) : elems { args... } {}
-
-        auto tup() const {
-            return [&]<uint... Is>(std::integer_sequence<uint, Is...>){
-                return std::make_tuple(elems[Is]...);
-            }(std::make_integer_sequence<uint, N> {});
-        }
-
-        static VectorN ZERO() { return { 0 }; }
-        static VectorN ONE()  { return { 1 }; }
-    };
-    
-    template <class> struct IsVectorType : std::false_type {};
-    template <u32 N, class T> struct IsVectorType<VectorN<N, T>> : std::true_type {};
-    
-    template <class V>
-    concept IVector = IsVectorType<V>::value;
-
-    template <class T> using Unit    = VectorN<1, T>;
-    template <class T> using Single  = VectorN<1, T>;
-    template <class T> using Vector2 = VectorN<2, T>;
-    template <class T> using Vector3 = VectorN<3, T>;
-    template <class T> using Vector4 = VectorN<4, T>;
-    using fVector2 = Vector2<float>;
-    using fVector3 = Vector3<float>;
-    using fVector4 = Vector4<float>;
-    using dVector2 = Vector2<double>;
-    using dVector3 = Vector3<double>;
-    using dVector4 = Vector4<double>;
-    using iVector2 = Vector2<int>;
-    using iVector3 = Vector3<int>;
-    using iVector4 = Vector4<int>;
-    using uVector2 = Vector2<uint>;
-    using uVector3 = Vector3<uint>;
-    using uVector4 = Vector4<uint>;
-    using bVector2 = Vector2<byte>;
-    using bVector3 = Vector3<byte>;
-    using bVector4 = Vector4<byte>;
-
-    template <class> struct Complex;
-    struct Quaternion;
-
-    struct Transform2D;
-    struct Transform3D;
-
-    struct Color3;
-    struct fColor3;
-    struct fColor;
-    struct Color;
-
-    namespace details {
-        template <class V> struct rect_origin_t;
-        template <class V> struct rect_size_t;
-    }
-    template <u32, class> struct RectN;
-    
-#pragma endregion // concepts and decls
-
-#pragma region Vector Swizzle Impl
-#define VECTOR_SWIZZLING 1
-#if VECTOR_SWIZZLING == 1
-    template <class T, u32 D, u32 N>
-    VectorN<N - 1, T> operator%(const VectorN<D, T>& vector, const char (&swizz)[N]) {
-        return [&]<u32... I>(std::integer_sequence<u32, I...>) {
-            return VectorN<N - 1, T> { vector[VectorN<D, T>::params.find(swizz[I])]... };
-        }(std::make_integer_sequence<u32, N - 1> {});
-    }
-#endif
-#pragma endregion // vector swizzle impl
-
-#pragma region Vector Util Fn
-    namespace details {
-        template <class T> struct floating_of {};
-        template <class T> requires std::is_arithmetic_v<T> struct floating_of<T> {
-            using type = std::common_type_t<T, float>;
-        };
-
-        template <IVector T> struct floating_of<T> {
-            using type = VectorN<T::dimension, typename floating_of<typename T::scalar>::type>;
-        };
-        template <class T> using floating_of_t = typename floating_of<T>::type;
-
-        template <class T, class U> T cast(U val) { return (T)val; }
-
-        template <class T, class U, class F, u32... I>
-        void rangecopy(T& out, const U& in, F fn, std::integer_sequence<u32, I...>) {
-            // ReSharper disable once CppDFAUnusedValue, CppDFAUnreadVariable
-            Empty _ = { (out[I] = fn(in[I]))... };
-        }
-
-        template <u32 N, class From, class To>
-        VectorN<N, To> typecast(const VectorN<N, From>& vec) {
-            VectorN<N, To> out;
-            rangecopy(out, vec, cast<To, From>, std::make_integer_sequence<u32, N> {});
-            return out;
-        }
-
-        template <u32 From, uint To, class T>
-        VectorN<To, T> sizecast(const VectorN<From, T>& vec) {
-            VectorN<To, T> out;
-            rangecopy(out, vec, std::identity {}, std::make_integer_sequence<u32, std::min(From, To)> {});
-            return out;
-        }
-
-        struct add { auto operator()(auto a, auto b) { return a + b; } };
-        struct sub { auto operator()(auto a, auto b) { return a - b; } };
-        struct mul { auto operator()(auto a, auto b) { return a * b; } };
-        struct div { auto operator()(auto a, auto b) { return a / b; } };
-        struct mod {
-            auto operator()(auto a, auto b) {
-                if constexpr (std::is_floating_point_v<decltype(a)> || std::is_floating_point_v<decltype(b)>)
-                    return std::fmod(a, b);
-                else return a % b;
-            }
-        };
-        struct cneg { auto operator()(auto v) { if constexpr (std::is_signed_v<decltype(v)>) return -v; else return 0; } };
-
-        struct eq  { bool operator()(auto a, auto b) { return a == b; } };
-        struct neq { bool operator()(auto a, auto b) { return a != b; } };
-        struct lt  { bool operator()(auto a, auto b) { return a <  b; } };
-        struct le  { bool operator()(auto a, auto b) { return a <= b; } };
-        struct ge  { bool operator()(auto a, auto b) { return a >= b; } };
-        struct gt  { bool operator()(auto a, auto b) { return a >  b; } };
-
-        struct min { auto operator()(auto a, auto b) { return a < b ? a : b; } };
-        struct max { auto operator()(auto a, auto b) { return a < b ? b : a; } };
-
-        template <u32 N, class T, class F>
-        VectorN<N, decltype(F{}(T{}, T{}))> operate(F f, const VectorN<N, T>& a, const VectorN<N, T>& b, int = 0 /* here to explicitly say for no recursion*/) {
-            return [&]<u32... I>(std::integer_sequence<u32, I...>) {
-                return VectorN<N, decltype(F{}(T{}, T{}))> { f(a[I], b[I])... };
-            }(std::make_integer_sequence<u32, N> {});
-        }
-
-        template <u32 N, class T, class F>
-        VectorN<N, decltype(F{}(T{}, T{}))> operate(F f, const VectorN<N, T>& a, std::convertible_to<T> auto b, int = 0) {
-            return [&]<u32... I>(std::integer_sequence<u32, I...>) {
-                return VectorN<N, decltype(F{}(T{}, T{}))> { f(a[I], b)... };
-            }(std::make_integer_sequence<u32, N> {});
-        }
-
-        template <u32 N, u32 M, class T, class U, class F>
-        VectorN<std::max(N, M), decltype(F{}(T{}, U{}))> operate(F f, const VectorN<N, T>& a, const VectorN<M, U>& b, int = 0) {
-            return [&]<u32... I>(std::integer_sequence<u32, I...>) {
-                return VectorN<std::max(N, M), decltype(F{}(T{}, U{}))> { f(I < N ? a[I] : 0, I < M ? b[I] : 0)... };
-            }(std::make_integer_sequence<u32, N> {});
-        }
-
-        template <class F, class T, class U> requires requires { operate(F {}, U {}, T {}, int {} /* specify to not choose this function */); }
-        auto operate(F f, const T& a, const U& b) { return operate(f, b, a, int {}); }
-
-        template <u32 N, class T, class F>
-        void operate_inplace(F f, VectorN<N, T>& a, const VectorN<N, T>& b, int = 0 /* here to explicitly say for no recursion*/) {
-            return [&]<u32... I>(std::integer_sequence<u32, I...>) {
-                Empty _ = { (a[I] = f(a[I], b[I]))... };
-            }(std::make_integer_sequence<u32, N> {});
-        }
-
-        template <u32 N, class T, class F>
-        void operate_inplace(F f, VectorN<N, T>& a, std::convertible_to<T> auto b, int = 0) {
-            return [&]<u32... I>(std::integer_sequence<u32, I...>) {
-                Empty _ = { (a[I] = f(a[I], b))... };
-            }(std::make_integer_sequence<u32, N> {});
-        }
-
-        template <u32 N, u32 M, class T, class U, class F>
-        requires (M <= N && std::is_convertible_v<decltype(F{}(T{}, U{})), T>)
-        void operate_inplace(F f, VectorN<N, T>& a, const VectorN<M, U>& b, int = 0 /* here to explicitly say for no recursion*/) {
-            return [&]<u32... I>(std::integer_sequence<u32, I...>) {
-                Empty _ = { (a[I] = f(a[I], I < M ? b[I] : 0))... };
-            }(std::make_integer_sequence<u32, N> {});
-        }
-
-        template <u32 N, class T, class F>
-        T accum(F f, const VectorN<N, T>& v, T base) {
-            return [&]<u32... I>(std::integer_sequence<u32, I...>) {
-                Empty _ = { (base = f(base, v[I]))... };
-                return base;
-            }(std::make_integer_sequence<u32, N> {});
-        }
-
-        template <u32 N, class T>
-        VectorN<N, T> negate(const VectorN<N, T>& vec) {
-            return [&]<u32... I>(std::integer_sequence<u32, I...>) {
-                return VectorN<N, T> { -vec[I]... };
-            }(std::make_integer_sequence<u32, N> {});
-        }
-    }
-#pragma endregion
-
-#define NODISC [[nodiscard]]
-
-#pragma region Vector Base
+    struct Rotation2D;
     struct RandomGenerator;
+    struct Transform2D;
 
-    template <u32 N, class T>
-    struct details::vecn_base {
+    template <class T, usize N> struct Vector;
+    using iv2 = Vector<int,    2>;
+    using iv3 = Vector<int,    3>;
+    using iv4 = Vector<int,    4>;
+    using uv2 = Vector<uint,   2>;
+    using uv3 = Vector<uint,   3>;
+    using uv4 = Vector<uint,   4>;
+    using fv2 = Vector<float,  2>;
+    using fv3 = Vector<float,  3>;
+    using fv4 = Vector<float,  4>;
+    using dv2 = Vector<double, 2>;
+    using dv3 = Vector<double, 3>;
+    using dv4 = Vector<double, 4>;
+    using bv2 = Vector<byte,   2>;
+    using bv3 = Vector<byte,   3>;
+    using bv4 = Vector<byte,   4>;
+    template <class T> using Unit = Vector<T, 1>;
+    template <class T> using Vec2 = Vector<T, 2>;
+    template <class T> using Vec3 = Vector<T, 3>;
+    template <class T> using Vec4 = Vector<T, 4>;
+
+    template <class T, usize N> struct Rect;
+
+    template <class T, usize N> struct IVector {
+        using Super = Vector<T, N>;
+        using Elm = T;
+        enum { Dim = N };
+        using fT = Common<T, f32>;
+    private:
+        const Super& super() const { return *static_cast<const Super*>(this); }
+        Super& super() { return *static_cast<Super*>(this); }
+    protected:
+        T*       DataImpl() = delete;
+        const T* DataImpl() const = delete;
+        static usize CompFromNameImpl(char c) = delete;
     public:
-        using scalar = T;
-        using vect = VectorN<N, T>;
-        static constexpr u32 Length() { return N; }
-        static constexpr u32 dimension = N;
+        static usize CompFromName(char c)  { return Super::CompFromNameImpl(c); }
+        T*       Data()          { return super().DataImpl(); }
+        const T* Data() const    { return super().DataImpl(); }
+        T*       DataEnd()       { return super().DataImpl() + N; }
+        const T* DataEnd() const { return super().DataImpl() + N; }
+        Span<const T> AsSpan() const { return Spans::Slice(Data(), N); }
+        Span<T>       AsSpan()       { return Spans::Slice(Data(), N); }
 
-        static constexpr bool traits_float  = std::is_floating_point_v<T>,
-                              traits_signed = std::is_signed_v<T>;
-    public:
-        using float_type = floating_of_t<T>;
+        T&       At(usize i)       { return Data()[i]; }
+        const T& At(usize i) const { return Data()[i]; }
+        T&       operator[](usize i)       { return Data()[i]; }
+        const T& operator[](usize i) const { return Data()[i]; }
 
-        static vect from_span(Span<const T> span) {
-            vect out;
-            details::rangecopy(out, span, std::identity {}, std::make_integer_sequence<u32, N> {});
-            return out;
+        template <usize M>
+        Vector<T, M> Swizzle(const char (&swizzle)[M + 1]) const {
+            Vector<T, M> swizzled;
+            for (usize i = 0; i < M; ++i) {
+                const usize comp = CompFromName(swizzle[i]);
+                swizzled[i] = comp == -1 ? 0 : At(comp);
+            }
+            return swizzled;
+        }
+        template <usize M> Vector<T, M> operator[](const char (&swizzle)[M + 1]) { return Swizzle(swizzle); }
+
+        usize Dimensions() const { return N; }
+
+        static Super FromSpan(Span<const T> elms) {
+            Super v;
+            Memory::RangeCopy(v.Data(), elms.Data(), std::min(elms.Length(), N));
+            return v;
+        }
+        // static Super FromAxis(some axis type, T scale);
+        static Super FromCorner(const bool (&rel) [N], T scale = 1) {
+            Super v;
+            for (usize i = 0; i < N; ++i) v[i] = rel[i] ? scale : -scale;
+            return v;
+        }
+        static Super FromScale(T scale) {
+            Super v;
+            Memory::RangeSet(v.Data(), scale, N);
+            return v;
+        }
+        static Super Zero() { return {}; }
+        static Super One() { return FromScale(1); }
+
+        Vector<T, N + 1> AddComponent(T extra) const {
+            Vector<T, N + 1> v;
+            Memory::RangeCopy(v.Data(), Data(), N);
+            v[N] = extra;
+            return v;
+        }
+        Vector<T, N - 1> RemoveComponent() const {
+            Vector<T, N - 1> v;
+            Memory::RangeCopy(v.Data(), Data(), N - 1);
+            return v;
         }
 
-        static vect from_direction(u32 directionID, T scale) {
-            vect val;
-            val[directionID >> 1] = directionID & 1 ? cneg {}(scale) : scale;
-            return val;
+        template <class U, usize M = N> Vector<U, M> As() const {
+            Vector<U, M> v;
+            static constexpr usize CopyLen = std::min(N, M);
+            for (usize i = 0; i < CopyLen; ++i) v[i] = (U)At(i);
+            return v;
         }
 
-        static vect from_corner(u32 cornerID, T scale) {
-            vect val;
-            for (u32 i = 0; i < N; ++i) val[i] = cornerID & (1 << i) ? scale : cneg {}(scale);
-            return val;
+        template <class U, usize M> explicit operator Vector<U, M>() const { return As<U, M>(); }
+
+        bool IsZero() const { return All([] (T x) { return x == 0; }); }
+        bool NearZero() const { return LenSq() < (T)(f32s::EPSILON * f32s::EPSILON); }
+        Comparison Cmp(const Super& other) const { return AsSpan().Cmp(other.AsSpan()); }
+
+        Super Neg() const { return Map(Operators::UNeg {}); }
+        Super Add(const Super& other) const           { return BinaryMap(other, Operators::Add {}); }
+        Super Sub(const Super& other) const           { return BinaryMap(other, Operators::Sub {}); }
+        Super Mul(T scale) const                      { return Map(scale, Operators::Mul {}); }
+        Super Div(T scale) const requires Integer<T>  { return Map(scale, Operators::Div {}); }
+        Super Div(T scale) const requires Floating<T> { return Mul((T)1 / scale); }
+        Super AddScalar(T off) const                  { return Map(off, Operators::Add {}); }
+        Super SubScalar(T off) const                  { return Map(off, Operators::Sub {}); }
+        Super MulComps(const Super& other) const      { return BinaryMap(other, Operators::Mul {}); }
+        Super DivComps(const Super& other) const      { return BinaryMap(other, Operators::Div {}); }
+        Super Mod(T m) const { return Map([=] (T x)   { return NumInfo<T>::Modulo(x, m); }); }
+        Super ModComps(const Super& other) const      { return BinaryMap(other, Operators::NumericModulo {}); }
+
+        Super& AddAssign(const Super& other)          { return BinaryAssign(other, Operators::AddAssign {}); }
+        Super& SubAssign(const Super& other)          { return BinaryAssign(other, Operators::AddAssign {}); }
+        Super& MulAssign(T scale)                     { return MapAssign(scale, Operators::MulAssign {}); }
+        Super& DivAssign(T scale) requires Integer<T> { return MapAssign(scale, Operators::DivAssign {}); }
+        Super& DivAssign(T scale) requires Floating<T> { return MulAssign((T)1 / scale); }
+        Super& AddScalarAssign(T off)                 { return MapAssign(off, Operators::AddAssign {}); }
+        Super& SubScalarAssign(T off)                 { return MapAssign(off, Operators::AddAssign {}); }
+        Super& MulCompsAssign(const Super& other)     { return BinaryAssign(other, Operators::MulAssign {}); }
+        Super& DivCompsAssign(const Super& other)     { return BinaryAssign(other, Operators::DivAssign {}); }
+
+        Super operator+() const { return *this; }
+        Super operator-() const { return Neg(); }
+
+        Super operator+(const Super& other) const { return Add(other); }
+        Super operator+(T off)              const { return AddScalar(off); }
+        Super operator-(const Super& other) const { return Sub(other); }
+        Super operator-(T off)              const { return SubScalar(off); }
+        Super operator*(const Super& other) const { return MulComps(other); }
+        Super operator*(T scale)            const { return Mul(scale); }
+        Super operator/(const Super& other) const { return DivComps(other); }
+        Super operator/(T scale)            const { return Div(scale); }
+        Super operator%(const Super& other) const { return ModComps(other); }
+        Super operator%(T m)                const { return Mod(m); }
+
+        Super& operator+=(const Super& other) { return AddAssign(other); }
+        Super& operator+=(T off)              { return AddScalarAssign(off); }
+        Super& operator-=(const Super& other) { return SubAssign(other); }
+        Super& operator-=(T off)              { return SubScalarAssign(off); }
+        Super& operator*=(const Super& other) { return MulCompsAssign(other); }
+        Super& operator*=(T scale)            { return MulAssign(scale); }
+        Super& operator/=(const Super& other) { return DivCompsAssign(other); }
+        Super& operator/=(T scale)            { return DivAssign(scale); }
+        Super& operator%=(const Super& other) { return super() = ModComps(other); }
+        Super& operator%=(T m)                { return super() = Mod(m); }
+
+        auto Map(const FnArgs<T> auto& mapping) const {
+            Vector<FuncResult<decltype(mapping), T>, N> v;
+            for (usize i = 0; i < N; ++i) { v[i] = mapping(At(i)); }
+            return v;
+        }
+        auto Map(T other, const FnArgs<T, T> auto& mapping) const {
+            Vector<FuncResult<decltype(mapping), T, T>, N> v;
+            for (usize i = 0; i < N; ++i) { v[i] = mapping(At(i), other); }
+            return v;
+        }
+        auto BinaryMap(const Super& other, const FnArgs<T, T> auto& mapping) const {
+            Vector<FuncResult<decltype(mapping), T, T>, N> v;
+            for (usize i = 0; i < N; ++i) { v[i] = mapping(At(i), other[i]); }
+            return v;
+        }
+        Super& MapAssign(T other, const FnArgs<T&, T> auto& mapping) {
+            for (usize i = 0; i < N; ++i) mapping(At(i), other);
+            return super();
+        }
+        Super& BinaryAssign(const Super& other, const FnArgs<T&, T> auto& mapping) {
+            for (usize i = 0; i < N; ++i) mapping(At(i), other[i]);
+            return super();
         }
 
-        T* begin() { return (T*)this; }
-        T* end()   { return (T*)this + N; }
-        NODISC const T* begin()  const { return (const T*)this; }
-        NODISC const T* cbegin() const { return (const T*)this; }
-        NODISC const T* end()    const { return (const T*)this + N; }
-        NODISC const T* cend()   const { return (const T*)this + N; }
+        fT Len  () const { return std::sqrt((fT)LenSq()); }
+        T  LenSq() const { return Dot(super()); }
+        fT Dist  (const Super& to) const { return (super() - to).Len(); }
+        T  DistSq(const Super& to) const { return (super() - to).LenSq(); }
+        bool InRange(const Super& other, T d) const { return DistSq(other) <= d * d; }
+        Super Norm()        const requires Floating<T> { return Div(Len()); }
+        Super Norm(float d) const requires Floating<T> { return Norm() * d; }
+        Tuple<Super, fT> NormAndLen() const requires Floating<T> { const fT len = Len(); return { Div(len), len }; }
+        Super DirTowards(const Super& other)           const requires Floating<T> { return (other - super()).Norm(); }
+        Super DirTowards(const Super& other, float d)  const requires Floating<T> { return (other - super()).Norm(d); }
+        Tuple<Super, fT> DirAndLen(const Super& other) const requires Floating<T> { const fT len = (other - super()).NormAndLen(); return { Div(len), len }; }
+        Super SafeNorm()    const requires Floating<T> { return NearZero() ? 0 : Norm(); }
 
-        T& at_unchecked(usize i) { return *(begin() + i); }
-        NODISC const T& at_unchecked(usize i) const { return *(begin() + i); }
-        T& operator[](usize i) { return at_unchecked(i); }
-        NODISC const T& operator[](usize i) const { return at_unchecked(i); }
+        T Dot(const Super& other) const {
+            T sum = At(0) * other[0];
+            for (usize i = 1; i < N; ++i) sum += At(i) * other[i];
+            return sum;
+        }
+        Super Project(const Super& axis) const { return axis.Mul(Dot(axis) / axis.LenSq()); }
+        Super Reflect(const Super& normal) const { return Add((2 * Dot(normal)) * normal); }
 
-        Ref<T> at(usize i) { return i < N ? at_unchecked(i) : nullptr; }
-        NODISC Ref<const T> at(usize i) const { return i < N ? at_unchecked(i) : nullptr; }
-
-        T& first() { return at_unchecked(0); }
-        T& last()  { return at_unchecked(N - 1); }
-        NODISC const T& first() const { return at_unchecked(0); }
-        NODISC const T& last()  const { return at_unchecked(N - 1); }
-
-        NODISC VectorN<N + 1, T> extend(const T& ex) const {
-            VectorN<N + 1, T> base;
-            details::rangecopy(base, as_vec(), std::identity {}, std::make_integer_sequence<u32, N> {});
-            base.last() = ex;
-            return base;
+        Vector<fT, N> Lerp(const Super& other, fT t) { return BinaryMap(other, [t = t, u = 1 - t] (T a, T b) { return u * a + t * b; }); }
+        Super& LerpToward(const Super& other, T t) requires Floating<T> { return BinaryAssign(other, [=] (T& a, T b) { a += (b - a) * t; }); }
+        Super& StepToward(const Super& other, T d) requires Floating<T> { const auto [dir, s] = (other - super()).NormAndLen(); return AddAssign(dir * std::min(s, d)); }
+        Super& StepExact (const Super& other, T d) requires Floating<T> { const auto [dir, s] = (other - super()).NormAndLen(); return AddAssign(dir * d); }
+        Super Slerp(const Super& other, fT t) const requires Floating<T> {
+            const Radians theta = AngleBetween(other);
+            const fT inv = 1 / Sin(theta);
+            return BinaryMap(other, [p = Trig::Sin(theta * (1 - t)) * inv, q = Trig::Sin(theta * t) * inv] (T a, T b) {
+                return a * p + b * q;
+            });
         }
 
-        NODISC VectorN<N - 1, T> shrink() const { return (VectorN<N - 1, T>)as_vec(); }
+        Radians AngleBetween(const Super& other) const { return Trig::Arccos(Dot(other) / (Len() * other.Len())); }
 
-        vect& as_vec() { return *(vect*)this; }
-        NODISC const vect& as_vec() const { return *(const vect*)this; }
-
-        template <class U> NODISC operator VectorN<N, U>() const { return details::typecast<N, T, U>(as_vec()); }
-        template <u32 M>   NODISC operator VectorN<M, T>() const { return details::sizecast<N, M, T>(as_vec()); }
-        template <class U> NODISC VectorN<N, U> as() const { return (VectorN<N, U>)as_vec(); }
-        NODISC VectorN<N, float_type> asf() const { return as<float_type>(); }
-
-        NODISC auto operator+() const { return as_vec(); }
-        NODISC auto operator-() const requires traits_signed { return details::negate(as_vec()); }
-        NODISC auto operator+(const auto& v) const { return details::operate(add {}, as_vec(), v); }
-        NODISC auto operator-(const auto& v) const { return details::operate(sub {}, as_vec(), v); }
-        NODISC auto operator*(const auto& v) const { return details::operate(mul {}, as_vec(), v); }
-        NODISC auto operator/(const auto& v) const { return details::operate(div {}, as_vec(), v); }
-        NODISC auto operator%(const auto& v) const { return details::operate(mod {}, as_vec(), v); }
-        VectorN<N, T>& operator+=(const auto& v) {  details::operate_inplace(add {}, as_vec(), v); return as_vec(); }
-        VectorN<N, T>& operator-=(const auto& v) {  details::operate_inplace(sub {}, as_vec(), v); return as_vec(); }
-        VectorN<N, T>& operator*=(const auto& v) {  details::operate_inplace(mul {}, as_vec(), v); return as_vec(); }
-        VectorN<N, T>& operator/=(const auto& v) {  details::operate_inplace(div {}, as_vec(), v); return as_vec(); }
-        VectorN<N, T>& operator%=(const auto& v) {  details::operate_inplace(mod {}, as_vec(), v); return as_vec(); }
-
-        NODISC bool eq(const vect& other) const { return as_vec() == other; }
-        NODISC bool neq(const vect& other) const { return !eq(other); }
-        NODISC std::strong_ordering  ord_cmp(const vect& other) const { return as_vec()->tup() <=> other.tup(); }
-        NODISC std::partial_ordering abs_cmp(const vect& other) const {
-            return as_vec() == other ? std::partial_ordering::equivalent :
-                   as_vec() <  other ? std::partial_ordering::less :
-                   as_vec() >  other ? std::partial_ordering::greater :
-                   std::partial_ordering::unordered;
+        Super Clamp() const requires Floating<T> { return Clamp(0, 0); }
+        Super Clamp(T min, T max) const { return Map([&] (T x) { return Math::Clamp(x, min, max); }); }
+        Super Clamp(const Super& min, const Super& max) const {
+            Super v;
+            for (usize i = 0; i < N; ++i) v[i] = Math::Clamp(At(i), min[i], max[i]);
+            return v;
         }
-        NODISC bool iszero() const { return eq(as_vec().ZERO()); }
+        Super Clamp(const Rect<T, N>& rect) const;
+        Super MapCoords(const Rect<T, N>& source, const Rect<T, N>& dest) const;
+        Super MapFromUnit(const Rect<T, N>& dest) const;
+        Super UnmapToUnit(const Rect<T, N>& source) const;
 
-        NODISC bool operator==(const auto& v) const { return details::operate(details::eq  {}, as_vec(), v).all(); }
-        NODISC bool operator!=(const auto& v) const { return details::operate(details::neq {}, as_vec(), v).all(); }
-        NODISC bool operator< (const auto& v) const { return details::operate(details::lt  {}, as_vec(), v).all(); }
-        NODISC bool operator<=(const auto& v) const { return details::operate(details::le  {}, as_vec(), v).all(); }
-        NODISC bool operator>=(const auto& v) const { return details::operate(details::ge  {}, as_vec(), v).all(); }
-        NODISC bool operator> (const auto& v) const { return details::operate(details::gt  {}, as_vec(), v).all(); }
-
-        NODISC float_type len() const { return std::sqrt((float_type)lensq()); }
-        NODISC T          lensq() const { return dot(as_vec()); }
-        NODISC float_type dist(const vect& to) const { return (as_vec() - to).len(); }
-        NODISC float_type distsq(const vect& to) const { return (as_vec() - to).lensq(); }
-        NODISC bool       in_range(const vect& other, T d) const { return dist(other) <= d; }
-        NODISC vect       norm() const { return as_vec() / len(); }
-        NODISC vect       norm(float d) const { return norm() * d; }
-        NODISC vect       safe_norm() const { return lensq() <= f32s::EPSILON * f32s::EPSILON ? 0 : norm(); }
-
-        NODISC T sum() const { return details::accum(add {}, as_vec(), (T)0); }
-        NODISC T dot(const vect& other) const { return (as_vec() * other).sum(); }
-
-        NODISC VectorN<N, float_type> lerp(const vect& other, float t) const { return as_vec() + (other - as_vec()) * t; }
-        vect& lerp_to(const vect& other, float t) requires traits_float { return as_vec() = lerp(other, t); }
-        NODISC VectorN<N, float_type> towards(const vect& other, float max_d) const { vect u = (other - *this).norm(); return *this + u * max_d; }
-        vect& move_towards(const vect& other, float max_d) requires traits_float { return as_vec() = towards(other, max_d); }
-
-        NODISC float_type angle(const vect& other) { return std::acos(dot(other) / (len() * other.len())); }
-        NODISC vect slerp(const vect& other, float t) {
-            const float_type theta = angle(other);
-            return (std::sin((1 - t) * theta) * as_vec() + std::sin(t * theta) * other) / std::sin(theta);
+        Super ClampLen(T d) const requires Floating<T> {
+            const auto [dir, s] = NormAndLen();
+            return dir * std::max(s, d);
         }
 
-        NODISC vect clamped() const { return clamp(as_vec().ZERO(), as_vec().ONE(), as_vec()); }
-        vect& clamp() { return as_vec() = clamped(); }
-        NODISC VectorN<N, float_type> len_clamped() const { return as_vec() / std::max(1, len()); }
-        vect& len_clamp() { return as_vec() = len_clamped(); }
-        NODISC static vect max(const vect& a, const vect& b) { return details::operate(details::max {}, a, b); }
-        NODISC static vect min(const vect& a, const vect& b) { return details::operate(details::min {}, a, b); }
-        NODISC static vect max(const Collection<vect> auto& nums) { vect m = { std::numeric_limits<T>::lowest() }; for (const auto& v : nums) { m = max(m, v); } return m; }
-        NODISC static vect min(const Collection<vect> auto& nums) { vect m = { std::numeric_limits<T>::max()    }; for (const auto& v : nums) { m = min(m, v); } return m; }
-        NODISC static vect clamp(const RectN<N, T>& r, const vect& x);
+        static Super Max(const Super& x, const Super& y) { return x.BinaryMap(y, [] (T a, T b) { return std::max(a, b); }); }
+        static Super Min(const Super& x, const Super& y) { return x.BinaryMap(y, [] (T a, T b) { return std::min(a, b); }); }
+        static Super MaxOver(const Collection<Super> auto& xs) {
+            Super max = { NumInfo<T>::MIN };
+            for (const auto& x : xs) max = Max(max, x);
+            return max;
+        }
+        static Super MinOver(const Collection<Super> auto& xs) {
+            Super min = { NumInfo<T>::MAX };
+            for (const auto& x : xs) min = Min(min, x);
+            return min;
+        }
 
-        NODISC vect map(const RectN<N, T>& input, const RectN<N, T>& output) const;
+        bool operator==(const IVector&) const = default;
+        bool AllGreater(const Super& other) const {
+            for (usize i = 0; i < N; ++i) if (At(i) <= other[i]) return false;
+            return true;
+        }
+        bool AllLess(const Super& other) const {
+            for (usize i = 0; i < N; ++i) if (At(i) >= other[i]) return false;
+            return true;
+        }
+        bool AllGreaterEq(const Super& other) const {
+            for (usize i = 0; i < N; ++i) if (At(i) < other[i]) return false;
+            return true;
+        }
+        bool AllLessEq(const Super& other) const {
+            for (usize i = 0; i < N; ++i) if (At(i) > other[i]) return false;
+            return true;
+        }
+        bool IsIn(const Super& min, const Super& max) const { return ALlGreater(min) && AllLess(max); }
+        bool IsIn(const Rect<T, N>& rect) const;
 
-        NODISC rect_origin_t<vect> as_origin() const;
-        NODISC rect_size_t<vect> as_size() const;
-        NODISC RectN<N, T> to(const vect& other) const;
-        NODISC RectN<N, T> to(const rect_size_t<vect>& other) const;
-        NODISC bool is_in(const RectN<N, T>& region) const;
+        static Super Random(RandomGenerator& rand);
+        static Super Random(RandomGenerator& rand, const Super& min, const Super& max);
+        static Super Random(RandomGenerator& rand, const Rect<T, N>& range);
+        static Super RandomOnUnit(RandomGenerator& rand) requires Floating<T>;
+        static Super RandomInUnit(RandomGenerator& rand) requires Floating<T>;
 
-        NODISC bool all() const requires std::is_same_v<T, bool> { return details::accum([](bool a, bool b) { return a && b; }, as_vec(), true); }
-        NODISC bool any() const requires std::is_same_v<T, bool> { return details::accum([](bool a, bool b) { return a || b; }, as_vec(), true); }
-
-        static vect random(RandomGenerator& rg, const RectN<N, T>& range);
-        static vect random_on_unit(RandomGenerator& rg) requires traits_float;
-        static vect random_in_unit(RandomGenerator& rg) requires traits_float;
-
-        static Option<vect> parse(Str string, Str sep, Str beg, Str end, Fn<Option<T>, Str> auto elemParser) {
-            if (!string.StartsWith(beg) || !string.StartsWith(end)) return nullptr;
-
-            string = string.Substr(beg.Length(), string.Length() - beg.Length() - end.Length());
-            vect v;
-            for (usize i = 0; i < N; ++i) {
-                const auto [e, rest] = string.SplitOnce(sep);
-                Option<T> element = elemParser(e);
-                if (!element) return nullptr;
-                v[i] = *element;
-                if (i < N - 1 && rest.IsEmpty()) return nullptr;
-                string = rest;
+        static Option<Super> Parse(Str s, Str sep) { return Parse(s, sep, [] (Str x) { return Text::Parse<T>(x); }); }
+        static Option<Super> Parse(Str s, Str sep, Fn<Option<T>, Str> auto&& parserForElms) {
+            Super v;
+            for (const auto [i, e] : s.Split(sep).Enumerate()) {
+                if (i > N) return nullptr;
+                Option<T> elm = parserForElms(e);
+                if (!elm) return nullptr;
+                v[i] = *elm;
             }
             return v;
         }
-        static Option<vect> parse(Str string, Str sep, Str beg, Str end) { return parse(string, sep, beg, end, [] (Str s) { return Text::Parse<T>(s); }); }
     };
 
-    template <u32 N, class T> auto operator+(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return vec + val; }
-    template <u32 N, class T> auto operator-(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return VectorN<N, T> { val } - vec; }
-    template <u32 N, class T> auto operator*(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return vec * val; }
-    template <u32 N, class T> auto operator/(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return VectorN<N, T> { val } / vec; }
-    template <u32 N, class T> auto operator%(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return VectorN<N, T> { val } % vec; }
+    template <class T, usize N> Vector<T, N> operator+(NoInfer<T> val, const Vector<T, N>& vec) { return vec + val; }
+    template <class T, usize N> Vector<T, N> operator-(NoInfer<T> val, const Vector<T, N>& vec) { return vec.Map(val, [] (T x, T v) { return (T)(v - x); }); }
+    template <class T, usize N> Vector<T, N> operator*(NoInfer<T> val, const Vector<T, N>& vec) { return vec * val; }
+    template <class T, usize N> Vector<T, N> operator/(NoInfer<T> val, const Vector<T, N>& vec) { return vec.Map(val, [] (T x, T v) { return (T)(v / x); }); }
 
-    template <u32 N, class T> auto operator==(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return vec == val; }
-    template <u32 N, class T> auto operator!=(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return vec != val; }
-    template <u32 N, class T> auto operator< (std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return vec >  val; }
-    template <u32 N, class T> auto operator<=(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return vec >= val; }
-    template <u32 N, class T> auto operator>=(std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return vec <= val; }
-    template <u32 N, class T> auto operator> (std::convertible_to<T> auto val, const VectorN<N, T>& vec) requires (!IVector<decltype(val)>) { return vec <  val; }
-#pragma endregion
+    template <class T, usize N> struct Vector : IVector<T, N> {
+        Array<T, N> elems;
+    protected:
+        T* DataImpl() { return elems.Data(); }
+        const T* DataImpl() const { return elems.Data(); }
+        static usize CompFromNameImpl(char c) { return c == '\0' ? -1ULL : (usize)(c - 1); }
+    public:
+        Vector(T base = 0) { elems.Fill(base); }
+        Vector(const Array<T, N>& array) : elems(array) {}
+    };
 
-#pragma region Vector Impl
-#pragma region Vec1
-    template <class T>
-    struct VectorN<1, T> : public details::vecn_base<1, T> {
-        using base = details::vecn_base<1, T>;
-        using base::dimension, base::traits_float, base::traits_signed;
-        using float_type = typename base::float_type;
-        using float_vec = VectorN<dimension, float_type>;
+    template <class T> struct Vector<T, 1> : IVector<T, 1> {
+        friend IVector<T, 1>;
         T x;
+    protected:
+        T* DataImpl() { return &x; }
+        const T* DataImpl() const { return &x; }
+        static usize CompFromNameImpl(char c) {
+            switch (c) {
+                case 'x': case 's': case 'r': return 0;
+                default: return -1;
+            }
+        }
+    public:
+        Vector(T x = 0) : x(x) {}
 
-        VectorN(T x = 0) : x(x) {}
-        VectorN(std::convertible_to<T> auto x) : x((T)x) {}
-
-        static constexpr Str params = "x"_str;
-
-        NODISC const T& value() const { return x; }
-        T& value() { return x; }
-        NODISC operator const T&() const { return value(); }
-        operator T&() { return value(); }
-
-        static VectorN ZERO() { return {  0 }; }
-        static VectorN ONE()  { return { +1 }; }
-    };
-#pragma endregion // Vec1
-#pragma region Vec2
-    template <class T>
-    struct VectorN<2, T> : public details::vecn_base<2, T> {
-        using base = details::vecn_base<2, T>;
-        using base::dimension, base::traits_float, base::traits_signed;
-        using float_type = typename base::float_type;
-        using float_vec = VectorN<dimension, float_type>;
-        T x; T y;
-
-        VectorN(T s = 0) : x(s), y(s) {}
-        VectorN(T x, T y) : x(x), y(y) {}
-        VectorN(std::convertible_to<T> auto x, std::convertible_to<T> auto y) : x((T)x), y((T)y) {}
-
-        static constexpr Str params = "xy";
-
-        static VectorN RIGHT()                       { return { +1,  0 }; }
-        static VectorN LEFT() requires traits_signed { return { -1,  0 }; }
-        static VectorN UP()                          { return {  0, +1 }; }
-        static VectorN DOWN() requires traits_signed { return {  0, -1 }; }
-        static VectorN ZERO()                        { return {  0,  0 }; }
-        static VectorN ONE()                         { return { +1, +1 }; }
-
-        NODISC float_type zcross(const VectorN& other) const;
-
-        NODISC float_type slope() const;
-
-        NODISC float_type angle() const;
-        NODISC float_type angle_signed(const VectorN& other) const;
-        NODISC float_vec polar() const;
-        static float_vec from_polar(T r, T theta);
-
-        NODISC VectorN perpend() const requires traits_signed;
-
-        NODISC float_vec rotated(float angle) const;
-        NODISC float_vec rotated(float angle, const VectorN& origin) const;
-        NODISC float_vec rotated_by(const Complex<T>& rotation) const;
-        NODISC VectorN projected(const VectorN& axis) const;
-        NODISC VectorN reflected(const VectorN& normal) const;
-        NODISC VectorN transformed_by(const Transform2D& transform) const;
-
-        VectorN& rotate(float angle)                        requires traits_float { return *this = rotated(angle); }
-        VectorN& rotate(float angle, const VectorN& origin) requires traits_float { return *this = rotated(angle, origin); }
-        VectorN& rotate_by(const Complex<T>& rotation) requires traits_float;
-        VectorN& reflect(const VectorN& normal) { return *this = reflected(normal); }
-        VectorN& project(const VectorN& axis)   { return *this = projected(axis); }
-        VectorN& transform_by(const Transform2D& transform);
-
-        NODISC Vector3<T> with_z(T z) const { return { x, y, z }; }
-
-        NODISC std::tuple<T, T> tup() const { return { x, y }; }
-
-        static VectorN unit_x(T x) { return { x, 0 }; }
-        static VectorN unit_y(T y) { return { 0, y }; }
+        operator const T&() const { return x; }
+        operator T&() { return x; }
+        bool operator> (T y) const { return x >  y; }
+        bool operator>=(T y) const { return x >= y; }
+        bool operator<=(T y) const { return x <= y; }
+        bool operator< (T y) const { return x <  y; }
+        T& operator++()    { return ++x; }
+        T  operator++(int) { return x++; }
     };
 
-    template <class T> typename VectorN<2, T>::float_type VectorN<2, T>::zcross(const VectorN& other) const { return x * other.y - y * other.x; }
-    template <class T> typename VectorN<2, T>::float_type VectorN<2, T>::slope() const { return (float_type)y / (float_type)x; }
-    template <class T> typename VectorN<2, T>::float_type VectorN<2, T>::angle() const { return std::atan2((float_type)y, (float_type)x); }
-    template <class T> typename VectorN<2, T>::float_type VectorN<2, T>::angle_signed(const VectorN& other) const { return std::atan2((float_type)(y * other.x - x * other.y), (float_type)this->dot(other)); }
-    template <class T> typename VectorN<2, T>::float_vec VectorN<2, T>::polar() const { return { this->len(), angle() }; }
-    template <class T> typename VectorN<2, T>::float_vec VectorN<2, T>::from_polar(T r, T theta) { return { r * std::cos(theta), r * std::sin(theta) }; }
+    template <Numeric T> struct Vector<T, 2> : IVector<T, 2> {
+        friend IVector<T, 2>;
+        using fT = typename IVector<T, 2>::fT;
+        T x, y;
+    protected:
+        T* DataImpl() { return &x; }
+        const T* DataImpl() const { return &x; }
+        static usize CompFromNameImpl(char c) {
+            switch (c) {
+                case 'x': case 's': case 'r': return 0;
+                case 'y': case 't': case 'g': return 1;
+                default: return -1;
+            }
+        }
+    public:
+        Vector(T s = 0) : x(s), y(s) {}
+        Vector(T x, T y) : x(x), y(y) {}
 
-    template <class T> VectorN<2, T> VectorN<2, T>::perpend() const requires traits_signed { return { y, -x }; } /* perpendicular vector (rotated 90 deg), (0, 1) -> (1, 0) */
-    template <class T> typename VectorN<2, T>::float_vec VectorN<2, T>::rotated(float angle) const {
-        float_type sin = std::sin(angle), cos = std::cos(angle);
-        return { x * cos - y * sin, x * sin + y * cos };
-    }
-    template <class T> typename VectorN<2, T>::float_vec VectorN<2, T>::rotated(float angle, const VectorN& origin) const { return (*this - origin).rotated(angle) + (float_vec)origin; }
-    template <class T> VectorN<2, T> VectorN<2, T>::reflected(const VectorN& normal) const { return *this - 2 * this->dot(normal) * normal; }
-    template <class T> VectorN<2, T> VectorN<2, T>::projected(const VectorN& axis) const { return axis * this->dot(axis) / axis.lensq(); }
-#pragma endregion
-#pragma region Vec3
-    template <class T>
-    struct VectorN<3, T> : public details::vecn_base<3, T> {
-        using base = details::vecn_base<3, T>;
-        using base::dimension, base::traits_float, base::traits_signed;
-        using float_type = typename base::float_type;
-        using float_vec = VectorN<dimension, float_type>;
-        T x; T y; T z;
+        static Vector XAxis() { return { 1, 0 }; }
+        static Vector YAxis() { return { 0, 1 }; }
+        static Vector XPos()                    { return { +1,  0 }; } static Vector Right()                   { return XPos(); }
+        static Vector XNeg() requires Signed<T> { return { -1,  0 }; } static Vector Left() requires Signed<T> { return XNeg(); }
+        static Vector YPos()                    { return {  0, +1 }; } static Vector Up()                      { return YPos(); }
+        static Vector YNeg() requires Signed<T> { return {  0, -1 }; } static Vector Down() requires Signed<T> { return YNeg(); }
 
-        VectorN(T s = 0) : x(s), y(s), z(s) {}
-        VectorN(T x, T y, T z) : x(x), y(y), z(z) {}
-        VectorN(std::convertible_to<T> auto x, std::convertible_to<T> auto y,
-             std::convertible_to<T> auto z) : x((T)x), y((T)y), z((T)z) {}
+        T CrossZ(const Vector& other) const { return x * other.y - y * other.x; }
 
-        static constexpr Str params = "xyz";
+        fT Slope()       const { return (fT)y / (fT)x; }
+        fT AspectRatio() const { return (fT)x / (fT)y; }
 
-        static VectorN RIGHT()                       { return {  1,  0,  0 }; }
-        static VectorN LEFT() requires traits_signed { return { -1,  0,  0 }; }
-        static VectorN UP()                          { return {  0,  1,  0 }; }
-        static VectorN DOWN() requires traits_signed { return {  0, -1,  0 }; }
-        static VectorN FRONT()                       { return {  0,  0,  1 }; }
-        static VectorN BACK() requires traits_signed { return {  0,  0, -1 }; }
-        static VectorN ZERO()                        { return {  0,  0,  0 }; }
-        static VectorN ONE()                         { return {  1,  1,  1 }; }
+        Radians PolarAngle() const { return Trig::Atan2(y, x); }
+        Radians SignedAngleBetween(const Vector& other) const { return Trig::Atan2(CrossZ(other), this->Dot(other)); }
 
-        NODISC VectorN cross(const VectorN& other) const;
+        Tuple<fT, Radians> PolarCoords() const { return { this->Len(), this->PolarAngle() }; }
+        static Vector FromPolar(T r, Radians theta) requires Floating<T> { return { r * Cos(theta), r * Sin(theta) }; }
 
-        NODISC float_type angle_signed(const VectorN& other, const VectorN& normal) const;
+        Vector Perpend()      const requires Signed<T> { return { y, -x }; }
+        Vector PerpendLeft()  const requires Signed<T> { return { -y, x }; }
+        Vector PerpendRight() const requires Signed<T> { return { y, -x }; }
 
-        NODISC float_type yaw() const;
-        NODISC float_type pitch() const;
-        NODISC float_vec spheric() const;
-        static float_vec from_spheric(T r, T yaw, T pitch);
+        Vector RotateBy(const Rotation2D& r) const;
+        Vector TransformBy(const Transform2D& t) const;
 
-        NODISC float_vec rotated_by(const Quaternion& rotation) const;
-        NODISC Vector2<float_type> projected() const;
-        NODISC VectorN reflected(const VectorN& normal) const;
-        NODISC VectorN transformed_by(const Transform3D& transform) const;
-
-        VectorN& rotate_by(const Quaternion& rotation) requires traits_float;
-        VectorN& reflect(const VectorN& normal) { return *this = reflected(normal); }
-        VectorN& transform_by(const Transform3D& transform);
-
-        NODISC auto to_color(T alpha = 1) const -> std::conditional_t<traits_float, fColor, Color>;
-        NODISC auto to_color3() const -> std::conditional_t<traits_float, fColor3, Color3>;
-
-        NODISC Vector2<T> xy() const { return { x, y }; }
-        NODISC Vector4<T> with_w(T w = 1) const { return { x, y, z, w }; }
-
-        NODISC std::tuple<T, T, T> tup() const { return { x, y, z }; }
-
-        static VectorN unit_x(T x) { return { x, 0, 0 }; }
-        static VectorN unit_y(T y) { return { 0, y, 0 }; }
-        static VectorN unit_z(T z) { return { 0, 0, z }; }
+        Vec3<T> AddZ(T z) const { return { x, y, z }; }
     };
 
-    template <class T> Vector3<T> VectorN<3, T>::cross(const VectorN& other) const { return { (T)(y * other.z - z * other.y), (T)(z * other.x - x * other.z), (T)(x * other.y - y * other.x) }; }
+    template <class T> struct Vector<T, 2> { T x, y; };
 
-    template <class T> typename VectorN<3, T>::float_type VectorN<3, T>::yaw() const { return std::atan2((float_type)x, (float_type)z); }
-    template <class T> typename VectorN<3, T>::float_type VectorN<3, T>::pitch() const { return std::asin((float_type)y / this->len()); }
-    template <class T> typename VectorN<3, T>::float_vec VectorN<3, T>::spheric() const { return { this->len(), yaw(), pitch() }; }
-    template <class T> typename VectorN<3, T>::float_vec VectorN<3, T>::from_spheric(T r, T yaw, T pitch) { return (float_type)r * float_vec { std::sin(yaw) * std::cos(pitch), std::sin(pitch), std::cos(yaw) * std::cos(pitch) }; }
+    template <Numeric T> struct Vector<T, 3> : IVector<T, 3> {
+        friend IVector<T, 3>;
+        using fT = typename IVector<T, 2>::fT;
+        T x, y, z;
+    protected:
+        T* DataImpl() { return &x; }
+        const T* DataImpl() const { return &x; }
+        static usize CompFromNameImpl(char c) {
+            switch (c) {
+                case 'x': case 's': case 'r': return 0;
+                case 'y': case 't': case 'g': return 1;
+                case 'z': case 'u': case 'b': return 2;
+                default: return -1;
+            }
+        }
+    public:
+        Vector(T s = 0) : x(s), y(s), z(s) {}
+        Vector(T x, T y, T z) : x(x), y(y), z(z) {}
 
-    template <class T> typename VectorN<3, T>::float_type VectorN<3, T>::angle_signed(const VectorN& other, const VectorN& normal) const { return std::atan2((float_type)cross(other).dot(normal), (float_type)this->dot(other)); }
+        static Vector XAxis() { return { 1, 0, 0 }; }
+        static Vector YAxis() { return { 0, 1, 0 }; }
+        static Vector ZAxis() { return { 0, 0, 1 }; }
+        static Vector XPos()                    { return { +1,  0,  0 }; } static Vector Right()                   { return XPos(); }
+        static Vector XNeg() requires Signed<T> { return { -1,  0,  0 }; } static Vector Left() requires Signed<T> { return XNeg(); }
+        static Vector YPos()                    { return {  0, +1,  0 }; } static Vector Up()                      { return YPos(); }
+        static Vector YNeg() requires Signed<T> { return {  0, -1,  0 }; } static Vector Down() requires Signed<T> { return YNeg(); }
+        static Vector ZPos()                    { return {  0,  0, +1 }; } static Vector Front()                   { return ZPos(); }
+        static Vector ZNeg() requires Signed<T> { return {  0,  0, -1 }; } static Vector Back() requires Signed<T> { return ZNeg(); }
 
-    template <class T> Vector2<typename VectorN<3, T>::float_type> VectorN<3, T>::projected() const { return (Vector2<float_type>)xy() / (float_type)z; }
-    template <class T> Vector3<T> VectorN<3, T>::reflected(const VectorN& normal) const { return *this - 2 * this->dot(normal) * normal; }
-#pragma endregion
-#pragma region Vec4
-    template <class T>
-    struct VectorN<4, T> : details::vecn_base<4, T> {
-        using base = details::vecn_base<4, T>;
-        using base::dimension, base::traits_float, base::traits_signed;
-        using float_type = typename base::float_type;
-        using float_vec = VectorN<dimension, float_type>;
-        T x; T y; T z; T w;
+        Vector Cross(const Vector& other) const {
+            return {
+                (T)(y * other.z - z * other.y),
+                (T)(z * other.x - x * other.z),
+                (T)(x * other.y - y * other.x),
+            };
+        }
 
-        VectorN(T s = 0, T w = 0) : x(s), y(s), z(s), w(w) {}
-        VectorN(T x, T y, T z, T w = 1) : x(x), y(y), z(z), w(w) {}
-        VectorN(std::convertible_to<T> auto x, std::convertible_to<T> auto y,
-                std::convertible_to<T> auto z, std::convertible_to<T> auto w = 1) : x((T)x), y((T)y), z((T)z), w((T)w) {}
+        Radians SignedAngleBetween(const Vector& other, const Vector& normal) const {
+            return Trig::Atan2((fT)Cross(other).Dot(normal), (fT)this->Dot(other));
+        }
+        Radians Yaw()   const { return Trig::Atan2(x, z); }
+        Radians Pitch() const { return Trig::Atan2(y, std::sqrt(x * x + z * z)); }
+        Tuple<fT, Radians, Radians> SphericCoords() const requires Floating<T> {
+            const fT len = this->Len();
+            return { len, Yaw(), Trig::Arcsin(y / len) };
+        }
+        static Vector FromSpheric(T r, Radians yaw, Radians pitch) requires Floating<T> {
+            const T xz = r * Cos(pitch);
+            return { xz * Cos(yaw), r * Sin(pitch), xz * Sin(yaw) };
+        }
+        Vec2<fT> ProjectTo2DPlane() const { const fT invZ = (fT)1 / z; return { x * invZ, y * invZ }; }
 
-        static constexpr Str params = "xyzw";
-
-        static constexpr VectorN RIGHT()                       { return {  1,  0,  0,  0 }; }
-        static constexpr VectorN LEFT() requires traits_signed { return { -1,  0,  0,  0 }; }
-        static constexpr VectorN UP()                          { return {  0,  1,  0,  0 }; }
-        static constexpr VectorN DOWN() requires traits_signed { return {  0, -1,  0,  0 }; }
-        static constexpr VectorN FRONT()                       { return {  0,  0,  1,  0 }; }
-        static constexpr VectorN BACK() requires traits_signed { return {  0,  0, -1,  0 }; }
-        static constexpr VectorN IN()                          { return {  0,  0,  0,  1 }; }
-        static constexpr VectorN OUT()  requires traits_signed { return {  0,  0,  0, -1 }; }
-        static constexpr VectorN ZERO()                        { return {  0,  0,  0,  0 }; }
-        static constexpr VectorN ONE()                         { return {  1,  1,  1,  1 }; }
-
-        NODISC Vector3<T> xyz() const { return { x, y, z }; }
-        NODISC Vector2<T> xy() const { return { x, y }; }
-
-        NODISC Vector3<float_type> projected() const;
-
-        NODISC auto to_color() const -> std::conditional_t<traits_float, fColor, Color>;
-
-        NODISC std::tuple<T, T, T, T> tup() const { return { x, y, z, w }; }
-
-        static VectorN unit_x(T x) { return { x, 0, 0, 0 }; }
-        static VectorN unit_y(T y) { return { 0, y, 0, 0 }; }
-        static VectorN unit_z(T z) { return { 0, 0, z, 0 }; }
-        static VectorN unit_w(T w) { return { 0, 0, 0, w }; }
+        Vec2<T> As2D() const { return { x, y }; }
+        Vec4<T> AddW(T w = 1) const { return { x, y, z, w }; }
     };
 
-    template <class T> Vector3<typename VectorN<4, T>::float_type> VectorN<4, T>::projected() const { return (Vector3<float_type>)xyz() / (float_type)w; }
-#pragma endregion
-#pragma endregion
-#undef NODISC
-}
+    template <class T> struct Vector<T, 3> { T x, y, z; };
 
-#pragma region Formatting
-namespace Quasi::Text {
-    template <u32 N, class T>
-    struct Formatter<Math::VectorN<N, T>> : Formatter<Span<const T>> {
-        using typename Formatter<Span<const T>>::FormatOptions;
-        static usize FormatTo(StringWriter sw, const Math::VectorN<N, T>& vec, const FormatOptions& options) {
-            return Formatter<Span<const T>>::FormatTo(sw, Spans::Slice(vec.begin(), N), options);
+    template <Numeric T> struct Vector<T, 4> : IVector<T, 4> {
+        friend IVector<T, 4>;
+        using fT = typename IVector<T, 2>::fT;
+        T x, y, z, w;
+    protected:
+        T* DataImpl() { return &x; }
+        const T* DataImpl() const { return &x; }
+        static usize CompFromNameImpl(char c) {
+            switch (c) {
+                case 'x': case 's': case 'r': return 0;
+                case 'y': case 't': case 'g': return 1;
+                case 'z': case 'u': case 'b': return 2;
+                case 'w': case 'v': case 'a': return 3;
+                default: return -1;
+            }
+        }
+    public:
+        Vector(T s = 0, T w = 0) : x(s), y(s), z(s), w(w) {}
+        Vector(T x, T y, T z, T w = 1) : x(x), y(y), z(z), w(w) {}
+
+
+        static Vector XAxis() { return { 1, 0, 0, 0 }; }
+        static Vector YAxis() { return { 0, 1, 0, 0 }; }
+        static Vector ZAxis() { return { 0, 0, 1, 0 }; }
+        static Vector WAxis() { return { 0, 0, 0, 1 }; }
+        static Vector XPos()                    { return { +1,  0,  0,  0 }; } static Vector Right()                   { return XPos(); }
+        static Vector XNeg() requires Signed<T> { return { -1,  0,  0,  0 }; } static Vector Left() requires Signed<T> { return XNeg(); }
+        static Vector YPos()                    { return {  0, +1,  0,  0 }; } static Vector Up()                      { return YPos(); }
+        static Vector YNeg() requires Signed<T> { return {  0, -1,  0,  0 }; } static Vector Down() requires Signed<T> { return YNeg(); }
+        static Vector ZPos()                    { return {  0,  0, +1,  0 }; } static Vector Front()                   { return ZPos(); }
+        static Vector ZNeg() requires Signed<T> { return {  0,  0, -1,  0 }; } static Vector Back() requires Signed<T> { return ZNeg(); }
+        static Vector WPos()                    { return {  0,  0,  0, +1 }; } static Vector In()                      { return WPos(); }
+        static Vector WNeg() requires Signed<T> { return {  0,  0,  0, -1 }; } static Vector Out()  requires Signed<T> { return WNeg(); }
+
+        Vec3<fT> ProjectTo3DPlane() const { const fT invW = (fT)1 / w; return { x * invW, y * invW, z * invW }; }
+        Vec3<T> As3D() const { return { x, y, z }; }
+        Vec2<T> As2D() const { return { x, y }; }
+    };
+
+    template <class T> struct Vector<T, 4> { T x, y, z, w; };
+
+    struct VectorFormatter {
+        struct FormatOptions {
+            Str elementFmt = "#: $", separator = ", ";
+        };
+        static FormatOptions ConfigureOptions(Str opt);
+        template <class T>
+        static usize FormatToInternal(Text::StringWriter sw, Span<const T> vector, Str comps, const FormatOptions& options) {
+            OptionUsize identifiers[2] {};
+            for (usize i = 0, j = 0; i < options.elementFmt.Length(); ++i) {
+                const char c = options.elementFmt[i];
+                if (c == '$' || c == '#') {
+                    identifiers[j] = i;
+                    if (++j == 2) break;
+                }
+            }
+            Str sections[3] = {};
+            if (identifiers[0]) {
+                sections[0] = options.elementFmt.First(*identifiers[0]);
+                if (identifiers[1]) {
+                    sections[1] = options.elementFmt.Substr(*identifiers[0] + 1, *identifiers[1] - *identifiers[0] - 1);
+                    sections[2] = options.elementFmt.Skip(*identifiers[1] + 1);
+                } else {
+                    sections[1] = options.elementFmt.Skip(*identifiers[0] + 1);
+                }
+            } else {
+                sections[0] = options.elementFmt;
+            }
+
+            usize ln = (sections[0].Length() + sections[1].Length() + sections[2].Length() + options.separator.Length());
+            ln *= vector.Length();
+            ln -= options.separator.Length();
+            for (usize i = 0; i < vector.Length(); i++) {
+                if (i != 0)
+                    sw.Write(options.separator);
+
+                sw.Write(sections[0]);
+                if (identifiers[0]) {
+                    if (options.elementFmt[*identifiers[0]] == '#') {
+                        ln += sw.Write(comps[i]);
+                    } else {
+                        ln += Text::FormatObjectTo(sw, vector[i]);
+                    }
+                }
+                sw.Write(sections[1]);
+                if (*identifiers[1]) {
+                    if (options.elementFmt[*identifiers[0]] == '#') {
+                        ln += sw.Write(comps[i]);
+                    } else {
+                        ln += Text::FormatObjectTo(sw, vector[i]);
+                    }
+                }
+                sw.Write(sections[2]);
+            }
+            return ln;
         }
     };
 }
-#pragma endregion
+
+namespace Quasi::Text {
+    template <class T, usize N>
+    struct Formatter<Math::Vector<T, N>> : Math::VectorFormatter {
+        static usize FormatTo(StringWriter sw, const Math::Vector<T, N>& vec, const FormatOptions& options) {
+            return VectorFormatter::FormatToInternal(sw, vec.AsSpan(), Str::Slice("xyzw", N), options);
+        }
+    };
+
+    template <class T, usize N>
+    struct Parser<Math::Vector<T, N>> {
+        using ParseOptions = Str;
+        static OptionUsize ParseUntil(Str s, Out<Math::Vector<T, N>&> out, Str) {
+            Option<Math::Vector<T, N>> v = Math::Vector<T, N>::Parse(s, ", ");
+            if (!v) return nullptr;
+            out = *v;
+            return s.Length();
+        }
+    };
+}

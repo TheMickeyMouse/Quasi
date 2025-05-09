@@ -65,9 +65,9 @@ namespace Quasi::Text {
         // removes unnessecary information,
         // ranges '0'-'9' now become 0-9
         // ranges 'A'-'F'/'a'-'f' now both become 0x41-0x47
-        chars &= 0x4F4F4F4F4F4F4F4F;
+        chars &= 0x4F4F4F4F;
         // alphabet characters all have the 6th bit set
-        const u64 isAlpha = chars & 0x4040404040404040;
+        const u64 isAlpha = chars & 0x40404040;
         // removes the extra bit for alphabets, now 0x41-0x47 -> 0x01-0x07
         // adds 9 if alpha is set, 0x01-0x07 -> 10-16
         chars = (isAlpha >> 6) * 9 + (chars ^ isAlpha);

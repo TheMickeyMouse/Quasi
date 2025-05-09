@@ -2,6 +2,7 @@
 #include "ArrayBox.h"
 #include "Memory.h"
 #include "Iterator.h"
+#include "Range.h"
 #include "Ref.h"
 
 namespace Quasi {
@@ -46,8 +47,6 @@ namespace Quasi {
         Span<const byte> AsBytes() const { return { Memory::AsBytePtr(data), size * sizeof(T) }; }
         Span<const T>    AsSpan()  const { return *this; }
         Span             AsSpan()  mut   { return *this; }
-        // Range<T*> AsPtrRange()
-
     protected:
         usize LengthImpl() const { return size; }
 
@@ -73,6 +72,7 @@ namespace Quasi {
 
         Span<MutT> SubspanMut(usize start)              mut { return { data + start, size - start }; }
         Span<MutT> SubspanMut(usize start, usize count) mut { return { data + start, count }; }
+        Span<MutT> SubspanMut(zRange range)             mut { return { data + range.min, range.max - range.min }; }
         Span<MutT> FirstMut(usize num)                  mut { return { data, num }; }
         Span<MutT> SkipMut(usize len)                   mut { return { data + len, size - len }; }
         Span<MutT> TailMut()                            mut { return { data + 1, size - 1 }; }
@@ -98,6 +98,7 @@ namespace Quasi {
         }
         Span<const T> Subspan(usize start)              const { return { data + start, size - start }; }
         Span<const T> Subspan(usize start, usize count) const { return { data + start, count }; }
+        Span<const T> Subspan(zRange range)             const { return { data + range.min, range.max - range.min }; }
         Span<const T> First(usize num)                  const { return { data, num }; }
         Span<const T> Skip(usize len)                   const { return { data + len, size - len }; }
         Span<const T> Tail()                            const { return { data + 1, size - 1 }; }
@@ -270,10 +271,10 @@ namespace Quasi {
         OptionUsize ContainsOneOf   (Span<const Span<const T>> anytarget) const { const auto [i, j] = FindOneOf   (anytarget); return i.And(j); }
         OptionUsize RevContainsOneOf(Span<const Span<const T>> anytarget) const { const auto [i, j] = RevFindOneOf(anytarget); return i.And(j); }
 
-        usize Unaddress      (const T* addr) const { return addr - data; }
-        bool  ContainsAddress(const T* addr) const { return data <= addr && addr < data + size; }
-        // IntegerRange UnaddressSpan      (Span addr) const { return ; }
-        // bool         ContainsAddressSpan(Span addr) const { return ; }
+        usize  Unaddress      (const T* addr) const { return addr - data; }
+        bool   ContainsAddress(const T* addr) const { return data <= addr && addr < data + size; }
+        zRange UnaddressSpan      (Span addr) const { return zRange::FromSize(addr.Data() - data, addr.Size()); }
+        bool   ContainsAddressSpan(Span addr) const { return data <= addr.Data() && addr.DataEnd() <= this->DataEnd(); }
 
         // assumes ascending order
         Tuple<bool, usize> BinarySearch(const T& target) const { return BinarySearchWith(Cmp::ComparedTo { target }); }
@@ -289,9 +290,9 @@ namespace Quasi {
         usize UpperBound(const T& target) const { return UpperBoundBy(Cmp::LessThanWith { target }); }
         usize UpperBoundBy(Fn<Comparison, const T&> auto&& cmp) const;
         usize UpperBoundByKey(const T& target, FnArgs<const T&> auto&& keyf) const;
-        // Range<usize> EqualRange(const T& target) const { return LowerBoundBy(Operators::LessThanWith { target }); }
-        // Range<usize> EqualRangeBy(Predicate<T> auto&& left) const;
-        // Range<usize> EqualRangeByKey(FnArgs<const T&> auto&& keyf) const;
+        // zRange EqualRange(const T& target) const { return LowerBoundBy(Operators::LessThanWith { target }); }
+        // zRange EqualRangeBy(Predicate<T> auto&& left) const;
+        // zRange EqualRangeByKey(FnArgs<const T&> auto&& keyf) const;
 
         bool BinaryContains(const T& target) const { const auto [found, _] = BinarySearch(target); return found; }
         bool BinaryContainsKey  (FnArgs<const T&> auto&& keyf, auto&& targetKey) const { const auto [found, _] = BinarySearchByKey(keyf(targetKey)); return found; }

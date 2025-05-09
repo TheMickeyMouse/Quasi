@@ -5,6 +5,11 @@
 #include "Math/Rect.h"
 #include "Math/Color.h"
 
+namespace Quasi::Math {
+    struct Rotation3D;
+    struct Transform3D;
+}
+
 namespace Quasi::Graphics {
     class CameraController;
     class Light;
@@ -23,18 +28,18 @@ namespace ImGui {
     float GetItemDefaultWidth(float totalWidth = Q floats::NAN);
     float GetItemRemainingWidth(float totalWidth = Q floats::NAN);
 
-    void DisplaySimpleIcon(const char* text, const Q Math::Color& bgColor);
+    void DisplaySimpleIcon(const char* text, const Q Math::fColor3& bgColor);
 
     void DisplayTextCropped(Q Str text, float width);
 
     void EditString(Q Str label, Q String& string);
 
-    template <class T> requires std::is_arithmetic_v<T>
-    Q_IMGUI_EDITOR(EditScalar, T& value, float speed = 1, Q NoInfer<Q Option<Q Math::Range<T>>> range = nullptr);
+    template <Q Numeric T>
+    Q_IMGUI_EDITOR(EditScalar, T& value, float speed = 1, Q NoInfer<Q Option<Q Range<T>>> range = nullptr);
 
-    template <class T> requires std::is_arithmetic_v<T>
-    Q_IMGUI_EDITOR(EditScalarWithIcon, const Q Math::Color& color,
-        T& value, float speed = 1, Q NoInfer<Q Option<Q Math::Range<T>>> range = nullptr, Q Str fmt = {}) {
+    template <Q Numeric T>
+    Q_IMGUI_EDITOR(EditScalarWithIcon, const Q Math::fColor3& color,
+        T& value, float speed = 1, Q NoInfer<Q Option<Q Range<T>>> range = nullptr, Q Str fmt = {}) {
         PushID(title.Data());
         DisplaySimpleIcon(title.Data(), color);
 
@@ -44,22 +49,22 @@ namespace ImGui {
         PopID();
     }
 
-    template <Q u32 N, class T>
-    Q_IMGUI_EDITOR(EditVector, Q Math::VectorN<N, T>& vector, float speed = 1, Q NoInfer<const Q Option<Q Math::RectN<N, T>>&> range = nullptr);
+    template <class T, Q usize N>
+    Q_IMGUI_EDITOR(EditVector, Q Math::Vector<T, N>& vector, float speed = 1, Q NoInfer<const Q Option<Q Math::Rect<T, N>>&> range = nullptr);
 
     template <class T>
-    Q_IMGUI_EDITOR(EditRange, Q Math::Range<T>& range, float speed = 1, Q NoInfer<const Q Option<Q Math::Range<T>>&> constraint = nullptr);
+    Q_IMGUI_EDITOR(EditRange, Q Range<T>& range, float speed = 1, Q NoInfer<const Q Option<Q Range<T>>&> constraint = nullptr);
 
-    template <Q u32 N, class T>
-    Q_IMGUI_EDITOR(EditRect, Q Math::RectN<N, T>& range, float speed = 1, Q NoInfer<const Q Option<Q Math::RectN<N, T>>&> constraint = nullptr);
+    template <class T, Q usize N>
+    Q_IMGUI_EDITOR(EditRect, Q Math::Rect<T, N>& range, float speed = 1, Q NoInfer<const Q Option<Q Math::Rect<T, N>>&> constraint = nullptr);
 
-    Q_IMGUI_EDITOR(EditComplexRotation, Q Math::Complex<float>& complex);
-    Q_IMGUI_EDITOR(EditQuatRotation, Q Math::Quaternion& quaternion);
+    Q_IMGUI_EDITOR(EditRotation2D, Q Math::Rotation2D& rot2);
+    Q_IMGUI_EDITOR(EditRotation3D, Q Math::Rotation3D& rot3);
 
-    Q_IMGUI_EDITOR(EditRotation, float& yaw, float& pitch);
+    Q_IMGUI_EDITOR(EditYawPitch, float& yaw, float& pitch);
 
-    template <Q Math::ColorLike C>
-    Q_IMGUI_EDITOR(EditColor, C& color);
+    template <class T, bool A>
+    Q_IMGUI_EDITOR(EditColor, Q Math::IColor<T, A>& color);
 
     Q_IMGUI_EDITOR(EditTransform, Q Math::Transform2D& transform, float speed = 1);
     Q_IMGUI_EDITOR(EditTransform, Q Math::Transform3D& transform, float speed = 1);

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Macros.h"
-#include "Type.h"
 #include "Option.h"
 #include "Text/Formatting.h"
 

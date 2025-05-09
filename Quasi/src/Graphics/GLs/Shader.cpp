@@ -46,29 +46,29 @@ namespace Quasi::Graphics {
         using enum ShaderUniformType;
         switch (type) {
             case F_UNIT:    return SetUniformFloat(name, data.ReadFirst<float>());
-            case FV2:       return SetUniformFv2  (name, data.ReadFirst<Math::fVector2>());
-            case FV3:       return SetUniformFv3  (name, data.ReadFirst<Math::fVector3>());
-            case FV4:       return SetUniformFv4  (name, data.ReadFirst<Math::fVector4>());
+            case FV2:       return SetUniformFv2  (name, data.ReadFirst<Math::fv2>());
+            case FV3:       return SetUniformFv3  (name, data.ReadFirst<Math::fv3>());
+            case FV4:       return SetUniformFv4  (name, data.ReadFirst<Math::fv4>());
             case F_ARRAY:   return SetUniformFloatArr(name, data.Transmute<float>());
-            case FV2_ARRAY: return SetUniformFv2Arr  (name, data.Transmute<Math::fVector2>());
-            case FV3_ARRAY: return SetUniformFv3Arr  (name, data.Transmute<Math::fVector3>());
-            case FV4_ARRAY: return SetUniformFv4Arr  (name, data.Transmute<Math::fVector4>());
+            case FV2_ARRAY: return SetUniformFv2Arr  (name, data.Transmute<Math::fv2>());
+            case FV3_ARRAY: return SetUniformFv3Arr  (name, data.Transmute<Math::fv3>());
+            case FV4_ARRAY: return SetUniformFv4Arr  (name, data.Transmute<Math::fv4>());
             case I_UNIT:    return SetUniformInt   (name, data.ReadFirst<int>());
-            case IV2:       return SetUniformIv2   (name, data.ReadFirst<Math::iVector2>());
-            case IV3:       return SetUniformIv3   (name, data.ReadFirst<Math::iVector3>());
-            case IV4:       return SetUniformIv4   (name, data.ReadFirst<Math::iVector4>());
+            case IV2:       return SetUniformIv2   (name, data.ReadFirst<Math::iv2>());
+            case IV3:       return SetUniformIv3   (name, data.ReadFirst<Math::iv3>());
+            case IV4:       return SetUniformIv4   (name, data.ReadFirst<Math::iv4>());
             case I_ARRAY:   return SetUniformIntArr(name, data.Transmute<int>());
-            case IV2_ARRAY: return SetUniformIv2Arr(name, data.Transmute<Math::iVector2>());
-            case IV3_ARRAY: return SetUniformIv3Arr(name, data.Transmute<Math::iVector3>());
-            case IV4_ARRAY: return SetUniformIv4Arr(name, data.Transmute<Math::iVector4>());
+            case IV2_ARRAY: return SetUniformIv2Arr(name, data.Transmute<Math::iv2>());
+            case IV3_ARRAY: return SetUniformIv3Arr(name, data.Transmute<Math::iv3>());
+            case IV4_ARRAY: return SetUniformIv4Arr(name, data.Transmute<Math::iv4>());
             case U_UNIT:    return SetUniformUint(name, data.ReadFirst<uint>());
-            case UV2:       return SetUniformUv2 (name, data.ReadFirst<Math::uVector2>());
-            case UV3:       return SetUniformUv3 (name, data.ReadFirst<Math::uVector3>());
-            case UV4:       return SetUniformUv4 (name, data.ReadFirst<Math::uVector4>());
+            case UV2:       return SetUniformUv2 (name, data.ReadFirst<Math::uv2>());
+            case UV3:       return SetUniformUv3 (name, data.ReadFirst<Math::uv3>());
+            case UV4:       return SetUniformUv4 (name, data.ReadFirst<Math::uv4>());
             case U_ARRAY:   return SetUniformUintArr(name, data.Transmute<uint>());
-            case UV2_ARRAY: return SetUniformUv2Arr (name, data.Transmute<Math::uVector2>());
-            case UV3_ARRAY: return SetUniformUv3Arr (name, data.Transmute<Math::uVector3>());
-            case UV4_ARRAY: return SetUniformUv4Arr (name, data.Transmute<Math::uVector4>());
+            case UV2_ARRAY: return SetUniformUv2Arr (name, data.Transmute<Math::uv2>());
+            case UV3_ARRAY: return SetUniformUv3Arr (name, data.Transmute<Math::uv3>());
+            case UV4_ARRAY: return SetUniformUv4Arr (name, data.Transmute<Math::uv4>());
             case FMAT_2X2:  return SetUniformMat2x2Arr(name, data.Transmute<Math::Matrix2x2>());
             case FMAT_2X3:  return SetUniformMat2x3Arr(name, data.Transmute<Math::Matrix2x3>());
             case FMAT_2X4:  return SetUniformMat2x4Arr(name, data.Transmute<Math::Matrix2x4>());
@@ -99,29 +99,29 @@ namespace Quasi::Graphics {
     }
 
     void Shader::SetUniformFloat(CStr name, float x)                 { GL::Uniform1f(GetUniformLocation(name), x); }
-    void Shader::SetUniformFv2(CStr name, const Math::fVector2& v2s) { GL::Uniform2f(GetUniformLocation(name), v2s.x, v2s.y); }
-    void Shader::SetUniformFv3(CStr name, const Math::fVector3& v3s) { GL::Uniform3f(GetUniformLocation(name), v3s.x, v3s.y, v3s.z); }
-    void Shader::SetUniformFv4(CStr name, const Math::fVector4& v4s) { GL::Uniform4f(GetUniformLocation(name), v4s.x, v4s.y, v4s.z, v4s.w); }
+    void Shader::SetUniformFv2(CStr name, const Math::fv2& v2s) { GL::Uniform2f(GetUniformLocation(name), v2s.x, v2s.y); }
+    void Shader::SetUniformFv3(CStr name, const Math::fv3& v3s) { GL::Uniform3f(GetUniformLocation(name), v3s.x, v3s.y, v3s.z); }
+    void Shader::SetUniformFv4(CStr name, const Math::fv4& v4s) { GL::Uniform4f(GetUniformLocation(name), v4s.x, v4s.y, v4s.z, v4s.w); }
     void Shader::SetUniformFloatArr(CStr name, Span<const float> xs) { GL::Uniform1fv(GetUniformLocation(name), xs.Length(), xs.Data()); }
-    void Shader::SetUniformFv2Arr(CStr name, Span<const Math::fVector2> v2s) { GL::Uniform2fv(GetUniformLocation(name), v2s.Length(), (const float*)v2s.Data()); }
-    void Shader::SetUniformFv3Arr(CStr name, Span<const Math::fVector3> v3s) { GL::Uniform3fv(GetUniformLocation(name), v3s.Length(), (const float*)v3s.Data()); }
-    void Shader::SetUniformFv4Arr(CStr name, Span<const Math::fVector4> v4s) { GL::Uniform4fv(GetUniformLocation(name), v4s.Length(), (const float*)v4s.Data()); }
+    void Shader::SetUniformFv2Arr(CStr name, Span<const Math::fv2> v2s) { GL::Uniform2fv(GetUniformLocation(name), v2s.Length(), (const float*)v2s.Data()); }
+    void Shader::SetUniformFv3Arr(CStr name, Span<const Math::fv3> v3s) { GL::Uniform3fv(GetUniformLocation(name), v3s.Length(), (const float*)v3s.Data()); }
+    void Shader::SetUniformFv4Arr(CStr name, Span<const Math::fv4> v4s) { GL::Uniform4fv(GetUniformLocation(name), v4s.Length(), (const float*)v4s.Data()); }
     void Shader::SetUniformInt(CStr name, int x)                     { GL::Uniform1i(GetUniformLocation(name), x); }
-    void Shader::SetUniformIv2(CStr name, const Math::iVector2& v2s) { GL::Uniform2i(GetUniformLocation(name), v2s.x, v2s.y); }
-    void Shader::SetUniformIv3(CStr name, const Math::iVector3& v3s) { GL::Uniform3i(GetUniformLocation(name), v3s.x, v3s.y, v3s.z); }
-    void Shader::SetUniformIv4(CStr name, const Math::iVector4& v4s) { GL::Uniform4i(GetUniformLocation(name), v4s.x, v4s.y, v4s.z, v4s.w); }
+    void Shader::SetUniformIv2(CStr name, const Math::iv2& v2s) { GL::Uniform2i(GetUniformLocation(name), v2s.x, v2s.y); }
+    void Shader::SetUniformIv3(CStr name, const Math::iv3& v3s) { GL::Uniform3i(GetUniformLocation(name), v3s.x, v3s.y, v3s.z); }
+    void Shader::SetUniformIv4(CStr name, const Math::iv4& v4s) { GL::Uniform4i(GetUniformLocation(name), v4s.x, v4s.y, v4s.z, v4s.w); }
     void Shader::SetUniformIntArr(CStr name, Span<const int> xs)     { GL::Uniform1iv(GetUniformLocation(name), xs.Length(), xs.Data()); }
-    void Shader::SetUniformIv2Arr(CStr name, Span<const Math::iVector2> v2s) { GL::Uniform2iv(GetUniformLocation(name), v2s.Length(), (const int*)v2s.Data()); }
-    void Shader::SetUniformIv3Arr(CStr name, Span<const Math::iVector3> v3s) { GL::Uniform3iv(GetUniformLocation(name), v3s.Length(), (const int*)v3s.Data()); }
-    void Shader::SetUniformIv4Arr(CStr name, Span<const Math::iVector4> v4s) { GL::Uniform4iv(GetUniformLocation(name), v4s.Length(), (const int*)v4s.Data()); }
+    void Shader::SetUniformIv2Arr(CStr name, Span<const Math::iv2> v2s) { GL::Uniform2iv(GetUniformLocation(name), v2s.Length(), (const int*)v2s.Data()); }
+    void Shader::SetUniformIv3Arr(CStr name, Span<const Math::iv3> v3s) { GL::Uniform3iv(GetUniformLocation(name), v3s.Length(), (const int*)v3s.Data()); }
+    void Shader::SetUniformIv4Arr(CStr name, Span<const Math::iv4> v4s) { GL::Uniform4iv(GetUniformLocation(name), v4s.Length(), (const int*)v4s.Data()); }
     void Shader::SetUniformUint(CStr name, uint x)                   { GL::Uniform1ui(GetUniformLocation(name), x); }
-    void Shader::SetUniformUv2(CStr name, const Math::uVector2& v2s) { GL::Uniform2ui(GetUniformLocation(name), v2s.x, v2s.y); }
-    void Shader::SetUniformUv3(CStr name, const Math::uVector3& v3s) { GL::Uniform3ui(GetUniformLocation(name), v3s.x, v3s.y, v3s.z); }
-    void Shader::SetUniformUv4(CStr name, const Math::uVector4& v4s) { GL::Uniform4ui(GetUniformLocation(name), v4s.x, v4s.y, v4s.z, v4s.w); }
+    void Shader::SetUniformUv2(CStr name, const Math::uv2& v2s) { GL::Uniform2ui(GetUniformLocation(name), v2s.x, v2s.y); }
+    void Shader::SetUniformUv3(CStr name, const Math::uv3& v3s) { GL::Uniform3ui(GetUniformLocation(name), v3s.x, v3s.y, v3s.z); }
+    void Shader::SetUniformUv4(CStr name, const Math::uv4& v4s) { GL::Uniform4ui(GetUniformLocation(name), v4s.x, v4s.y, v4s.z, v4s.w); }
     void Shader::SetUniformUintArr(CStr name, Span<const uint> xs)   { GL::Uniform1uiv(GetUniformLocation(name), xs.Length(), xs.Data()); }
-    void Shader::SetUniformUv2Arr(CStr name, Span<const Math::uVector2> v2s) { GL::Uniform2uiv(GetUniformLocation(name), v2s.Length(), (const uint*)v2s.Data()); }
-    void Shader::SetUniformUv3Arr(CStr name, Span<const Math::uVector3> v3s) { GL::Uniform3uiv(GetUniformLocation(name), v3s.Length(), (const uint*)v3s.Data()); }
-    void Shader::SetUniformUv4Arr(CStr name, Span<const Math::uVector4> v4s) { GL::Uniform4uiv(GetUniformLocation(name), v4s.Length(), (const uint*)v4s.Data()); }
+    void Shader::SetUniformUv2Arr(CStr name, Span<const Math::uv2> v2s) { GL::Uniform2uiv(GetUniformLocation(name), v2s.Length(), (const uint*)v2s.Data()); }
+    void Shader::SetUniformUv3Arr(CStr name, Span<const Math::uv3> v3s) { GL::Uniform3uiv(GetUniformLocation(name), v3s.Length(), (const uint*)v3s.Data()); }
+    void Shader::SetUniformUv4Arr(CStr name, Span<const Math::uv4> v4s) { GL::Uniform4uiv(GetUniformLocation(name), v4s.Length(), (const uint*)v4s.Data()); }
 
     void Shader::SetUniformColor(CStr name, const Math::fColor3& color3) { GL::Uniform3f(GetUniformLocation(name), color3.r, color3.g, color3.b); }
     void Shader::SetUniformColor(CStr name, const Math::fColor&  color)  { GL::Uniform4f(GetUniformLocation(name), color.r, color.g, color.b, color.a); }
@@ -229,8 +229,8 @@ namespace Quasi::Graphics {
     bool Shader::IsArrayUnif (ShaderUniformType type) { return (u32)type & 0x40; }
     bool Shader::IsMatrixUnif(ShaderUniformType type) { return (u32)type & 0x0C; }
 
-    ShaderParameter::ShaderParameter(Str name, const Math::fColor3& color3) : ShaderParameter(name, color3.as_rgbf()) {}
-    ShaderParameter::ShaderParameter(Str name, const Math::fColor&  color)  : ShaderParameter(name, color.as_rgbaf()) {}
+    ShaderParameter::ShaderParameter(Str name, const Math::fColor3& color3) : ShaderParameter(name, color3.AsRGBfVec()) {}
+    ShaderParameter::ShaderParameter(Str name, const Math::fColor&  color)  : ShaderParameter(name, color.AsRGBAfVec()) {}
     ShaderParameter::ShaderParameter(Str name, Span<const Math::fColor3> color3s) : ShaderParameter(name, FV3_ARRAY, color3s.AsBytes()) {}
     ShaderParameter::ShaderParameter(Str name, Span<const Math::fColor>  colors)  : ShaderParameter(name, FV4_ARRAY, colors.AsBytes()) {}
     ShaderParameter::ShaderParameter(Str name, const Texture&       tex)    : ShaderParameter(name, tex.Slot()) {}

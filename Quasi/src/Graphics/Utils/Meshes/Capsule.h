@@ -13,9 +13,9 @@ namespace Quasi::Graphics::MeshUtils {
 
     template <>
     struct OptionsFor<CapsuleCreator> {
-        Math::fVector3 start, end;
+        Math::fv3 start, end;
         float radius;
-        Math::uVector2 sections;
+        Math::uv2 sections;
 
         using MData = VertexBuilder::MeshConstructData3D;
     };
@@ -29,10 +29,10 @@ namespace Quasi::Graphics::MeshUtils {
             using namespace Math;
             const float LATITUDE_SECT = HALF_PI / (float)opt.sections.y, LONGITUDE_SECT = TAU / (float)opt.sections.x;
 
-            const fVector3 Y = (opt.start - opt.end).norm();
+            const fv3 Y = (opt.start - opt.end).norm();
             // the { y, -x, 0 } is absolutely arbitrary, just need a nonzero vec thats also not the x axis
-            const fVector3 X = fVector3 { Y.y, -Y.x, 0 }.norm();
-            const fVector3 Z = Y.cross(X);
+            const fv3 X = fv3 { Y.y, -Y.x, 0 }.norm();
+            const fv3 Z = Y.cross(X);
 
             const auto sphereCoord = [&] (float yaw, float pitch) {
                 return std::sin(yaw) * std::cos(pitch) * X +
@@ -51,7 +51,7 @@ namespace Quasi::Graphics::MeshUtils {
                 }));
                 for (u32 y = 1; y <= opt.sections.y; ++y) {
                     for (u32 x = 0; x < opt.sections.x; ++x) {
-                        const fVector3 direction = sign * sphereCoord((float)x * LONGITUDE_SECT, (float)y * LATITUDE_SECT);
+                        const fv3 direction = sign * sphereCoord((float)x * LONGITUDE_SECT, (float)y * LATITUDE_SECT);
                         meshp.PushV(f(MData {
                             .Position = (isTop ? opt.start : opt.end) + direction * opt.radius,
                             .Normal   = direction

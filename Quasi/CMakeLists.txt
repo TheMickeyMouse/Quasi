@@ -211,6 +211,10 @@ source_group("Source Files" FILES ${SOURCE_FILES})
 set(ALL_FILES
     ${HEADER_FILES}
     ${SOURCE_FILES}
+        src/Math/Angles.h
+        src/Math/Rect.cpp
+        src/Utils/Range.h
+        src/Utils/Range.cpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

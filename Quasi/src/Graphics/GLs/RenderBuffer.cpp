@@ -6,7 +6,7 @@
 namespace Quasi::Graphics {
     RenderBuffer::RenderBuffer(GraphicsID id) : GLObject(id) {}
 
-    RenderBuffer RenderBuffer::New(TextureIFormat format, Math::iVector2 size) {
+    RenderBuffer RenderBuffer::New(TextureIFormat format, Math::iv2 size) {
         GraphicsID id;
         QGLCall$(GL::GenRenderbuffers(1, &id));
         BindObject(id);

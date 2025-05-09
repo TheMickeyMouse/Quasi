@@ -2,40 +2,28 @@
 
 #include "Math/Complex.h"
 #include "Math/Geometry.h"
-#include "Math/Vector.h"
+#include "Math/Transform2D.h"
 
 namespace Quasi::Physics2D {
     using namespace Math;
 
     struct PhysicsTransform { // different from math::transform2d, as this has no scale
-        fVector2 position;
-        fComplex rotation;
+        fv2 position;
+        Rotation2D rotation;
 
-        PhysicsTransform(const fVector2& pos = {}, const fComplex& rot = 1) : position(pos), rotation(rot) {}
+        PhysicsTransform(const fv2& pos = {}, const Rotation2D& rot = {}) : position(pos), rotation(rot) {}
 
-        void Translate(const fVector2& p);
-        void Rotate(float r);
-        void Rotate(const fComplex& r);
-        PhysicsTransform Translated(const fVector2& p) const;
-        PhysicsTransform Rotated(float r) const;
-        PhysicsTransform Rotated(const fComplex& r) const;
+        static PhysicsTransform Translate(const fv2& p);
+        static PhysicsTransform Rotation(const Rotation2D& q);
 
-        static PhysicsTransform Translation(const fVector2& p);
-        static PhysicsTransform Rotation(float r);
-        static PhysicsTransform Rotation(const fComplex& q);
+        fv2 Transform(const fv2& point) const;
+        fv2 TransformDir(const fv2& dir) const;
+        fv2 TransformInverse(const fv2& point) const;
+        fv2 TransformInverseDir(const fv2& dir) const;
+        fLine2D TransformLine(const fLine2D& line) const;
+        fRect2D TransformRect(const fRect2D& rect) const;
 
-        fVector2 Transform(const fVector2& point) const;
-        fVector2 TransformDir(const fVector2& dir) const;
-                      void     TransformInplace(fVector2& point) const;
-                      void     TransformInplaceDir(fVector2& dir) const;
-        fVector2 TransformInverse(const fVector2& point) const;
-        fVector2 TransformInverseDir(const fVector2& dir) const;
-                      void     TransformInverseInplace(fVector2& point) const;
-                      void     TransformInverseInplaceDir(fVector2& dir) const;
-        fLine2D  TransformLine(const fLine2D& line) const;
-        fRect2D  TransformRect(const fRect2D& rect) const;
-
-        Transform2D AsObjectTransform(const fVector2& scale = 1) const;
+        Transform2D AsObjectTransform(const fv2& scale = 1) const;
 
         PhysicsTransform Inverse() const;
 
@@ -48,7 +36,7 @@ namespace Quasi::Physics2D {
 
         void Reset();
 
-        fVector2 operator*(const fVector2& p) const { return Transform(p); }
+        fv2 operator*(const fv2& p) const { return Transform(p); }
         fRect2D  operator*(const fRect2D& r) const { return TransformRect(r); }
         PhysicsTransform operator*(const PhysicsTransform& t) const { return Applied(t); }
         PhysicsTransform& operator*=(const PhysicsTransform& t) { return Apply(t); }

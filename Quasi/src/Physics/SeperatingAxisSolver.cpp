@@ -37,22 +37,22 @@ namespace Quasi::Physics2D {
         axisIndex = 0;
     }
 
-    bool SeperatingAxisSolver::CheckAxis(const fVector2& axis) {
+    bool SeperatingAxisSolver::CheckAxis(const fv2& axis) {
         ++axisIndex;
         if (!collides) return false;
 
-        const fVector2 worldAxis = IsChecking(BASE)   ? baseXf  ->TransformDir(axis) :
+        const fv2 worldAxis = IsChecking(BASE)   ? baseXf  ->TransformDir(axis) :
                                    IsChecking(TARGET) ? targetXf->TransformDir(axis) :
                                    axis;
 
         const fRange bproj = (IsChecking(BASE) ?
                              base->ProjectOntoOwnAxis(axisIndex - 1, axis) :
                              base->ProjectOntoAxis(baseXf->TransformInverseDir(worldAxis)))
-                           + baseXf->position.dot(worldAxis),
+                           + baseXf->position.Dot(worldAxis),
                      tproj = (IsChecking(TARGET) ?
                              target->ProjectOntoOwnAxis(axisIndex - 1, axis) :
                              target->ProjectOntoAxis(targetXf->TransformInverseDir(worldAxis)))
-                           + targetXf->position.dot(worldAxis);
+                           + targetXf->position.Dot(worldAxis);
 
         const float d1 = bproj.max - tproj.min, d2 = tproj.max - bproj.min,
                     depth = std::min(d1, d2);
@@ -79,7 +79,7 @@ namespace Quasi::Physics2D {
         return overlap;
     }
 
-    const fVector2& SeperatingAxisSolver::GetSepAxis() const {
+    const fv2& SeperatingAxisSolver::GetSepAxis() const {
         return seperatingAxis;
     }
 } // Quasi

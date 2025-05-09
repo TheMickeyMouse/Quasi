@@ -29,7 +29,7 @@ namespace Quasi::Graphics::MeshUtils {
             }
 
             for (u32 i = 0; i < 8; ++i) {
-                meshp.PushV(f(MData { .Position = Math::fVector3::from_corner(i, 1) }));
+                meshp.PushV(f(MData { .Position = Math::fv3::FromCorner({ (bool)(i & 1), (bool)(i & 2), (bool)(i & 4) }) }));
             }
         }
     };

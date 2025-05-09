@@ -8,14 +8,14 @@
 #include "Math/Geometry.h"
 
 namespace Quasi::Physics2D {
-    float ClosestBetweenSegments(const fVector2& a1, const fVector2& b1, const fVector2& a2, const fVector2& b2,
-                                 float* s, float* t, fVector2* c1, fVector2* c2) {
-        const fVector2 direction1 = b1 - a1; // Direction vector of segment S1
-        const fVector2 direction2 = b2 - a2; // Direction vector of segment S2
-        const fVector2 relative = a1 - a2;
-        const float len1 = direction1.lensq(); // Squared length of segment S1, always nonnegative
-        const float len2 = direction2.lensq(); // Squared length of segment S2, always nonnegative
-        const float r2 = direction2.dot(relative);
+    float ClosestBetweenSegments(const fv2& a1, const fv2& b1, const fv2& a2, const fv2& b2,
+                                 float* s, float* t, fv2* c1, fv2* c2) {
+        const fv2 direction1 = b1 - a1; // Direction vector of segment S1
+        const fv2 direction2 = b2 - a2; // Direction vector of segment S2
+        const fv2 relative = a1 - a2;
+        const float len1 = direction1.LenSq(); // Squared length of segment S1, always nonnegative
+        const float len2 = direction2.LenSq(); // Squared length of segment S2, always nonnegative
+        const float r2 = direction2.Dot(relative);
 
         // Check if either or both segments degenerate into points
         if (len1 <= f32s::EPSILON && len2 <= f32s::EPSILON) {
@@ -23,7 +23,7 @@ namespace Quasi::Physics2D {
             *s = *t = 0.0f;
             *c1 = a1;
             *c2 = a2;
-            return c1->distsq(*c2);
+            return c1->DistSq(*c2);
         }
         if (len1 <= f64s::EPSILON) {
             // First segment degenerates into a point
@@ -31,14 +31,14 @@ namespace Quasi::Physics2D {
             *t = r2 / len2; // s = 0 => t = (b*s + f) / e = f / e
             *t = std::clamp(*t, 0.0f, 1.0f);
         } else {
-            const float r1 = direction1.dot(relative);
+            const float r1 = direction1.Dot(relative);
             if (len2 <= f64s::EPSILON) {
                 // Second segment degenerates into a point
                 *t = 0.0f;
                 *s = std::clamp(-r1 / len1, 0.0f, 1.0f); // t = 0 => s = (b*t - c) / a = -c / a
             } else {
                 // The general nondegenerate case starts here
-                const float b = direction1.dot(direction2);
+                const float b = direction1.Dot(direction2);
                 const float denom = len1 * len2 - b * b; // Always nonnegative
                 // If segments not parallel, compute closest point on L1 to L2 and
                 // clamp to segment S1. Else pick arbitrary s (here 0)
@@ -62,7 +62,7 @@ namespace Quasi::Physics2D {
         }
         *c1 = a1 + direction1 * *s;
         *c2 = a2 + direction2 * *t;
-        return c1->distsq(*c2);
+        return c1->DistSq(*c2);
     }
 
     Manifold CollideShapes(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
@@ -98,12 +98,12 @@ namespace Quasi::Physics2D {
     }
 
     Manifold CollideCircles(const CircleShape& s1, const PhysicsTransform& xf1, const CircleShape& s2, const PhysicsTransform& xf2) {
-        float distsq = xf1.position.distsq(xf2.position);
+        float distsq = xf1.position.DistSq(xf2.position);
         if (distsq >= (s1.radius + s2.radius) * (s1.radius + s2.radius))
             return Manifold::None();
 
         distsq = std::sqrt(distsq);
-        const fVector2 n = (xf2.position - xf1.position) / distsq;
+        const fv2 n = (xf2.position - xf1.position) / distsq;
         return Manifold {
             .seperatingNormal = n,
             .contactPoint = { xf1.position - n * s2.radius },
@@ -117,7 +117,7 @@ namespace Quasi::Physics2D {
         const auto& circle = *s1.As<CircleShape>();
 
         sat.SetCheckFor(SeperatingAxisSolver::NEITHER);
-        sat.CheckAxis((xf2.Transform(s2.NearestPointTo(xf2.TransformInverse(xf1.position))) - xf1.position).norm());
+        sat.CheckAxis(xf2.Transform(s2.NearestPointTo(xf2.TransformInverse(xf1.position))).DirTowards(xf1.position));
 
         sat.CheckAxisFor(SeperatingAxisSolver::TARGET);
 
@@ -148,7 +148,7 @@ namespace Quasi::Physics2D {
                           & cap2 = s2.As<CapsuleShape>();
 
         // from cap2 local space to cap1 local space
-  //       const fVector2 f1  = xf1.TransformDir(cap1.forward),
+  //       const fv2 f1  = xf1.TransformDir(cap1.forward),
   //                      a1  = xf1.position - f1,
   //   				   b1  = xf1.position + f1,
   //                      f2  = xf2.TransformDir(cap2.forward),
@@ -179,8 +179,8 @@ namespace Quasi::Physics2D {
   //           u = std::clamp((2 * dboth - k1) / lensq1, 0.0f, 2.0f);
   //       }
   //
-  //       const fVector2 closest1 = a1 + f1 * u;
-  //       const fVector2 closest2 = a2 + f2 * v;
+  //       const fv2 closest1 = a1 + f1 * u;
+  //       const fv2 closest2 = a2 + f2 * v;
   //       const float distSq = closest1.distsq(closest2);
   //
   //
@@ -193,7 +193,7 @@ namespace Quasi::Physics2D {
   //
 		// const float dist = std::sqrt(distSq);
 		// const float len1 = std::sqrt(lensq1), len2 = std::sqrt(lensq2);
-  //   	const fVector2 fn1 = f1 / len1, fn2 = f2 / len2;
+  //   	const fv2 fn1 = f1 / len1, fn2 = f2 / len2;
   //
 		// // Does cap2 project outside cap1?
 		// const float projA2 = (a2 - a1).dot(fn1),
@@ -218,8 +218,8 @@ namespace Quasi::Physics2D {
   //
 		// 	manifold.seperatingNormal = sat.GetSepAxis();
 		// 	if (!useCap2) {
-		// 		const fVector2& n = sat.GetSepAxis();
-		// 		fVector2 contactLeft = a2, contactRight = b2;
+		// 		const fv2& n = sat.GetSepAxis();
+		// 		fv2 contactLeft = a2, contactRight = b2;
 		// 		// clip leftwise
 		// 		if (projA2 < 0 && projB2 > 0) {
 		// 			contactLeft  = a2 + f2 * ((0.0f - projA2) / (projB2 - projA2));
@@ -246,8 +246,8 @@ namespace Quasi::Physics2D {
 		// 		if (manifold.contactCount)
 		// 			return manifold;
 		// 	} else {
-		// 		const fVector2 n = -sat.GetSepAxis();
-		// 		fVector2 contactLeft = a1, contactRight = b1;
+		// 		const fv2 n = -sat.GetSepAxis();
+		// 		fv2 contactLeft = a1, contactRight = b1;
 		// 		// clip leftwise
 		// 		if        (projA1 < 0 && projB1 > 0) {
 		// 			contactLeft  = a1 + f1 * ((0.0f - projA1) / (projB1 - projA1));
@@ -277,14 +277,14 @@ namespace Quasi::Physics2D {
   //
 		// // single point collision
 	 //    {
-		//     fVector2 normal = closest2 - closest1;
+		//     fv2 normal = closest2 - closest1;
   //       	if (normal.lensq() > EPSILON) {
   //       		normal *= 1 / normal.len();
   //       	} else {
   //       		normal = fn1.perpend();
   //       	}
   //
-  //       	const fVector2 c1 = closest1 + normal * cap1.radius,
+  //       	const fv2 c1 = closest1 + normal * cap1.radius,
 		// 				   c2 = closest2 - normal * cap2.radius;
   //
   //       	manifold.seperatingNormal = normal;
@@ -294,25 +294,25 @@ namespace Quasi::Physics2D {
 
         SeperatingAxisSolver sat = SeperatingAxisSolver::CheckCollisionFor(s1, xf1, s2, xf2);
 
-        const fVector2 f1 = xf1.TransformDir(cap1.forward),
+        const fv2 f1 = xf1.TransformDir(cap1.forward),
                        f2 = xf2.TransformDir(cap2.forward);
 
-        const fVector2 off = xf1.position - xf2.position;
-        const fVector2 tip1 =  off + f1, end1 =  off - f1,
+        const fv2 off = xf1.position - xf2.position;
+        const fv2 tip1 =  off + f1, end1 =  off - f1,
                        tip2 = -off + f2, end2 = -off - f2;
-        const fVector2 axis1 = tip1 - f2 * std::clamp(tip1.dot(f2) * cap2.invLenSq, -1.0f, 1.0f),
-                       axis2 = end1 - f2 * std::clamp(end1.dot(f2) * cap2.invLenSq, -1.0f, 1.0f),
-                       axis3 = tip2 - f1 * std::clamp(tip2.dot(f1) * cap1.invLenSq, -1.0f, 1.0f),
-                       axis4 = end2 - f1 * std::clamp(end2.dot(f1) * cap1.invLenSq, -1.0f, 1.0f);
+        const fv2 axis1 = tip1 - f2 * std::clamp(tip1.Dot(f2) * cap2.invLenSq, -1.0f, 1.0f),
+                       axis2 = end1 - f2 * std::clamp(end1.Dot(f2) * cap2.invLenSq, -1.0f, 1.0f),
+                       axis3 = tip2 - f1 * std::clamp(tip2.Dot(f1) * cap1.invLenSq, -1.0f, 1.0f),
+                       axis4 = end2 - f1 * std::clamp(end2.Dot(f1) * cap1.invLenSq, -1.0f, 1.0f);
 
         sat.SetCheckFor(SeperatingAxisSolver::NEITHER);
 
         bool useSecondCapsule = false;
 
-        sat.CheckAxis(axis1.norm());
-        sat.CheckAxis(axis2.norm());
-        useSecondCapsule |= sat.CheckAxis(axis3.norm());
-        useSecondCapsule |= sat.CheckAxis(axis4.norm());
+        sat.CheckAxis(axis1.Norm());
+        sat.CheckAxis(axis2.Norm());
+        useSecondCapsule |= sat.CheckAxis(axis3.Norm());
+        useSecondCapsule |= sat.CheckAxis(axis4.Norm());
 
         if (!sat.Collides())
             return Manifold::None();
@@ -336,9 +336,9 @@ namespace Quasi::Physics2D {
 
         const auto& cap = *s2.As<CapsuleShape>();
         sat.SetCheckFor(SeperatingAxisSolver::NEITHER);
-        const fVector2 tip = xf2.Transform(cap.forward), end = 2 * xf2.position - tip;
-        sat.CheckAxis((xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(tip))) - tip).norm());
-        sat.CheckAxis((xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(end))) - end).norm());
+        const fv2 tip = xf2.Transform(cap.forward), end = 2 * xf2.position - tip;
+        sat.CheckAxis((xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(tip))) - tip).Norm());
+        sat.CheckAxis((xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(end))) - end).Norm());
 
         if (!sat.Collides())
             return Manifold::None();
@@ -383,14 +383,14 @@ namespace Quasi::Physics2D {
     }
 
     bool OverlapCircles(const CircleShape& s1, const PhysicsTransform& xf1, const CircleShape& s2, const PhysicsTransform& xf2) {
-        return xf1.position.in_range(xf2.position, s1.radius + s2.radius);
+        return xf1.position.InRange(xf2.position, s1.radius + s2.radius);
     }
 
     bool OverlapCircleShape(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
         SeperatingAxisSolver sat = SeperatingAxisSolver::CheckOverlapFor(s1, xf1, s2, xf2);
         sat.CheckAxisFor(SeperatingAxisSolver::TARGET);
         sat.SetCheckFor(SeperatingAxisSolver::NEITHER);
-        sat.CheckAxis((xf2.Transform(s2.NearestPointTo(xf2.TransformInverse(xf1.position))) - xf1.position).norm());
+        sat.CheckAxis(xf2.Transform(s2.NearestPointTo(xf2.TransformInverse(xf1.position))).DirTowards(xf1.position));
         return sat.Collides();
     }
 
@@ -405,9 +405,9 @@ namespace Quasi::Physics2D {
     bool OverlapCapsules(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
         const CapsuleShape& cap1 = s1.As<CapsuleShape>(),
                           & cap2 = s2.As<CapsuleShape>();
-        const auto [p1, p2] = fLine2D         { xf1.position - cap1.forward, xf1.position + cap1.forward }
-                             .nearest_between({ xf2.position - cap2.forward, xf2.position + cap2.forward });
-        return p1.in_range(p2, cap1.radius + cap2.radius);
+        const auto [p1, p2] = fLine2D        { xf1.position - cap1.forward, xf1.position + cap1.forward }
+                             .NearestBetween({ xf2.position - cap2.forward, xf2.position + cap2.forward });
+        return p1.InRange(p2, cap1.radius + cap2.radius);
     }
 
     bool OverlapPolygonCapsule(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
@@ -417,9 +417,9 @@ namespace Quasi::Physics2D {
 
         const auto& cap = *s2.As<CapsuleShape>();
         sat.SetCheckFor(SeperatingAxisSolver::NEITHER);
-        const fVector2 tip = xf2.Transform(cap.forward), end = 2 * xf2.position - tip;
-        sat.CheckAxis((xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(tip))) - tip).norm());
-        sat.CheckAxis((xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(end))) - end).norm());
+        const fv2 tip = xf2.Transform(cap.forward), end = 2 * xf2.position - tip;
+        sat.CheckAxis(xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(tip))).DirTowards(tip));
+        sat.CheckAxis(xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(end))).DirTowards(end));
 
         return sat.Collides();
     }
@@ -430,7 +430,7 @@ namespace Quasi::Physics2D {
         const bool bodyDyn   = body.IsDynamic(),
                    targetDyn = target.IsDynamic(),
                    shareForce = bodyDyn && targetDyn;
-        fVector2 sep = manifold.seperatingNormal;
+        fv2 sep = manifold.seperatingNormal;
         switch (manifold.contactCount) {
             case 0: return;
             case 1: {
@@ -473,7 +473,7 @@ namespace Quasi::Physics2D {
 
     template <u32 ContactCount, bool BDyn, bool TDyn>
     void DynamicResolveFor(Body& body, Body& target, const Manifold& manifold) {
-        const fVector2& normal = manifold.seperatingNormal, tangent = normal.perpend();
+        const fv2& normal = manifold.seperatingNormal, tangent = normal.Perpend();
         const float share = ContactCount == 2 ? 0.5f : 1.0f;
         // this makes contactCount known in compile time for loop unrolling
 
@@ -481,211 +481,63 @@ namespace Quasi::Physics2D {
         //     return;
         // }
 
-        /*
-         *  // FlatBody bodyA = contact.BodyA;
-            // FlatBody bodyB = contact.BodyB;
-            // FlatVector normal = contact.Normal;
-            // FlatVector contact1 = contact.Contact1;
-            // FlatVector contact2 = contact.Contact2;
-            // int contactCount = contact.ContactCount;
-
-            // float e = MathF.Min(bodyA.Restitution, bodyB.Restitution);
-
-            float sf = (bodyA.StaticFriction + bodyB.StaticFriction) * 0.5f;
-            float df = (bodyA.DynamicFriction + bodyB.DynamicFriction) * 0.5f;
-
-            this.contactList[0] = contact1;
-            this.contactList[1] = contact2;
-
-            for (int i = 0; i < contactCount; i++)
-            {
-                this.impulseList[i] = FlatVector.Zero;
-                this.raList[i] = FlatVector.Zero;
-                this.rbList[i] = FlatVector.Zero;
-                this.frictionImpulseList[i] = FlatVector.Zero;
-                this.jList[i] = 0f;
-            }
-
-            for (int i = 0; i < contactCount; i++)
-            {
-                FlatVector ra = contactList[i] - bodyA.Position;
-                FlatVector rb = contactList[i] - bodyB.Position;
-
-                raList[i] = ra;
-                rbList[i] = rb;
-
-                FlatVector raPerp = new FlatVector(-ra.Y, ra.X);
-                FlatVector rbPerp = new FlatVector(-rb.Y, rb.X);
-
-                FlatVector angularLinearVelocityA = raPerp * bodyA.AngularVelocity;
-                FlatVector angularLinearVelocityB = rbPerp * bodyB.AngularVelocity;
-
-                FlatVector relativeVelocity =
-                    (bodyB.LinearVelocity + angularLinearVelocityB) -
-                    (bodyA.LinearVelocity + angularLinearVelocityA);
-
-                float contactVelocityMag = FlatMath.Dot(relativeVelocity, normal);
-
-                if (contactVelocityMag > 0f)
-                {
-                    continue;
-                }
-
-                float raPerpDotN = FlatMath.Dot(raPerp, normal);
-                float rbPerpDotN = FlatMath.Dot(rbPerp, normal);
-
-                float denom = bodyA.InvMass + bodyB.InvMass +
-                    (raPerpDotN * raPerpDotN) * bodyA.InvInertia +
-                    (rbPerpDotN * rbPerpDotN) * bodyB.InvInertia;
-
-                float j = -(1f + e) * contactVelocityMag;
-                j /= denom;
-                j /= (float)contactCount;
-
-                jList[i] = j;
-
-                FlatVector impulse = j * normal;
-                impulseList[i] = impulse;
-            }
-
-            for (int i = 0; i < contactCount; i++)
-            {
-                FlatVector impulse = impulseList[i];
-                FlatVector ra = raList[i];
-                FlatVector rb = rbList[i];
-
-                bodyA.LinearVelocity += -impulse * bodyA.InvMass;
-                bodyA.AngularVelocity += -FlatMath.Cross(ra, impulse) * bodyA.InvInertia;
-                bodyB.LinearVelocity += impulse * bodyB.InvMass;
-                bodyB.AngularVelocity += FlatMath.Cross(rb, impulse) * bodyB.InvInertia;
-            }
-
-            for (int i = 0; i < contactCount; i++)
-            {
-                FlatVector ra = contactList[i] - bodyA.Position;
-                FlatVector rb = contactList[i] - bodyB.Position;
-
-                raList[i] = ra;
-                rbList[i] = rb;
-
-                FlatVector raPerp = new FlatVector(-ra.Y, ra.X);
-                FlatVector rbPerp = new FlatVector(-rb.Y, rb.X);
-
-                FlatVector angularLinearVelocityA = raPerp * bodyA.AngularVelocity;
-                FlatVector angularLinearVelocityB = rbPerp * bodyB.AngularVelocity;
-
-                FlatVector relativeVelocity =
-                    (bodyB.LinearVelocity + angularLinearVelocityB) -
-                    (bodyA.LinearVelocity + angularLinearVelocityA);
-
-                FlatVector tangent = relativeVelocity - FlatMath.Dot(relativeVelocity, normal) * normal;
-
-                if(FlatMath.NearlyEqual(tangent, FlatVector.Zero))
-                {
-                    continue;
-                }
-                else
-                {
-                    tangent = FlatMath.Normalize(tangent);
-                }
-
-                float raPerpDotT = FlatMath.Dot(raPerp, tangent);
-                float rbPerpDotT = FlatMath.Dot(rbPerp, tangent);
-
-                float denom = bodyA.InvMass + bodyB.InvMass +
-                    (raPerpDotT * raPerpDotT) * bodyA.InvInertia +
-                    (rbPerpDotT * rbPerpDotT) * bodyB.InvInertia;
-
-                float jt = -FlatMath.Dot(relativeVelocity, tangent);
-                jt /= denom;
-                jt /= (float)contactCount;
-
-                FlatVector frictionImpulse;
-                float j = jList[i];
-
-                if(MathF.Abs(jt) <= j * sf)
-                {
-                    frictionImpulse = jt * tangent;
-                }
-                else
-                {
-                    frictionImpulse = -j * tangent * df;
-                }
-
-                this.frictionImpulseList[i] = frictionImpulse;
-            }
-
-            for (int i = 0; i < contactCount; i++)
-            {
-                FlatVector frictionImpulse = this.frictionImpulseList[i];
-                FlatVector ra = raList[i];
-                FlatVector rb = rbList[i];
-
-                bodyA.LinearVelocity += -frictionImpulse * bodyA.InvMass;
-                bodyA.AngularVelocity += -FlatMath.Cross(ra, frictionImpulse) * bodyA.InvInertia;
-                bodyB.LinearVelocity += frictionImpulse * bodyB.InvMass;
-                bodyB.AngularVelocity += FlatMath.Cross(rb, frictionImpulse) * bodyB.InvInertia;
-            }
-         *
-         */
-
         constexpr float BODY_RESTITUION = 1.0f;
         constexpr float STATIC_FRICTION = 0.75f, DYNAMIC_FRICTION = 0.57f;
 
-        fVector2 relBody    [ContactCount], relTarget[ContactCount];
-        float    velocityMag[ContactCount], jn       [ContactCount];
+        fv2   relBody    [ContactCount], relTarget[ContactCount];
+        float velocityMag[ContactCount], jn       [ContactCount];
 
-        fVector2 totalImpulse = 0;
+        fv2 totalImpulse = 0;
         [[maybe_unused]] float totalBodyAngMtm = 0;
         [[maybe_unused]] float totalTargetAngMtm = 0;
         // normal forces
         for (u32 i = 0; i < ContactCount; ++i) {
-            const fVector2& contact = manifold.contactPoint[i];
+            const fv2& contact = manifold.contactPoint[i];
 
             relBody  [i] = contact - body.position,
             relTarget[i] = contact - target.position;
 
-            const fVector2 relVel = [&] {
+            const fv2 relVel = [&] {
                 if constexpr (BDyn && TDyn) {
-                    const fVector2 angularVelBody   = relBody  [i].perpend() * -body.angularVelocity,
-                                   angularVelTarget = relTarget[i].perpend() * -target.angularVelocity;
+                    const fv2 angularVelBody   = relBody  [i].Perpend() * -body.angularVelocity,
+                              angularVelTarget = relTarget[i].Perpend() * -target.angularVelocity;
 
                     return (target.velocity + angularVelTarget) -
                            (body  .velocity + angularVelBody);
                 } else if constexpr (BDyn) {
-                    return -body.velocity + relBody[i].perpend() * body.angularVelocity;
+                    return -body.velocity + relBody[i].Perpend() * body.angularVelocity;
                 } else /* targetDyn */ {
-                    return target.velocity - relTarget[i].perpend() * target.angularVelocity;
+                    return target.velocity - relTarget[i].Perpend() * target.angularVelocity;
                 }
             } ();
 
-            velocityMag[i] = relVel.dot(normal);
+            velocityMag[i] = relVel.Dot(normal);
             if (velocityMag[i] > 0.0f) continue;
 
             const float denomN = [&] {
                 if constexpr (BDyn && TDyn) {
-                    const float torqueRadiusNBody   = relBody  [i].zcross(normal),
-                                torqueRadiusNTarget = relTarget[i].zcross(normal);
+                    const float torqueRadiusNBody   = relBody  [i].CrossZ(normal),
+                                torqueRadiusNTarget = relTarget[i].CrossZ(normal);
 
                     return body.invMass + target.invMass +
                           (torqueRadiusNBody   * torqueRadiusNBody)   * body  .invInertia +
                           (torqueRadiusNTarget * torqueRadiusNTarget) * target.invInertia;
                 } else if constexpr (BDyn) {
-                    const float torqueRadius = relBody[i].zcross(normal);
+                    const float torqueRadius = relBody[i].CrossZ(normal);
                     return body.invMass + torqueRadius * torqueRadius * body.invInertia;
                 } else /* targetDyn */ {
-                    const float torqueRadius = relTarget[i].zcross(normal);
+                    const float torqueRadius = relTarget[i].CrossZ(normal);
                     return target.invMass + torqueRadius * torqueRadius * target.invInertia;
                 }
             } ();
 
             jn[i] = -(1.0f + BODY_RESTITUION) * velocityMag[i] * share / denomN;
 
-            const fVector2 impulse = jn[i] * normal;
+            const fv2 impulse = jn[i] * normal;
 
             totalImpulse      += impulse;
-            if constexpr (BDyn) totalBodyAngMtm   -= relBody  [i].zcross(impulse);
-            if constexpr (TDyn) totalTargetAngMtm += relTarget[i].zcross(impulse);
+            if constexpr (BDyn) totalBodyAngMtm   -= relBody  [i].CrossZ(impulse);
+            if constexpr (TDyn) totalTargetAngMtm += relTarget[i].CrossZ(impulse);
         }
 
         if constexpr (BDyn) {
@@ -701,50 +553,50 @@ namespace Quasi::Physics2D {
         totalBodyAngMtm = 0; totalTargetAngMtm = 0;
         // frictional forces (needs to be separated, order matters)
         for (u32 i = 0; i < ContactCount; ++i) {
-            const fVector2 relVel = [&] {
+            const fv2 relVel = [&] {
                 if constexpr (BDyn && TDyn) {
-                    const fVector2 angularVelBody   = relBody  [i].perpend() * -body.angularVelocity,
-                                   angularVelTarget = relTarget[i].perpend() * -target.angularVelocity;
+                    const fv2 angularVelBody   = relBody  [i].Perpend() * -body.angularVelocity,
+                              angularVelTarget = relTarget[i].Perpend() * -target.angularVelocity;
 
                     return (target.velocity + angularVelTarget) -
                            (body  .velocity + angularVelBody);
                 } else if constexpr (BDyn) {
-                    return -body.velocity + relBody[i].perpend() * body.angularVelocity;
+                    return -body.velocity + relBody[i].Perpend() * body.angularVelocity;
                 } else /* targetDyn */ {
-                    return target.velocity - relTarget[i].perpend() * target.angularVelocity;
+                    return target.velocity - relTarget[i].Perpend() * target.angularVelocity;
                 }
             } ();
 
-            const float t = relVel.dot(tangent);
+            const float t = relVel.Dot(tangent);
 
             if (std::abs(t) <= f32s::EPSILON) continue;
 
             const float denomT = [&] {
                 if constexpr (BDyn && TDyn) {
-                    const float torqueRadiusTBody   = relBody  [i].zcross(tangent),
-                                torqueRadiusTTarget = relTarget[i].zcross(tangent);
+                    const float torqueRadiusTBody   = relBody  [i].CrossZ(tangent),
+                                torqueRadiusTTarget = relTarget[i].CrossZ(tangent);
 
                     return body.invMass + target.invMass +
                           (torqueRadiusTBody   * torqueRadiusTBody)   * body  .invInertia +
                           (torqueRadiusTTarget * torqueRadiusTTarget) * target.invInertia;
                 } else if constexpr (BDyn) {
-                    const float torqueRadius = relBody[i].zcross(tangent);
+                    const float torqueRadius = relBody[i].CrossZ(tangent);
                     return body.invMass + torqueRadius * torqueRadius * body.invInertia;
                 } else /* targetDyn */ {
-                    const float torqueRadius = relTarget[i].zcross(tangent);
+                    const float torqueRadius = relTarget[i].CrossZ(tangent);
                     return target.invMass + torqueRadius * torqueRadius * target.invInertia;
                 }
             } ();
 
             const float jt = -t * share / denomT;
-            const fVector2 frictionImpulse = tangent * (
+            const fv2 frictionImpulse = tangent * (
                 std::abs(jt) <= std::abs(jn[i] * STATIC_FRICTION) ?
                 jt : (jt < 0 ? -1.0f : 1.0f) * jn[i] * DYNAMIC_FRICTION
             ); // static/dynamic friction picking
 
             totalImpulse      += frictionImpulse;
-            if constexpr (BDyn) totalBodyAngMtm   -= relBody  [i].zcross(frictionImpulse);
-            if constexpr (TDyn) totalTargetAngMtm += relTarget[i].zcross(frictionImpulse);
+            if constexpr (BDyn) totalBodyAngMtm   -= relBody  [i].CrossZ(frictionImpulse);
+            if constexpr (TDyn) totalTargetAngMtm += relTarget[i].CrossZ(frictionImpulse);
         }
 
         if constexpr (BDyn) {

@@ -10,8 +10,8 @@ namespace Quasi::Physics2D {
 }
 
 namespace Quasi::Physics2D {
-    float ClosestBetweenSegments(const fVector2& a1, const fVector2& b1, const fVector2& a2, const fVector2& b2,
-                                 float* s, float* t, fVector2* c1, fVector2* c2);
+    float ClosestBetweenSegments(const fv2& a1, const fv2& b1, const fv2& a2, const fv2& b2,
+                                 float* s, float* t, fv2* c1, fv2* c2);
 
     Manifold CollideShapes(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2);
 

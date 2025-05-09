@@ -18,10 +18,10 @@ namespace Quasi::Graphics {
         MTLProperty prop = { Empty {} };
         Qmatch$ (prefix, (
             case ("newmtl") prop.Set(NewMaterial { String(data) });,
-            case ("Ka")     prop.Set(AmbientCol  { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 {}).to_color3() });,
-            case ("Kd")     prop.Set(DiffuseCol  { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 {}).to_color3() });,
-            case ("Ks")     prop.Set(SpecularCol { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 {}).to_color3() });,
-            case ("Ke")     prop.Set(EmissiveCol { Math::fVector3::parse(data, " ", "", "").UnwrapOr(Math::fVector3 {}).to_color3() });,
+            case ("Ka")     prop.Set(AmbientCol  { { Math::fv3::Parse(data, " ").UnwrapOr(Math::fv3 {}) } });,
+            case ("Kd")     prop.Set(DiffuseCol  { { Math::fv3::Parse(data, " ").UnwrapOr(Math::fv3 {}) } });,
+            case ("Ks")     prop.Set(SpecularCol { { Math::fv3::Parse(data, " ").UnwrapOr(Math::fv3 {}) } });,
+            case ("Ke")     prop.Set(EmissiveCol { { Math::fv3::Parse(data, " ").UnwrapOr(Math::fv3 {}) } });,
             case ("Ns")     prop.Set(SpecularExp { Text::Parse<float>(data).UnwrapOr(f32s::NAN) });,
             case ("Ni")     prop.Set(OpticalDen  { Text::Parse<float>(data).UnwrapOr(f32s::NAN) });,
             case ("d")      prop.Set(Dissolve    { Text::Parse<float>(data).UnwrapOr(f32s::NAN) });,

@@ -7,7 +7,7 @@ namespace Quasi::Graphics::MeshUtils {
 
     template <>
     struct OptionsFor<StadiumCreator> {
-        Math::fVector2 start, end;
+        Math::fv2 start, end;
         float radius;
         u32 subdivisions;
 
@@ -23,8 +23,8 @@ namespace Quasi::Graphics::MeshUtils {
             using namespace Math;
             auto meshp = mesh.NewBatch();
 
-            const fVector2 X = (opt.start - opt.end).norm(opt.radius);
-            const fVector2 Y = { X.y, -X.x };
+            const fv2 X = (opt.start - opt.end).Norm(opt.radius);
+            const fv2 Y = { X.y, -X.x };
 
             meshp.PushV(f(MData { opt.start + Y })); // 0
             meshp.PushV(f(MData { opt.end   + Y })); // 1

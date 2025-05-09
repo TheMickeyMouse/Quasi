@@ -1,6 +1,4 @@
 ﻿#pragma once
-#include <utility>
-#include <vector>
 
 #include "Utils/Box.h"
 #include "Utils/Variant.h"
@@ -78,7 +76,7 @@ namespace Quasi::Graphics {
             explicit operator bool() const { return index != 0; }
         };
 
-        Math::uVector3 size;
+        Math::uv3 size;
         TextureSlot textureSlot;
         TextureTarget target = TextureTarget::NONE;
 
@@ -86,11 +84,11 @@ namespace Quasi::Graphics {
 
         void LoadTexture(const byte* img, const TextureInitParams& init = {});
 
-        explicit Texture(GraphicsID id, const Math::uVector3& size);
+        explicit Texture(GraphicsID id, const Math::uv3& size);
     public:
         Texture() = default;
-        static Texture New(const byte* raw, const Math::uVector3& size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_3D });
-        static Texture New(const byte* raw, const Math::uVector2& size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_2D }) { return New(raw, size.with_z(0), init); }
+        static Texture New(const byte* raw, const Math::uv3& size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_3D });
+        static Texture New(const byte* raw, const Math::uv2& size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_2D }) { return New(raw, size.AddZ(0), init); }
         static Texture New(const byte* raw, u32 size, const TextureInitParams& init = { .target = TextureTarget::TEXTURE_1D }) { return New(raw, { size, 0, 0 }, init); }
         static void DestroyObject(GraphicsID id);
         static void BindObject(TextureTarget target, GraphicsID id);
@@ -122,18 +120,18 @@ namespace Quasi::Graphics {
 
         void SetSubTexture(const void* data, const Math::uRect3D& rect, const TextureLoadParams& params = {});
         void SetSubTexture(const void* data, const Math::uRect2D& rect, const TextureLoadParams& params = {}) {
-            SetSubTexture(data, Math::uRect3D { rect.min.with_z(0), rect.max.with_z(0) }, params);
+            SetSubTexture(data, Math::uRect3D { rect.min.AddZ(0), rect.max.AddZ(0) }, params);
         }
-        void SetSubTexture(const uchar* data, const Math::uRange& rect, const TextureLoadParams& params = {}) {
+        void SetSubTexture(const uchar* data, const uRange& rect, const TextureLoadParams& params = {}) {
             SetSubTexture(data, Math::uRect3D { { rect.min, 0, 0 }, { rect.max, 0, 0 } }, params);
         }
 
-        void TexImage(const byte* data, const Math::uVector3& dim, const TextureLoadParams& params = {}, TextureTarget overrideTarget = TextureTarget::NONE);
+        void TexImage(const byte* data, const Math::uv3& dim, const TextureLoadParams& params = {}, TextureTarget overrideTarget = TextureTarget::NONE);
         void TexImage(const byte* data, u32 width, const TextureLoadParams& params = {}) {
             TexImage(data, { width, 0, 0 }, params);
         }
-        void TexImage(const byte* data, const Math::uVector2& dim, const TextureLoadParams& params = {}) {
-            TexImage(data, dim.with_z(0), params);
+        void TexImage(const byte* data, const Math::uv2& dim, const TextureLoadParams& params = {}) {
+            TexImage(data, dim.AddZ(0), params);
         }
 
         static void SetPixelStore(PixelStoreParam param, int val);
@@ -144,8 +142,8 @@ namespace Quasi::Graphics {
         int TargetI() const { return (int)Target(); }
         void SetTarget(const TextureTarget t) { target = t; }
 
-        const Math::uVector3& Size() const { return size; }
-        Math::uVector2 Size2D() const { return size.xy(); }
+        const Math::uv3& Size() const { return size; }
+        Math::uv2 Size2D() const { return size.As2D(); }
         u32 Size1D() const { return size.x; }
 
         int Dimension() const;

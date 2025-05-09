@@ -13,11 +13,11 @@ namespace Quasi::Physics2D {
         float ComputeArea() const = delete;
         fRect2D ComputeBoundingBox() const = delete;
 
-        fVector2 NearestPointTo(const fVector2& point) const = delete;
-        fVector2 FurthestAlong(const fVector2& normal) const = delete;
-        fLine2D BestEdgeFor(const fVector2& normal) const { return { {}, {} }; }
-        fRange ProjectOntoAxis(const fVector2& axis) const = delete;
-        fRange ProjectOntoOwnAxis(u32 axisID, const fVector2& axis) const = delete;
+        fv2 NearestPointTo(const fv2& point) const = delete;
+        fv2 FurthestAlong(const fv2& normal) const = delete;
+        fLine2D BestEdgeFor(const fv2& normal) const { return { {}, {} }; }
+        fRange ProjectOntoAxis(const fv2& axis) const = delete;
+        fRange ProjectOntoOwnAxis(u32 axisID, const fv2& axis) const = delete;
         bool AddSeperatingAxes(SeperatingAxisSolver& sat) const = delete;
 
         void UpdateTransform(const PhysicsTransform& xf) = delete;

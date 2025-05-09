@@ -6,7 +6,7 @@ namespace Quasi::Graphics::MeshUtils {
     struct SphereCreator;
 
     template <> struct OptionsFor<SphereCreator> {
-        Math::uVector2 sections;
+        Math::uv2 sections;
         using MData = VertexBuilder::MeshConstructData3D;
     };
 
@@ -27,7 +27,7 @@ namespace Quasi::Graphics::MeshUtils {
                     if (lat != 0) {
                         const float latAngle = HALF_PI - LATITUDE_SECT * (float)lat,
                                     lonAngle = LONGITUDE_SECT * (float)lon;
-                        const fVector3 pos = fVector3::from_spheric(1, lonAngle, latAngle);
+                        const fv3 pos = fv3::FromSpheric(1, Radians(lonAngle), Radians(latAngle));
                         meshp.PushV(f(MData { .Position = pos, .Normal = pos }));
                     }
 

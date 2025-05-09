@@ -34,7 +34,7 @@ namespace Quasi::Graphics {
 
         TextAlign(const Math::fRect2D& rect) : rect(rect) {}
 
-        TextAlign& Move(Math::fVector2 offset);
+        TextAlign& Move(Math::fv2 offset);
 
         TextAlign& SpaceOut(float line = 1, PointPer64 letter = 0_p64);
         TextAlign& Align(IList<AlignOptions> options);

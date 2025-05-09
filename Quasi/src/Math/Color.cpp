@@ -1,323 +1,531 @@
 #include "Color.h"
 
 #include "Random.h"
-#include "Vector.h"
-#include "Utils/String.h"
+#include "Utils/Text.h"
 
-namespace Quasi::Math::details {
-#pragma region Util Funcs
-        template <class T> T convert_type(auto channel) {
-            if constexpr (std::is_same_v<decltype(channel), T>) return channel;
-            else if constexpr (std::is_same_v<decltype(channel), byte> && std::is_same_v<T, f32>) return (f32)channel / 255.0f;
-            else if constexpr (std::is_same_v<decltype(channel), f32> && std::is_same_v<T, byte>) return (byte)(channel * 255.0f);
-            else return nullptr;
+namespace Quasi::Math {
+#pragma region Conversion
+    template <class T> T ChannelConv(f32 channel) {
+        if constexpr (Floating<T>) return channel;
+        else {
+            u32 x = f32s::FastToIntUnsigned(channel * 255.0f);
+            return x > 255 ? (T)255 : (T)x;
         }
-        template byte  convert_type<byte, byte>(byte);
-        template byte  convert_type<byte, f32> (f32);
-        template f32   convert_type<f32,  byte>(byte);
-        template f32   convert_type<f32,  f32> (f32);
+    }
 
-        template <class T> T channel_from_hexcode(char D0, char D1) {
-            return convert_type<T>((byte)((D0 - (D0 < ':' ? '0' : 'W')) << 4 | (D1 - (D1 < ':' ? '0' : 'W'))));
+    template <class T> T ByteConv(u8 channel) {
+        if constexpr (Integer<T>) return channel;
+        else return (f32)channel / 255.0f;
+    }
+
+    Tuple<f32, f32, f32> RGB2HSL(f32 r, f32 g, f32 b) {
+        // https://stackoverflow.com/a/9493060
+        const f32 max = std::max({ r, g, b }), min = std::min({ r, g, b });
+        f32 h = 0, l = (max + min) / 2;
+
+        if (max == min)
+            return { 0, 0, l }; // achromatic
+
+        const f32 d = max - min;
+        f32 s = d / (l > 0.5f ? (2 - max - min) : (max + min));
+        if (max == r) h = (g - b) / d + (g < b ? 6.0f : 0.0f);
+        if (max == g) h = (b - r) / d + 2;
+        if (max == b) h = (r - g) / d + 4;
+        h /= 6;
+
+        return { h, s, l };
+    }
+
+    f32 Hue2RGB(f32 p, f32 q, f32 t) {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1.0f/6) return p + (q - p) * 6 * t;
+        if (t < 1.0f/2) return q;
+        if (t < 2.0f/3) return p + (q - p) * (2.0f/3 - t) * 6;
+        return p;
+    }
+
+    Tuple<f32, f32, f32> HSL2RGB(f32 h, f32 s, f32 l) {
+        f32 r, g, b;
+        if (s == 0) {
+            r = g = b = l; // achromatic
+        } else {
+            const f32 q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            const f32 p = 2 * l - q;
+            r = Hue2RGB(p, q, h + 1.0f/3);
+            g = Hue2RGB(p, q, h);
+            b = Hue2RGB(p, q, h - 1.0f/3);
         }
-        template byte channel_from_hexcode<byte>(char, char);
-        template f32  channel_from_hexcode<f32> (char, char);
+        return { r, g, b };
+    }
 
-        fVector3 rgb2hsl(f32 r, f32 g, f32 b) {
-            // https://stackoverflow.com/a/9493060
-            const f32 max = std::max({r, g, b}), min = std::min({r, g, b});
-            f32 h = 0, l = (max + min) / 2;
-
-            if (max == min) // NOLINT(clang-diagnostic-f32-equal) no need to worry abt this
-                return { 0, 0, l }; // achromatic
-
-            const f32 d = max - min;
-            f32 s = d / (l > 0.5f ? (2 - max - min) : (max + min));
-            if (max == r) h = (g - b) / d + (g < b ? 6.0f : 0.0f);  // NOLINT(clang-diagnostic-f32-equal)
-            if (max == g) h = (b - r) / d + 2;                      // NOLINT(clang-diagnostic-f32-equal)
-            if (max == b) h = (r - g) / d + 4;                      // NOLINT(clang-diagnostic-f32-equal)
-            h /= 6;
-
-            return { h, s, l };
+    Tuple<f32, f32, f32> RGB2HSV(f32 r, f32 g, f32 b) {
+        // https://stackoverflow.com/a/6930407
+        const f32 max = std::max({ r, g, b }), min = std::min({ r, g, b });
+        const f32 v = max, d = max - min;
+        if (v == 0)
+            return { f32s::NAN, 0, v }; // acromatic
+        f32 s = d / v;
+        if (d == 0)
+            return { 0, 0, v }; // acromatic
+        f32 h = 0;
+        if (max == r) h = g - b;
+        else if (max == g) h = 2 + b - r;
+        else if (max == b) h = 4 + r - g;
+        h /= d * 6;
+        h += (f32)(h < 0);
+        return { h, s, v };
+    }
+    Tuple<f32, f32, f32> HSV2RGB(f32 h, f32 s, f32 v) {
+        if (s == 0)
+            return { v, v, v }; // Achromatic case
+        h *= 6;
+        const int i = (int)h;
+        const f32 f = h - (f32)i;
+        f32 p = v * (1 - s);
+        f32 q = v * (1 - f * s);
+        f32 t = v * (1 - (1 - f) * s);
+        switch (i) {
+            case 0:  return { v, t, p };
+            case 1:  return { q, v, p };
+            case 2:  return { p, v, t };
+            case 3:  return { p, q, v };
+            case 4:  return { t, p, v };
+            case 5:  return { v, p, q };
+            default: return { 0, 0, 0 };
         }
-
-        f32 hue2rgb(f32 p, f32 q, f32 t) {
-            if (t < 0) t += 1;
-            if (t > 1) t -= 1;
-            if (t < 1.0f/6) return p + (q - p) * 6 * t;
-            if (t < 1.0f/2) return q;
-            if (t < 2.0f/3) return p + (q - p) * (2.0f/3 - t) * 6;
-            return p;
-        }
-    
-        fVector3 hsl2rgb(f32 h, f32 s, f32 l) {
-            f32 r, g, b;
-            if (s == 0) {  // NOLINT(clang-diagnostic-f32-equal)
-                r = g = b = l; // achromatic
-            } else {
-                const f32 q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-                const f32 p = 2 * l - q;
-                r = hue2rgb(p, q, h + 1.0f/3);
-                g = hue2rgb(p, q, h);
-                b = hue2rgb(p, q, h - 1.0f/3);
-            }
-            return { r, g, b };
-        }
-
-        fVector3 rgb2hsv(f32 r, f32 g, f32 b) {
-            // https://stackoverflow.com/a/6930407
-            const f32 max = std::max({r, g, b}), min = std::min({r, g, b});
-            const f32 v = max, d = max - min;
-            if (v == 0) // NOLINT(clang-diagnostic-f32-equal)
-                return { f32s::NAN, 0, v }; // acromatic
-            f32 s = d / v;
-
-            if (d == 0)  // NOLINT(clang-diagnostic-f32-equal)
-                return { 0, 0, v }; // acromatic
-
-            f32 h = 0;
-            if (max == r) h = g - b;      // NOLINT(clang-diagnostic-f32-equal)
-            if (max == g) h = 2 + b - r;  // NOLINT(clang-diagnostic-f32-equal)
-            if (max == b) h = 4 + r - g;  // NOLINT(clang-diagnostic-f32-equal)
-            h /= d * 6;
-            h += (f32)(h < 0);
-            return { h, s, v };
-        }
-
-        fVector3 hsv2rgb(f32 h, f32 s, f32 v) {
-            if (s == 0)  // NOLINT(clang-diagnostic-f32-equal)
-                return { v }; // Achromatic case
-            h *= 6;
-            const int i = (int)h;
-            const f32 f = h - (f32)i;
-
-            f32 p = v * (1 - s);
-            f32 q = v * (1 - f * s);
-            f32 t = v * (1 - (1 - f) * s);
-
-            switch (i) {
-                case 0: return { v, t, p };
-                case 1: return { q, v, p };
-                case 2: return { p, v, t };
-                case 3: return { p, q, v };
-                case 4: return { t, p, v };
-                case 5: return { v, p, q };
-                default: return 0;
-            }
-        }
-
-        f32 overlay_channel(f32 a, f32 b) {
-            return a < 0.5f ? 2 * a * b : 1 - 2 * (1 - a) * (1 - b);
-        }
-
-        byte overlay_channel(byte a, byte b) {
-            return a < 128 ? a * b * 255 / 2 : 255 - 255 * (1 - a) * (1 - b) / 2;
-        }
-
-        bool channel_loose_eq(f32 a, f32 b) { // loose equality
-            return std::abs(a - b) < (1 / 255.0f);
-        }
-        
-        bool color_loose_eq(const f32* a, const f32* b) {
-            return channel_loose_eq(a[0], b[0]) && channel_loose_eq(a[1], b[1]) && channel_loose_eq(a[2], b[2]);
-        }
-
-        bool color4_loose_eq(const f32* a, const f32* b) {
-            return channel_loose_eq(a[0], b[0]) && channel_loose_eq(a[1], b[1])
-                && channel_loose_eq(a[2], b[2]) && channel_loose_eq(a[3], b[3]);
-        }
-
-        char channel_hex(const char i) {
-            return (i < 10) ? (char)('0' + i) : (char)('a' + i - 10);
-        }
-
-        char hexdigit_1(auto channel) {
-            return channel_hex(convert_type<byte>(channel) % 16);
-        }
-
-        char hexdigit_2(auto channel) {
-            return channel_hex(convert_type<byte>(channel) / 16);
-        }
+    }
 #pragma endregion
 
-#pragma region Color Impl
+#define coldef template <class T, bool HasAlpha>
+#define colcls IColor<T, HasAlpha>
+    coldef bv3 colcls::AsRGBVec()   const { return { RedAs<u8>(),  GreenAs<u8>(),  BlueAs<u8>() }; }
+    coldef bv4 colcls::AsRGBAVec()  const { return { RedAs<u8>(),  GreenAs<u8>(),  BlueAs<u8>(),  AlphaOrFull<u8>() }; }
+    coldef fv3 colcls::AsRGBfVec()  const { return { RedAs<f32>(), GreenAs<f32>(), BlueAs<f32>() }; }
+    coldef fv4 colcls::AsRGBAfVec() const { return { RedAs<f32>(), GreenAs<f32>(), BlueAs<f32>(), AlphaOrFull<f32>() }; }
+    coldef Tuple<f32, f32, f32> colcls::GetHSL()  const {
+        return RGB2HSL(RedAs<f32>(), GreenAs<f32>(), BlueAs<f32>());
+    }
+    coldef Tuple<f32, f32, f32, f32> colcls::GetHSLA() const {
+        const auto [h, s, l] = RGB2HSL(RedAs<f32>(), GreenAs<f32>(), BlueAs<f32>());
+        return { h, s, l, AlphaOrFull<f32>() };
+    }
+    coldef colcls colcls::FromHSL (f32 hue, f32 saturation, f32 lightness) {
+        const auto [r, g, b] = HSL2RGB(hue, saturation, lightness);
+        return { ChannelConv<T>(r), ChannelConv<T>(g), ChannelConv<T>(b) };
+    }
+    coldef colcls colcls::FromHSLA(f32 hue, f32 saturation, f32 lightness, f32 alpha) {
+        const auto [r, g, b] = HSL2RGB(hue, saturation, lightness);
+        return { ChannelConv<T>(r), ChannelConv<T>(g), ChannelConv<T>(b), ChannelConv<T>(alpha) };
+    }
+    coldef Tuple<f32, f32, f32> colcls::GetHSV() const {
+        return RGB2HSV(RedAs<f32>(), GreenAs<f32>(), BlueAs<f32>());
+    }
+    coldef Tuple<f32, f32, f32, f32> colcls::GetHSVA() const {
+        const auto [h, s, v] = RGB2HSV(RedAs<f32>(), GreenAs<f32>(), BlueAs<f32>());
+        return { h, s, v, AlphaOrFull<f32>() };
+    }
+    coldef colcls colcls::FromHSV(f32 hue, f32 saturation, f32 value) {
+        const auto [r, g, b] = HSV2RGB(hue, saturation, value);
+        return { ChannelConv<T>(r), ChannelConv<T>(g), ChannelConv<T>(b) };
+    }
+    coldef colcls colcls::FromHSVA(f32 hue, f32 saturation, f32 value, f32 alpha) {
+        const auto [r, g, b] = HSV2RGB(hue, saturation, value);
+        return { ChannelConv<T>(r), ChannelConv<T>(g), ChannelConv<T>(b), ChannelConv<T>(alpha) };
+    }
 
-        template <class TColor>
-        typename color_base<TColor>::scalar color_base<TColor>::alpha(scalar def) const {
-            if constexpr (traits_has_alpha) return color().a;
-            else return def;
+#pragma region Operations
+#define CHANNEL_OP(NAME, SECOND_ARG, U8, F32) \
+    struct NAME { u8 operator()(u8 a, SECOND_ARG(u8) b) const { return U8; } f32 operator()(f32 a, SECOND_ARG(f32) b) const { return F32; } };
+#define BINARY(X) X
+#define FLOAT_OP(X) f32
+    CHANNEL_OP(ChannelAdd, BINARY, a + b > 255 ? 255_u8 : (u8)(a + b), a + b)
+    CHANNEL_OP(ChannelSub, BINARY, b > a       ?   0_u8 : (u8)(a - b), a - b)
+    CHANNEL_OP(ChannelMul, BINARY, (u8)(a * b / 255),                  a * b)
+    CHANNEL_OP(ChannelDiv, BINARY, (u8)(a * 255 / b),                  a / b)
+
+    CHANNEL_OP(ChannelMulF, FLOAT_OP, a * b > 255.0f ? 255_u8 : ChannelConv<u8>(a * b), a * b)
+    CHANNEL_OP(ChannelScreen, BINARY, 255 - (255 - a) * (255 * b) / 255, 1 - (1 - a) * (1 - b))
+
+    CHANNEL_OP(ChannelInv, BINARY, (u8)~a, 1.0f - a)
+    struct ChannelLerp {
+        f32 t, tCompl;
+        u8 operator()(u8 a, u8 b) const {
+            const f32 v = tCompl * (f32)a + t * (f32)b;
+            if (v < 0 || v > 255.0f) return v < 0 ? 0_u8 : 255_u8;
+            return (u8)f32s::FastToIntUnsigned(v);
         }
-
-        template <class TColor> TColor color_base<TColor>::from_hex(Str hex) {
-            if constexpr (traits_has_alpha)
-                return hex.Length() > 6 ? TColor {
-                    details::channel_from_hexcode<scalar>(hex[0], hex[1]),
-                    details::channel_from_hexcode<scalar>(hex[2], hex[3]),
-                    details::channel_from_hexcode<scalar>(hex[4], hex[5]),
-                    details::channel_from_hexcode<scalar>(hex[6], hex[7])
-                } : TColor {
-                    details::channel_from_hexcode<scalar>(hex[0], hex[1]),
-                    details::channel_from_hexcode<scalar>(hex[2], hex[3]),
-                    details::channel_from_hexcode<scalar>(hex[4], hex[5]),
-                };
-            else return TColor {
-                details::channel_from_hexcode<scalar>(hex[0], hex[1]),
-                details::channel_from_hexcode<scalar>(hex[2], hex[3]),
-                details::channel_from_hexcode<scalar>(hex[4], hex[5]),
-            };
+        f32 operator()(f32 a, f32 b) const { return a * tCompl + b * t; }
+    };
+    struct ChannelLerpFraction {
+        int p, pCompl, q;
+        u8 operator()(u8 a, u8 b) const {
+            const int v = (pCompl * a + p * b) / q;
+            if (v < 0 || v > 255) return v < 0 ? 0_u8 : 255_u8;
+            return (u8)v;
         }
-
-        template <class TColor> String color_base<TColor>::hexcode() const {
-            if constexpr (traits_has_alpha) return Text::Format("{}{}{}{}{}{}{}{}",
-                details::hexdigit_2(color().r),
-                details::hexdigit_1(color().r),
-                details::hexdigit_2(color().g),
-                details::hexdigit_1(color().g),
-                details::hexdigit_2(color().b),
-                details::hexdigit_1(color().b),
-                details::hexdigit_2(color().a),
-                details::hexdigit_1(color().a)
-            ); else return Text::Format("{}{}{}{}{}{}",
-                details::hexdigit_2(color().r),
-                details::hexdigit_1(color().r),
-                details::hexdigit_2(color().g),
-                details::hexdigit_1(color().g),
-                details::hexdigit_2(color().b),
-                details::hexdigit_1(color().b)
-            );
+    };
+    struct ChannelLogBlend {
+        f32 t, tCompl;
+        u8 operator()(u8 a, u8 b) const {
+            const f32 v = std::sqrt(tCompl * (f32)(a * a) + t * (f32)(b * b));
+            if (v < 0 || v > 255.0f) return v < 0 ? 0_u8 : 255_u8;
+            return (u8)f32s::FastToIntUnsigned(v);
         }
-
-        template <class TColor> bool color_base<TColor>::eq(const TColor& other) const {
-            if constexpr (traits_has_alpha)
-                return color().r == other.r && color().g == other.g && color().b == other.b && color().a == other.a;
-            else
-                return color().r == other.r && color().g == other.g && color().b == other.b;
+        f32 operator()(f32 a, f32 b) const { return std::sqrt(a * a * tCompl + b * b * tCompl); }
+    };
+    struct ChannelLogBlendFraction {
+        int p, pCompl, q;
+        u8 operator()(u8 a, u8 b) const {
+            const int v = (int)std::sqrt((pCompl * a * a + p * b * b) / q);
+            if (v < 0 || v > 255) return v < 0 ? 0_u8 : 255_u8;
+            return (u8)v;
         }
-        template <class TColor> bool color_base<TColor>::operator==(const color_base& other) const { return eq(other.color()); }
-
-        template <class TColor> bool color_base<TColor>::neq(const TColor& other) const { return !eq(other); }
-
-        template <class TColor> bool color_base<TColor>::loose_eq(const TColor& other) const {
-            if constexpr (traits_is_floating)
-                if constexpr (traits_has_alpha) return details::color4_loose_eq(begin(), other.begin());
-                else return details::color_loose_eq(begin(), other.begin());
-            else return eq(other);
-        }
-
-        template <class TColor> TColor color_base<TColor>::neg() const {
-            return details::make_color<TColor>(
-                CHANNEL_MAX_VALUE - color().r,
-                CHANNEL_MAX_VALUE - color().g,
-                CHANNEL_MAX_VALUE - color().b,
-                CHANNEL_MAX_VALUE - alpha()
-            );
-        }
-
-        template <class TColor> TColor color_base<TColor>::lerp(const TColor& other, f32 t) const {
-            const f32 s = 1 - t;
-            return make_color<TColor>(
-                convert_type<f32>(color().r) * s + convert_type<f32>(other.r) * t,
-                convert_type<f32>(color().g) * s + convert_type<f32>(other.g) * t,
-                convert_type<f32>(color().b) * s + convert_type<f32>(other.b) * t,
-                convert_type<f32>(alpha())   * s + convert_type<f32>(other.alpha()) * t
-            );
-        }
-
-        template <class TColor> TColor color_base<TColor>::mul(const TColor& other) const {
-            return details::make_color<TColor>(
-                color().r * other.r / CHANNEL_MAX_VALUE,
-                color().g * other.g / CHANNEL_MAX_VALUE,
-                color().b * other.b / CHANNEL_MAX_VALUE,
-                alpha() * other.alpha() / CHANNEL_MAX_VALUE
-            );
-        }
-
-        template <class TColor> TColor color_base<TColor>::screen(const TColor& other) const { return neg().mul(other).neg(); }
-        template <class TColor> TColor color_base<TColor>::overlay(const TColor& other) const {
-            return make_color<TColor>(
-                overlay_channel(color().r, other.r), overlay_channel(color().g, other.g),
-                overlay_channel(color().b, other.b), overlay_channel(alpha(), other.alpha())
-            );
-        }
-
-        template <class TColor> typename color_base<TColor>::without_alpha_t color_base<TColor>::mul_alpha() const {
-            return { color().r * alpha() / CHANNEL_MAX_VALUE, color().g * alpha() / CHANNEL_MAX_VALUE, color().b * alpha() / CHANNEL_MAX_VALUE, };
-        }
-
-        template <class TColor> f32 color_base<TColor>::luminance() const {
-            // https://en.wikipedia.org/wiki/Relative_luminance
-            return (0.2126f * details::convert_type<f32>(color().r) + 0.7152f * details::convert_type<f32>(color().g) + 0.0722f * details::convert_type<f32>(color().b));
-        }
-
-        template <class TColor> bVector3 color_base<TColor>::as_rgb()   const { return { details::convert_type<byte>(color().r), details::convert_type<byte>(color().g), details::convert_type<byte>(color().b) }; }
-        template <class TColor> bVector4 color_base<TColor>::as_rgba()  const { return as_rgb().with_w(details::convert_type<byte>(alpha())); }
-        template <class TColor> fVector3 color_base<TColor>::as_rgbf()  const { return { details::convert_type<f32>(color().r), details::convert_type<f32>(color().g), details::convert_type<f32>(color().b) }; }
-        template <class TColor> fVector4 color_base<TColor>::as_rgbaf() const { return as_rgbf().with_w(details::convert_type<f32>(alpha())); }
-
-        template <class TColor> fVector3 color_base<TColor>::as_hsl()  const { return details::rgb2hsl(details::convert_type<f32>(color().r), details::convert_type<f32>(color().g), details::convert_type<f32>(color().b)); }
-        template <class TColor> fVector4 color_base<TColor>::as_hsla() const { return as_hsl().with_w(details::convert_type<f32>(alpha())); }
-
-        template <class TColor> TColor color_base<TColor>::from_hsl(f32 hue, f32 saturation, f32 lightness) requires (!traits_has_alpha) {
-            return hsl2rgb(hue / 360.0f, saturation, lightness).to_color3();
-        }
-        template <class TColor> TColor color_base<TColor>::from_hsl(f32 hue, f32 saturation, f32 lightness, f32 alpha) requires traits_has_alpha {
-            return hsl2rgb(hue / 360.0f, saturation, lightness).with_w(alpha).to_color();
-        }
-
-        template <class TColor> TColor color_base<TColor>::from_hsl(const fVector3& hsl) requires (!traits_has_alpha) { return from_hsl(hsl.x, hsl.y, hsl.z); }
-        template <class TColor> TColor color_base<TColor>::from_hsl(const fVector4& hsla) requires traits_has_alpha { return from_hsl(hsla.x, hsla.y, hsla.z, hsla.w); }
-
-        template <class TColor> fVector3 color_base<TColor>::as_hsv()  const { return details::rgb2hsv(details::convert_type<f32>(color().r), details::convert_type<f32>(color().g), details::convert_type<f32>(color().b)); }
-        template <class TColor> fVector4 color_base<TColor>::as_hsva() const { return as_hsv().with_w(details::convert_type<f32>(alpha())); }
-
-        template <class TColor> TColor color_base<TColor>::from_hsv(f32 hue, f32 saturation, f32 value) requires (!traits_has_alpha) {
-            return hsv2rgb(hue / 360.0f, saturation, value).to_color3();
-        }
-        template <class TColor> TColor color_base<TColor>::from_hsv(f32 hue, f32 saturation, f32 value, f32 alpha) requires traits_has_alpha {
-            return hsv2rgb(hue / 360.0f, saturation, value).with_w(alpha).to_color();
-        }
-
-        template <class TColor> TColor color_base<TColor>::from_hsv(const fVector3& hsv) requires (!traits_has_alpha) { return from_hsv(hsv.x, hsv.y, hsv.z); }
-        template <class TColor> TColor color_base<TColor>::from_hsv(const fVector4& hsva) requires traits_has_alpha { return from_hsv(hsva.x, hsva.y, hsva.z, hsva.w); }
-        template <class TColor> typename color_base<TColor>::without_alpha_t color_base<TColor>::rgb() const { return { color().r, color().g, color().b }; }
-        template <class TColor> typename color_base<TColor>::with_alpha_t color_base<TColor>::with_alpha(scalar alpha) const { return { color().r, color().g, color().b, alpha }; }
-        template <class TColor> typename color_base<TColor>::with_alpha_t color_base<TColor>::rgb1() const { return { color().r, color().g, color().b, CHANNEL_MAX_VALUE }; }
-
-        template <class TColor> color_base<TColor>::operator without_alpha_t() const requires traits_has_alpha { return rgb(); }
-        template <class TColor> color_base<TColor>::operator with_alpha_t() const requires (!traits_has_alpha) { return rgb1(); }
-        template <class TColor> color_base<TColor>::operator alternate_data_form() const {
-            using alt = typename color_traits<alternate_data_form>::scalar;
-            return details::make_color<alternate_data_form>(
-                details::convert_type<alt>(color().r),
-                details::convert_type<alt>(color().g),
-                details::convert_type<alt>(color().b),
-                details::convert_type<alt>(alpha())
-            );
-        }
-
-        template<class TColor>
-        TColor color_base<TColor>::random(RandomGenerator& rg, f32 sat, f32 val) {
-            return from_hsv(rg.Get(0.0f, 360.0f), sat, val);
-        }
-
-        template <class TColor> TColor color_base<TColor>::color_id(int id) {
-            switch (id) {
-                case 0: return BETTER_BLACK();
-                case 1: return BETTER_RED();
-                case 2: return BETTER_GREEN();
-                case 3: return BETTER_YELLOW();
-                case 4: return BETTER_BLUE();
-                case 5: return BETTER_PURPLE();
-                case 6: return BETTER_CYAN();
-                case 7: return BETTER_WHITE();
-                default: return BLACK();
-            }
-        }
-
-        template struct color_base<Color3>;
-        template struct color_base<fColor3>;
-        template struct color_base<Color>;
-        template struct color_base<fColor>;
-
+    };
+    struct ChannelAdjust {
+        u8 operator()(u8 a, int b) const { const int v = a + b; return v > 255 ? 255_u8 : v < 0 ? 0 : (u8)v; }
+        f32 operator()(f32 a, f32 b) const { return a + b; }
+    };
 #pragma endregion
+
+    coldef colcls colcls::Add(const IColor& other) const { return BinaryMap(other, ChannelAdd {}); }
+    coldef colcls colcls::Sub(const IColor& other) const { return BinaryMap(other, ChannelSub {}); }
+    coldef colcls colcls::Mul(T scale)             const { return Map      (scale, ChannelMul {}); }
+    coldef colcls colcls::Mul(f32 scale) const requires Integer<T> { return Map(scale, ChannelMulF {}); }
+    coldef colcls colcls::Div(T scale)             const { return Map      (scale, ChannelDiv {}); }
+    coldef colcls colcls::Div(f32 scale) const requires Integer<T> { return Map(1 / scale, ChannelMulF {}); }
+    coldef colcls colcls::AddScalar(T off) const { return Map(off, ChannelAdd {}); }
+    coldef colcls colcls::SubScalar(T off) const { return Map(off, ChannelSub {}); }
+
+    coldef colcls& colcls::AddAssign(const IColor& other) { return *this = Add(other); }
+    coldef colcls& colcls::SubAssign(const IColor& other) { return *this = Sub(other); }
+    coldef colcls& colcls::MulAssign(T scale)            { return *this = Mul(scale); }
+    coldef colcls& colcls::MulAssign(f32 scale) requires Integer<T> { return *this = Mul(scale); }
+    coldef colcls& colcls::DivAssign(T scale)            { return *this = Div(scale); }
+    coldef colcls& colcls::DivAssign(f32 scale) requires Integer<T> { return *this = Div(scale); }
+    coldef colcls& colcls::AddScalarAssign(T off)        { return *this = AddScalar(off); }
+    coldef colcls& colcls::SubScalarAssign(T off)        { return *this = SubScalar(off); }
+
+    coldef colcls colcls::Inverted() const { return MapRGB(0, ChannelInv {}, AlphaOrFull()); }
+    coldef colcls colcls::Lerp(const IColor& other, f32 t) const { return BinaryMap(other, ChannelLerp { t, 1 - t }); }
+    coldef colcls colcls::Lerp(const IColor& other, int p, int q) const {
+        if constexpr (Integer<T>) return BinaryMap(other, ChannelLerpFraction { p, q - p, q });
+        else return Lerp(other, (f32)p / (f32)q);
+    }
+    coldef colcls colcls::Blend(const IColor& top) requires HasAlpha {
+        if constexpr (Floating<T>)
+            return BinaryMapRGB(top, ChannelLerp { top.a, 1 - top.a }, 1 - (1 - a) * (1 - top.a));
+        else return BinaryMapRGB(top, ChannelLerpFraction { top.a, (u8)~top.a, 255 }, 255 - (255 - a) * (255 - top.a) / 255);
+    }
+    coldef colcls colcls::LogBlend(const IColor& other, f32 t) const {
+        return BinaryMap(other, ChannelLogBlend { t, 1 - t });
+    }
+    coldef colcls colcls::LogBlend(const IColor& other, int p, int q) const {
+        if constexpr (Integer<T>) return BinaryMap(other, ChannelLogBlendFraction { p, q - p, q });
+        else return LogBlend(other, (f32)p / (f32)q);
+    }
+    coldef colcls colcls::AdjustShade(int brightOff) const requires Integer<T> {
+        return Map(brightOff, ChannelAdjust {});
+    }
+    coldef colcls colcls::AdjustShade(f32 brightOff) const requires Floating<T> {
+        return Map(brightOff, ChannelAdjust {});
+    }
+    coldef colcls colcls::Product(const IColor& other) const {
+        return BinaryMap(other, ChannelMul {});
+    }
+    coldef colcls colcls::Screen (const IColor& other) const {
+        return BinaryMap(other, ChannelScreen {});
+    }
+    coldef colcls colcls::Overlay(const IColor& other) const requires HasAlpha {
+        if constexpr (Floating<T>) return a < 0.5f ? Product(other) : Screen(other);
+        else return a < 127 ? Product(other) : Screen(other);
+    }
+    coldef IColor<T, false> colcls::MulAlpha() const {
+        constexpr auto mul = ChannelMul {};
+        const T alpha = AlphaOrFull();
+        return { mul(r, alpha), mul(g, alpha), mul(b, alpha) };
+    }
+    coldef f32 colcls::Luminance() const {
+        return 0.2126f * r + 0.7152f * g + 0.0722f * b;
+    }
+
+    coldef colcls colcls::FromBytes(u8 r, u8 g, u8 b, u8 a) {
+        return { ByteConv<T>(r),    ByteConv<T>(g),    ByteConv<T>(b),    ByteConv<T>(a)    };
+    }
+    coldef colcls colcls::FromIntCode(u32 rgb, u8 a) {
+        return FromBytes((u8)(rgb >> 16), (u8)(rgb >> 8), (u8)rgb, a);
+    }
+    coldef colcls colcls::FromIntWithAlpha(u32 rgba) {
+        return FromBytes((u8)(rgba >> 24), (u8)(rgba >> 16), (u8)(rgba >> 8), (u8)rgba);
+    }
+    coldef colcls colcls::FromIntLittleCode(u32 bgr, u8 a) {
+        return FromBytes((u8)bgr, (u8)(bgr >> 8), (u8)(bgr >> 16), a);
+    }
+    coldef colcls colcls::FromIntLittleWithAlpha(u32 abgr) {
+        return FromBytes((u8)abgr, (u8)(abgr >> 8), (u8)(abgr >> 16), (u8)(abgr >> 24));
+    }
+    coldef colcls colcls::FromFloats(f32 r, f32 g, f32 b, f32 a) {
+        return { ChannelConv<T>(r), ChannelConv<T>(g), ChannelConv<T>(b), ChannelConv<T>(a) };
+    }
+
+    coldef Option<colcls> colcls::FromHex(Str hex) {
+        if (hex.StartsWith('#')) hex.Advance(1);
+        switch (hex.Length()) {
+            case 3: {
+                u32 bbggrr = (Memory::ReadU32(hex.Data()) & 0xFFFFFF) | 0x30000000;
+                if (!Text::NumberConversion::AreAllHexDigits4(bbggrr)) return nullptr;
+                bbggrr = Text::NumberConversion::ConvertHexDigits4(bbggrr);
+                bbggrr *= 17;
+                return FromIntLittleCode(bbggrr);
+            }
+            case 4: {
+                u32 aabbggrr = Memory::ReadU32(hex.Data());
+                if (!Text::NumberConversion::AreAllHexDigits4(aabbggrr)) return nullptr;
+                aabbggrr = Text::NumberConversion::ConvertHexDigits4(aabbggrr);
+                aabbggrr *= 17;
+                return FromIntLittleWithAlpha(aabbggrr);
+            }
+            case 6: {
+                u32 gr = Memory::ReadU32(hex.Data());
+                u32 b  = Memory::ReadU32(hex.Data() + 4) & 0xFFFF | 0x30300000;
+                if (!Text::NumberConversion::AreAllHexDigits4(gr) ||
+                    !Text::NumberConversion::AreAllHexDigits4(b)) return nullptr;
+
+                gr = Text::NumberConversion::ConvertHexDigits4(gr);
+                b  = Text::NumberConversion::ConvertHexDigits4(b);
+                gr += gr << 12;
+                gr &= 0xFF00FF00;
+                gr = (gr >> 8) + (gr >> 16);
+                gr &= 0xFFFF;
+                b  += b << 12;
+                b  &= 0xFF00;
+                return FromIntLittleCode(gr | (b << 8));
+            }
+            case 8: {
+                u64 aabbggrr = Memory::ReadU64(hex.Data());
+                if (!Text::NumberConversion::AreAllHexDigits4((u32)aabbggrr) ||
+                    !Text::NumberConversion::AreAllHexDigits4(aabbggrr >> 32)) return nullptr;
+                aabbggrr &= 0x4F4F4F4F;
+                const u64 isLetterChar = aabbggrr & 0x40404040;
+                aabbggrr = (isLetterChar >> 6) * 9 + (aabbggrr ^ isLetterChar);
+
+                aabbggrr += aabbggrr << 12;
+                aabbggrr &= 0xFF00FF00FF00FF00;
+                aabbggrr += aabbggrr << 8;
+                aabbggrr &= 0xFFFF0000FFFF0000;
+                aabbggrr += aabbggrr << 16;
+
+                return FromIntLittleWithAlpha(aabbggrr >> 32);
+            }
+            default: return nullptr;
+        }
+    }
+
+    coldef u32 colcls::GetIntCode() const {
+        if constexpr (Integer<T>) {
+            return Memory::ReadU32Big(&r) >> (!HasAlpha * 8);
+        } else {
+            const bv4 rgba = AsRGBAVec();
+            return Memory::ReadU32Big(&rgba.x) >> (!HasAlpha * 8);
+        }
+    }
+    coldef String colcls::GetHexCode() const {
+        char buf[Dim * 2];
+        u32 icode = GetIntCode();
+        icode |= icode << 16;
+        icode &= 0x00FF00FF;
+        icode |= icode << 8;
+        icode &= 0x0F0F0F0F;
+        icode |= 0x30303030;
+        Memory::WriteU32Big(icode, buf);
+        return Str::Slice(buf, Dim * 2);
+    }
+    coldef bool colcls::LooseEq(const IColor& other) const {
+        if constexpr (Integer<T>) { return *this == other; }
+        else {
+            static constexpr f32 THRESHOLD = 1 / 255.0f;
+            if constexpr (HasAlpha) if (std::abs(a - other.a) >= THRESHOLD) return false;
+            return std::abs(r - other.r) < THRESHOLD &&
+                   std::abs(g - other.g) < THRESHOLD &&
+                   std::abs(b - other.b) < THRESHOLD;
+        }
+    }
+
+    coldef colcls colcls::FromColorID(Colors::ColorID colorid) {
+        return FromIntWithAlpha(Colors::GetHexFromID(colorid));
+    }
+
+    coldef colcls colcls::Random(RandomGenerator& rand) {
+        return IColor::FromHSV(rand.Get(0, 360), rand.Get(0.4f, 0.6f), 0.95f);
+    }
+    coldef colcls colcls::RandomPure(RandomGenerator& rand) {
+        return IColor::FromIntCode(rand.GetRaw() & 0xFFFFFF);
+    }
+
+    template struct IColor<u8,  false>;
+    template struct IColor<f32, false>;
+    template struct IColor<u8,  true>;
+    template struct IColor<f32, true>;
+
+//         template<class TColor>
+//         TColor color_base<TColor>::random(RandomGenerator& rg, f32 sat, f32 val) {
+//             return from_hsv(rg.Get(0.0f, 360.0f), sat, val);
+//         }
+//
+//         template <class TColor> TColor color_base<TColor>::color_id(int id) {
+//             switch (id) {
+//                 case 0: return BETTER_BLACK();
+//                 case 1: return BETTER_RED();
+//                 case 2: return BETTER_GREEN();
+//                 case 3: return BETTER_YELLOW();
+//                 case 4: return BETTER_BLUE();
+//                 case 5: return BETTER_PURPLE();
+//                 case 6: return BETTER_CYAN();
+//                 case 7: return BETTER_WHITE();
+//                 default: return BLACK();
+//             }
+//         }
+    fColor  operator ""_fColor (usize x) { return fColor ::FromIntCode((u32)x); }
+    uColor  operator ""_uColor (usize x) { return uColor ::FromIntCode((u32)x); }
+    fColor3 operator ""_fColor3(usize x) { return fColor3::FromIntCode((u32)x); }
+    uColor3 operator ""_uColor3(usize x) { return uColor3::FromIntCode((u32)x); }
+    fColor  operator ""_fColor(const char* colorId, usize len) {
+        const Str cid = Str::Slice(colorId, len);
+        if (cid.StartsWith('#')) return fColor::FromHex(cid.Skip(1)).UnwrapOr({});
+        return fColor::FromColorID(Colors::GetColorIDFor(cid));
+    }
+    uColor  operator ""_uColor(const char* colorId, usize len) {
+        const Str cid = Str::Slice(colorId, len);
+        if (cid.StartsWith('#')) return uColor::FromHex(cid.Skip(1)).UnwrapOr({});
+        return uColor::FromColorID(Colors::GetColorIDFor(cid));
+    }
+    fColor3 operator ""_fColor3(const char* colorId, usize len) {
+        const Str cid = Str::Slice(colorId, len);
+        if (cid.StartsWith('#')) return fColor3::FromHex(cid.Skip(1)).UnwrapOr({});
+        return fColor3::FromColorID(Colors::GetColorIDFor(cid));
+    }
+    uColor3 operator ""_uColor3(const char* colorId, usize len) {
+        const Str cid = Str::Slice(colorId, len);
+        if (cid.StartsWith('#')) return uColor3::FromHex(cid.Skip(1)).UnwrapOr({});
+        return uColor3::FromColorID(Colors::GetColorIDFor(cid));
+    }
+
+    Colors::ColorID Colors::GetColorIDFor(Str colorId) {
+        switch (Memory::ReadZeroExtU64Big(colorId.Data(), colorId.Length())) {
+            case "black"_u64:    return BLACK;
+            case "dGray"_u64:    return DARK_GRAY;
+            case "gray"_u64:     return GRAY;
+            case "lGray"_u64:    return LIGHT_GRAY;
+            case "white"_u64:    return WHITE;
+            case "silver"_u64:   return SILVER;
+            case "red"_u64:      return RED;
+            case "orange"_u64:   return ORANGE;
+            case "yellow"_u64:   return YELLOW;
+            case "lime"_u64:     return LIME;
+            case "green"_u64:    return GREEN;
+            case "seafoam"_u64:  return SEAFOAM;
+            case "cyan"_u64:     return CYAN;
+            case "azure"_u64:    return AZURE;
+            case "blue"_u64:     return BLUE;
+            case "purple"_u64:   return PURPLE;
+            case "magenta"_u64:  return MAGENTA;
+            case "rose"_u64:     return ROSE;
+            case "lRed"_u64:     return LIGHT_RED;
+            case "lYellow"_u64:  return LIGHT_YELLOW;
+            case "lGreen"_u64:   return LIGHT_GREEN;
+            case "lCyan"_u64:    return LIGHT_CYAN;
+            case "lBlue"_u64:    return LIGHT_BLUE;
+            case "lMagenta"_u64: return LIGHT_MAGENTA;
+            case "salmon"_u64:   return SALMON;
+            case "lemon"_u64:    return LEMON;
+            case "mint"_u64:     return MINT;
+            case "sky"_u64:      return SKY;
+            case "cornflwr"_u64: return CORNFLOWER;
+            case "pink"_u64:     return PINK;
+            case "dRed"_u64:     return DARK_RED;
+            case "dYellow"_u64:  return DARK_YELLOW;
+            case "dGreen"_u64:   return DARK_GREEN;
+            case "dCyan"_u64:    return DARK_CYAN;
+            case "dBlue"_u64:    return DARK_BLUE;
+            case "dMagenta"_u64: return DARK_MAGENTA;
+            case "maroon"_u64:   return MAROON;
+            case "olive"_u64:    return OLIVE;
+            case "avocado"_u64:  return AVOCADO;
+            case "teal"_u64:     return TEAL;
+            case "navy"_u64:     return NAVY;
+            case "violet"_u64:   return VIOLET;
+            case "red+"_u64:     return BETTER_RED;
+            case "orange+"_u64:  return BETTER_ORANGE;
+            case "yellow+"_u64:  return BETTER_YELLOW;
+            case "lime+"_u64:    return BETTER_LIME;
+            case "green+"_u64:   return BETTER_GREEN;
+            case "aqua+"_u64:    return BETTER_AQUA;
+            case "cyan+"_u64:    return BETTER_CYAN;
+            case "blue+"_u64:    return BETTER_BLUE;
+            case "purple+"_u64:  return BETTER_PURPLE;
+            case "magenta+"_u64: return BETTER_MAGENTA;
+            case "pink+"_u64:    return BETTER_PINK;
+            case "brown+"_u64:   return BETTER_BROWN;
+            case "black+"_u64:   return BETTER_BLACK;
+            case "dGray+"_u64:   return BETTER_DARK_GRAY;
+            case "gray+"_u64:    return BETTER_GRAY;
+            case "lGray+"_u64:   return BETTER_LIGHT_GRAY;
+            case "white+"_u64:   return BETTER_WHITE;
+            case "clear"_u64:    return CLEAR;
+            default: return BLACK;
+        }
+    }
+
+    u32 Colors::GetHexFromID(ColorID id) {
+        switch (id) {
+            case BLACK:             return 0x000000ff;
+            case DARK_GRAY:         return 0x404040ff;
+            case GRAY:              return 0x808080ff;
+            case LIGHT_GRAY:        return 0xc0c0c0ff;
+            case WHITE:             return 0xffffffff;
+            case RED:               return 0xff0000ff;
+            case ORANGE:            return 0xff8000ff;
+            case YELLOW:            return 0xffff00ff;
+            case LIME:              return 0x80ff00ff;
+            case GREEN:             return 0x00ff00ff;
+            case SEAFOAM:           return 0x00ff80ff;
+            case CYAN:              return 0x00ffffff;
+            case AZURE:             return 0x0080ffff;
+            case BLUE:              return 0x0000ffff;
+            case PURPLE:            return 0x8000ffff;
+            case MAGENTA:           return 0xff00ffff;
+            case ROSE:              return 0xff0080ff;
+            case LIGHT_RED:         return 0xff8080ff;
+            case LIGHT_YELLOW:      return 0xffff80ff;
+            case LIGHT_GREEN:       return 0x80ff80ff;
+            case LIGHT_CYAN:        return 0x80ffffff;
+            case LIGHT_BLUE:        return 0x8080ffff;
+            case LIGHT_MAGENTA:     return 0xff80ffff;
+            case DARK_RED:          return 0x800000ff;
+            case DARK_YELLOW:       return 0x808000ff;
+            case DARK_GREEN:        return 0x008000ff;
+            case DARK_CYAN:         return 0x008080ff;
+            case DARK_BLUE:         return 0x000080ff;
+            case DARK_MAGENTA:      return 0x800080ff;
+            case BETTER_RED:        return 0xff3030ff;
+            case BETTER_ORANGE:     return 0xff802bff;
+            case BETTER_YELLOW:     return 0xffc014ff;
+            case BETTER_LIME:       return 0x87f725ff;
+            case BETTER_GREEN:      return 0x0c8501ff;
+            case BETTER_AQUA:       return 0x28cef7ff;
+            case BETTER_CYAN:       return 0x17a0b3ff;
+            case BETTER_BLUE:       return 0x1041e3ff;
+            case BETTER_PURPLE:     return 0x7818edff;
+            case BETTER_MAGENTA:    return 0xcb2aebff;
+            case BETTER_PINK:       return 0xfa57c6ff;
+            case BETTER_BROWN:      return 0x45200dff;
+            case BETTER_BLACK:      return 0x16191dff;
+            case BETTER_DARK_GRAY:  return 0x4c4b5dff;
+            case BETTER_GRAY:       return 0x747e86ff;
+            case BETTER_LIGHT_GRAY: return 0xafbac1ff;
+            case BETTER_WHITE:      return 0xe8f7f9ff;
+            case CLEAR:             return 0x00000000;
+            default:                return 0x000000FF;
+        }
+    }
 }

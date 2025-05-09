@@ -33,7 +33,7 @@ namespace Quasi::IO {
 
         scrollDelta = 0;
         while (!queuedScrolls.empty()) {
-            const Math::dVector2 scrollEvent = queuedScrolls.front();
+            const Math::dv2 scrollEvent = queuedScrolls.front();
             scrollDelta += scrollEvent;
             scroll += scrollEvent;
             queuedScrolls.pop();
@@ -62,14 +62,14 @@ namespace Quasi::IO {
         glfwSetInputMode(inputWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 
-    Math::dVector2 MouseType::GetMousePosPx() const {
-        Math::dVector2 pos;
+    Math::dv2 MouseType::GetMousePosPx() const {
+        Math::dv2 pos;
         glfwGetCursorPos((GLFWwindow*)inputWindow(), &pos.x, &pos.y);
         return pos;
     }
 
-    Math::dVector2 MouseType::GetMousePos() const {
-        const auto r01 = GetMousePosPx() / io->gdevice->GetWindowSize(); // range 0 - 1
+    Math::dv2 MouseType::GetMousePos() const {
+        const auto r01 = GetMousePosPx() / (Math::dv2)io->gdevice->GetWindowSize(); // range 0 - 1
         return r01 * 2.0 - 1.0;
     }
 
@@ -80,11 +80,11 @@ namespace Quasi::IO {
                0 <= mouseY && mouseY <= borderY;
     }
 
-    Math::dVector2 MouseType::GetMouseScroll() const {
+    Math::dv2 MouseType::GetMouseScroll() const {
         return scroll;
     }
 
-    Math::dVector2 MouseType::GetMouseScrollDelta() const {
+    Math::dv2 MouseType::GetMouseScrollDelta() const {
         return scrollDelta;
     }
 

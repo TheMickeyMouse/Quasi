@@ -7,10 +7,10 @@ namespace Quasi::Physics2D {
     class World {
     public:
         Vec<Box<Body>> bodies;
-        fVector2 gravity;
+        fv2 gravity;
     public:
         World() = default;
-        World(const fVector2& gravity) : gravity(gravity) {}
+        World(const fv2& gravity) : gravity(gravity) {}
     public:
         usize BodyCount() const { return bodies.Length(); }
         void Reserve(usize size);

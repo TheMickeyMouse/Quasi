@@ -29,20 +29,20 @@ namespace Quasi::Graphics::MeshUtils {
         static constexpr float NLEN = 1.90211'30325'90307f, // precomputed sqrt(1 + phi * phi)
                                I_1 = 1.0F / NLEN, I_PHI = Math::PHI / NLEN;
 
-        inline static const Array<Math::fVector3, CORNER_COUNT> IcoVert = {
+        inline static const Array<Math::fv3, CORNER_COUNT> IcoVert = {
             // from https://en.wikipedia.org/wiki/Regular_icosahedron#Construction
-            Math::fVector3 { 0, +I_1, +I_PHI },
-            Math::fVector3 { 0, -I_1, +I_PHI },
-            Math::fVector3 { 0, +I_1, -I_PHI },
-            Math::fVector3 { 0, -I_1, -I_PHI },
-            Math::fVector3 { +I_1, +I_PHI, 0 },
-            Math::fVector3 { -I_1, +I_PHI, 0 },
-            Math::fVector3 { +I_1, -I_PHI, 0 },
-            Math::fVector3 { -I_1, -I_PHI, 0 },
-            Math::fVector3 { +I_PHI, 0, +I_1 },
-            Math::fVector3 { +I_PHI, 0, -I_1 },
-            Math::fVector3 { -I_PHI, 0, +I_1 },
-            Math::fVector3 { -I_PHI, 0, -I_1 },
+            Math::fv3 { 0, +I_1, +I_PHI },
+            Math::fv3 { 0, -I_1, +I_PHI },
+            Math::fv3 { 0, +I_1, -I_PHI },
+            Math::fv3 { 0, -I_1, -I_PHI },
+            Math::fv3 { +I_1, +I_PHI, 0 },
+            Math::fv3 { -I_1, +I_PHI, 0 },
+            Math::fv3 { +I_1, -I_PHI, 0 },
+            Math::fv3 { -I_1, -I_PHI, 0 },
+            Math::fv3 { +I_PHI, 0, +I_1 },
+            Math::fv3 { +I_PHI, 0, -I_1 },
+            Math::fv3 { -I_PHI, 0, +I_1 },
+            Math::fv3 { -I_PHI, 0, -I_1 },
         };
 
         struct BytePair {
@@ -125,15 +125,15 @@ namespace Quasi::Graphics::MeshUtils {
                                       idx = EdgeIdx(edgeIdx, dist - 1);
 
                             const float factor = (float)dist / (float)divisions;
-                            const fVector3 pos = (IcoVert[lineStart] * (1.0f - factor) + IcoVert[lineEnd] * factor).norm();
+                            const fv3 pos = (IcoVert[lineStart] * (1.0f - factor) + IcoVert[lineEnd] * factor).Norm();
 
                             meshp.VertAt(idx) = f(MData { .Position = pos, .Normal = pos });
                             continue;
                         }
                         // center, interpolate between 3 points
-                        const fVector3 pos = (IcoVert[Face().i] * ((float)(divisions - p) / (float)divisions)
+                        const fv3 pos = (IcoVert[Face().i] * ((float)(divisions - p) / (float)divisions)
                                             + IcoVert[Face().j] * ((float)(p - q)         / (float)divisions)
-                                            + IcoVert[Face().k] * ((float)q               / (float)divisions)).norm();
+                                            + IcoVert[Face().k] * ((float)q               / (float)divisions)).Norm();
                         const u32 idx = IndexOf(p, q);
                         meshp.VertAt(idx) = f(MData { .Position = pos, .Normal = pos });
                     }

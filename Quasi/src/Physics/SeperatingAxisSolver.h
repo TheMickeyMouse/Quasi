@@ -19,7 +19,7 @@ namespace Quasi::Physics2D {
         Subject currentChecked = BASE;
         bool collides = true;
 
-        fVector2 seperatingAxis;
+        fv2 seperatingAxis;
         float overlap = f32s::INFINITY;
         u32 axisIndex = 0;
 
@@ -38,12 +38,12 @@ namespace Quasi::Physics2D {
 
         void SetCheckFor(Subject s);
         bool CheckAxisFor(Subject s);
-        bool CheckAxis(const fVector2& axis);
+        bool CheckAxis(const fv2& axis);
         bool IsChecking(Subject subject) const;
         bool Collides() const { return collides; }
 
         float GetDepth() const;
-        const fVector2& GetSepAxis() const;
+        const fv2& GetSepAxis() const;
 
         friend struct Manifold;
     };

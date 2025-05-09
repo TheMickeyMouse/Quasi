@@ -85,11 +85,11 @@ namespace Quasi::Graphics {
                     continue;
                 }
             
-                const uVector2 size = { glyphHandle->bitmap.width, glyphHandle->bitmap.rows }; // construct size in pixels of the texture
-                atlas.SetSubTexture(glyphHandle->bitmap.buffer, uVector2 { pen, heights[i] }.to(size.as_size()), { .format = TextureFormat::RED }); // draw the sub texture
+                const uv2 size = { glyphHandle->bitmap.width, glyphHandle->bitmap.rows }; // construct size in pixels of the texture
+                atlas.SetSubTexture(glyphHandle->bitmap.buffer, uRect2D::FromSize({ (u32)pen, heights[i] }, size), { .format = TextureFormat::RED }); // draw the sub texture
 
                 Glyph& glyph = glyphs[charCode - 32 + i * NUM_GLYPHS]; // write rendering memory
-                glyph.rect = fVector2 { pen, heights[i] }.to(size.asf().as_size()) / textureSize.asf(); // rect of texture in atlas
+                glyph.rect = fRect2D::FromSize({ (float)pen, (float)heights[i] }, (fv2)size) / (fv2)textureSize; // rect of texture in atlas
                 glyph.advance = { (float)glyphHandle->advance.x / 64.0f, (float)glyphHandle->advance.y / 64.0f }; // pen move
                 glyph.offset  = { glyphHandle->bitmap_left, glyphHandle->bitmap_top }; // offset from pen
 

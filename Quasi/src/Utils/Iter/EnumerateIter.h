@@ -9,10 +9,10 @@ namespace Quasi::Iter {
     };
 
     template <class It>
-    struct EnumerateIter : IIterator<EnumeratePair<CollectionItem<It>>, EnumerateIter<It>> {
+    struct EnumerateIter : IIterator<const EnumeratePair<CollectionItem<It>>, EnumerateIter<It>> {
         using OriginalItem = CollectionItem<It>;
-        using Item = EnumeratePair<OriginalItem>;
-        friend IIterator<Item, EnumerateIter>;
+        using Item = const EnumeratePair<OriginalItem>;
+        friend IIterator<const Item, EnumerateIter>;
     private:
         usize i = 0;
         It iter;
