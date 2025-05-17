@@ -133,7 +133,7 @@ namespace Quasi {
         Span<const T> EntireAsSpan() const { return { data, capacity }; }
 
         void SetLengthUnsafe(usize len) { size = len; }
-        void Truncate(usize len) { if (len >= size) return; Memory::RangeDestruct(&data[len], size - len); size = len; }
+        void Truncate(usize len) { if (len < size) { Memory::RangeDestruct(&data[len], size - len); size = len; } }
         void Shorten(usize amount) { amount = std::min(amount, size); Memory::RangeDestruct(data, size - amount); size -= amount; }
 
         void PopUnordered(usize index)  { --size; std::swap(data[index], data[size]); data[size].~T(); }

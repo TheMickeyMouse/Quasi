@@ -1,7 +1,6 @@
 #pragma once
 
 #include "MeshConstructor.h"
-#include "Graphicals/Mesh.h"
 #include "Utils/Numeric.h"
 
 namespace Quasi::Graphics::VertexBuilder {

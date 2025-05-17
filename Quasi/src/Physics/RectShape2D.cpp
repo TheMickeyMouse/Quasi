@@ -27,7 +27,9 @@ namespace Quasi::Physics2D {
     fLine2D RectShape::BestEdgeFor(const fv2& normal) const {
         const float dx = hx * normal.x, dy = hy * normal.y;
         const bool xPerpendicular = std::abs(dx) < std::abs(dy);
-        return { Corner(dx > 0, dy > 0), Corner(dx > 0 ^ xPerpendicular, dy > 0 ^ !xPerpendicular) };
+        return { Corner(dx > 0, dy > 0),
+                 xPerpendicular ? fv2 { dx > 0 ? -2 * hx : 2 * hx, 0 }
+                                : fv2 { 0, dy > 0 ? -2 * hy : 2 * hy } };
     }
 
     fRange RectShape::ProjectOntoAxis(const fv2& axis) const {

@@ -23,14 +23,14 @@ namespace Quasi::Math {
         static Quaternion From3D(const fv3& q) { return { 0,   q.x, q.y, q.z }; }
         static Quaternion FromWXYZ(float w, float x, float y, float z) { return { w, x, y, z }; }
 
-        static Quaternion RotateAxis(const fv3& axis, const Rotation2D& rotation); // assumes normalized axis
-        static Quaternion RotateX(const Rotation2D& r);
-        static Quaternion RotateY(const Rotation2D& r);
-        static Quaternion RotateZ(const Rotation2D& r);
-        static Quaternion RotateXYZ(const Vec3<Rotation2D>& r);
+        static Quaternion RotateAxis(const fv3& axis, const Rotor2D& rotation); // assumes normalized axis
+        static Quaternion RotateX(const Rotor2D& r);
+        static Quaternion RotateY(const Rotor2D& r);
+        static Quaternion RotateZ(const Rotor2D& r);
+        static Quaternion RotateXYZ(const Vec3<Rotor2D>& r);
         static Quaternion RotateTo(const fv3& from, const fv3& to); // both vectors assumed to be normed
 
-        static Quaternion FromEulerAngles(const Vec3<Rotation2D>& r) { return RotateXYZ(r); }
+        static Quaternion FromEulerAngles(const Vec3<Rotor2D>& r) { return RotateXYZ(r); }
         Vec3<Radians> ToEulerAngles() const;
 
         static Quaternion LookAt(const fv3& direction, const fv3& worldFront); // both vectors assumed to be normed

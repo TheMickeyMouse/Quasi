@@ -19,7 +19,7 @@ namespace Quasi::Iter {
         explicit EnumerateIter(It it) : iter(std::move(it)) {}
     protected:
         Item CurrentImpl() const { return { i, iter.Current() }; }
-        void AdvanceImpl() { iter.Advance(); }
+        void AdvanceImpl() { iter.Advance(); ++i; }
         bool CanNextImpl() const { return iter.CanNext(); }
     public:
         static EnumerateIter New(It it) { return EnumerateIter { it }; }

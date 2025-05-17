@@ -191,7 +191,8 @@ namespace Quasi::Memory {
     }
 
     template <class T> constexpr void RangeDestruct(T* data, usize count) {
-        for (usize i = 0; i < count; ++i) data[i].~T();
+        T* dataEnd = data + count;
+        for (; data < dataEnd; ++data) data->~T();
     }
 
 #define Q_GETTER_MUT(FN, ...) (decltype(this->FN(__VA_ARGS__)))(Memory::AsConstPtr(this))->FN(__VA_ARGS__)

@@ -3,7 +3,7 @@
 
 namespace Quasi::Physics2D {
     PhysicsTransform PhysicsTransform::Translate(const fv2& p) { return { p }; }
-    PhysicsTransform PhysicsTransform::Rotation(const Rotation2D& q) { return { 0, q }; }
+    PhysicsTransform PhysicsTransform::Rotation(const Rotor2D& q) { return { 0, q }; }
 
     fv2 PhysicsTransform::Transform(const fv2& point) const {
         return point.RotateBy(rotation) + position;

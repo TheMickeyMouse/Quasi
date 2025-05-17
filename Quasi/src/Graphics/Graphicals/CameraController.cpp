@@ -20,7 +20,7 @@ namespace Quasi::Graphics {
 
         if (!enabled) { return; }
         const fv3 localRight = -(Right() * std::cos(yaw) + worldFront * std::sin(yaw));
-        const fv3 localFront = -localRight.Cross(worldUp);
+        const fv3 localFront = worldUp.Cross(localRight);
         if (Keyboard.KeyPressed(W))      position += localFront * speed * dt;
         if (Keyboard.KeyPressed(S))      position -= localFront * speed * dt;
         if (Keyboard.KeyPressed(D))      position += localRight * speed * dt;
@@ -71,10 +71,8 @@ namespace Quasi::Graphics {
         //     Right()    * (std::cos(yaw) * std::cos(pitch)) + // like x
         //     worldFront * (std::sin(yaw) * std::cos(pitch)) +
         //     worldUp    * std::sin(pitch);
-        // return { -position, 1, Math::Quaternion::look_at(front, worldFront).inv() };
-        return { position, 1,
-                 Math::Rotation3D::RotateAxis(worldUp, Math::Radians(yaw)) +
-                 Math::Rotation3D::RotateAxis(Right(), Math::Radians(pitch)) };
+        // return { -position, 1, Math::Rotor3D::LookAt(front, worldFront).Inverse() };
+        return { position, 1, Math::Rotor3D::RotateAxis(worldUp, Math::Radians(yaw)) + Math::Rotor3D::RotateAxis(Right(), Math::Radians(pitch)) };
     }
 
     Math::Matrix3D CameraController::GetProjMat() const {

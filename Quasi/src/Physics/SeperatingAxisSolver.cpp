@@ -42,8 +42,8 @@ namespace Quasi::Physics2D {
         if (!collides) return false;
 
         const fv2 worldAxis = IsChecking(BASE)   ? baseXf  ->TransformDir(axis) :
-                                   IsChecking(TARGET) ? targetXf->TransformDir(axis) :
-                                   axis;
+                              IsChecking(TARGET) ? targetXf->TransformDir(axis) :
+                              axis;
 
         const fRange bproj = (IsChecking(BASE) ?
                              base->ProjectOntoOwnAxis(axisIndex - 1, axis) :

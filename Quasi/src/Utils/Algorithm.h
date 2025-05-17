@@ -632,9 +632,9 @@ namespace Quasi::Algorithm {
             const T* Median3Recursive(const T* a, const T* b, const T* c, usize n, Comparator<T> auto&& cmp) {
                 if (n * 8 >= PSEUDO_MEDIAN_REC_THRESHOLD) {
                     const usize nOver8 = n / 8;
-                    a = Median3Recursive(a, a += nOver8 * 4, a += nOver8 * 7, nOver8, cmp);
-                    b = Median3Recursive(b, b += nOver8 * 4, b += nOver8 * 7, nOver8, cmp);
-                    c = Median3Recursive(c, c += nOver8 * 4, c += nOver8 * 7, nOver8, cmp);
+                    a = Median3Recursive(a, a + nOver8 * 4, a + nOver8 * 7, nOver8, cmp);
+                    b = Median3Recursive(b, b + nOver8 * 4, b + nOver8 * 7, nOver8, cmp);
+                    c = Median3Recursive(c, c + nOver8 * 4, c + nOver8 * 7, nOver8, cmp);
                 }
                 return Median3(*a, *b, *c, cmp);
             }

@@ -519,12 +519,12 @@ namespace Quasi::Text {
 
     char* NumberConversion::AddSign(f64 f, char* out, bool alwaysShowSign) {
         if (f < 0) {
-            *out++ = '-';
-            return out;
+            *out = '-';
+            return ++out;
         }
         if (alwaysShowSign) {
-            *out++ = '+';
-            return out;
+            *out = '+';
+            return ++out;
         }
         return out;
     }
@@ -534,16 +534,18 @@ namespace Quasi::Text {
             // builtin 3-digit max precision
             u32 dig3 = f64s::FastToIntUnsigned(f * 1000);
             if (dig3 == 0) {
-                return out - 1;
+                return out;
             } else {
                 dig3 = U64ToBCD4(dig3);
                 const u32 empty = u32s::CountRightZeros(dig3) / 8;
                 dig3 <<= 8;
                 dig3 |= 0x30'30'30'00;
+                *out++ = '.';
                 Memory::WriteU32Big(dig3, out);
                 out += 3 - empty;
             }
         } else {
+            *out++ = '.';
             u32 p = 0;
             for (; p < precision; p += 2) {
                 f64 dig2;
@@ -561,16 +563,17 @@ namespace Quasi::Text {
         return out;
     }
 
-    u32 NumberConversion::WriteFltSci(f64 f, char* out, u32 precision, char e, int log10) {
-        const char* begin = out;
+    char* NumberConversion::WriteFltSci(f64 f, char* out, u32 precision, char e, int log10) {
         if (f == 0) {
+            if (precision == ~0) {
+                *out++ = '0';
+                return out;
+            }
             Memory::WriteU16(".0"_u16, out);
             out += 2;
-            if (precision == ~0)
-                return 1;
             while (precision --> 0)
                 *out++ = '0';
-            return out - begin;
+            return out;
         }
 
         f64 mant, mantDec;
@@ -584,12 +587,8 @@ namespace Quasi::Text {
         }
         f64s::SeparateDecimal(mant, mant, mantDec);
 
-        // *out++ = '0' + (char);
-        // *out++ = '.';
-        Memory::WriteU16(f64s::FastToIntUnsigned(mant) | ".0"_u16, out);
-        out += 2;
-
-        out = WriteFltDecimal(mantDec, out, precision);
+        *out = (char)('0' | f64s::FastToIntUnsigned(mant));
+        out = WriteFltDecimal(mantDec, ++out, precision);
         // ...E+... or ...E-...
         Memory::WriteU16(e << 8 | (log10 < 0 ? '-' : '+'), out);
         out += 2;
@@ -604,28 +603,27 @@ namespace Quasi::Text {
             out += 4 - empty;
         }
 
-        return out - begin;
+        return out;
     }
 
-    u32 NumberConversion::WriteFltFxd(f64 f, char* out, u32 width, u32 precision, int log10, char pad) {
-        const char* begin = out;
+    char* NumberConversion::WriteFltFxd(f64 f, char* out, u32 width, u32 precision, int log10, char pad) {
         if (f == 0) {
-            const u32 w = width ? width : 1;
+            const u32 w = width > 1 ? width - 1 : 0;
             Memory::MemSet(out, pad, w);
-            if (precision == ~0) {
-                return w;
-            }
-
             out += w;
-            *out++ = '.';
+            *out++ = '0';
 
+            if (precision == ~0) return out;
+
+            *out++ = '.';
             Memory::MemSet(out, pad, precision);
-            return w + 1 + precision;
+
+            return out + precision;
         } else if (f < 1) { // log will be negative
-            const u32 w = width ? width : 1;
+            const u32 w = width > 1 ? width - 1 : 0;
             Memory::MemSet(out, pad, w);
             out += w;
-            *out++ = '.';
+            *out++ = '0';
         } else {
             log10 = (log10 == i32s::MIN ? (int)f64s::FloorToIntUnsigned(f64s::Log10(f)) : log10) + 1;
 
@@ -654,9 +652,9 @@ namespace Quasi::Text {
             d = U64ToBCD4(d);
             d |= 0x30303030;
             d <<= (-8 * log10) & 31;
+            d = Memory::ByteSwap32(d);
             Memory::MemCopyNoOverlap(out, (const char*)&d, log10);
             out += log10;
-            *out++ = '.';
 
             [[maybe_unused]] f64 ignore;
             f64s::SeparateDecimal(f, ignore, f);
@@ -664,10 +662,10 @@ namespace Quasi::Text {
 
         out = WriteFltDecimal(f, out, precision);
 
-        return out - begin;
+        return out;
     }
 
-    u32 NumberConversion::WriteFltGen(f64 f, char* out, u32 width, u32 precision, char e) {
+    char* NumberConversion::WriteFltGen(f64 f, char* out, u32 width, u32 precision, char e) {
         const int log = (int)f64s::Log10(f);
         if (log > (int)width) {
             return WriteFltSci(f, out, precision, e);
@@ -686,14 +684,14 @@ namespace Quasi::Text {
         // E+ (2)
         // exponent (max 4)
         char* strbuf = Memory::QAlloca$(char, 1 + 1 + 1 + (options.precision + 4) + 2 + 4);
-        const usize len = WriteFltSci(
+        const char* end = WriteFltSci(
             std::abs(f),
             AddSign(f, strbuf, options.showSign),
             options.precision,
             options.mode == FloatFormatter::FormatOptions::SCI_CAP ? 'E' : 'e'
         );
         return Formatter<Str>::FormatTo(sw,
-            Str::Slice(strbuf, len),
+            Str::Slice(strbuf, end - strbuf),
             { options.totalLength, options.alignment, options.pad, false }
         );
     }
@@ -707,7 +705,7 @@ namespace Quasi::Text {
         const int log10 = (int)f64s::Log10(std::abs(f));
         const u32 w = log10 <= 0 ? 1 : (log10 + 1);
         char* strbuf = Memory::QAlloca$(char, 1 + std::max(w, options.width) + 1 + (options.precision + 4));
-        const usize len = WriteFltFxd(
+        const char* end = WriteFltFxd(
             std::abs(f),
             AddSign(f, strbuf, options.showSign),
             options.width,
@@ -716,7 +714,7 @@ namespace Quasi::Text {
             options.shouldPadZero ? '0' : ' '
         );
         return Formatter<Str>::FormatTo(sw,
-            Str::Slice(strbuf, len),
+            Str::Slice(strbuf, end - strbuf),
             { options.totalLength, options.alignment, options.pad, false }
         );
     }
@@ -829,6 +827,7 @@ namespace Quasi::Text {
     FloatFormatter::FormatOptions FloatFormatter::ConfigureOptions(Str opt) {
         // ((?'pad'.?)(?'align'[<^>])(?'totalLen'[0-9]+)\,)?(?'showSign'\+?)(?'shouldPadZero'0?)(?'width'[0-9]*)\.(?'precision'[0-9]*)(?'mode'[feEgG%])
         FormatOptions options;
+        if (opt.IsEmpty()) return {};
         if (opt.Length() > 1 && opt[0] != '+') {
             if (opt[0] != '<' && opt[0] != '^' && opt[0] != '>') {
                 options.pad = opt[0];

@@ -1,7 +1,6 @@
 ﻿#include "Texture.h"
 
 #include <glp.h>
-#include "Utils/Str.h"
 #include "Utils/CStr.h"
 #include "Utils/Vec.h"
 #include "GLDebug.h"

@@ -59,7 +59,7 @@ namespace Quasi::Physics2D {
                     const bool bDyn = b->IsDynamic(), cDyn = c->IsDynamic();
                     if ((bDyn || cDyn) && c->boundingBox.RangeY().Overlaps(b->boundingBox.RangeY())) {
                         const Manifold manifold = b->CollideWith(*c);
-                        if (manifold.contactCount && std::max(manifold.contactDepth[0], manifold.contactDepth[1]) > f32s::EPSILON) {
+                        if (manifold.contactCount && std::max(manifold.contactDepth[0], manifold.contactDepth[1]) > f32s::DELTA) {
                             StaticResolve (*b, *c, manifold);
                             DynamicResolve(*b, *c, manifold);
                             if (bDyn) b->TryUpdateTransforms();

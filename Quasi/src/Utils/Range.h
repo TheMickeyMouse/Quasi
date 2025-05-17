@@ -20,7 +20,7 @@ namespace Quasi {
         static Range FromCenter(T center, T size) { return { center - size, center + size, Inclusive }; }
         static Range Empty()      { return {}; }
         static Range FullDomain() { return { NumInfo<T>::MIN, NumInfo<T>::MAX }; }
-        static Range AntiDomain() { return { NumInfo<T>::MIN, NumInfo<T>::MAX }; }
+        static Range AntiDomain() { return { NumInfo<T>::MAX, NumInfo<T>::MIN }; }
         static Range On(T point) { return { point, point, Inclusive }; }
         template <class R> static Range Over(const R& nums) {
             Range r = AntiDomain();

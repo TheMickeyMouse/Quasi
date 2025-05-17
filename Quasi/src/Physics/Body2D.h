@@ -19,7 +19,7 @@ namespace Quasi::Physics2D {
     class Body {
     public:
         fv2 position, velocity;
-        Rotation2D rotation; float angularVelocity = 0.0;
+        Rotor2D rotation; float angularVelocity = 0.0;
         float mass = 1.0f, invMass = 1.0f, inertia = 1.0f, invInertia = 1.0f;
         fRect2D boundingBox;
         u32 sortedIndex = 0;
@@ -31,7 +31,7 @@ namespace Quasi::Physics2D {
         Shape shape;
         fRect2D baseBoundingBox;
 
-        Body(const fv2& p, const Rotation2D& r, float m, BodyType type, World& world, Shape shape)
+        Body(const fv2& p, const Rotor2D& r, float m, BodyType type, World& world, Shape shape)
             : position(p), rotation(r), mass(m), invMass(m > 0 ? 1 / m : 0), type(type), world(world),
               shape(std::move(shape)) { TryUpdateTransforms(); }
 

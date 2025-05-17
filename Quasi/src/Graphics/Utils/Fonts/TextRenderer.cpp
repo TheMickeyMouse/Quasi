@@ -338,7 +338,7 @@ namespace Quasi::Graphics {
                     AddRoundedRect(
                         {{ monoSpan + restWidth,
                            { pen.y + descent.pointsf() * scaleRatio, pen.y + ascend.pointsf() * scaleRatio } }},
-                        fontSize.pointsf() * 0.3f, 0x27303d_fColor
+                        fontSize.pointsf() * 0.3f, fColor::Atom::BgAlt()
                     );
                 }
                 monos.Clear();
@@ -359,7 +359,7 @@ namespace Quasi::Graphics {
             AddRoundedRect(
                 {{ monoSpan + restWidth,
                    { pen.y + descent.pointsf() * scaleRatio, pen.y + ascend.pointsf() * scaleRatio } }},
-                fontSize.pointsf() * 0.3f, 0x27303d_fColor
+                fontSize.pointsf() * 0.3f, fColor::Atom::BgAlt()
             );
         }
     }

@@ -9,7 +9,7 @@
 #include "Utils/Iter/EnumerateIter.h"
 
 namespace Quasi::Math {
-    struct Rotation2D;
+    struct Rotor2D;
     struct RandomGenerator;
     struct Transform2D;
 
@@ -116,7 +116,7 @@ namespace Quasi::Math {
         template <class U, usize M> explicit operator Vector<U, M>() const { return As<U, M>(); }
 
         bool IsZero() const { return All([] (T x) { return x == 0; }); }
-        bool NearZero() const { return LenSq() < (T)(f32s::EPSILON * f32s::EPSILON); }
+        bool NearZero() const { return LenSq() < (T)(f32s::DELTA * f32s::DELTA); }
         Comparison Cmp(const Super& other) const { return AsSpan().Cmp(other.AsSpan()); }
 
         Super Neg() const { return Map(Operators::UNeg {}); }
@@ -133,12 +133,12 @@ namespace Quasi::Math {
         Super ModComps(const Super& other) const      { return BinaryMap(other, Operators::NumericModulo {}); }
 
         Super& AddAssign(const Super& other)          { return BinaryAssign(other, Operators::AddAssign {}); }
-        Super& SubAssign(const Super& other)          { return BinaryAssign(other, Operators::AddAssign {}); }
+        Super& SubAssign(const Super& other)          { return BinaryAssign(other, Operators::SubAssign {}); }
         Super& MulAssign(T scale)                     { return MapAssign(scale, Operators::MulAssign {}); }
         Super& DivAssign(T scale) requires Integer<T> { return MapAssign(scale, Operators::DivAssign {}); }
         Super& DivAssign(T scale) requires Floating<T> { return MulAssign((T)1 / scale); }
         Super& AddScalarAssign(T off)                 { return MapAssign(off, Operators::AddAssign {}); }
-        Super& SubScalarAssign(T off)                 { return MapAssign(off, Operators::AddAssign {}); }
+        Super& SubScalarAssign(T off)                 { return MapAssign(off, Operators::SubAssign {}); }
         Super& MulCompsAssign(const Super& other)     { return BinaryAssign(other, Operators::MulAssign {}); }
         Super& DivCompsAssign(const Super& other)     { return BinaryAssign(other, Operators::DivAssign {}); }
 
@@ -286,7 +286,7 @@ namespace Quasi::Math {
         static Option<Super> Parse(Str s, Str sep, Fn<Option<T>, Str> auto&& parserForElms) {
             Super v;
             for (const auto [i, e] : s.Split(sep).Enumerate()) {
-                if (i > N) return nullptr;
+                if (i >= N) return nullptr;
                 Option<T> elm = parserForElms(e);
                 if (!elm) return nullptr;
                 v[i] = *elm;
@@ -309,6 +309,8 @@ namespace Quasi::Math {
     public:
         Vector(T base = 0) { elems.Fill(base); }
         Vector(const Array<T, N>& array) : elems(array) {}
+
+        bool operator==(const Vector&) const = default;
     };
 
     template <class T> struct Vector<T, 1> : IVector<T, 1> {
@@ -328,6 +330,7 @@ namespace Quasi::Math {
 
         operator const T&() const { return x; }
         operator T&() { return x; }
+        bool operator==(const Vector&) const = default;
         bool operator> (T y) const { return x >  y; }
         bool operator>=(T y) const { return x >= y; }
         bool operator<=(T y) const { return x <= y; }
@@ -376,10 +379,12 @@ namespace Quasi::Math {
         Vector PerpendLeft()  const requires Signed<T> { return { -y, x }; }
         Vector PerpendRight() const requires Signed<T> { return { y, -x }; }
 
-        Vector RotateBy(const Rotation2D& r) const;
+        Vector RotateBy(const Rotor2D& r) const;
         Vector TransformBy(const Transform2D& t) const;
 
         Vec3<T> AddZ(T z) const { return { x, y, z }; }
+
+        bool operator==(const Vector&) const = default;
     };
 
     template <class T> struct Vector<T, 2> { T x, y; };
@@ -438,6 +443,8 @@ namespace Quasi::Math {
 
         Vec2<T> As2D() const { return { x, y }; }
         Vec4<T> AddW(T w = 1) const { return { x, y, z, w }; }
+
+        bool operator==(const Vector&) const = default;
     };
 
     template <class T> struct Vector<T, 3> { T x, y, z; };
@@ -479,6 +486,8 @@ namespace Quasi::Math {
         Vec3<fT> ProjectTo3DPlane() const { const fT invW = (fT)1 / w; return { x * invW, y * invW, z * invW }; }
         Vec3<T> As3D() const { return { x, y, z }; }
         Vec2<T> As2D() const { return { x, y }; }
+
+        bool operator==(const Vector&) const = default;
     };
 
     template <class T> struct Vector<T, 4> { T x, y, z, w; };

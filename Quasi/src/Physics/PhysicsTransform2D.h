@@ -9,12 +9,12 @@ namespace Quasi::Physics2D {
 
     struct PhysicsTransform { // different from math::transform2d, as this has no scale
         fv2 position;
-        Rotation2D rotation;
+        Rotor2D rotation;
 
-        PhysicsTransform(const fv2& pos = {}, const Rotation2D& rot = {}) : position(pos), rotation(rot) {}
+        PhysicsTransform(const fv2& pos = {}, const Rotor2D& rot = {}) : position(pos), rotation(rot) {}
 
         static PhysicsTransform Translate(const fv2& p);
-        static PhysicsTransform Rotation(const Rotation2D& q);
+        static PhysicsTransform Rotation(const Rotor2D& q);
 
         fv2 Transform(const fv2& point) const;
         fv2 TransformDir(const fv2& dir) const;

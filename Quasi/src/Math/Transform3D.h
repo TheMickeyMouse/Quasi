@@ -2,60 +2,60 @@
 #include "Quaternion.h"
 
 namespace Quasi::Math {
-    struct Rotation3D : private Quaternion {
-        Rotation3D() = default;
-        Rotation3D(Radians x, Radians y, Radians z) : Quaternion(FromEulerAngles({ x, y, z })) {}
-        Rotation3D(const Rotation2D& x, const Rotation2D& y, const Rotation2D& z) : Quaternion(FromEulerAngles({ x, y, z })) {}
+    struct Rotor3D : private Quaternion {
+        Rotor3D() = default;
+        Rotor3D(Radians x, Radians y, Radians z) : Quaternion(FromEulerAngles({ x, y, z })) {}
+        Rotor3D(const Rotor2D& x, const Rotor2D& y, const Rotor2D& z) : Quaternion(FromEulerAngles({ x, y, z })) {}
     private:
-        Rotation3D(const Quaternion& q) : Quaternion(q) {}
+        Rotor3D(const Quaternion& q) : Quaternion(q) {}
     public:
-        static Rotation3D FromQuat(const Quaternion& c) { return { c }; }
+        static Rotor3D FromQuat(const Quaternion& c) { return { c }; }
         Quaternion&       AsQuat()       { return static_cast<Quaternion&>(*this); }
         const Quaternion& AsQuat() const { return static_cast<const Quaternion&>(*this); }
 
-        static Rotation3D RotateAxis(const fv3& axis, const Rotation2D& r) { return Quaternion::RotateAxis(axis, r); }
-        static Rotation3D LookAt(const fv3& direction, const fv3& front) { return Quaternion::LookAt(direction, front); }
-        static Rotation3D RotateX(const Rotation2D& r) { return Quaternion::RotateX(r); }
-        static Rotation3D RotateY(const Rotation2D& r) { return Quaternion::RotateY(r); }
-        static Rotation3D RotateZ(const Rotation2D& r) { return Quaternion::RotateZ(r); }
+        static Rotor3D RotateAxis(const fv3& axis, const Rotor2D& r) { return Quaternion::RotateAxis(axis, r); }
+        static Rotor3D LookAt(const fv3& direction, const fv3& front) { return Quaternion::LookAt(direction, front); }
+        static Rotor3D RotateX(const Rotor2D& r) { return Quaternion::RotateX(r); }
+        static Rotor3D RotateY(const Rotor2D& r) { return Quaternion::RotateY(r); }
+        static Rotor3D RotateZ(const Rotor2D& r) { return Quaternion::RotateZ(r); }
 
         fv3 IHat() const;
         fv3 JHat() const;
         fv3 KHat() const;
 
         Vec3<Radians> EulerAngles() const { return ToEulerAngles(); }
-        Radians AngleBetween(const Rotation3D& r) const;
+        Radians AngleBetween(const Rotor3D& r) const;
 
-        Rotation3D RotateBy   (const Rotation3D& r) const;
-        Rotation3D RotateByInv(const Rotation3D& r) const;
+        Rotor3D RotateBy   (const Rotor3D& r) const;
+        Rotor3D RotateByInv(const Rotor3D& r) const;
 
-        Rotation3D Halved() const;
-        Rotation3D Mul(f32 p) const { return Pow(p); }
-        Rotation3D Doubled()  const;
-        Rotation3D Tripled()  const;
-        Rotation3D Inverse()  const { return Conj(); }
+        Rotor3D Halved() const;
+        Rotor3D Mul(f32 p) const { return Pow(p); }
+        Rotor3D Doubled()  const;
+        Rotor3D Tripled()  const;
+        Rotor3D Inverse()  const { return Conj(); }
 
         Matrix3x3 AsMatrixLinear() const { return AsQuat().AsMatrixLinear(); }
         Matrix3D  AsMatrix()       const { return AsQuat().AsMatrix(); }
         fv3 Rotate   (const fv3& v) const;
         fv3 InvRotate(const fv3& v) const;
 
-        Rotation3D Lerp(const Rotation3D& z, f32 t) const { return AsQuat().Slerp(z, t); }
-        Rotation3D Lerp(const Rotation3D& z, f32 t, int revolutions) const { return AsQuat().Slerp(z, t, revolutions); }
+        Rotor3D Lerp(const Rotor3D& z, f32 t) const { return AsQuat().Slerp(z, t); }
+        Rotor3D Lerp(const Rotor3D& z, f32 t, int revolutions) const { return AsQuat().Slerp(z, t, revolutions); }
 
-        Rotation3D operator+() const { return *this; }
-        Rotation3D operator-() const { return Inverse(); }
-        Rotation3D operator+(const Rotation3D& r) const { return RotateBy(r); }
-        Rotation3D operator-(const Rotation3D& r) const { return RotateByInv(r); }
-        Rotation3D operator*(f32 mul) const { return Mul(mul); }
-        Rotation3D operator/(f32 div) const { return Mul(1.0f / div); }
-        Rotation3D& operator+=(const Rotation3D& r) { return *this = RotateBy(r); }
-        Rotation3D& operator-=(const Rotation3D& r) { return *this = RotateByInv(r); }
-        Rotation3D& operator*=(f32 mul) { return *this = Mul(mul); }
-        Rotation3D& operator/=(f32 div) { return *this = Mul(1.0f / div); }
+        Rotor3D operator+() const { return *this; }
+        Rotor3D operator-() const { return Inverse(); }
+        Rotor3D operator+(const Rotor3D& r) const { return RotateBy(r); }
+        Rotor3D operator-(const Rotor3D& r) const { return RotateByInv(r); }
+        Rotor3D operator*(f32 mul) const { return Mul(mul); }
+        Rotor3D operator/(f32 div) const { return Mul(1.0f / div); }
+        Rotor3D& operator+=(const Rotor3D& r) { return *this = RotateBy(r); }
+        Rotor3D& operator-=(const Rotor3D& r) { return *this = RotateByInv(r); }
+        Rotor3D& operator*=(f32 mul) { return *this = Mul(mul); }
+        Rotor3D& operator/=(f32 div) { return *this = Mul(1.0f / div); }
         fv3 operator*(const fv3& v) const { return Rotate(v); }
 
-        static Rotation3D Random(RandomGenerator& rg);
+        static Rotor3D Random(RandomGenerator& rg);
     };
 
     struct MatrixTransform3D {
@@ -82,15 +82,15 @@ namespace Quasi::Math {
 
     struct Transform3D {
         fv3 position = 0, scale = 1;
-        Rotation3D rotation {};
+        Rotor3D rotation {};
 
         Transform3D() = default;
-        Transform3D(const fv3& pos, const fv3& scale = 1, const Rotation3D& rot = {})
+        Transform3D(const fv3& pos, const fv3& scale = 1, const Rotor3D& rot = {})
             : position(pos), scale(scale), rotation(rot) {}
 
         static Transform3D Translate(const fv3& p);
         static Transform3D Scale(const fv3& s);
-        static Transform3D Rotation(const Rotation3D& r);
+        static Transform3D Rotation(const Rotor3D& r);
 
         Transform3D NormalTransform() const;
 

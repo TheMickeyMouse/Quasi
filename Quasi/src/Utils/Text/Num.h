@@ -35,7 +35,7 @@ namespace Quasi::Text {
     struct FloatFormatter {
         // ((?'pad'.?)(?'align'[<^>])(?'totalLen'[0-9]+)\,)?(?'showSign'\+?)(?'shouldPadZero'0?)(?'width'[0-9]*)\.(?'precision'[0-9]*)(?'mode'[feEgG%])
         struct FormatOptions {
-            u32 width = 6, precision = ~0;
+            u32 width = 0, precision = ~0;
             u32 totalLength = 0;
 
             TextFormatOptions::Alignment alignment = TextFormatOptions::LEFT;
@@ -198,9 +198,9 @@ namespace Quasi::Text {
 
         char* AddSign(f64 f, char* out, bool alwaysShowSign = false);
         char* WriteFltDecimal(f64 f, char* out, u32 precision = ~0);
-        u32 WriteFltSci(f64 f, char* out, u32 precision = ~0, char e = 'e', int log10 = i32s::MIN);
-        u32 WriteFltFxd(f64 f, char* out, u32 width = 0, u32 precision = ~0, int log10 = i32s::MIN, char pad = ' ');
-        u32 WriteFltGen(f64 f, char* out, u32 width = 0, u32 precision = ~0, char e = 'e');
+        char* WriteFltSci(f64 f, char* out, u32 precision = ~0, char e = 'e', int log10 = i32s::MIN);
+        char* WriteFltFxd(f64 f, char* out, u32 width = 0, u32 precision = ~0, int log10 = i32s::MIN, char pad = ' ');
+        char* WriteFltGen(f64 f, char* out, u32 width = 0, u32 precision = ~0, char e = 'e');
 
         usize FormatFltSci  (StringWriter sw, f64 f, const FloatFormatter::FormatOptions& options);
         usize FormatFltFxd  (StringWriter sw, f64 f, const FloatFormatter::FormatOptions& options);

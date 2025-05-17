@@ -2,13 +2,13 @@
 #include "Complex.h"
 
 namespace Quasi::Math {
-    struct Rotation2D : private fComplex {
-        Rotation2D() : fComplex(1, 0) {}
-        Rotation2D(Radians theta) : fComplex(Cos(theta), Sin(theta)) {}
+    struct Rotor2D : private fComplex {
+        Rotor2D() : fComplex(1, 0) {}
+        Rotor2D(Radians theta) : fComplex(Cos(theta), Sin(theta)) {}
     private:
-        Rotation2D(const fComplex& c) : fComplex(c) {}
+        Rotor2D(const fComplex& c) : fComplex(c) {}
     public:
-        static Rotation2D FromComplex(const fComplex& c) { return { c }; }
+        static Rotor2D FromComplex(const fComplex& c) { return { c }; }
         fComplex&       AsComplex()       { return static_cast<fComplex&>(*this); }
         const fComplex& AsComplex() const { return static_cast<const fComplex&>(*this); }
 
@@ -16,40 +16,40 @@ namespace Quasi::Math {
         fv2 JHat() const { return { -im, re }; }
 
         Radians Angle() const;
-        Radians AngleBetween(const Rotation2D& other) const;
+        Radians AngleBetween(const Rotor2D& other) const;
 
-        Rotation2D RotateCCW90() const;
-        Rotation2D RotateCW90()  const;
-        Rotation2D Rotate180()   const;
-        Rotation2D RotateBy(Radians theta) const;
-        Rotation2D RotateBy   (const Rotation2D& r) const;
-        Rotation2D RotateByInv(const Rotation2D& r) const;
+        Rotor2D RotateCCW90() const;
+        Rotor2D RotateCW90()  const;
+        Rotor2D Rotate180()   const;
+        Rotor2D RotateBy(Radians theta) const;
+        Rotor2D RotateBy   (const Rotor2D& r) const;
+        Rotor2D RotateByInv(const Rotor2D& r) const;
 
-        Rotation2D Halved() const;
-        Rotation2D Mul(f32 p) const;
-        Rotation2D Doubled()  const { return Squared(); }
-        Rotation2D Tripled()  const { return Cubed(); }
-        Rotation2D Inverse()  const { return Conj(); }
+        Rotor2D Halved() const;
+        Rotor2D Mul(f32 p) const;
+        Rotor2D Doubled()  const { return Squared(); }
+        Rotor2D Tripled()  const { return Cubed(); }
+        Rotor2D Inverse()  const { return Conj(); }
 
         Matrix2x2 AsMatrixLinear() const { return AsComplex().AsMatrixLinear(); }
         Matrix2D  AsMatrix()       const { return AsComplex().AsMatrix(); }
         fv2 Rotate   (const fv2& v) const;
         fv2 InvRotate(const fv2& v) const;
 
-        Rotation2D Lerp(const Rotation2D& z, f32 t) const;
+        Rotor2D Lerp(const Rotor2D& z, f32 t) const;
 
-        Rotation2D operator+() const { return *this; }
-        Rotation2D operator-() const { return Inverse(); }
-        Rotation2D operator+(const Rotation2D& r) const { return RotateBy(r); }
-        Rotation2D operator-(const Rotation2D& r) const { return RotateByInv(r); }
-        Rotation2D operator*(f32 mul) const { return Mul(mul); }
-        Rotation2D operator/(f32 div) const { return Mul(1.0f / div); }
-        Rotation2D& operator+=(const Rotation2D& r) { return *this = RotateBy(r); }
-        Rotation2D& operator-=(const Rotation2D& r) { return *this = RotateByInv(r); }
-        Rotation2D& operator*=(f32 mul) { return *this = Mul(mul); }
-        Rotation2D& operator/=(f32 div) { return *this = Mul(1.0f / div); }
+        Rotor2D operator+() const { return *this; }
+        Rotor2D operator-() const { return Inverse(); }
+        Rotor2D operator+(const Rotor2D& r) const { return RotateBy(r); }
+        Rotor2D operator-(const Rotor2D& r) const { return RotateByInv(r); }
+        Rotor2D operator*(f32 mul) const { return Mul(mul); }
+        Rotor2D operator/(f32 div) const { return Mul(1.0f / div); }
+        Rotor2D& operator+=(const Rotor2D& r) { return *this = RotateBy(r); }
+        Rotor2D& operator-=(const Rotor2D& r) { return *this = RotateByInv(r); }
+        Rotor2D& operator*=(f32 mul) { return *this = Mul(mul); }
+        Rotor2D& operator/=(f32 div) { return *this = Mul(1.0f / div); }
 
-        static Rotation2D Random(RandomGenerator& rg);
+        static Rotor2D Random(RandomGenerator& rg);
     };
 
     struct MatrixTransform2D {
@@ -78,15 +78,15 @@ namespace Quasi::Math {
 
     struct Transform2D {
         fv2 position = 0, scale = 1;
-        Rotation2D rotation;
+        Rotor2D rotation;
 
         Transform2D() = default;
-        Transform2D(const fv2& pos, const fv2& scale = 1, const Rotation2D& rotation = {})
+        Transform2D(const fv2& pos, const fv2& scale = 1, const Rotor2D& rotation = {})
             : position(pos), scale(scale), rotation(rotation) {}
 
         static Transform2D Translate(const fv2& p);
         static Transform2D Scale(const fv2& s);
-        static Transform2D Rotation(const Rotation2D& r);
+        static Transform2D Rotation(const Rotor2D& r);
 
         Transform2D NormalTransform() const;
 
@@ -116,7 +116,7 @@ namespace Quasi::Math {
         Transform2D& operator*=(const Transform2D& t) { return Apply(t); }
     };
 
-    template <Numeric T> Vector<T, 2> Vector<T, 2>::RotateBy(const Rotation2D& r) const {
+    template <Numeric T> Vector<T, 2> Vector<T, 2>::RotateBy(const Rotor2D& r) const {
         return r.Rotate(*this);
     }
     template <Numeric T> Vector<T, 2> Vector<T, 2>::TransformBy(const Transform2D& t) const {

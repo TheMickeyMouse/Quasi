@@ -59,7 +59,7 @@ namespace Quasi::Physics2D {
             manifold.AddPoint(v1);
 
         if (d0 * d1 < 0.0f) { // different sides
-            manifold.AddPoint(fLine2D { v0, v1 }.Lerp(d0 / (d0 - d1)));
+            manifold.AddPoint(fLine2D { v0, v1 - v0 }.Lerp(d0 / (d0 - d1)));
         }
 
         return manifold;

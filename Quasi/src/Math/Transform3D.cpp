@@ -2,55 +2,50 @@
 #include "Random.h"
 
 namespace Quasi::Math {
-    fv3 Rotation3D::IHat() const {
+    fv3 Rotor3D::IHat() const {
         return { 1 - 2 * (y * y + z * z),
                      2 * (x * y + z * w),
                      2 * (x * z - y * w), };
     }
-    fv3 Rotation3D::JHat() const {
+    fv3 Rotor3D::JHat() const {
         return {     2 * (x * y - z * w),
                  1 - 2 * (x * x + z * z),
                      2 * (y * z + x * w), };
     }
-    fv3 Rotation3D::KHat() const {
+    fv3 Rotor3D::KHat() const {
         return {     2 * (x * z + y * w),
                      2 * (y * z - x * w),
                  1 - 2 * (x * x + y * y), };
     }
 
-    Radians Rotation3D::AngleBetween(const Rotation3D& r) const { return Arccos(Dot(r)); }
+    Radians Rotor3D::AngleBetween(const Rotor3D& r) const { return Arccos(Dot(r)); }
 
-    Rotation3D Rotation3D::RotateBy(const Rotation3D& r) const {
-        // 14 muls, 10 adds
-        return Quaternion {
-            2 * w * r.w - 1,
-            w * r.x + r.w * x + y * r.z - z * r.y,
-            w * r.y + r.w * y + z * r.x - x * r.z,
-            w * r.z + r.w * z + x * r.y - y * r.x
-        };
+    Rotor3D Rotor3D::RotateBy(const Rotor3D& r) const {
+        // 16 muls, 12 adds
+        return AsQuat() * r.AsQuat();
     }
-    Rotation3D Rotation3D::RotateByInv(const Rotation3D& r) const {
+    Rotor3D Rotor3D::RotateByInv(const Rotor3D& r) const {
         // r.xyz signs are flipped
         return Quaternion {
-            2 * w * r.w - 1,
-            r.w * x - w * r.x - y * r.z + z * r.y,
-            r.w * y - w * r.y - z * r.x + x * r.z,
-            r.w * z - w * r.z - x * r.y + y * r.x
+            w * r.w - x * r.x - y * r.y - z * r.z,
+            w * r.x + r.w * x + y * r.z - z * r.y,
+            w * r.y + r.w * y + z * r.x - x * r.z,
+            w * r.z + r.w * z + x * r.y - y * r.x,
         };
     }
 
-    Rotation3D Rotation3D::Halved() const {
+    Rotor3D Rotor3D::Halved() const {
         const float u = std::sqrt((1 - w) * 0.5f);
         return Quaternion { std::sqrt((1 + w) * 0.5f), x * u, y * u, z * u };
     }
-    Rotation3D Rotation3D::Doubled() const {
+    Rotor3D Rotor3D::Doubled() const {
         const float w2 = 2 * w;
         return Quaternion { w2 * w - 1, w2 * x, w2 * y, w2 * z };
     }
-    Rotation3D Rotation3D::Tripled() const {
+    Rotor3D Rotor3D::Tripled() const {
         return Doubled() + (*this);
     }
-    fv3 Rotation3D::Rotate(const fv3& v) const {
+    fv3 Rotor3D::Rotate(const fv3& v) const {
         // 21 mul, 18 adds
         const float xx = x * x, yy = y * y, zz = z * z,
                     xy = x * y, xz = x * z, yz = y * z, xw = x * w, yw = y * w, zw = z * w;
@@ -64,7 +59,7 @@ namespace Quasi::Math {
         };
     }
 
-    fv3 Rotation3D::InvRotate(const fv3& v) const {
+    fv3 Rotor3D::InvRotate(const fv3& v) const {
         // 21 mul, 18 adds
         // xyz signs are flipped, but since theyre multiplied by pairs the only
         // sign change is in xw, yw, and zw
@@ -77,7 +72,7 @@ namespace Quasi::Math {
         };
     }
 
-    Rotation3D Rotation3D::Random(RandomGenerator& rg) {
+    Rotor3D Rotor3D::Random(RandomGenerator& rg) {
         const auto [u, v, w] = fv3::Random(rg, 0, 1);
         const f32 uComp = std::sqrt(1 - u), uSqrt = std::sqrt(u);
         return Quaternion {
@@ -90,7 +85,7 @@ namespace Quasi::Math {
 
     Transform3D Transform3D::Translate(const fv3& p)        { return { p }; }
     Transform3D Transform3D::Scale    (const fv3& s)        { return { 0, s }; }
-    Transform3D Transform3D::Rotation (const Rotation3D& r) { return { 0, 1, r }; }
+    Transform3D Transform3D::Rotation (const Rotor3D& r) { return { 0, 1, r }; }
 
     Transform3D Transform3D::NormalTransform() const {
         return { 0, 1.0f / scale, rotation };
@@ -128,17 +123,13 @@ namespace Quasi::Math {
 
     Matrix3x3 Transform3D::LinearMatrix() const {
         Matrix3x3 rotmatrix = rotation.AsMatrixLinear();
-        rotmatrix.unitVectors[0] *= scale.x;
-        rotmatrix.unitVectors[1] *= scale.y;
-        rotmatrix.unitVectors[2] *= scale.z;
+        rotmatrix.ScaleBy(scale);
         return rotmatrix;
     }
 
     Matrix3D Transform3D::TransformMatrix() const {
         Matrix3D rotmatrix = rotation.AsMatrix();
-        rotmatrix.unitVectors[0] *= scale.x;
-        rotmatrix.unitVectors[1] *= scale.y;
-        rotmatrix.unitVectors[2] *= scale.z;
+        rotmatrix.ScaleBy(scale);
         rotmatrix.unitVectors[3] = position.AddW(1);
         return rotmatrix;
     }

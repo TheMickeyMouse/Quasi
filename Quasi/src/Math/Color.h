@@ -77,8 +77,6 @@ namespace Quasi::Math {
             Memory::RangeSet(v.Data(), scale, Dim);
             return v;
         }
-        static IColor Black() { return {}; }
-        static IColor White() { return Greyscale(1); }
 
         IColor<T, true> AddAlpha(T alpha) const {
             return { r, g, b, alpha };
@@ -196,10 +194,98 @@ namespace Quasi::Math {
         bool operator==(const IColor&) const = default;
         bool LooseEq(const IColor& other) const;
 
-        static IColor FromColorID(Colors::ColorID colorid);
-
         static IColor Random(RandomGenerator& rand);
         static IColor RandomPure(RandomGenerator& rand);
+
+#pragma region Colors
+        static IColor Clear()        { return { 0, 0, 0, 0 }; } // complete transparency. RGBA is (0, 0, 0, 0)
+        static IColor Black()        { return FromIntCode(0x000000); } // solid black: rgb(000, 000, 000) or #000000
+        static IColor DarkGray()     { return FromIntCode(0x404040); } // 25% white:   rgb(064, 064, 064) or #404040
+        static IColor Gray()         { return FromIntCode(0x808080); } // 50% white:   rgb(128, 128, 128) or #808080
+        static IColor LightGray()    { return FromIntCode(0xc0c0c0); } // 75% white:   rgb(192, 192, 192) or #c0c0c0
+        static IColor White()        { return FromIntCode(0xffffff); } // solid white: rgb(255, 255, 255) or #ffffff
+        static IColor Red()          { return FromIntCode(0xff0000); } // red    (100%   red):              rgb(255, 000, 000) or #ff0000
+        static IColor Orange()       { return FromIntCode(0xff8000); } // orange (100%   red +  50% green): rgb(255, 128, 000) or #ff8000
+        static IColor Yellow()       { return FromIntCode(0xffff00); } // yellow (100%   red + 100% green): rgb(255, 255, 000) or #ffff00
+        static IColor Lime()         { return FromIntCode(0x80ff00); } // lime   (100% green +  50%   red): rgb(128, 255, 000) or #80ff00
+        static IColor Green()        { return FromIntCode(0x00ff00); } // green  (100% green):              rgb(000, 255, 000) or #00ff00
+        static IColor Seafoam()      { return FromIntCode(0x00ff80); } // seafoam(100% green +  50%  blue): rgb(000, 255, 128) or #00ff80
+        static IColor Cyan()         { return FromIntCode(0x00ffff); } // cyan   (100% green + 100%  blue): rgb(000, 255, 255) or #00ffff
+        static IColor Azure()        { return FromIntCode(0x0080ff); } // azure  (100%  blue +  50% green): rgb(000, 128, 255) or #0080ff
+        static IColor Blue()         { return FromIntCode(0x0000ff); } // blue   (100%  blue):              rgb(000, 000, 255) or #0000ff
+        static IColor Purple()       { return FromIntCode(0x8000ff); } // purple (100%  blue +  50%   red): rgb(128, 000, 255) or #8000ff
+        static IColor Magenta()      { return FromIntCode(0xff00ff); } // magenta(100%  blue + 100%   red): rgb(255, 000, 255) or #ff00ff
+        static IColor Rose()         { return FromIntCode(0xff0080); } // rose   (100%   red +  50%  blue): rgb(255, 000, 128) or #ff0080
+        static IColor LightRed()     { return FromIntCode(0xff8080); } // light red    (100%   red +  50% green +  50%  blue): rgb(255, 128, 128) or #ff8080
+        static IColor LightYellow()  { return FromIntCode(0xffff80); } // light yellow (100%   red + 100% green +  50%  blue): rgb(255, 255, 128) or #ffff80
+        static IColor LightGreen()   { return FromIntCode(0x80ff80); } // light green  ( 50%   red + 100% green +  50%  blue): rgb(128, 255, 128) or #80ff80
+        static IColor LightCyan()    { return FromIntCode(0x80ffff); } // light cyan   ( 50%   red + 100% green + 100%  blue): rgb(128, 255, 255) or #80ffff
+        static IColor LightBlue()    { return FromIntCode(0x8080ff); } // light blue   ( 50%   red +  50% green + 100%  blue): rgb(128, 128, 255) or #8080ff
+        static IColor LightMagenta() { return FromIntCode(0xff80ff); } // light magenta(100%   red +  50% green + 100%  blue): rgb(255, 128, 255) or #ff80ff
+        static IColor DarkRed()      { return FromIntCode(0x800000); } // dark red   ( 50%   red):              rgb(128, 000, 000) or #800000
+        static IColor DarkYellow()   { return FromIntCode(0x808000); } // dark yellow( 50%   red +  50% green): rgb(128, 128, 000) or #808000
+        static IColor DarkGreen()    { return FromIntCode(0x008000); } // dark green ( 50% green):              rgb(000, 128, 000) or #008000
+        static IColor DarkCyan()     { return FromIntCode(0x008080); } // dark cyan  ( 50% green +  50%  blue): rgb(000, 128, 128) or #008080
+        static IColor DarkBlue()     { return FromIntCode(0x000080); } // dark blue  ( 50%  blue):              rgb(000, 000, 128) or #000080
+        static IColor DarkMagenta()  { return FromIntCode(0x800080); } // dark purple( 50%  blue +  50%   red): rgb(128, 000, 128) or #800080
+        static IColor Silver()       { return FromIntCode(0xc0c0c0); } // same as light gray,    rgb(192, 192, 192) or #c0c0c0
+        static IColor Salmon()       { return FromIntCode(0xff8080); } // same as light red,     rgb(255, 128, 128) or #ff8080
+        static IColor Lemon()        { return FromIntCode(0xffff80); } // same as light yellow,  rgb(255, 255, 128) or #ffff80
+        static IColor Mint()         { return FromIntCode(0x80ff80); } // same as light green,   rgb(128, 255, 128) or #80ff80
+        static IColor Sky()          { return FromIntCode(0x80ffff); } // same as light cyan,    rgb(128, 255, 255) or #80ffff
+        static IColor Cornflower()   { return FromIntCode(0x8080ff); } // same as light blue,    rgb(128, 128, 255) or #8080ff
+        static IColor Pink()         { return FromIntCode(0xff80ff); } // same as light magenta, rgb(255, 128, 255) or #ff80ff
+        static IColor Maroon()       { return FromIntCode(0x800000); } // same as dark red,      rgb(128, 000, 000) or #800000
+        static IColor Olive()        { return FromIntCode(0x808000); } // same as dark yellow,   rgb(128, 128, 000) or #808000
+        static IColor Avocado()      { return FromIntCode(0x008000); } // same as dark green,    rgb(000, 128, 000) or #008000
+        static IColor Teal()         { return FromIntCode(0x008080); } // same as dark cyan,     rgb(000, 128, 128) or #008080
+        static IColor Navy()         { return FromIntCode(0x000080); } // same as dark blue,     rgb(000, 000, 128) or #000080
+        static IColor Violet()       { return FromIntCode(0x800080); } // same as dark purple,   rgb(128, 000, 128) or #800080
+        struct Better {
+            static IColor Red()        { return IColor::FromIntCode(0xff3030); } // #ff3030, or rgb(255, 048, 048)
+            static IColor Orange()     { return IColor::FromIntCode(0xff802b); } // #ff802b, or rgb(255, 128, 043)
+            static IColor Yellow()     { return IColor::FromIntCode(0xffc014); } // #ffc014, or rgb(255, 192, 020)
+            static IColor Lime()       { return IColor::FromIntCode(0x87f725); } // #87f725, or rgb(135, 247, 037)
+            static IColor Green()      { return IColor::FromIntCode(0x0c8501); } // #0c8501, or rgb(012, 133, 001)
+            static IColor Aqua()       { return IColor::FromIntCode(0x28cef7); } // #28cef7, or rgb(040, 206, 247)
+            static IColor Cyan()       { return IColor::FromIntCode(0x17a0b3); } // #17a0b3, or rgb(023, 160, 179)
+            static IColor Blue()       { return IColor::FromIntCode(0x1041e3); } // #1041e3, or rgb(016, 065, 227)
+            static IColor Purple()     { return IColor::FromIntCode(0x7818ed); } // #7818ed, or rgb(120, 024, 237)
+            static IColor Magenta()    { return IColor::FromIntCode(0xcb2aeb); } // #cb2aeb, or rgb(203, 042, 235)
+            static IColor Pink()       { return IColor::FromIntCode(0xfa57c6); } // #fa57c6, or rgb(250, 087, 198)
+            static IColor Brown()      { return IColor::FromIntCode(0x45200d); } // #45200d, or rgb(069, 032, 013)
+            static IColor Black()      { return IColor::FromIntCode(0x16191d); } // #16191d, or rgb(022, 025, 029)
+            static IColor DarkGray()   { return IColor::FromIntCode(0x4c4b5d); } // #4c4b5d, or rgb(076, 075, 093)
+            static IColor Gray()       { return IColor::FromIntCode(0x747e86); } // #747e86, or rgb(116, 126, 134)
+            static IColor LightGray()  { return IColor::FromIntCode(0xafbac1); } // #afbac1, or rgb(175, 186, 193)
+            static IColor White()      { return IColor::FromIntCode(0xe8f7f9); } // #e8f7f9, or rgb(232, 247, 249)
+            inline static IColor Colors[] {
+                Red(), Orange(), Yellow(), Lime(), Green(), Aqua(), Cyan(), Blue(), Purple(), Magenta(), Pink(), Brown(), Black(), DarkGray(), Gray(), LightGray(), White(),
+            };
+        };
+        struct Atom {
+            static IColor Red()         { return IColor::FromIntCode(0xe06c75); } // #e06c75, or rgb(224, 108, 117)
+            static IColor Orange()      { return IColor::FromIntCode(0xd19a66); } // #d19a66, or rgb(209, 154, 102)
+            static IColor Green()       { return IColor::FromIntCode(0x98c379); } // #98c379, or rgb(152, 195, 121)
+            static IColor Aqua()        { return IColor::FromIntCode(0x56b6c2); } // #56b6c2, or rgb( 86, 182, 194)
+            static IColor Purple()      { return IColor::FromIntCode(0xc678dd); } // #c678dd, or rgb(198, 120, 221)
+            static IColor Blue()        { return IColor::FromIntCode(0x61afef); } // #61afef, or rgb( 97, 175, 239)
+            static IColor Yellow()      { return IColor::FromIntCode(0xe5c07b); } // #e5c07b, or rgb(229, 192, 123)
+            static IColor Gray()        { return IColor::FromIntCode(0xabb2bf); } // #abb2bf, or rgb(171, 178, 191)
+            static IColor DarkRed()     { return IColor::FromIntCode(0xbe5046); } // #be5046, or rgb(190,  80,  70)
+            static IColor DarkOrange()  { return IColor::FromIntCode(0xd19a66); } // #d19a66, or rgb(209, 154, 102)
+            static IColor DarkGreen()   { return IColor::FromIntCode(0x7a9f60); } // #7a9f60, or rgb(122, 159,  96)
+            static IColor DarkAqua()    { return IColor::FromIntCode(0x3c909b); } // #3c909b, or rgb( 60, 144, 155)
+            static IColor DarkPurple()  { return IColor::FromIntCode(0x9a52af); } // #9a52af, or rgb(154,  82, 175)
+            static IColor DarkBlue()    { return IColor::FromIntCode(0x3b84c0); } // #3b84c0, or rgb( 59, 132, 192)
+            static IColor DarkYellow()  { return IColor::FromIntCode(0xd19a66); } // #d19a66, or rgb(209, 154, 102)
+            static IColor DarkGray()    { return IColor::FromIntCode(0x5C6370); } // #5C6370, or rgb( 92,  99, 112)
+            static IColor Background()  { return IColor::FromIntCode(0x272b34); } // #272b34, or rgb( 39,  43,  52)
+            static IColor BgSecondary() { return IColor::FromIntCode(0x20242b); } // #20242b, or rgb( 32,  36,  43)
+            static IColor BgAlt()       { return IColor::FromIntCode(0x1a1e24); } // #1a1e24, or rgb( 26,  30,  36)
+            static IColor Text()        { return IColor::FromIntCode(0xdcddde); } // #dcddde, or rgb(220, 221, 222)
+        };
+#pragma endregion
     };
 
     using fColor  = IColor<f32, true>;
@@ -207,88 +293,10 @@ namespace Quasi::Math {
     using fColor3 = IColor<f32, false>;
     using uColor3 = IColor<u8, false>;
 
-    fColor  operator ""_fColor(usize x);
-    uColor  operator ""_uColor(usize x);
-    fColor3 operator ""_fColor3(usize x);
-    uColor3 operator ""_uColor3(usize x);
-    fColor  operator ""_fColor(const char* colorId, usize len);
-    uColor  operator ""_uColor(const char* colorId, usize len);
-    fColor3 operator ""_fColor3(const char* colorId, usize len);
-    uColor3 operator ""_uColor3(const char* colorId, usize len);
-
-    namespace Colors {
-        enum ColorID : u32 {
-            BLACK,      //  solid black: rgb(000, 000, 000) or #000000
-            DARK_GRAY,  //    25% white: rgb(064, 064, 064) or #404040
-            GRAY,       //    50% white: rgb(128, 128, 128) or #808080
-            LIGHT_GRAY, //    75% white: rgb(192, 192, 192) or #c0c0c0
-            WHITE,      //  solid white: rgb(255, 255, 255) or #ffffff
-
-            RED,        // red    (100%   red):              rgb(255, 000, 000) or #ff0000
-            ORANGE,     // orange (100%   red +  50% green): rgb(255, 128, 000) or #ff8000
-            YELLOW,     // yellow (100%   red + 100% green): rgb(255, 255, 000) or #ffff00
-            LIME,       // lime   (100% green +  50%   red): rgb(128, 255, 000) or #80ff00
-            GREEN,      // green  (100% green):              rgb(000, 255, 000) or #00ff00
-            SEAFOAM,    // seafoam(100% green +  50%  blue): rgb(000, 255, 128) or #00ff80
-            CYAN,       // cyan   (100% green + 100%  blue): rgb(000, 255, 255) or #00ffff
-            AZURE,      // azure  (100%  blue +  50% green): rgb(000, 128, 255) or #0080ff
-            BLUE,       // blue   (100%  blue):              rgb(000, 000, 255) or #0000ff
-            PURPLE,     // purple (100%  blue +  50%   red): rgb(128, 000, 255) or #8000ff
-            MAGENTA,    // magenta(100%  blue + 100%   red): rgb(255, 000, 255) or #ff00ff
-            ROSE,       // rose   (100%   red +  50%  blue): rgb(255, 000, 128) or #ff0080
-
-            LIGHT_RED,     // light_red    (100%   red +  50% green +  50%  blue): rgb(255, 128, 128) or #ff8080
-            LIGHT_YELLOW,  // light_yellow (100%   red + 100% green +  50%  blue): rgb(255, 255, 128) or #ffff80
-            LIGHT_GREEN,   // light_green  ( 50%   red + 100% green +  50%  blue): rgb(128, 255, 128) or #80ff80
-            LIGHT_CYAN,    // light_cyan   ( 50%   red + 100% green + 100%  blue): rgb(128, 255, 255) or #80ffff
-            LIGHT_BLUE,    // light_blue   ( 50%   red +  50% green + 100%  blue): rgb(128, 128, 255) or #8080ff
-            LIGHT_MAGENTA, // light_magenta(100%   red +  50% green + 100%  blue): rgb(255, 128, 255) or #ff80ff
-
-            DARK_RED,      // dark_red   ( 50%   red):              rgb(128, 000, 000) or #800000
-            DARK_YELLOW,   // dark_yellow( 50%   red +  50% green): rgb(128, 128, 000) or #808000
-            DARK_GREEN,    // dark_green ( 50% green):              rgb(000, 128, 000) or #008000
-            DARK_CYAN,     // dark_cyan  ( 50% green +  50%  blue): rgb(000, 128, 128) or #008080
-            DARK_BLUE,     // dark_blue  ( 50%  blue):              rgb(000, 000, 128) or #000080
-            DARK_MAGENTA,  // dark_purple( 50%  blue +  50%   red): rgb(128, 000, 128) or #800080
-
-
-            SILVER     = LIGHT_GRAY,    // same as light_gray,    rgb(192, 192, 192) or #c0c0c0
-            SALMON     = LIGHT_RED,     // same as light_red,     rgb(255, 128, 128) or #ff8080
-            LEMON      = LIGHT_YELLOW,  // same as light_yellow,  rgb(255, 255, 128) or #ffff80
-            MINT       = LIGHT_GREEN,   // same as light_green,   rgb(128, 255, 128) or #80ff80
-            SKY        = LIGHT_CYAN,    // same as light_cyan,    rgb(128, 255, 255) or #80ffff
-            CORNFLOWER = LIGHT_BLUE,    // same as light_blue,    rgb(128, 128, 255) or #8080ff
-            PINK       = LIGHT_MAGENTA, // same as light_magenta, rgb(255, 128, 255) or #ff80ff
-            MAROON     = DARK_RED,      // same as dark_red,      rgb(128, 000, 000) or #800000
-            OLIVE      = DARK_YELLOW,   // same as dark_yellow,   rgb(128, 128, 000) or #808000
-            AVOCADO    = DARK_GREEN,    // same as dark_green,    rgb(000, 128, 000) or #008000
-            TEAL       = DARK_CYAN,     // same as dark_cyan,     rgb(000, 128, 128) or #008080
-            NAVY       = DARK_BLUE,     // same as dark_blue,     rgb(000, 000, 128) or #000080
-            VIOLET     = DARK_MAGENTA,  // same as dark_purple,   rgb(128, 000, 128) or #800080
-
-            BETTER_RED = 50,   // more appealing red:     rgb(255, 048, 048) or #ff3030
-            BETTER_ORANGE,     // more appealing orange:  rgb(255, 128, 043) or #ff802b
-            BETTER_YELLOW,     // more appealing yellow:  rgb(255, 192, 020) or #ffc014
-            BETTER_LIME,       // more appealing lime:    rgb(135, 247, 037) or #87f725
-            BETTER_GREEN,      // more appealing green:   rgb(012, 133, 001) or #0c8501
-            BETTER_AQUA,       // more appealing aqua:    rgb(040, 206, 247) or #28cef7
-            BETTER_CYAN,       // more appealing cyan:    rgb(023, 160, 179) or #17a0b3
-            BETTER_BLUE,       // more appealing blue:    rgb(016, 065, 227) or #1041e3
-            BETTER_PURPLE,     // more appealing purple:  rgb(120, 024, 237) or #7818ed
-            BETTER_MAGENTA,    // more appealing magenta: rgb(203, 042, 235) or #cb2aeb
-            BETTER_PINK,       // more appealing pink:    rgb(250, 087, 198) or #fa57c6
-            BETTER_BROWN,      // more appealing brown:   rgb(069, 032, 013) or #45200d
-            BETTER_BLACK,      // more appealing black:   rgb(022, 025, 029) or #16191d
-            BETTER_DARK_GRAY,  // more appealing gray:    rgb(076, 075, 093) or #4c4b5d
-            BETTER_GRAY,       // more appealing gray:    rgb(116, 126, 134) or #747e86
-            BETTER_LIGHT_GRAY, // more appealing gray:    rgb(175, 186, 193) or #afbac1
-            BETTER_WHITE,      // more appealing white:   rgb(232, 247, 249) or #e8f7f9
-
-            CLEAR, // complete transparency. RGBA is (0, 0, 0, 0)
-        };
-        ColorID GetColorIDFor(Str colorId);
-        u32 GetHexFromID(ColorID id);
-    }
+    uColor3 operator ""_rgb(usize x);
+    uColor  operator ""_rgba(usize x);
+    fColor3 operator ""_rgbf(usize x);
+    fColor  operator ""_rgbaf(usize x);
 }
 
 namespace Quasi::Text {

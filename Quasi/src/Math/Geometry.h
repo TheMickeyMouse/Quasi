@@ -35,7 +35,7 @@ namespace Quasi::Math {
                               (start.x - other.start.x) * other.forward.y;
             const float u   = forward.x * (start.y - other.start.y) -
                               forward.y * (start.x - other.start.x);
-            if (std::abs(det) < f32s::EPSILON)
+            if (std::abs(det) < f32s::DELTA)
                 return { -1, -1 };
             return { t / det, u / det };
         }
@@ -57,7 +57,7 @@ namespace Quasi::Math {
         }
 
         T DistToSigned(const VecT& p) const {
-            return (p - start).Dot(forward.Norm().Perpend());
+            return (p - start).Dot(forward.Norm().PerpendLeft());
         }
         T DistTo(const VecT& p) const { return std::abs(DistToSigned(p)); }
 

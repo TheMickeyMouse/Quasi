@@ -6,11 +6,11 @@
 #include "Transform3D.h"
 
 namespace Quasi::Math {
-    Matrix<2> Matrix<2>::RotationLin(const Rotation2D& rotation) {
+    Matrix<2> Matrix<2>::RotationLin(const Rotor2D& rotation) {
         return rotation.AsMatrixLinear();
     }
 
-    Matrix<2>& Matrix<2>::RotateByLin(const Rotation2D& rotation) {
+    Matrix<2>& Matrix<2>::RotateByLin(const Rotor2D& rotation) {
         const fComplex& z = rotation.AsComplex();
         float* m = &unitVectors[0][0];
         const float arr[4] = { m[0] * z.re - m[1] * z.im,
@@ -21,15 +21,15 @@ namespace Quasi::Math {
         return *this;
     }
 
-    Rotation2D Matrix<2>::GetRotationLin() const {
-        return Rotation2D::FromComplex(fComplex::FromVec2D(unitVectors[0]));
+    Rotor2D Matrix<2>::GetRotationLin() const {
+        return Rotor2D::FromComplex(fComplex::FromVec2D(unitVectors[0]));
     }
 
-    Matrix<3> Matrix<3>::Rotation(const Rotation2D& rotation) {
+    Matrix<3> Matrix<3>::Rotation(const Rotor2D& rotation) {
         return rotation.AsMatrix();
     }
 
-    Matrix<3>& Matrix<3>::RotateBy(const Rotation2D& rotation) {
+    Matrix<3>& Matrix<3>::RotateBy(const Rotor2D& rotation) {
         const fComplex& z = rotation.AsComplex();
         float* m = &unitVectors[0][0];
         const float arr[4] = { m[0] * z.re - m[1] * z.im,
@@ -43,15 +43,15 @@ namespace Quasi::Math {
         return *this;
     }
 
-    Rotation2D Matrix<3>::GetRotation() const {
-        return Rotation2D::FromComplex(fComplex::FromVec2D(unitVectors[0].As2D()));
+    Rotor2D Matrix<3>::GetRotation() const {
+        return Rotor2D::FromComplex(fComplex::FromVec2D(unitVectors[0].As2D()));
     }
 
-    Matrix<3> Matrix<3>::RotationLin(const Rotation3D& rotation) {
+    Matrix<3> Matrix<3>::RotationLin(const Rotor3D& rotation) {
         return rotation.AsMatrixLinear();
     }
 
-    Matrix<3>& Matrix<3>::RotateByLin(const Rotation3D& rotation) {
+    Matrix<3>& Matrix<3>::RotateByLin(const Rotor3D& rotation) {
         const Matrix3x3 matrixForm = rotation.AsMatrixLinear();
         const fv3 columns[3] = { matrixForm * unitVectors[0],
                                  matrixForm * unitVectors[1],
@@ -60,7 +60,7 @@ namespace Quasi::Math {
         return *this;
     }
 
-    Rotation3D Matrix<3>::GetRotationLin() const {
+    Rotor3D Matrix<3>::GetRotationLin() const {
         const float* m = &unitVectors[0][0];
         float trace;
         Quaternion q;
@@ -82,10 +82,10 @@ namespace Quasi::Math {
             }
         }
         q *= 0.5f / std::sqrt(trace);
-        return Rotation3D::FromQuat(q);
+        return Rotor3D::FromQuat(q);
     }
 
-    Matrix<3> Matrix<3>::Transform(const fv2& translate, const fv2& scale, const Rotation2D& rotate) {
+    Matrix<3> Matrix<3>::Transform(const fv2& translate, const fv2& scale, const Rotor2D& rotate) {
         Matrix m = rotate.AsMatrix();
         m[0].x *= scale.x; m[1].x *= scale.x;
         m[0].y *= scale.y; m[1].y *= scale.y;
@@ -108,11 +108,11 @@ namespace Quasi::Math {
         return result;
     }
 
-    Matrix<4> Matrix<4>::Rotation(const Rotation3D& rotation) {
+    Matrix<4> Matrix<4>::Rotation(const Rotor3D& rotation) {
         return rotation.AsMatrix();
     }
 
-    Matrix<4>& Matrix<4>::RotateBy(const Rotation3D& rotation) {
+    Matrix<4>& Matrix<4>::RotateBy(const Rotor3D& rotation) {
         const Matrix3x3 matrixForm = rotation.AsMatrixLinear();
         const fv4 columns[3] = { (fv4)(matrixForm * unitVectors[0].As3D()),
                                  (fv4)(matrixForm * unitVectors[1].As3D()),
@@ -121,7 +121,7 @@ namespace Quasi::Math {
         return *this;
     }
 
-    Rotation3D Matrix<4>::GetRotation() const {
+    Rotor3D Matrix<4>::GetRotation() const {
         const float* m = &unitVectors[0][0];
         float trace;
         Quaternion q;
@@ -143,7 +143,7 @@ namespace Quasi::Math {
             }
         }
         q *= 0.5f / std::sqrt(trace);
-        return Rotation3D::FromQuat(q);
+        return Rotor3D::FromQuat(q);
     }
 
     Matrix<4> Matrix<4>::OrthoProjection(const fRect3D& box) {
@@ -187,8 +187,8 @@ namespace Quasi::Math {
                     y     = 1.0f /  tan,
                     x     = 1.0f / (tan * aspect),
                     rdz   = 1.0f / (far - near),
-                    zsum  = (far + near) / rdz,
-                    zprod = (far * near) / rdz;
+                    zsum  = (far + near) * rdz,
+                    zprod = (far * near) * rdz;
         return {{
             x, 0,  0,    0,
             0, y,  0,    0,
@@ -197,7 +197,7 @@ namespace Quasi::Math {
         }};
     }
 
-    Matrix<4> Matrix<4>::Transform(const fv3& translate, const fv3& scale, const Rotation3D& rotate) {
+    Matrix<4> Matrix<4>::Transform(const fv3& translate, const fv3& scale, const Rotor3D& rotate) {
         Matrix m = rotate.AsMatrix();
         m[0].x *= scale.x; m[1].x *= scale.x; m[2].x *= scale.x;
         m[0].y *= scale.y; m[1].y *= scale.y; m[2].y *= scale.y;
@@ -210,14 +210,14 @@ namespace Quasi::Math {
         // from this answer: https://stackoverflow.com/a/21830596
         // z is front
         // getting the vector perpendicular to the plane (eye -> center) and worldUp
-        const fv3 viewX = worldUp.Cross(direction).Norm();
+        const fv3 viewX = direction.Cross(worldUp).Norm();
         // getting localUp from viewX and viewZ
-        const fv3 viewY = direction.Cross(viewX);
+        const fv3 viewY = viewX.Cross(direction);
         return {{
-            viewX.x,     viewX.y,     viewX.z,     -viewX    .Dot(eye),
-            viewY.x,     viewY.y,     viewY.z,     -viewY    .Dot(eye),
-            direction.x, direction.y, direction.z, -direction.Dot(eye),
-            0,           0,           0,            1,
+             viewX.x,      viewX.y,      viewX.z,     -viewX    .Dot(eye),
+             viewY.x,      viewY.y,      viewY.z,     -viewY    .Dot(eye),
+            -direction.x, -direction.y, -direction.z,  direction.Dot(eye),
+             0,            0,            0,            1,
         }};
     }
 

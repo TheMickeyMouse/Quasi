@@ -12,14 +12,14 @@
 #include "Utils/Text/Formatting.h"
 
 namespace ImGui {
-    static const Quasi::Math::fColor3 COLOR_X_AXIS  = Quasi::Math::fColor3::FromColorID(Quasi::Math::Colors::BETTER_RED);
-    static const Quasi::Math::fColor3 COLOR_Y_AXIS  = Quasi::Math::fColor3::FromColorID(Quasi::Math::Colors::BETTER_GREEN);
-    static const Quasi::Math::fColor3 COLOR_Z_AXIS  = Quasi::Math::fColor3::FromColorID(Quasi::Math::Colors::BETTER_BLUE);
-    static const Quasi::Math::fColor3 COLOR_W_AXIS  = Quasi::Math::fColor3::FromColorID(Quasi::Math::Colors::BETTER_YELLOW);
-    static const Quasi::Math::fColor3 COLOR_ALPHA   = Quasi::Math::fColor3::FromColorID(Quasi::Math::Colors::BETTER_GRAY);
-    static const Quasi::Math::fColor3 COLOR_X_ANGLE = Quasi::Math::fColor3::FromColorID(Quasi::Math::Colors::BETTER_ORANGE);
-    static const Quasi::Math::fColor3 COLOR_Y_ANGLE = Quasi::Math::fColor3::FromColorID(Quasi::Math::Colors::BETTER_CYAN);
-    static const Quasi::Math::fColor3 COLOR_Z_ANGLE = Quasi::Math::fColor3::FromColorID(Quasi::Math::Colors::BETTER_PURPLE);
+    static const Quasi::Math::fColor3 COLOR_X_AXIS  = Quasi::Math::fColor3::Better::Red();
+    static const Quasi::Math::fColor3 COLOR_Y_AXIS  = Quasi::Math::fColor3::Better::Green();
+    static const Quasi::Math::fColor3 COLOR_Z_AXIS  = Quasi::Math::fColor3::Better::Blue();
+    static const Quasi::Math::fColor3 COLOR_W_AXIS  = Quasi::Math::fColor3::Better::Yellow();
+    static const Quasi::Math::fColor3 COLOR_ALPHA   = Quasi::Math::fColor3::Better::Gray();
+    static const Quasi::Math::fColor3 COLOR_X_ANGLE = Quasi::Math::fColor3::Better::Orange();
+    static const Quasi::Math::fColor3 COLOR_Y_ANGLE = Quasi::Math::fColor3::Better::Cyan();
+    static const Quasi::Math::fColor3 COLOR_Z_ANGLE = Quasi::Math::fColor3::Better::Purple();
 
     float GetUsableWidth() {
         return GetWindowWidth() - 2 * GetStyle().WindowPadding.x;
@@ -175,7 +175,7 @@ namespace ImGui {
         Unindent(GetItemRemainingWidth(width));
     }
 
-    Q_IMGUI_EDITOR(EditRotation2D, Q Math::Rotation2D& rot2) {
+    Q_IMGUI_EDITOR(EditRotation2D, Q Math::Rotor2D& rot2) {
         width = GetRemWidth(width);
 
         float theta = rot2.Angle().InDegrees();
@@ -191,7 +191,7 @@ namespace ImGui {
         rot2 = { Q Math::Radians::FromDegrees(theta) };
     }
 
-    Q_IMGUI_EDITOR(EditRotation3D, Q Math::Rotation3D& rot3) {
+    Q_IMGUI_EDITOR(EditRotation3D, Q Math::Rotor3D& rot3) {
         width = GetRemWidth(width);
 
         auto [xrot, yrot, zrot] = rot3.EulerAngles();

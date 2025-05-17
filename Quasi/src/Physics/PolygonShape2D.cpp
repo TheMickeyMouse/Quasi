@@ -104,13 +104,13 @@ namespace Quasi::Physics2D {
             }
         }
 
-        const fv2 &f     = PointAt(furthest),
-                       &edge0 = PointAtWrap(furthest + 1),
-                       &edge1 = PointAtWrap(furthest - 1);
-        if (std::abs((f - edge0).Dot(normal)) * InvLenBtwn(furthest) >
-            std::abs((f - edge1).Dot(normal)) * InvLenBtwnWrap(furthest - 1))
-            return { f, edge1 };
-        return { f, edge0 };
+        const fv2 &p  = PointAt(furthest),
+                   f0 = PointAtWrap(furthest + 1) - p,
+                   f1 = PointAtWrap(furthest - 1) - p;
+        if (std::abs(f0.Dot(normal)) * InvLenBtwn(furthest) >
+            std::abs(f1.Dot(normal)) * InvLenBtwnWrap(furthest - 1))
+            return { p, f1 };
+        return { p, f0 };
     }
 
     template <class T> fRange BasicPolygonShape<T>::ProjectOntoAxis(const fv2& axis) const {
@@ -136,9 +136,9 @@ namespace Quasi::Physics2D {
         bool success = false;
         u32 i = 0;
         for (; i < Size() - 1; ++i) {
-            success |= sat.CheckAxis((PointAt(i + 1) - PointAt(i)).Perpend() * InvLenBtwn(i));
+            success |= sat.CheckAxis((PointAt(i + 1) - PointAt(i)).PerpendLeft() * InvLenBtwn(i));
         }
-        success |= sat.CheckAxis((PointAt(0) - PointAt(i)).Perpend() * InvLenBtwn(i));
+        success |= sat.CheckAxis((PointAt(0) - PointAt(i)).PerpendLeft() * InvLenBtwn(i));
         return success;
     }
 

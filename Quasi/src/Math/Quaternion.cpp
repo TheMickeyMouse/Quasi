@@ -5,24 +5,24 @@
 #include "Transform2D.h"
 
 namespace Quasi::Math {
-    Quaternion Quaternion::RotateAxis(const fv3& axis, const Rotation2D& rotation) {
+    Quaternion Quaternion::RotateAxis(const fv3& axis, const Rotor2D& rotation) {
         const auto [cos, sin] = rotation.Halved().IHat();
         return { cos, axis * sin };
     }
 
-    Quaternion Quaternion::RotateX(const Rotation2D& r) {
+    Quaternion Quaternion::RotateX(const Rotor2D& r) {
         const auto [cos, sin] = r.Halved().IHat();
         return { cos, sin, 0, 0 };
     }
-    Quaternion Quaternion::RotateY(const Rotation2D& r) {
+    Quaternion Quaternion::RotateY(const Rotor2D& r) {
         const auto [cos, sin] = r.Halved().IHat();
         return { cos, 0, sin, 0 };
     }
-    Quaternion Quaternion::RotateZ(const Rotation2D& r) {
+    Quaternion Quaternion::RotateZ(const Rotor2D& r) {
         const auto [cos, sin] = r.Halved().IHat();
         return { cos, 0, 0, sin };
     }
-    Quaternion Quaternion::RotateXYZ(const Vec3<Rotation2D>& r) { return RotateY(r.y) * RotateX(r.x) * RotateZ(r.z); }
+    Quaternion Quaternion::RotateXYZ(const Vec3<Rotor2D>& r) { return RotateY(r.y) * RotateX(r.x) * RotateZ(r.z); }
     Quaternion Quaternion::RotateTo(const fv3& from, const fv3& to) {
         return { from.Dot(to), from.Cross(to) };
     }

@@ -18,21 +18,21 @@ namespace Quasi::Physics2D {
         const float r2 = direction2.Dot(relative);
 
         // Check if either or both segments degenerate into points
-        if (len1 <= f32s::EPSILON && len2 <= f32s::EPSILON) {
+        if (len1 <= f32s::DELTA && len2 <= f32s::DELTA) {
             // Both segments degenerate into points
             *s = *t = 0.0f;
             *c1 = a1;
             *c2 = a2;
             return c1->DistSq(*c2);
         }
-        if (len1 <= f64s::EPSILON) {
+        if (len1 <= f32s::DELTA) {
             // First segment degenerates into a point
             *s = 0.0f;
             *t = r2 / len2; // s = 0 => t = (b*s + f) / e = f / e
             *t = std::clamp(*t, 0.0f, 1.0f);
         } else {
             const float r1 = direction1.Dot(relative);
-            if (len2 <= f64s::EPSILON) {
+            if (len2 <= f32s::DELTA) {
                 // Second segment degenerates into a point
                 *t = 0.0f;
                 *s = std::clamp(-r1 / len1, 0.0f, 1.0f); // t = 0 => s = (b*t - c) / a = -c / a
@@ -146,164 +146,18 @@ namespace Quasi::Physics2D {
     Manifold CollideCapsules(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
         const CapsuleShape& cap1 = s1.As<CapsuleShape>(),
                           & cap2 = s2.As<CapsuleShape>();
-
-        // from cap2 local space to cap1 local space
-  //       const fv2 f1  = xf1.TransformDir(cap1.forward),
-  //                      a1  = xf1.position - f1,
-  //   				   b1  = xf1.position + f1,
-  //                      f2  = xf2.TransformDir(cap2.forward),
-  //                      a2  = xf2.position - f2,
-  //                      b2  = xf2.position + f2,
-  //                      rel = a1 - a2;
-  //
-  //       const float lensq1 = f1.lensq(), lensq2 = f2.lensq();
-  //       const float k1 = rel.dot(f1), k2 = rel.dot(f2), dboth = f1.dot(f2);
-  //       const float denom = lensq1 * lensq2 - dboth * dboth;
-  //
-  //       // fraction on segment 1
-  //       float u = 0.0f;
-  //       if (denom != 0.0f) {
-  //           // not parallel
-  //           u = std::clamp((dboth * k2 - k1 * lensq2) / denom, 0.0f, 2.0f);
-  //       }
-  //
-  //       // Compute point on segment 2 closest to p1 + f1 * d1
-  //       float v = (dboth * u + k2) / lensq2;
-  //
-  //       // Clamping of segment 2 requires a do over on segment 1
-  //       if (v < 0.0f) {
-  //           v = 0.0f;
-  //           u = std::clamp((0 - k1) / lensq1, 0.0f, 2.0f);
-  //       } else if (v > 2.0f) {
-  //           v = 2.0f;
-  //           u = std::clamp((2 * dboth - k1) / lensq1, 0.0f, 2.0f);
-  //       }
-  //
-  //       const fv2 closest1 = a1 + f1 * u;
-  //       const fv2 closest2 = a2 + f2 * v;
-  //       const float distSq = closest1.distsq(closest2);
-  //
-  //
-		// Manifold manifold = { 0 };
-		// float totalRadius = cap1.radius + cap2.radius;
-  //
-		// if (distSq > totalRadius * totalRadius) {
-		// 	return manifold;
-		// }
-  //
-		// const float dist = std::sqrt(distSq);
-		// const float len1 = std::sqrt(lensq1), len2 = std::sqrt(lensq2);
-  //   	const fv2 fn1 = f1 / len1, fn2 = f2 / len2;
-  //
-		// // Does cap2 project outside cap1?
-		// const float projA2 = (a2 - a1).dot(fn1),
-  //   				projB2 = (b2 - a1).dot(fn1);
-		// const bool outsideA = (projA2 <= 0.0f && projB2 <= 0.0f) || (projA2 >= 2 * len1 && projB2 >= 2 * len1);
-  //
-		// // Does cap1 project outside cap2?
-  //   	const float projA1 = (a1 - a2).dot(fn2),
-		// 			projB1 = (b1 - a2).dot(fn2);
-		// const bool outsideB = (projA1 <= 0.0f && projB1 <= 0.0f) || (projA1 >= 2 * len2 && projB1 >= 2 * len2);
-  //
-		// if (!outsideA && !outsideB) {
-		// 	// attempt to clip
-		// 	// this may yield contact points with excessive separation
-		// 	// in that case the algorithm falls back to single point collision
-  //
-		// 	// find reference edge using SAT
-		// 	SeperatingAxisSolver sat = SeperatingAxisSolver::CheckCollisionFor(s1, xf1, s2, xf2);
-		// 	sat.SetCheckFor(SeperatingAxisSolver::NEITHER);
-		// 	sat.CheckAxis(fn1.perpend());
-		// 	const bool useCap2 = sat.CheckAxis(fn2.perpend());
-  //
-		// 	manifold.seperatingNormal = sat.GetSepAxis();
-		// 	if (!useCap2) {
-		// 		const fv2& n = sat.GetSepAxis();
-		// 		fv2 contactLeft = a2, contactRight = b2;
-		// 		// clip leftwise
-		// 		if (projA2 < 0 && projB2 > 0) {
-		// 			contactLeft  = a2 + f2 * ((0.0f - projA2) / (projB2 - projA2));
-		// 		} else if (projA2 > 0 && projB2 < 0) {
-		// 			contactRight = b2 - f2 * ((0.0f - projB2) / (projA2 - projB2));
-		// 		}
-		// 		// clip rightwise
-		// 		if (projA2 > 2 * len1 && projB2 < 2 * len1) {
-		// 			contactLeft  = a2 + f2 * ((0.0f - projA2) / (projB2 - projA2));
-		// 		} else if (projA2 < 2 * len1 && projB2 > 2 * len1) {
-		// 			contactRight = b2 - f2 * ((0.0f - projB2) / (projA2 - projB2));
-		// 		}
-		// 		// clip forward
-		// 		float depthLeft  = (contactLeft  - a1).dot(n),
-		// 			  depthRight = (contactRight - a1).dot(n);
-  //
-		// 		if (depthLeft <= dist) {
-		// 			manifold.AddPoint(contactLeft  + n * (0.5f * (cap1.radius - cap2.radius)), totalRadius - depthLeft);
-		// 		}
-		// 		if (depthRight <= dist) {
-		// 			manifold.AddPoint(contactRight + n * (0.5f * (cap1.radius - cap2.radius)), totalRadius - depthRight);
-		// 		}
-  //
-		// 		if (manifold.contactCount)
-		// 			return manifold;
-		// 	} else {
-		// 		const fv2 n = -sat.GetSepAxis();
-		// 		fv2 contactLeft = a1, contactRight = b1;
-		// 		// clip leftwise
-		// 		if        (projA1 < 0 && projB1 > 0) {
-		// 			contactLeft  = a1 + f1 * ((0.0f - projA1) / (projB1 - projA1));
-		// 		} else if (projA1 > 0 && projB1 < 0) {
-		// 			contactRight = b1 - f1 * ((0.0f - projB1) / (projA1 - projB1));
-		// 		}
-		// 		// clip rightwise
-		// 		if        (projA1 > 2 * len2 && projB1 < 2 * len2) {
-		// 			contactLeft  = a1 + f1 * ((projA1 - 2 * len2) / (projB1 - projA1));
-		// 		} else if (projA1 < 2 * len2 && projB1 > 2 * len2) {
-		// 			contactRight = b1 - f1 * ((projB1 - 2 * len2) / (projA1 - projB1));
-		// 		}
-		// 		const float depthLeft  = (contactLeft  - a2).dot(n),
-		// 					depthRight = (contactRight - a2).dot(n);
-  //
-		// 		if (depthLeft <= dist) {
-		// 			manifold.AddPoint(contactLeft  + n * (0.5f * (cap2.radius - cap1.radius)), totalRadius - depthLeft);
-		// 		}
-		// 		if (depthRight <= dist) {
-		// 			manifold.AddPoint(contactRight + n * (0.5f * (cap2.radius - cap1.radius)), totalRadius - depthRight);
-		// 		}
-  //
-		// 		if (manifold.contactCount)
-		// 			return manifold;
-		// 	}
-		// }
-  //
-		// // single point collision
-	 //    {
-		//     fv2 normal = closest2 - closest1;
-  //       	if (normal.lensq() > EPSILON) {
-  //       		normal *= 1 / normal.len();
-  //       	} else {
-  //       		normal = fn1.perpend();
-  //       	}
-  //
-  //       	const fv2 c1 = closest1 + normal * cap1.radius,
-		// 				   c2 = closest2 - normal * cap2.radius;
-  //
-  //       	manifold.seperatingNormal = normal;
-  //       	manifold.AddPoint((c1 + c2) * 0.5f, totalRadius - dist);
-	 //    }
-  //   	return manifold;
-
         SeperatingAxisSolver sat = SeperatingAxisSolver::CheckCollisionFor(s1, xf1, s2, xf2);
 
         const fv2 f1 = xf1.TransformDir(cap1.forward),
-                       f2 = xf2.TransformDir(cap2.forward);
+                  f2 = xf2.TransformDir(cap2.forward);
 
         const fv2 off = xf1.position - xf2.position;
         const fv2 tip1 =  off + f1, end1 =  off - f1,
-                       tip2 = -off + f2, end2 = -off - f2;
+                  tip2 = -off + f2, end2 = -off - f2;
         const fv2 axis1 = tip1 - f2 * std::clamp(tip1.Dot(f2) * cap2.invLenSq, -1.0f, 1.0f),
-                       axis2 = end1 - f2 * std::clamp(end1.Dot(f2) * cap2.invLenSq, -1.0f, 1.0f),
-                       axis3 = tip2 - f1 * std::clamp(tip2.Dot(f1) * cap1.invLenSq, -1.0f, 1.0f),
-                       axis4 = end2 - f1 * std::clamp(end2.Dot(f1) * cap1.invLenSq, -1.0f, 1.0f);
+                  axis2 = end1 - f2 * std::clamp(end1.Dot(f2) * cap2.invLenSq, -1.0f, 1.0f),
+                  axis3 = tip2 - f1 * std::clamp(tip2.Dot(f1) * cap1.invLenSq, -1.0f, 1.0f),
+                  axis4 = end2 - f1 * std::clamp(end2.Dot(f1) * cap1.invLenSq, -1.0f, 1.0f);
 
         sat.SetCheckFor(SeperatingAxisSolver::NEITHER);
 
@@ -337,8 +191,8 @@ namespace Quasi::Physics2D {
         const auto& cap = *s2.As<CapsuleShape>();
         sat.SetCheckFor(SeperatingAxisSolver::NEITHER);
         const fv2 tip = xf2.Transform(cap.forward), end = 2 * xf2.position - tip;
-        sat.CheckAxis((xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(tip))) - tip).Norm());
-        sat.CheckAxis((xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(end))) - end).Norm());
+        sat.CheckAxis(xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(tip))).DirTowards(tip));
+        sat.CheckAxis(xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(end))).DirTowards(end));
 
         if (!sat.Collides())
             return Manifold::None();
@@ -499,8 +353,8 @@ namespace Quasi::Physics2D {
 
             const fv2 relVel = [&] {
                 if constexpr (BDyn && TDyn) {
-                    const fv2 angularVelBody   = relBody  [i].Perpend() * -body.angularVelocity,
-                              angularVelTarget = relTarget[i].Perpend() * -target.angularVelocity;
+                    const fv2 angularVelBody   = relBody  [i].PerpendLeft() * body.angularVelocity,
+                              angularVelTarget = relTarget[i].PerpendLeft() * target.angularVelocity;
 
                     return (target.velocity + angularVelTarget) -
                            (body  .velocity + angularVelBody);
@@ -555,8 +409,8 @@ namespace Quasi::Physics2D {
         for (u32 i = 0; i < ContactCount; ++i) {
             const fv2 relVel = [&] {
                 if constexpr (BDyn && TDyn) {
-                    const fv2 angularVelBody   = relBody  [i].Perpend() * -body.angularVelocity,
-                              angularVelTarget = relTarget[i].Perpend() * -target.angularVelocity;
+                    const fv2 angularVelBody   = relBody  [i].PerpendLeft() * body.angularVelocity,
+                              angularVelTarget = relTarget[i].PerpendLeft() * target.angularVelocity;
 
                     return (target.velocity + angularVelTarget) -
                            (body  .velocity + angularVelBody);
@@ -569,7 +423,7 @@ namespace Quasi::Physics2D {
 
             const float t = relVel.Dot(tangent);
 
-            if (std::abs(t) <= f32s::EPSILON) continue;
+            if (std::abs(t) <= f32s::DELTA) continue;
 
             const float denomT = [&] {
                 if constexpr (BDyn && TDyn) {

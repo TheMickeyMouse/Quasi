@@ -6,7 +6,7 @@
 #include "Math/Color.h"
 
 namespace Quasi::Math {
-    struct Rotation3D;
+    struct Rotor3D;
     struct Transform3D;
 }
 
@@ -58,8 +58,8 @@ namespace ImGui {
     template <class T, Q usize N>
     Q_IMGUI_EDITOR(EditRect, Q Math::Rect<T, N>& range, float speed = 1, Q NoInfer<const Q Option<Q Math::Rect<T, N>>&> constraint = nullptr);
 
-    Q_IMGUI_EDITOR(EditRotation2D, Q Math::Rotation2D& rot2);
-    Q_IMGUI_EDITOR(EditRotation3D, Q Math::Rotation3D& rot3);
+    Q_IMGUI_EDITOR(EditRotation2D, Q Math::Rotor2D& rot2);
+    Q_IMGUI_EDITOR(EditRotation3D, Q Math::Rotor3D& rot3);
 
     Q_IMGUI_EDITOR(EditYawPitch, float& yaw, float& pitch);
 
