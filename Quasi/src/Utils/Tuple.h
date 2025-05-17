@@ -7,29 +7,29 @@ namespace Quasi {
         template <class T, class U, class V, class W, class... Rest>
         using Result = typename GetTupleElement<N - 4>::template DeferResult<Rest...>;
         template <class T, class U, class V, class W, class... Rest>
-        static Result<T, U, V, W, Rest...> GetDeferResult();
-        template <class... Ts> using DeferResult = decltype(GetDeferResult<Ts...>());
+        static Result<T, U, V, W, Rest...> GetDeferResult;
+        template <class... Ts> using DeferResult = decltype(GetDeferResult<Ts...>);
     };
 
     template <> struct GetTupleElement<0> {
         template <class T, class...> using Result = T;
-        template <class T, class... Ts> static T GetDeferResult();
-        template <class... Ts> using DeferResult = decltype(GetDeferResult<Ts...>());
+        template <class T, class... Ts> static T GetDeferResult;
+        template <class... Ts> using DeferResult = decltype(GetDeferResult<Ts...>);
     };
     template <> struct GetTupleElement<1> {
         template <class T, class U, class...> using Result = U;
-        template <class T, class U, class... Ts> static U GetDeferResult();
-        template <class... Ts> using DeferResult = decltype(GetDeferResult<Ts...>());
+        template <class T, class U, class... Ts> static U GetDeferResult;
+        template <class... Ts> using DeferResult = decltype(GetDeferResult<Ts...>);
     };
     template <> struct GetTupleElement<2> {
         template <class T, class U, class V, class...> using Result = V;
-        template <class T, class U, class V, class... Ts> static V GetDeferResult();
-        template <class... Ts> using DeferResult = decltype(GetDeferResult<Ts...>());
+        template <class T, class U, class V, class... Ts> static V GetDeferResult;
+        template <class... Ts> using DeferResult = decltype(GetDeferResult<Ts...>);
     };
     template <> struct GetTupleElement<3> {
         template <class T, class U, class V, class W, class...> using Result = W;
-        template <class T, class U, class V, class W, class... Ts> static W GetDeferResult();
-        template <class... Ts> using DeferResult = decltype(GetDeferResult<Ts...>());
+        template <class T, class U, class V, class W, class... Ts> static W GetDeferResult;
+        template <class... Ts> using DeferResult = decltype(GetDeferResult<Ts...>);
     };
 
     template <usize N, class... Types>
@@ -68,61 +68,58 @@ namespace Quasi {
     }
 #pragma endregion
 
-    template <usize, class T> struct TupleLeaf { T leaf; };
+    template <class...> struct Tuple;
 
-    template <usize N, class T, class... Ts> struct TupleImpl : TupleLeaf<N, T>, TupleImpl<N + 1, Ts...> {
-        TupleImpl() = default;
-        TupleImpl(T first, Ts... args) : TupleLeaf<N, T>((T&&)first), TupleImpl<N + 1, Ts...>((Ts&&)args...) {}
-    };
-    template <usize N, class T> struct TupleImpl<N, T> : TupleLeaf<N, T> {
-        TupleImpl() = default;
-        TupleImpl(T first) : TupleLeaf<N, T>((T&&)first) {}
-    };
+    template <class T, class... Ts> struct Tuple<T, Ts...> {
+        T first;
+        Tuple<Ts...> rest;
 
-    template <class... Ts> struct Tuple : TupleImpl<0, Ts...> {
-        using TupleImpl<0, Ts...>::TupleImpl;
+        Tuple() = default;
+        Tuple(T first, Ts... rest) : first((T&&)first), rest((Ts&&)rest...) {}
 
         template <usize N>
-        const TupleElement<N, Ts...>& Get() const {
-            return static_cast<const TupleLeaf<N, TupleElement<N, Ts...>>*>(this)->leaf;
+        const TupleElement<N, T, Ts...>& Get() const {
+            if constexpr (N == 0) return first;
+            else return rest.template Get<N - 1>();
         }
         template <usize N>
-        TupleElement<N, Ts...>& Get() {
-            return static_cast<TupleLeaf<N, TupleElement<N, Ts...>>*>(this)->leaf;
+        TupleElement<N, T, Ts...>& Get() {
+            if constexpr (N == 0) return first;
+            else return rest.template Get<N - 1>();
         }
 
         // structured binding support
-        template <usize N> const TupleElement<N, Ts...>& get() const { return Get<N>(); }
-        template <usize N> TupleElement<N, Ts...>& get() { return Get<N>(); }
+        template <usize N> const TupleElement<N, T, Ts...>& get() const { return Get<N>(); }
+        template <usize N> TupleElement<N, T, Ts...>& get() { return Get<N>(); }
 
-        template <usize N> const TupleElement<N, Ts...>& operator[](StaticIndex<N>) const { return Get<N>(); }
-        template <usize N>       TupleElement<N, Ts...>& operator[](StaticIndex<N>)       { return Get<N>(); }
+        template <usize N> const TupleElement<N, T, Ts...>& operator[](StaticIndex<N>) const { return Get<N>(); }
+        template <usize N>       TupleElement<N, T, Ts...>& operator[](StaticIndex<N>)       { return Get<N>(); }
 
-        template <class... Us>
-        void TieTo(Us&... outs) const {
-            [&]<usize... Is>(IntSeq<Is...>) {
-                ((outs = Us(Get<Is>())), ...);
-            }(IntRangeSeq<sizeof...(Ts)> {});
+        template <class U, class... Us>
+        void TieTo(U& out, Us&... outs) const {
+            out = first;
+            rest.TieTo(outs...);
         }
-        void TieMoveTo(Ts&... outs) {
-            [&]<usize... Is>(IntSeq<Is...>) {
-                ((outs = std::move(Get<Is>())), ...);
-            }(IntRangeSeq<sizeof...(Ts)> {});
+        void TieMoveTo(T& out, Ts&... outs) {
+            out = std::move(first);
+            rest.TieMoveTo(outs...);
         }
 
         Hashing::Hash GetHashCode() const {
-            Hashing::Hash h {};
-            [&]<usize... Is>(IntSeq<Is...>) {
-                ((h = Hashing::HashCombine(h, HashObject(Get<Is>()))), ...);
-            }(IntRangeSeq<sizeof...(Ts)> {});
+            Hashing::Hash h = Hashing::HashObject(first);
+            h = Hashing::HashCombine(h, rest.GetHashCode());
             return h;
         }
     };
 
     template <> struct Tuple<> {
+        Tuple() = default;
+
         template <usize> void Get() const = delete;
         template <usize> void get() const = delete;
         void operator[](auto) const = delete;
+        void TieTo() const {}
+        void TieMoveTo() const {}
         Hashing::Hash GetHashCode() const { return Hashing::EmptyHash(); }
     };
 

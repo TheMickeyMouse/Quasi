@@ -3,7 +3,8 @@ import itertools
 
 # TUTORIAL FOR ADDING PRETTY PRINTERS:
 # goto the home folder (on windows it's C:/users/$username$
-# create a .gdbinit file with contents
+# create a raw '.gdbinit' (thats the name!) file with
+# the following as the contents (you may have to use notepad++ to inser this)
 # ```
 # python
 # import sys
@@ -84,8 +85,7 @@ class QuasiArrayPrinter:
 
 
 class QuasiOptionPrinter:
-    def __init__(self, typename, val):
-        self.typename = typename
+    def __init__(self, val):
         self.val = val
         self.some = val.type.template_argument(0)
 
@@ -107,13 +107,11 @@ class QuasiRefPrinter:
         return self.typename
 
     def children(self):
-        yield
         yield 'Ref', self.val['obj'].dereference()
 
 
 class QuasiOptRefPrinter:
-    def __init__(self, typename, val):
-        self.typename = typename
+    def __init__(self, val):
         self.val = val
         self.some = val.type.template_argument(0)
 
@@ -127,8 +125,7 @@ class QuasiOptRefPrinter:
 
 
 class QuasiBoxPrinter:
-    def __init__(self, typename, val):
-        self.typename = typename
+    def __init__(self, val):
         self.val = val
 
     def to_string(self):
@@ -141,18 +138,108 @@ class QuasiBoxPrinter:
 
 
 class QuasiArrayBoxPrinter:
-    def __init__(self, typename, val):
-        self.typename = typename
+    def __init__(self, val):
         self.val = val
 
     def to_string(self):
         return f'ArrayBox({self.val["buf"]}, len={self.val["size"]})' if self.val['buf'] else 'nullptr'
 
     def children(self):
-        if self.val['buf']:
-            yield '*', self.val['buf']
-        return
+        return BufferPrinterIterator(self.val['buf'], self.val['size'])
 
+    def display_hint(self):
+        return 'array'
+
+
+class QuasiStringPrinter:
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        s = self.val['small']
+        small = s['sizePackedFlag'] & 1
+        string = s if small else self.val['large']
+        return string['data'].lazy_string(length=s['sizePackedFlag'] >> 1)
+
+    def display_hint(self):
+        return 'string'
+
+
+class QuasiStrPrinter:
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        return self.val['data'].lazy_string(length=self.val['size'])
+
+    def display_hint(self):
+        return 'string'
+
+
+class QuasiRangePrinter:
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        return f'[{self.val["min"]},{self.val["max"]})'
+
+    def children(self):
+        yield 'min', self.val['min']
+        yield 'max', self.val['max']
+
+class QuasiTuplePrinter:
+    def __init__(self, typename, val):
+        self.representation = typename[6:-1]
+        self.val = val
+
+    def to_string(self):
+        return f'({self.representation})'
+
+    def children(self):
+        i = 0
+        head = self.val
+        while True:
+            yield f'.{i}', head['first']
+            if len(head.fields()) == 0: break
+            head = head['rest']
+
+
+class QuasiVariantPrinter:
+    def __init__(self, val):
+        self.val = val
+        self.type = val.type
+
+    def to_string(self):
+        return f'{self.type.template_argument(self.val["tag"])}'
+
+    def children(self):
+        yield '*', self.val.cast(self.type.template_argument(self.val['tag']).reference())
+
+class QuasiMathVecPrinter:
+    def __init__(self, val):
+        self.val = val
+        self.n = int(val.type.template_argument(1))
+
+    def to_string(self):
+        return f'({", ".join(str(self.val[x]) for x in "xyzw"[:self.n])})'
+
+    def children(self):
+        for x in "xyzw"[:self.n]:
+            yield x, self.val[x]
+
+class QuasiMathMatrixPrinter:
+    def __init__(self, val):
+        self.val = val
+        self.n = int(val.type.template_argument(0))
+        self.m = int(val.type.template_argument(1))
+
+    def children(self):
+        u = self.val['unitVectors']
+        for i in range(self.n):
+            yield '', f'[{" ".join(str(u[j][i]) for j in range(self.m))}]'
+
+    def display_hint(self):
+        return 'array'
 
 def quasi_lookup(val):
     lookup: str = val.type.tag
@@ -167,11 +254,19 @@ def quasi_lookup(val):
         case 'Vec':      return QuasiVecPrinter      (lookup, val)
         case 'Span':     return QuasiSpanPrinter     (lookup, val)
         case 'Array':    return QuasiArrayPrinter    (lookup, val)
-        case 'Option':   return QuasiOptionPrinter   (lookup, val)
+        case 'Option':   return QuasiOptionPrinter   (val)
         case 'Ref':      return QuasiRefPrinter      (lookup, val)
-        case 'OptRef':   return QuasiOptRefPrinter   (lookup, val)
-        case 'Box':      return QuasiBoxPrinter      (lookup, val)
-        case 'ArrayBox': return QuasiArrayBoxPrinter (lookup, val)
+        case 'OptRef':   return QuasiOptRefPrinter   (val)
+        case 'Box':      return QuasiBoxPrinter      (val)
+        case 'ArrayBox': return QuasiArrayBoxPrinter (val)
+        case 'String':   return QuasiStringPrinter   (val)
+        case 'Str':      return QuasiStrPrinter      (val)
+        case 'CStr':     return QuasiStrPrinter      (val)
+        case 'Range':    return QuasiRangePrinter    (val)
+        case 'Tuple':    return QuasiTuplePrinter    (lookup, val)
+        case 'Variant':  return QuasiVariantPrinter  (val)
+        case 'Math::Vector':     return QuasiMathVecPrinter(val)
+        case 'Math::Matrix':     return QuasiMathMatrixPrinter(val)
     return None
 
 
