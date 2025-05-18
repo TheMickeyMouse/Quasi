@@ -157,9 +157,9 @@ class QuasiStringPrinter:
 
     def to_string(self):
         s = self.val['small']
-        small = s['sizePackedFlag'] & 1
+        small = int(s['sizePackedFlag'] & 1) == 0
         string = s if small else self.val['large']
-        return string['data'].lazy_string(length=s['sizePackedFlag'] >> 1)
+        return string['data'].lazy_string(length=(string['sizePackedFlag'] >> 1))
 
     def display_hint(self):
         return 'string'
@@ -215,6 +215,54 @@ class QuasiVariantPrinter:
     def children(self):
         yield '*', self.val.cast(self.type.template_argument(self.val['tag']).reference())
 
+class QuasiHashTablePrinter:
+    def __init__(self, val):
+        self.val = val
+        t = val.type
+        self.key = t.template_argument(1)
+        self.value = t.template_argument(2)
+
+    def to_string(self):
+        if self.value.tag != gdb.TYPE_CODE_VOID:
+            return f'HashMap<{self.key}, {self.value}> with {self.val["elmCount"]} elements'
+        else:
+            return f'HashSet<{self.key}> with {self.val["elmCount"]} elements'
+
+    def children(self):
+        info, kv = self.val['infoData'], self.val['kvData']
+        end = info.reinterpret_cast(kv.type)
+        byteptrt = gdb.lookup_type('uint64_t').pointer()
+        for _ in range(self.val['elmCount']):
+            n = int(info.reinterpret_cast(byteptrt).dereference())
+            while n == 0:
+                info += 8
+                kv += 8
+                n = int(info.reinterpret_cast(byteptrt).dereference())
+
+            n = (((n << 56) & 0xFF00000000000000) |
+                 ((n << 40) & 0x00FF000000000000) |
+                 ((n << 24) & 0x0000FF0000000000) |
+                 ((n <<  8) & 0x000000FF00000000) |
+                 ((n >>  8) & 0x00000000FF000000) |
+                 ((n >> 24) & 0x0000000000FF0000) |
+                 ((n >> 40) & 0x000000000000FF00) |
+                 ((n >> 56) & 0x00000000000000FF))
+
+            inc = ((n & -n).bit_length() - 1) // 8
+            kv += inc
+            info += inc
+            node = kv.dereference()['data']
+            if node.type.tag == gdb.TYPE_CODE_PTR:
+                node = node.dereference()
+
+            if self.value.tag != gdb.TYPE_CODE_VOID:
+                yield f'[{node["key"]}]', node["value"]
+            else:
+                yield f'[{node["key"]}]', ()
+    #
+    # def display_hint(self):
+    #     return 'map'
+
 class QuasiMathVecPrinter:
     def __init__(self, val):
         self.val = val
@@ -236,7 +284,7 @@ class QuasiMathMatrixPrinter:
     def children(self):
         u = self.val['unitVectors']
         for i in range(self.n):
-            yield '', f'[{" ".join(str(u[j][i]) for j in range(self.m))}]'
+            yield f'{"ijkl"[i]}hat', u[i]
 
     def display_hint(self):
         return 'array'
@@ -265,6 +313,7 @@ def quasi_lookup(val):
         case 'Range':    return QuasiRangePrinter    (val)
         case 'Tuple':    return QuasiTuplePrinter    (lookup, val)
         case 'Variant':  return QuasiVariantPrinter  (val)
+        case 'HashTable': return QuasiHashTablePrinter(val)
         case 'Math::Vector':     return QuasiMathVecPrinter(val)
         case 'Math::Matrix':     return QuasiMathMatrixPrinter(val)
     return None
