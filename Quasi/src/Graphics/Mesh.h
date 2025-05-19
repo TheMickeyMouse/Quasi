@@ -5,8 +5,6 @@
 #include "TriIndices.h"
 
 namespace Quasi::Graphics {
-    class GenericMesh;
-    
     template <IVertex Vtx>
     class Mesh {
         template <class T2D, class T3D>
@@ -101,7 +99,6 @@ namespace Quasi::Graphics {
 
         friend class GraphicsDevice;
         friend class RenderData;
-        friend class GenericMesh;
     };
 }
 

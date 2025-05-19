@@ -19,36 +19,36 @@ set(HEADER_FILES
     src/Graphics/GLs/RenderBuffer.h
     src/Graphics/GLs/VertexBlueprint.h
 
-    src/Graphics/Graphicals/GraphicsDevice.h
-    src/Graphics/Graphicals/Mesh.h
-    src/Graphics/Graphicals/Mesh.tpp
-    src/Graphics/Graphicals/RenderData.h
-    src/Graphics/Graphicals/RenderObject.h
-    src/Graphics/Graphicals/TriIndices.h
-    src/Graphics/Graphicals/CameraController.h
-    src/Graphics/Graphicals/Light.h
+        src/Graphics/GraphicsDevice.h
+        src/Graphics/Mesh.h
+        src/Graphics/Mesh.tpp
+        src/Graphics/RenderData.h
+        src/Graphics/RenderObject.h
+        src/Graphics/TriIndices.h
+        src/Graphics/CameraController.h
+        src/Graphics/Light.h
 
-    src/Graphics/Utils/ModelLoading/MTLMaterialLoader.h
-    src/Graphics/Utils/ModelLoading/OBJModel.h
-    src/Graphics/Utils/ModelLoading/OBJModelLoader.h
+        src/Graphics/ModelLoading/MTLMaterialLoader.h
+        src/Graphics/ModelLoading/OBJModel.h
+        src/Graphics/ModelLoading/OBJModelLoader.h
     src/Graphics/GLs/TextureConstants.h
     src/Graphics/GLs/Texture.h
-    src/Graphics/Utils/Fonts/Font.h
-    src/Graphics/Utils/Fonts/FontDevice.h
-    src/Graphics/Utils/Fonts/TextAlign.h
-    src/Graphics/Utils/Fonts/TextRenderer.h
-    src/Graphics/Utils/Fonts/TextStyle.h
-    src/Graphics/Utils/Meshes/Circle.h
-    src/Graphics/Utils/Meshes/MeshConstructor.h
-    src/Graphics/Utils/Meshes/Cube.h
-    src/Graphics/Utils/Meshes/CubeNormless.h
-    src/Graphics/Utils/Meshes/Sphere.h
-    src/Graphics/Utils/Meshes/Icosphere.h
-    src/Graphics/Utils/Meshes/Quad.h
-    src/Graphics/Utils/Meshes/Plane.h
-    src/Graphics/Utils/Meshes/Capsule.h
-    src/Graphics/Utils/Meshes/Stadium.h
-    src/Graphics/Utils/Extension/ImGuiExt.h
+        src/Graphics/Fonts/Font.h
+        src/Graphics/Fonts/FontDevice.h
+        src/Graphics/Fonts/TextAlign.h
+        src/Graphics/Fonts/TextRenderer.h
+        src/Graphics/Fonts/TextStyle.h
+        src/Graphics/Meshes/Circle.h
+        src/Graphics/Meshes/MeshConstructor.h
+        src/Graphics/Meshes/Cube.h
+        src/Graphics/Meshes/CubeNormless.h
+        src/Graphics/Meshes/Sphere.h
+        src/Graphics/Meshes/Icosphere.h
+        src/Graphics/Meshes/Quad.h
+        src/Graphics/Meshes/Plane.h
+        src/Graphics/Meshes/Capsule.h
+        src/Graphics/Meshes/Stadium.h
+        src/Graphics/GUI/ImGuiExt.h
 
     src/IO/IO.h
     src/IO/Keyboard.h
@@ -141,19 +141,19 @@ set(SOURCE_FILES
     src/Graphics/GLs/Render.cpp
     src/Graphics/GLs/Shader.cpp
 
-    src/Graphics/Graphicals/CameraController.cpp
-    src/Graphics/Graphicals/Light.cpp
-    src/Graphics/Graphicals/GraphicsDevice.cpp
-    src/Graphics/Graphicals/RenderData.cpp
+        src/Graphics/CameraController.cpp
+        src/Graphics/Light.cpp
+        src/Graphics/GraphicsDevice.cpp
+        src/Graphics/RenderData.cpp
 
-    src/Graphics/Utils/ModelLoading/MTLMaterialLoader.cpp
-    src/Graphics/Utils/ModelLoading/OBJModelLoader.cpp
-    src/Graphics/Utils/ModelLoading/OBJModel.cpp
-    src/Graphics/Utils/Fonts/Font.cpp
-    src/Graphics/Utils/Fonts/FontDevice.cpp
-    src/Graphics/Utils/Fonts/TextAlign.cpp
-    src/Graphics/Utils/Fonts/TextRenderer.cpp
-    src/Graphics/Utils/Extension/ImGuiExt.cpp
+        src/Graphics/ModelLoading/MTLMaterialLoader.cpp
+        src/Graphics/ModelLoading/OBJModelLoader.cpp
+        src/Graphics/ModelLoading/OBJModel.cpp
+        src/Graphics/Fonts/Font.cpp
+        src/Graphics/Fonts/FontDevice.cpp
+        src/Graphics/Fonts/TextAlign.cpp
+        src/Graphics/Fonts/TextRenderer.cpp
+        src/Graphics/GUI/ImGuiExt.cpp
     src/Graphics/GLs/Texture.cpp
 
     src/IO/IO.cpp

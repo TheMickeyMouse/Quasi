@@ -2,7 +2,7 @@
 #include <string>
 #include <freetype/freetype.h>
 
-#include "Graphicals/Mesh.h"
+#include "Mesh.h"
 #include "TextAlign.h"
 #include "TextStyle.h"
 #include "GLs/Texture.h"

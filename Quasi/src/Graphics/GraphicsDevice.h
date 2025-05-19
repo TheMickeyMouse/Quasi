@@ -6,7 +6,7 @@
 #include "IO/IO.h"
 #include "Math/Random.h"
 #include "Utils/Box.h"
-#include "Utils/Fonts/FontDevice.h"
+#include "Fonts/FontDevice.h"
 
 namespace Quasi::Graphics {
     class RenderData;

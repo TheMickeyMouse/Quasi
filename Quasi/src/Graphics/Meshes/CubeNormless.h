@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MeshConstructor.h"
-#include "Graphicals/Mesh.h"
+#include "Mesh.h"
 
 namespace Quasi::Graphics::VertexBuilder {
     struct MeshConstructData3D;

@@ -5,8 +5,9 @@
 #include "Utils/Array.h"
 
 #include "Complex.h"
-#include "Graphicals/CameraController.h"
-#include "Graphicals/Light.h"
+#include "CameraController.h"
+#include "Light.h"
+
 #include "Math/Transform2D.h"
 #include "Math/Transform3D.h"
 #include "Utils/Text/Formatting.h"
@@ -202,9 +203,9 @@ namespace ImGui {
 
         const float w = (GetItemDefaultWidth(width) - 2 * GetSpacingWidth()) / 3;
         PushID(title.Data());
-        EditScalarWithIcon((const char*)u8"θ:", COLOR_X_ANGLE, xr, 1, Q fRange {  -90,  90 }, "%f°", w); SameLine();
-        EditScalarWithIcon((const char*)u8"Ψ:", COLOR_Y_ANGLE, yr, 1, Q fRange { -180, 180 }, "%f°", w); SameLine();
-        EditScalarWithIcon((const char*)u8"φ:", COLOR_Z_ANGLE, zr, 1, Q fRange { -180, 180 }, "%f°", w);
+        EditScalarWithIcon((const char*)u8"θ:", COLOR_X_ANGLE, xr, 1, nullptr,              "%f°", w); SameLine();
+        EditScalarWithIcon((const char*)u8"Ψ:", COLOR_Y_ANGLE, yr, 1, Q fRange { -90, 90 }, "%f°", w); SameLine();
+        EditScalarWithIcon((const char*)u8"φ:", COLOR_Z_ANGLE, zr, 1, nullptr,              "%f°", w);
         PopID();
 
         rot3 = { Q Math::Radians::FromDegrees(xr),

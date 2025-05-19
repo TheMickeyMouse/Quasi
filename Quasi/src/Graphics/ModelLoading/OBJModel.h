@@ -1,5 +1,5 @@
 #pragma once
-#include "Graphicals/Mesh.h"
+#include "Mesh.h"
 #include "GLs/VertexElement.h"
 
 namespace Quasi::Graphics {

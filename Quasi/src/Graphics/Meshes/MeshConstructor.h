@@ -1,7 +1,7 @@
 #pragma once
 #include <utility>
 
-#include "Graphicals/Mesh.h"
+#include "Mesh.h"
 #include "Math/Transform2D.h"
 #include "Math/Transform3D.h"
 #include "Utils/Type.h"

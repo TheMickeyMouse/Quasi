@@ -21,7 +21,24 @@ namespace Quasi::Math {
         constexpr f64 operator/(f64 x) const { return      Value() / x; }
         constexpr f32 operator/(f32 x) const { return (f32)Value() / x; }
     };
-
+    constexpr f32 operator+(f32 x, MathConstant c) { return x + (f32)c; }
+    constexpr f32 operator-(f32 x, MathConstant c) { return x - (f32)c; }
+    constexpr f32 operator*(f32 x, MathConstant c) { return x * (f32)c; }
+    constexpr f32 operator/(f32 x, MathConstant c) { return x / (f32)c; }
+    constexpr f64 operator+(f64 x, MathConstant c) { return x + (f64)c; }
+    constexpr f64 operator-(f64 x, MathConstant c) { return x - (f64)c; }
+    constexpr f64 operator*(f64 x, MathConstant c) { return x * (f64)c; }
+    constexpr f64 operator/(f64 x, MathConstant c) { return x / (f64)c; }
+    constexpr f32 operator> (f32 x, MathConstant c) { return x >  (f32)c; }
+    constexpr f32 operator>=(f32 x, MathConstant c) { return x >= (f32)c; }
+    constexpr f32 operator==(f32 x, MathConstant c) { return x == (f32)c; }
+    constexpr f32 operator<=(f32 x, MathConstant c) { return x <= (f32)c; }
+    constexpr f32 operator< (f32 x, MathConstant c) { return x <  (f32)c; }
+    constexpr f64 operator> (f64 x, MathConstant c) { return x >  (f64)c; }
+    constexpr f64 operator>=(f64 x, MathConstant c) { return x >= (f64)c; }
+    constexpr f64 operator==(f64 x, MathConstant c) { return x == (f64)c; }
+    constexpr f64 operator<=(f64 x, MathConstant c) { return x <= (f64)c; }
+    constexpr f64 operator< (f64 x, MathConstant c) { return x <  (f64)c; }
 
     static constexpr MathConstant PI       { 226375608064910088 }; // π   = 3.14159'26535'89793'23846'26433
     static constexpr MathConstant TAU      { 452751216129820177 }; // τ   = 6.28318'53071'79586'47692'52867

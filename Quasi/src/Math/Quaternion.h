@@ -17,7 +17,7 @@ namespace Quasi::Math {
         fv3 GetXYZ()  const { return { x, y, z }; }
         fv4 GetWXYZ() const { return { w, x, y, z }; }
 
-        static constexpr Str ROTATION_ORDER = "ZXY"; // readonly property thats not used
+        static constexpr Str ROTATION_ORDER = "ZYX"; // readonly property thats not used
 
         static Quaternion From4D(const fv4& q) { return { q.w, q.x, q.y, q.z }; }
         static Quaternion From3D(const fv3& q) { return { 0,   q.x, q.y, q.z }; }

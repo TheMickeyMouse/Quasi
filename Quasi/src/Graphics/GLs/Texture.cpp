@@ -4,7 +4,7 @@
 #include "Utils/CStr.h"
 #include "Utils/Vec.h"
 #include "GLDebug.h"
-#include "Graphicals/GraphicsDevice.h"
+#include "../GraphicsDevice.h"
 #include "vendor/stb_image/stb_image.h"
 
 namespace Quasi::Graphics {

@@ -2,7 +2,7 @@
 #include <glp.h>
 #include "GLDebug.h"
 #include "VertexArray.h"
-#include "Graphicals/RenderData.h"
+#include "../RenderData.h"
 
 namespace Quasi::Graphics::Render {
     void Draw(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader) {

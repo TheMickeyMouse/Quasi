@@ -22,20 +22,46 @@ namespace Quasi::Math {
         const auto [cos, sin] = r.Halved().IHat();
         return { cos, 0, 0, sin };
     }
-    Quaternion Quaternion::RotateXYZ(const Vec3<Rotor2D>& r) { return RotateY(r.y) * RotateX(r.x) * RotateZ(r.z); }
+    Quaternion Quaternion::RotateXYZ(const Vec3<Rotor2D>& r) {
+        const fComplex xr = r.x.Halved().AsComplex(),
+                       yr = r.y.Halved().AsComplex(),
+                       zr = r.z.Halved().AsComplex();
+        return {
+            xr.re * yr.re * zr.re + xr.im * yr.im * zr.im,
+            xr.im * yr.re * zr.re - xr.re * yr.im * zr.im,
+            xr.re * yr.im * zr.re + xr.im * yr.re * zr.im,
+            xr.re * yr.re * zr.im - xr.im * yr.im * zr.re,
+        };
+    }
     Quaternion Quaternion::RotateTo(const fv3& from, const fv3& to) {
         return { from.Dot(to), from.Cross(to) };
     }
 
     Vec3<Radians> Quaternion::ToEulerAngles() const {
-        const f32 a = w - x, b = z + y, c = x + w, d = y - z;
-        const Radians xrot = Arcsin(2 * (a * a + b * b) / (a * a + b * b + c * c + d * d) - 1);
-        const Radians posAngle = Atan2(b, a), negAngle = Atan2(d, c);
-        Radians yrot = posAngle + negAngle;
-        Radians zrot = posAngle - negAngle;
-        yrot += Radians((*yrot < -PI ? TAU : 0.0f) + (*yrot > +PI ? -TAU : 0.0f));
-        zrot += Radians((*zrot < -PI ? TAU : 0.0f) + (*zrot > +PI ? -TAU : 0.0f));
-        return { -xrot, yrot, zrot };
+        // return {
+        //     Atan2  (2 * (x * y + w * z), w * w + x * x - y * y - z * z),
+        //     Arcsin(-2 * (x * z - w * y)),
+        //     Atan2  (2 * (y * z + w * x), w * w - x * x - y * y + z * z),
+        // };
+        // https://marc-b-reynolds.github.io/math/2017/04/18/TaitEuler.html
+        const float t0 = (x + z) * (x - z);  // x^2-z^2
+        const float t1 = (w + y) * (w - y);  // w^2-y^2
+        const float xx = 0.5f * (t0 + t1);   // 1/2 x of x'
+        const float xy = x * y + w * z;            // 1/2 y of x'
+        const float xz = w * y - x * z;            // 1/2 z of x'
+        const float t  = xx * xx + xy * xy;        // cos(theta)^2
+        const float yz = 2.0f * (y * z + w * x);      // z of y'
+
+        const bool onPoles = t < f32s::DELTA * f32s::DELTA;
+
+        const Radians zr = onPoles ? Radians(0.0f) : Atan2(xy, xx);
+        return {
+            onPoles ?
+                Atan2(x, w) * 2 + (xz < 0 ? zr : -zr) :
+                Atan2(yz, t1 - t0),
+            Arctan(xz / std::sqrt(t)), // pitch (theta)
+            zr, // yaw (psi)
+        };
     }
 
     Quaternion Quaternion::LookAt(const fv3& direction, const fv3& worldFront) {

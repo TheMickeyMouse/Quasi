@@ -1,5 +1,4 @@
 #pragma once
-#include <vector>
 
 #include "Math/Vector.h"
 #include "Math/Color.h"
