@@ -52,21 +52,35 @@ namespace Quasi::Math {
         static Rotor2D Random(RandomGenerator& rg);
     };
 
+    template <Numeric T>
+    Vector<T, 2> Vector<T, 2>::FromPolar(T r, const Rotor2D& theta) requires Floating<T> {
+        const fComplex& t = theta.AsComplex();
+        return { t.re * r, t.im * r };
+    }
+
+    template <Numeric T>
+    Vector<T, 3> Vector<T, 3>::FromSpheric(T r, const Rotor2D& yaw, const Rotor2D& pitch) requires Floating<T> {
+        const fComplex& y = yaw.AsComplex(), &p = pitch.AsComplex();
+        const float xz = r * p.re;
+        return { xz * y.re, r * p.im, xz * y.im };
+    }
+
     struct MatrixTransform2D {
-        Matrix2D transform, normalMatrix;
+        Matrix2D transform;
+        Matrix2x2 normalMatrix;
 
         fv2 Transform(const fv2& p) const { return (fv2)(transform * p); }
-        fv2 TransformNormal(const fv2& n) const { return ((fv2)(normalMatrix * n)).Norm(); }
+        fv2 TransformNormal(const fv2& n) const { return (normalMatrix * n).Norm(); }
     };
 
-    template <class TF> concept ITransformer2D = requires (const TF& t, const fv2& vec) {
+    template <class TF> concept ITransformation2D = requires (const TF& t, const fv2& vec) {
         { t.Transform(vec) }       -> ConvTo<fv2>;
         { t.TransformNormal(vec) } -> ConvTo<fv2>;
     };
 
     template <class T>
     struct InverseTransform2D {
-        static_assert(ITransformer2D<T>, "T should be a transformer2d"); // delayed constraint
+        static_assert(ITransformation2D<T>, "T should be a transformer2d"); // delayed constraint
         const T& tformer;
         fv2 Transform(const fv2& point)               const { return tformer.TransformInverse(point); }
         fv2 TransformInverse(const fv2& point)        const { return tformer.Transform(point); }

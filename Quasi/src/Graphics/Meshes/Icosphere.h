@@ -1,28 +1,14 @@
 #pragma once
 
-#include "MeshConstructor.h"
+#include "MeshBuilder.h"
 #include "Mesh.h"
 #include "Math/Vector.h"
 #include "Utils/Algorithm.h"
 
-namespace Quasi::Graphics {
-    struct TriIndices;
-}
-
-namespace Quasi::Graphics::VertexBuilder {
-    struct MeshConstructData3D;
-}
-
-namespace Quasi::Graphics::MeshUtils {
-    struct IcosphereCreator;
-
-    template <> struct OptionsFor<IcosphereCreator> {
-        u32 subdivisions;
-        using MData = VertexBuilder::MeshConstructData3D;
-    };
-
-    struct IcosphereCreator : MeshConstructor<IcosphereCreator> {
-        IcosphereCreator(const Options& options) : divisions(1 << options.subdivisions) {}
+namespace Quasi::Graphics::Meshes {
+    struct Icosphere : IMeshBuilder3D<Icosphere> {
+        float radius = 1.0f;
+        Icosphere(float r = 1, u32 subdivisions = 3) : radius(r), divisions(1 << subdivisions) {}
 
 #pragma region Icosahedron Data & Utils
         static constexpr u32 CORNER_COUNT = 12, EDGE_COUNT = 30, CENTER_COUNT = 20;
@@ -45,25 +31,16 @@ namespace Quasi::Graphics::MeshUtils {
             Math::fv3 { -I_PHI, 0, -I_1 },
         };
 
-        struct BytePair {
-            byte data;
-            BytePair(u32 top, u32 bottom) : data((byte)((top << 4) | bottom)) {}
-            Comparison operator<=>(const BytePair& pair) const { return Cmp::Between(data, pair.data); }
+        static constexpr u8 ICO_EDGES[EDGE_COUNT] {
+            0x01, 0x04, 0x05, 0x08, 0x0A, 0x16,
+            0x17, 0x18, 0x1A, 0x23, 0x24, 0x25,
+            0x29, 0x2B, 0x36, 0x37, 0x39, 0x3B,
+            0x45, 0x48, 0x49, 0x5A, 0x5B, 0x67,
+            0x68, 0x69, 0x7A, 0x7B, 0x89, 0xAB,
         };
 
-        inline static const Array<BytePair, EDGE_COUNT> ICO_EDGES {
-            BytePair { 0,  1 }, BytePair { 0,  4 }, BytePair { 0,  5 }, BytePair { 0,  8 },
-            BytePair { 0, 10 }, BytePair { 1,  6 }, BytePair { 1,  7 }, BytePair { 1,  8 },
-            BytePair { 1, 10 }, BytePair { 2,  3 }, BytePair { 2,  4 }, BytePair { 2,  5 },
-            BytePair { 2,  9 }, BytePair { 2, 11 }, BytePair { 3,  6 }, BytePair { 3,  7 },
-            BytePair { 3,  9 }, BytePair { 3, 11 }, BytePair { 4,  5 }, BytePair { 4,  8 },
-            BytePair { 4,  9 }, BytePair { 5, 10 }, BytePair { 5, 11 }, BytePair { 6,  7 },
-            BytePair { 6,  8 }, BytePair { 6,  9 }, BytePair { 7, 10 }, BytePair { 7, 11 },
-            BytePair { 8,  9 }, BytePair { 10, 11 }
-        };
-
-        static u32 FindEdge(BytePair p) {
-            return ICO_EDGES.LowerBound(p);
+        static u32 FindEdge(u8 p) {
+            return Span { ICO_EDGES }.LowerBound(p);
         };
 
         static constexpr Array<TriIndices, CENTER_COUNT> ICO_FACES { {
@@ -93,22 +70,21 @@ namespace Quasi::Graphics::MeshUtils {
                 const bool isSide = p == divisions;
                 const u32 lineStart = isSide ? Face().j : Face().i,
                           lineEnd = q ? Face().k : Face().j,
-                          edgeIdx = FindEdge({ lineStart, lineEnd });
+                          edgeIdx = FindEdge((lineStart << 4) + lineEnd);
                 return EdgeIdx(edgeIdx, (isSide ? q : p) - 1);
             }
             return FaceIdx(faceIdx, p, q);
         }
 #pragma endregion
 
-        template <FnArgs<MData> F>
-        void MergeImpl(F&& f, Mesh<ResultingV<F>>& mesh) {
+        template <FnArgs<VertexNormal3D> F>
+        void MergeImpl(F&& f, MeshBatch<FuncResult<F, VertexNormal3D>> mesh) {
             using namespace Math;
 
-            auto meshp = mesh.NewBatch();
-            meshp.ReserveV(CORNER_COUNT + EDGE_V_COUNT() * EDGE_COUNT + CENTER_V_COUNT() * CENTER_COUNT);
+            mesh.ReserveV(CORNER_COUNT + EDGE_V_COUNT() * EDGE_COUNT + CENTER_V_COUNT() * CENTER_COUNT);
 
             for (u32 i = 0; i < CORNER_COUNT; ++i)
-                meshp.VertAt(i) = f(MData { .Position = IcoVert[i], .Normal = IcoVert[i] });
+                mesh.VertAt(i) = f(VertexNormal3D { .Position = IcoVert[i] * radius, .Normal = IcoVert[i] });
 
             for (; faceIdx < CENTER_COUNT; ++faceIdx) {
                 // loops through a triangle, p = 1 to prevent the (0,0) coordinate
@@ -120,22 +96,22 @@ namespace Quasi::Graphics::MeshUtils {
 
                             const u32 lineStart = isSide ? Face().j : Face().i,
                                       lineEnd = q ? Face().k : Face().j,
-                                      edgeIdx = FindEdge({ lineStart, lineEnd }),
+                                      edgeIdx = FindEdge((lineStart << 4) + lineEnd),
                                       dist = isSide ? q : p,
                                       idx = EdgeIdx(edgeIdx, dist - 1);
 
                             const float factor = (float)dist / (float)divisions;
                             const fv3 pos = (IcoVert[lineStart] * (1.0f - factor) + IcoVert[lineEnd] * factor).Norm();
 
-                            meshp.VertAt(idx) = f(MData { .Position = pos, .Normal = pos });
+                            mesh.VertAt(idx) = f(VertexNormal3D { .Position = radius * pos, .Normal = pos });
                             continue;
                         }
                         // center, interpolate between 3 points
                         const fv3 pos = (IcoVert[Face().i] * ((float)(divisions - p) / (float)divisions)
-                                            + IcoVert[Face().j] * ((float)(p - q)         / (float)divisions)
-                                            + IcoVert[Face().k] * ((float)q               / (float)divisions)).Norm();
+                                       + IcoVert[Face().j] * ((float)(p - q)         / (float)divisions)
+                                       + IcoVert[Face().k] * ((float)q               / (float)divisions)).Norm();
                         const u32 idx = IndexOf(p, q);
-                        meshp.VertAt(idx) = f(MData { .Position = pos, .Normal = pos });
+                        mesh.VertAt(idx) = f(VertexNormal3D { .Position = radius * pos, .Normal = pos });
                     }
                 }
                 // the indices
@@ -143,14 +119,12 @@ namespace Quasi::Graphics::MeshUtils {
                 for (u32 p = 0; p < divisions; ++p) {
                     for (u32 q = 0; q < p; ++q) {
                         const u32 p1 = IndexOf(p, q);
-                        meshp.PushI(p1, IndexOf(p + 1, q + iSwap),  IndexOf(p + 1, q + !iSwap));
-                        meshp.PushI(p1, IndexOf(p + !iSwap, q + 1), IndexOf(p + iSwap, q + 1));
+                        mesh.PushI(p1, IndexOf(p + 1, q + !iSwap), IndexOf(p + 1, q + iSwap));
+                        mesh.PushI(p1, IndexOf(p + iSwap, q + 1),  IndexOf(p + !iSwap, q + 1));
                     }
-                    meshp.PushI(IndexOf(p, p), IndexOf(p + 1, p + iSwap), IndexOf(p + 1, p + !iSwap));
+                    mesh.PushI(IndexOf(p, p), IndexOf(p + 1, p + !iSwap), IndexOf(p + 1, p + iSwap));
                 }
             }
         }
     };
-
-    inline static MeshConstructor<IcosphereCreator> Icosphere {};
 }

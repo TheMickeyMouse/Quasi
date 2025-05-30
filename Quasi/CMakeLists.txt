@@ -18,37 +18,38 @@ set(HEADER_FILES
     src/Graphics/GLs/GLTypeID.h
     src/Graphics/GLs/RenderBuffer.h
     src/Graphics/GLs/VertexBlueprint.h
-
-        src/Graphics/GraphicsDevice.h
-        src/Graphics/Mesh.h
-        src/Graphics/Mesh.tpp
-        src/Graphics/RenderData.h
-        src/Graphics/RenderObject.h
-        src/Graphics/TriIndices.h
-        src/Graphics/CameraController.h
-        src/Graphics/Light.h
-
-        src/Graphics/ModelLoading/MTLMaterialLoader.h
-        src/Graphics/ModelLoading/OBJModel.h
-        src/Graphics/ModelLoading/OBJModelLoader.h
     src/Graphics/GLs/TextureConstants.h
     src/Graphics/GLs/Texture.h
-        src/Graphics/Fonts/Font.h
-        src/Graphics/Fonts/FontDevice.h
-        src/Graphics/Fonts/TextAlign.h
-        src/Graphics/Fonts/TextRenderer.h
-        src/Graphics/Fonts/TextStyle.h
-        src/Graphics/Meshes/Circle.h
-        src/Graphics/Meshes/MeshConstructor.h
-        src/Graphics/Meshes/Cube.h
-        src/Graphics/Meshes/CubeNormless.h
-        src/Graphics/Meshes/Sphere.h
-        src/Graphics/Meshes/Icosphere.h
-        src/Graphics/Meshes/Quad.h
-        src/Graphics/Meshes/Plane.h
-        src/Graphics/Meshes/Capsule.h
-        src/Graphics/Meshes/Stadium.h
-        src/Graphics/GUI/ImGuiExt.h
+
+    src/Graphics/GraphicsDevice.h
+    src/Graphics/Mesh.h
+    src/Graphics/Mesh.tpp
+    src/Graphics/RenderData.h
+    src/Graphics/RenderObject.h
+    src/Graphics/TriIndices.h
+    src/Graphics/CameraController2D.h
+    src/Graphics/CameraController3D.h
+    src/Graphics/Light.h
+
+    src/Graphics/ModelLoading/MTLMaterialLoader.h
+    src/Graphics/ModelLoading/OBJModel.h
+    src/Graphics/ModelLoading/OBJModelLoader.h
+    src/Graphics/Fonts/Font.h
+    src/Graphics/Fonts/FontDevice.h
+    src/Graphics/Fonts/TextAlign.h
+    src/Graphics/Fonts/TextRenderer.h
+    src/Graphics/Fonts/TextStyle.h
+    src/Graphics/Meshes/Circle.h
+    src/Graphics/Meshes/MeshConstructor.h
+    src/Graphics/Meshes/Cube.h
+    src/Graphics/Meshes/CubeNormless.h
+    src/Graphics/Meshes/Sphere.h
+    src/Graphics/Meshes/Icosphere.h
+    src/Graphics/Meshes/Quad.h
+    src/Graphics/Meshes/Plane.h
+    src/Graphics/Meshes/Capsule.h
+    src/Graphics/Meshes/Stadium.h
+    src/Graphics/GUI/ImGuiExt.h
 
     src/IO/IO.h
     src/IO/Keyboard.h
@@ -60,6 +61,7 @@ set(HEADER_FILES
     src/Math/Rect.h
     src/Math/Vector.h
     src/Math/Geometry.h
+    src/Math/Angles.h
     src/Math/Random.h
     src/Math/Color.h
     src/Math/Complex.h
@@ -103,6 +105,7 @@ set(HEADER_FILES
     src/Utils/Bitwise.h
     src/Utils/Hash.h
     src/Utils/HashMap.h
+    src/Utils/Range.h
     src/Utils/MacroIteration.h
     src/Utils/Text/Parsing.h
     src/Utils/Text/Num.h
@@ -140,21 +143,22 @@ set(SOURCE_FILES
     src/Graphics/GLs/VertexBufferLayout.cpp
     src/Graphics/GLs/Render.cpp
     src/Graphics/GLs/Shader.cpp
-
-        src/Graphics/CameraController.cpp
-        src/Graphics/Light.cpp
-        src/Graphics/GraphicsDevice.cpp
-        src/Graphics/RenderData.cpp
-
-        src/Graphics/ModelLoading/MTLMaterialLoader.cpp
-        src/Graphics/ModelLoading/OBJModelLoader.cpp
-        src/Graphics/ModelLoading/OBJModel.cpp
-        src/Graphics/Fonts/Font.cpp
-        src/Graphics/Fonts/FontDevice.cpp
-        src/Graphics/Fonts/TextAlign.cpp
-        src/Graphics/Fonts/TextRenderer.cpp
-        src/Graphics/GUI/ImGuiExt.cpp
     src/Graphics/GLs/Texture.cpp
+
+    src/Graphics/CameraController2D.cpp
+    src/Graphics/CameraController3D.cpp
+    src/Graphics/Light.cpp
+    src/Graphics/GraphicsDevice.cpp
+    src/Graphics/RenderData.cpp
+
+    src/Graphics/ModelLoading/MTLMaterialLoader.cpp
+    src/Graphics/ModelLoading/OBJModelLoader.cpp
+    src/Graphics/ModelLoading/OBJModel.cpp
+    src/Graphics/Fonts/Font.cpp
+    src/Graphics/Fonts/FontDevice.cpp
+    src/Graphics/Fonts/TextAlign.cpp
+    src/Graphics/Fonts/TextRenderer.cpp
+    src/Graphics/GUI/ImGuiExt.cpp
 
     src/IO/IO.cpp
     src/IO/Keyboard.cpp
@@ -163,6 +167,7 @@ set(SOURCE_FILES
 
     src/Math/Vector.cpp
     src/Math/Matrix.cpp
+    src/Math/Rect.cpp
     src/Math/Color.cpp
     src/Math/Complex.cpp
     src/Math/Quaternion.cpp
@@ -189,6 +194,7 @@ set(SOURCE_FILES
     src/Utils/Memory.cpp
     src/Utils/Bitwise.cpp
     src/Utils/Hash.cpp
+    src/Utils/Range.cpp
     src/Utils/Text/Parsing.cpp
     src/Utils/Text/Num.cpp
     src/Utils/Text/StringWriter.cpp
@@ -211,10 +217,6 @@ source_group("Source Files" FILES ${SOURCE_FILES})
 set(ALL_FILES
     ${HEADER_FILES}
     ${SOURCE_FILES}
-        src/Math/Angles.h
-        src/Math/Rect.cpp
-        src/Utils/Range.h
-        src/Utils/Range.cpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

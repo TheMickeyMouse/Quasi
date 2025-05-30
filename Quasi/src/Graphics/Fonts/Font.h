@@ -42,7 +42,7 @@ namespace Quasi::Graphics {
             int RenderType;
             static constexpr int RENDER_TEXT = 1, RENDER_FILL = 0;
 
-            QuasiDefineVertex$(Vertex, 2D, (Position, PosTf)(TextureCoord)(Color)(RenderType));
+            QuasiDefineVertex$(Vertex, 2D, (Position, Position)(TextureCoord)(Color)(RenderType));
         };
     private:
         static constexpr u32 NUM_GLYPHS = 127 - 32;

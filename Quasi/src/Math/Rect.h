@@ -74,6 +74,9 @@ namespace Quasi::Math {
         T LengthW()  const requires (N >= 4) { return max[3] - min[3]; }
         T LengthN(usize n) const { return max[n] - min[n]; }
 
+        Rect<T, N + 1> AddZ(const RangeT& z) const requires (N == 2) { return { min.AddZ(z.min), max.AddZ(z.max) }; }
+        Rect<T, N + 1> AddW(const RangeT& w) const requires (N == 3) { return { min.AddW(w.min), max.AddW(w.max) }; }
+
         T Volume() const {
             T volume = Width();
             for (usize i = 1; i < N; ++i) volume *= (max[N] - min[N]);
@@ -112,6 +115,12 @@ namespace Quasi::Math {
         Rect Scale(fT scale) const requires Integer<T> { return { (VecT)(min * scale), (VecT)(max * scale) }; }
         Rect ScaleCentered(T scale) const { const VecT off = Size() * (scale - 1); return { min - off, max + off }; }
         Rect ScaleAnchored(T scale, const VecT& anchor) const {
+            const VecT toMin = (min - anchor) * (scale - 1), toMax = (max - anchor) * (scale - 1);
+            return { min + toMin, max + toMax };
+        }
+        Rect Scale(const VecT& scale) const { return { min * scale, max * scale }; }
+        Rect ScaleCentered(const VecT& scale) const { const VecT off = Size() * (scale - 1); return { min - off, max + off }; }
+        Rect ScaleAnchored(const VecT& scale, const VecT& anchor) const {
             const VecT toMin = (min - anchor) * (scale - 1), toMax = (max - anchor) * (scale - 1);
             return { min + toMin, max + toMax };
         }

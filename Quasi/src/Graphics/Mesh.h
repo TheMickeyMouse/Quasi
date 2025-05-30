@@ -5,6 +5,8 @@
 #include "TriIndices.h"
 
 namespace Quasi::Graphics {
+    template <IVertex Vtx> struct MeshBatch;
+
     template <IVertex Vtx>
     class Mesh {
         template <class T2D, class T3D>
@@ -36,8 +38,12 @@ namespace Quasi::Graphics {
         void PushIndices(const Collection<TriIndices> auto& is) { for (const TriIndices& i : is) PushIndex(i); }
         void PushIndices(IList<TriIndices> is) { for (const TriIndices& i : is) PushIndex(i); }
         void PushTriangle(const Vtx& a, const Vtx& b, const Vtx& c) {
-            PushIndex({ vertices.Length(), vertices.Length() + 1, vertices.Length() + 2 });
+            PushIndex({ (u32)vertices.Length(), (u32)vertices.Length() + 1, (u32)vertices.Length() + 2 });
             PushVertex(a); PushVertex(b); PushVertex(c);
+        }
+        void PushITri(const Vtx& a, const Vtx& b, const Vtx& c, const TriIndices& i) {
+            PushVertex(a); PushVertex(b); PushVertex(c);
+            PushIndex(i);
         }
         void PushPolygon(const Collection<Vtx> auto& vs) {
             const u32 begin = vertices.Length();
@@ -46,38 +52,7 @@ namespace Quasi::Graphics {
         }
         void PushPolygon(IList<Vtx> vs) { PushPolygon(Span { vs }); }
 
-        struct BatchProxy {
-            u32 iOffset;
-            Ref<Mesh> mesh;
-
-            void PushV(const Vtx& v) { mesh->PushVertex(v); }
-            void ReserveV(u32 amount) { mesh->vertices.Resize(mesh->vertices.Length() + amount); }
-            Vtx& VertAt(u32 i) { return mesh->vertices[iOffset + i]; }
-            void PushVs(const Collection<Vtx> auto& vs) { mesh->PushVertices(vs); }
-            void PushVs(IList<Vtx> vs) { mesh->PushVertices(vs); }
-
-            void PushI(TriIndices i) { mesh->PushIndex(i + iOffset); }
-            void PushI(u32 i, u32 j, u32 k) { mesh->PushIndex({ i + iOffset, j + iOffset, k + iOffset }); }
-            void ReserveI(u32 amount) { mesh->indices.Resize(mesh->indices.Length() + amount); }
-            void PushIs(const Collection<TriIndices> auto& is) { mesh->PushIndices(is); }
-            void PushIs(IList<TriIndices> is) { mesh->PushIndices(is); }
-
-            void PushTri(const Vtx& a, const Vtx& b, const Vtx& c) {
-                PushV(a); PushV(b); PushV(c);
-                const u32 i = (u32)mesh->vertices.Length();
-                mesh->PushIndex({ i - 3, i - 2, i - 1 });
-            }
-
-            void PushSpan(const Collection<Vtx> auto& vs, const Collection<TriIndices> auto& is) {
-                for (const auto& v : vs) PushV(v);
-                for (const auto& i : is) PushI(i);
-            }
-
-            void PushPolygon(const Collection<Vtx> auto& vs) { mesh->PushPolygon(vs); }
-            void PushPolygon(IList<Vtx> vs) { PushPolygon(Spans::FromIList(vs)); }
-        };
-
-        BatchProxy NewBatch() { return { (u32)vertices.Length(), *this }; }
+        MeshBatch<Vtx> NewBatch() { return { (u32)vertices.Length(), *this }; }
 
         // moving isnt that efficient bc vertices are easy to copy
         Mesh& Add(const Mesh& m);
@@ -99,6 +74,45 @@ namespace Quasi::Graphics {
 
         friend class GraphicsDevice;
         friend class RenderData;
+    };
+
+    template <IVertex Vtx>
+    struct MeshBatch {
+        u32 iOffset;
+        Ref<Mesh<Vtx>> mesh;
+
+        void PushV(const Vtx& v) { mesh->PushVertex(v); }
+        void ReserveV(u32 amount) { mesh->vertices.Resize(mesh->vertices.Length() + amount); }
+        Vtx& VertAt(u32 i) { return mesh->vertices[iOffset + i]; }
+        void PushVs(const Collection<Vtx> auto& vs) { mesh->PushVertices(vs); }
+        void PushVs(IList<Vtx> vs) { mesh->PushVertices(vs); }
+
+        void PushI(TriIndices i) { mesh->PushIndex(i + iOffset); }
+        void PushI(u32 i, u32 j, u32 k) { mesh->PushIndex({ i + iOffset, j + iOffset, k + iOffset }); }
+        void ReserveI(u32 amount) { mesh->indices.Resize(mesh->indices.Length() + amount); }
+        void PushIs(const Collection<TriIndices> auto& is) { mesh->PushIndices(is); }
+        void PushIs(IList<TriIndices> is) { mesh->PushIndices(is); }
+
+        void PushTri(const Vtx& a, const Vtx& b, const Vtx& c) {
+            PushV(a); PushV(b); PushV(c);
+            const u32 i = (u32)mesh->vertices.Length();
+            mesh->PushIndex({ i - 3, i - 2, i - 1 });
+        }
+        void PushITri(const Vtx& a, const Vtx& b, const Vtx& c, const TriIndices& i) {
+            PushV(a); PushV(b); PushV(c);
+            PushI(i);
+        }
+
+        void PushSpan(const Collection<Vtx> auto& vs, const Collection<TriIndices> auto& is) {
+            for (const auto& v : vs) PushV(v);
+            for (const auto& i : is) PushI(i);
+        }
+
+        void PushPolygon(const Collection<Vtx> auto& vs) { mesh->PushPolygon(vs); }
+        void PushPolygon(IList<Vtx> vs) { PushPolygon(Spans::FromIList(vs)); }
+
+        MeshBatch NewBatch() { return { (u32)mesh->vertices.Length(), mesh }; }
+        void Reload() { iOffset = mesh.vertices.Length(); }
     };
 }
 

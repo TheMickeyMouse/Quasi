@@ -1,19 +1,19 @@
-#include "CameraController.h"
+#include "CameraController3D.h"
 
 #include "GraphicsDevice.h"
 
 namespace Quasi::Graphics {
-    Math::fv3 CameraController::Right() const { return worldFront.Cross(worldUp); }
+    Math::fv3 CameraController3D::Right() const { return worldFront.Cross(worldUp); }
 
-    void CameraController::Update(GraphicsDevice& gd, const float dt) {
+    void CameraController3D::Update(GraphicsDevice& gd, const float dt) {
         using namespace Math;
         using namespace IO;
         const auto& Keyboard = gd.GetIO().Keyboard;
         auto& Mouse = gd.GetIO().Mouse;
-        if(Keyboard.KeyOnPress(ESCAPE)) Toggle(gd);
+        if (Keyboard.KeyOnPress(ESCAPE)) Toggle(gd);
 
         if (UsesSmoothZoom()) {
-            viewFov = std::lerp(viewFov, fov, std::exp2f(-smoothZoom * dt));
+            viewFov = std::lerp(fov, viewFov, std::exp2f(-smoothZoom * dt));
         } else {
             viewFov = fov;
         }
@@ -39,34 +39,27 @@ namespace Quasi::Graphics {
             fov = fovRange.Clamp(fov);
         }
 
-        const dv2 mouse = Mouse.GetMousePosPx();
+        const dv2 delta = Mouse.GetMousePosDeltaPx();
 
-        if (initialMouse) {
-            lastMouse = mouse;
-            initialMouse = false;
-        }
-
-        yaw   += (float)(mouse.x - lastMouse.x) * -(sensitivity * dt);
-        pitch += (float)(mouse.y - lastMouse.y) *  (sensitivity * dt);
+        yaw   += (float)delta.x * -(sensitivity * dt);
+        pitch += (float)delta.y *  (sensitivity * dt);
         pitch = std::clamp(pitch, HALF_PI * -0.95f, HALF_PI * 0.95f);
-        lastMouse = mouse;
     }
 
-    void CameraController::Toggle(GraphicsDevice& gd) {
+    void CameraController3D::Toggle(GraphicsDevice& gd) {
         enabled ^= true;
         if (enabled) {
             gd.GetIO().Mouse.Lock();
         } else {
             gd.GetIO().Mouse.Show();
-            initialMouse = true;
         }
     }
 
-    Math::Matrix3D CameraController::GetViewMat() const {
+    Math::Matrix3D CameraController3D::GetViewMat() const {
         return GetViewTransform().TransformMatrix().InvTransRot();
     }
 
-    Math::Transform3D CameraController::GetViewTransform() const {
+    Math::Transform3D CameraController3D::GetViewTransform() const {
         // const Math::fv3 front =
         //     Right()    * (std::cos(yaw) * std::cos(pitch)) + // like x
         //     worldFront * (std::sin(yaw) * std::cos(pitch)) +
@@ -75,7 +68,7 @@ namespace Quasi::Graphics {
         return { position, 1, Math::Rotor3D::RotateAxis(worldUp, Math::Radians(yaw)) + Math::Rotor3D::RotateAxis(Right(), Math::Radians(pitch)) };
     }
 
-    Math::Matrix3D CameraController::GetProjMat() const {
+    Math::Matrix3D CameraController3D::GetProjMat() const {
         const float aspect = GraphicsDevice::GetDeviceInstance().GetWindowSize().AspectRatio();
         return Math::Matrix3D::PerspectiveFov(Math::Radians::FromDegrees(viewFov), aspect, 0.01f, 100.0f);
     }

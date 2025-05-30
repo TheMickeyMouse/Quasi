@@ -15,7 +15,7 @@ namespace Quasi::Math {
         Line(const VecT& s, const VecT& f) : start(s), forward(f) {}
 
         static Line FromDirection(const VecT& s, const VecT& f) { return { s, f }; }
-        static Line FromEnd      (const VecT& s, const VecT& e) { return { s, e - s }; }
+        static Line FromPoints   (const VecT& s, const VecT& e) { return { s, e - s }; }
 
         VecT End() const { return start + forward; }
 
@@ -47,6 +47,17 @@ namespace Quasi::Math {
         Option<VecT> Intersection(const Line& other) const {
             const auto [t, u] = SolutionsForIntersections(other);
             return 0 <= u && u <= 1 && 0 <= t && t <= 1 ? Options::Some(Lerp(t)) : nullptr;
+        }
+        bool IntersectsUnclamped(const Line& other) const {
+            const float det = forward.x * other.forward.y - forward.y * other.forward.x;
+            return std::abs(det) > f32s::DELTA;
+        }
+        VecT IntersectionUnclamped(const Line& other) const {
+            const float det = forward.x * other.forward.y -
+                              forward.y * other.forward.x;
+            const float t = (start.y - other.start.y) * other.forward.x -
+                            (start.x - other.start.x) * other.forward.y;
+            return Lerp(t / det);
         }
 
         T SolutionForNearest(const VecT& p) const {
@@ -100,6 +111,11 @@ namespace Quasi::Math {
     using dLine2D = Line2D<double>;
     using dLine3D = Line3D<double>;
     using dLine4D = Line4D<double>;
+
+    namespace Lines {
+        template <class VecT> static Line<VecT> FromDirection(const VecT& s, const VecT& f) { return { s, f }; }
+        template <class VecT> static Line<VecT> FromPoints   (const VecT& s, const VecT& e) { return { s, e - s }; }
+    }
 
     // TODO: ADD MATH METHODS
     template <class VecT>

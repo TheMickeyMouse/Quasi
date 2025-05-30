@@ -4,7 +4,7 @@
 namespace Quasi::Graphics {
     template <IVertex Vtx> Mesh<Vtx>& Mesh<Vtx>::EmbedTransform() {
         for (auto& v : vertices) {
-            v = VertexMul(v, modelTransform);
+            v = v.Mul(modelTransform);
         }
         modelTransform = {};
         return *this;
@@ -16,7 +16,7 @@ namespace Quasi::Graphics {
         rd.PushIndicesOffseted(indices, sizeof(Vtx));
 
         for (const Vtx& v : vertices) {
-            rd.PushVertex(VertexMul(v, modelTransform));
+            rd.PushVertex(v.Mul(modelTransform));
         }
     }
 
@@ -24,7 +24,7 @@ namespace Quasi::Graphics {
     Mesh<Vtx>& Mesh<Vtx>::Add(const Mesh& m) {
         auto batch = NewBatch();
         batch.PushSpan(m.vertices.Iter().Map([&] (const Vtx& v) {
-            return VertexMul(VertexMul(v, m.modelTransform), modelTransform.Inverse());
+            return v.Mul(m.modelTransform).Mul(modelTransform.Inverse());
         }), m.indices);
         return *this;
     }

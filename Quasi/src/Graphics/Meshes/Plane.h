@@ -1,28 +1,17 @@
 #pragma once
 
-#include "MeshConstructor.h"
+#include "MeshBuilder.h"
 
-namespace Quasi::Graphics::MeshUtils {
-    struct PlaneCreator;
-
-    template <> struct OptionsFor<PlaneCreator> {
-        using MData = VertexBuilder::MeshConstructData3D;
-    };
-
-    struct PlaneCreator : MeshConstructor<PlaneCreator> {
-        PlaneCreator(Options) {}
-
-        template <FnArgs<MData> F>
-        void MergeImpl(F&& f, Mesh<ResultingV<F>>& out) {
-            auto meshp = out.NewBatch();
-            meshp.PushV(f(MData { .Position = { +1, 0, +1 } }));
-            meshp.PushV(f(MData { .Position = { +1, 0, -1 } }));
-            meshp.PushV(f(MData { .Position = { -1, 0, +1 } }));
-            meshp.PushV(f(MData { .Position = { -1, 0, -1 } }));
-            meshp.PushI(0, 2, 1);
-            meshp.PushI(1, 2, 3);
+namespace Quasi::Graphics::Meshes {
+    struct Plane : IMeshBuilder3D<Plane> {
+        template <FnArgs<VertexNormal3D> F>
+        void MergeImpl(F&& f, auto& mesh) {
+            mesh.PushV(f(VertexNormal3D { .Position = { +1, 0, +1 }, .Normal = { 0, 1, 0 } }));
+            mesh.PushV(f(VertexNormal3D { .Position = { +1, 0, -1 }, .Normal = { 0, 1, 0 } }));
+            mesh.PushV(f(VertexNormal3D { .Position = { -1, 0, +1 }, .Normal = { 0, 1, 0 } }));
+            mesh.PushV(f(VertexNormal3D { .Position = { -1, 0, -1 }, .Normal = { 0, 1, 0 } }));
+            mesh.PushI(0, 2, 1);
+            mesh.PushI(1, 2, 3);
         }
     };
-
-    inline static MeshConstructor<PlaneCreator> Plane {};
 } // Graphics::MeshUtils

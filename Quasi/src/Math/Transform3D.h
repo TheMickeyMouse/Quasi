@@ -15,6 +15,7 @@ namespace Quasi::Math {
 
         static Rotor3D RotateAxis(const fv3& axis, const Rotor2D& r) { return Quaternion::RotateAxis(axis, r); }
         static Rotor3D LookAt(const fv3& direction, const fv3& front) { return Quaternion::LookAt(direction, front); }
+        static Rotor3D RotateTo(const fv3& from, const fv3& to) { return Quaternion::RotateTo(from, to); }
         static Rotor3D RotateX(const Rotor2D& r) { return Quaternion::RotateX(r); }
         static Rotor3D RotateY(const Rotor2D& r) { return Quaternion::RotateY(r); }
         static Rotor3D RotateZ(const Rotor2D& r) { return Quaternion::RotateZ(r); }
@@ -59,20 +60,21 @@ namespace Quasi::Math {
     };
 
     struct MatrixTransform3D {
-        Matrix3D transform, normalMatrix;
+        Matrix3D transform;
+        Matrix3x3 normalMatrix;
 
         fv3 Transform(const fv3& p) const { return (fv3)(transform * p); }
-        fv3 TransformNormal(const fv3& n) const { return ((fv3)(normalMatrix * n)).Norm(); }
+        fv3 TransformNormal(const fv3& n) const { return (normalMatrix * n).Norm(); }
     };
 
-    template <class Tf> concept ITransformer3D = requires (const Tf& t, const fv3& vec) {
+    template <class Tf> concept ITransformation3D = requires (const Tf& t, const fv3& vec) {
         { t.Transform(vec) }       -> ConvTo<fv3>;
         { t.TransformNormal(vec) } -> ConvTo<fv3>;
     };
 
     template <class T>
     struct InverseTransform3D {
-        static_assert(ITransformer3D<T>, "T should be a transformer3d"); // delayed constraint
+        static_assert(ITransformation3D<T>, "T should be a transformer3d"); // delayed constraint
         const T& tformer;
         fv3 Transform             (const fv3& point)  const { return tformer.TransformInverse(point); }
         fv3 TransformInverse      (const fv3& point)  const { return tformer.Transform(point); }

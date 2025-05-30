@@ -11,7 +11,7 @@ namespace Quasi::Math {
 }
 
 namespace Quasi::Graphics {
-    class CameraController;
+    class CameraController3D;
     class Light;
 }
 
@@ -69,7 +69,7 @@ namespace ImGui {
     Q_IMGUI_EDITOR(EditTransform, Q Math::Transform2D& transform, float speed = 1);
     Q_IMGUI_EDITOR(EditTransform, Q Math::Transform3D& transform, float speed = 1);
 
-    Q_IMGUI_EDITOR(EditCameraController, Q Graphics::CameraController& camera);
+    Q_IMGUI_EDITOR(EditCameraController, Q Graphics::CameraController3D& camera);
     Q_IMGUI_EDITOR(EditLight, Q Graphics::Light& light);
 
 #undef Q

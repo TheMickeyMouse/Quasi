@@ -374,6 +374,7 @@ namespace Quasi::Math {
 
         Tuple<fT, Radians> PolarCoords() const { return { this->Len(), this->PolarAngle() }; }
         static Vector FromPolar(T r, Radians theta) requires Floating<T> { return { r * Cos(theta), r * Sin(theta) }; }
+        static Vector FromPolar(T r, const Rotor2D& theta) requires Floating<T>;
 
         Vector Perpend()      const requires Signed<T> { return { y, -x }; }
         Vector PerpendLeft()  const requires Signed<T> { return { -y, x }; }
@@ -439,6 +440,7 @@ namespace Quasi::Math {
             const T xz = r * Cos(pitch);
             return { xz * Cos(yaw), r * Sin(pitch), xz * Sin(yaw) };
         }
+        static Vector FromSpheric(T r, const Rotor2D& yaw, const Rotor2D& pitch) requires Floating<T>;
         Vec2<fT> ProjectTo2DPlane() const { const fT invZ = (fT)1 / z; return { x * invZ, y * invZ }; }
 
         Vec2<T> As2D() const { return { x, y }; }
@@ -537,7 +539,7 @@ namespace Quasi::Math {
                 }
                 sw.Write(sections[1]);
                 if (*identifiers[1]) {
-                    if (options.elementFmt[*identifiers[0]] == '#') {
+                    if (options.elementFmt[*identifiers[1]] == '#') {
                         ln += sw.Write(comps[i]);
                     } else {
                         ln += Text::FormatObjectTo(sw, vector[i]);

@@ -22,7 +22,7 @@ namespace Quasi::IO {
         int prevMouseStates = 0;
         std::queue<char> queuedMouseEvents;
 
-        Math::dv2 scroll, scrollDelta;
+        Math::dv2 currPos, prevPos, posDelta, scroll, scrollDelta;
         std::queue<Math::dv2> queuedScrolls;
 
         Ref<IO> io;
@@ -38,8 +38,15 @@ namespace Quasi::IO {
         void Hide();
         void Show(); // will also unlock the cursor
 
+        Math::dv2 MapMouseToPixels(const Math::dv2& mouseReal) const;
+        Math::dv2 MapPixelsToMouse(const Math::dv2& mousePixels) const;
+        Math::dv2 FlipMouseY(const Math::dv2& mouse) const;
         Math::dv2 GetMousePosPx() const;
         Math::dv2 GetMousePos() const;
+        Math::dv2 GetPrevMousePosPx() const;
+        Math::dv2 GetPrevMousePos() const;
+        Math::dv2 GetMousePosDeltaPx() const;
+        Math::dv2 GetMousePosDelta() const;
         bool IsInWindow() const;
 
         Math::dv2 GetMouseScroll() const;

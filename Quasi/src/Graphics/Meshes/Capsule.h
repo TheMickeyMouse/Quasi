@@ -1,83 +1,52 @@
 #pragma once
 
-#include "MeshConstructor.h"
-#include "../../Mesh.h"
+#include "MeshBuilder.h"
+#include "Mesh.h"
 #include "Math/Vector.h"
 
-namespace Quasi::Graphics::VertexBuilder {
-    struct MeshConstructData3D;
-}
+namespace Quasi::Graphics::Meshes {
+    struct Capsule : IMeshBuilder3D<Capsule> {
+        Math::fv3 start = 0, end = { 0, 1, 0 };
+        float radius = 1;
+        Math::uv2 sections = { 32, 16 };
+        Capsule(const Math::fv3& start = 0, const Math::fv3& end = { 0, 1, 0 }, float r = 1, u32 lon = 32, u32 lat = 16)
+            : start(start), end(end), radius(r), sections(lon, lat) {}
 
-namespace Quasi::Graphics::MeshUtils {
-    struct CapsuleCreator;
-
-    template <>
-    struct OptionsFor<CapsuleCreator> {
-        Math::fv3 start, end;
-        float radius;
-        Math::uv2 sections;
-
-        using MData = VertexBuilder::MeshConstructData3D;
-    };
-
-    struct CapsuleCreator : MeshConstructor<CapsuleCreator> {
-        Options opt;
-        CapsuleCreator(const Options& options) : opt(options) {}
-
-        template <FnArgs<MData> F>
-        void MergeImpl(F&& f, Mesh<ResultingV<F>>& mesh) {
+        template <FnArgs<VertexNormal3D> F>
+        void MergeImpl(F&& f, MeshBatch<FuncResult<F, VertexNormal3D>> mesh) {
             using namespace Math;
-            const float LATITUDE_SECT = HALF_PI / (float)opt.sections.y, LONGITUDE_SECT = TAU / (float)opt.sections.x;
+            const Rotor2D LAT_ROT = Radians(HALF_PI / -(float)sections.y),
+                          LON_ROT = Radians(TAU / (float)sections.x);
 
-            const fv3 Y = (opt.start - opt.end).norm();
-            // the { y, -x, 0 } is absolutely arbitrary, just need a nonzero vec thats also not the x axis
-            const fv3 X = fv3 { Y.y, -Y.x, 0 }.norm();
-            const fv3 Z = Y.cross(X);
+            const fv3 forward = (end - start).Norm();
+            const Matrix3x3 TRANS = Rotor3D::RotateTo({ 0, 1, 0 }, forward).AsMatrixLinear();
 
-            const auto sphereCoord = [&] (float yaw, float pitch) {
-                return std::sin(yaw) * std::cos(pitch) * X +
-                       std::sin(pitch)                 * Y +
-                       std::cos(yaw) * std::cos(pitch) * Z;
-            };
+            mesh.PushV(f(VertexNormal3D { .Position = end + forward * radius, .Normal = forward }));
+            Rotor2D pitch = Rotor2D::FromComplex({ 0, 1 });
+            for (int lat = -(int)sections.y; lat < (int)sections.y; ++lat) {
+                Rotor2D yaw = {};
+                for (u32 lon = 0; lon < sections.x; ++lon) {
+                    if (lat != -(int)sections.y) {
+                        yaw += LON_ROT;
+                        const fv3 pos = TRANS * fv3::FromSpheric(1, yaw, pitch);
+                        mesh.PushV(f(VertexNormal3D { .Position = (lat < 0 ? end : start) + radius * pos, .Normal = pos }));
+                    }
 
-            for (u32 hemisphere = 0; hemisphere < 2; ++hemisphere) { // 0 is top, 1 is bottom
-                auto meshp = mesh.NewBatch();
-
-                const bool isTop = hemisphere == 0;
-                const float sign = isTop ? 1 : -1;
-                meshp.PushV(f(MData {
-                    .Position = opt.start + opt.radius * sign * Y,
-                    .Normal   = sign * Y
-                }));
-                for (u32 y = 1; y <= opt.sections.y; ++y) {
-                    for (u32 x = 0; x < opt.sections.x; ++x) {
-                        const fv3 direction = sign * sphereCoord((float)x * LONGITUDE_SECT, (float)y * LATITUDE_SECT);
-                        meshp.PushV(f(MData {
-                            .Position = (isTop ? opt.start : opt.end) + direction * opt.radius,
-                            .Normal   = direction
-                        }));
-                        const u32 px = x ? x : opt.sections.x;
-                        if (y == 1) {
-                            meshp.PushI(0, px, x + 1);
-                        } else {
-                            const u32 currYOff = (y - 1) * opt.sections.x;
-                            const u32 nextYOff = y * opt.sections.x;
-                            meshp.PushI(currYOff + px, nextYOff + px, currYOff + x);
-                            meshp.PushI(currYOff + x,  nextYOff + px, nextYOff + x);
-                        }
+                    const u32 lon_1 = (lon + 1) % sections.x,
+                              off = 1 + (lat + sections.y - 1) * sections.x,
+                              offNext = off + sections.x;
+                    if (lat == -(int)sections.y) {
+                        mesh.PushI(0, 1 + lon, 1 + lon_1);
+                    } else if (lat == sections.y - 1) {
+                        mesh.PushI(off + lon_1, off + lon, 1 + sections.x * (2 * sections.y - 1));
+                    } else {
+                        mesh.PushI(off + lon,   offNext + lon, off     + lon_1);
+                        mesh.PushI(off + lon_1, offNext + lon, offNext + lon_1);
                     }
                 }
+                pitch += LAT_ROT;
             }
-            const u32 lastLoopIndex = 1 + opt.sections.y * opt.sections.x;
-
-            // loop cut
-            for (u32 x = 1; x <= opt.sections.x; ++x) {
-                const u32 prevX = x == 1 ? opt.sections.x : x - 1;
-                mesh.PushIndex(lastLoopIndex - prevX, 2 * lastLoopIndex - prevX,     lastLoopIndex - x);
-                mesh.PushIndex(lastLoopIndex - x,     2 * lastLoopIndex - prevX, 2 * lastLoopIndex - x);
-            }
+            mesh.PushV(f(VertexNormal3D { .Position = start - forward * radius, .Normal = -forward }));
         }
     };
-
-    inline static MeshConstructor<CapsuleCreator> Capsule {};
 }

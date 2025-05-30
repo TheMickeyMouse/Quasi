@@ -1,73 +1,51 @@
 #pragma once
 
-#include "MeshConstructor.h"
+#include "MeshBuilder.h"
 
-namespace Quasi::Graphics::MeshUtils {
-    struct StadiumCreator;
+namespace Quasi::Graphics::Meshes {
+    struct Stadium : IMeshBuilder2D<Stadium> {
+        Math::fv2 start, end = { 0, 1 };
+        float radius = 1.0f;
+        u32 subdivisions = 4;
+        Stadium(const Math::fv2& start = {}, const Math::fv2& end = { 0, 1 }, float r = 1.0f, u32 sub = 4)
+            : start(start), end(end), radius(r), subdivisions(sub) {}
 
-    template <>
-    struct OptionsFor<StadiumCreator> {
-        Math::fv2 start, end;
-        float radius;
-        u32 subdivisions;
-
-        using MData = VertexBuilder::MeshConstructData2D;
-    };
-
-    struct StadiumCreator : MeshConstructor<StadiumCreator> {
-        Options opt;
-        StadiumCreator(const Options& options) : opt(options) {}
-
-        template <FnArgs<MData> F>
-        void MergeImpl(F&& f, Mesh<ResultingV<F>>& mesh) {
+        template <FnArgs<Vertex2D> F>
+        void MergeImpl(F&& f, MeshBatch<FuncResult<F, Vertex2D>> mesh) {
             using namespace Math;
-            auto meshp = mesh.NewBatch();
 
-            const fv2 X = (opt.start - opt.end).Norm(opt.radius);
-            const fv2 Y = { X.y, -X.x };
+            const fv2 X = (end - start).Norm(radius);
+            const fv2 Y = X.PerpendLeft();
 
-            meshp.PushV(f(MData { opt.start + Y })); // 0
-            meshp.PushV(f(MData { opt.end   + Y })); // 1
-            meshp.PushV(f(MData { opt.start - Y })); // 2
-            meshp.PushV(f(MData { opt.end   - Y })); // 3
-            meshp.PushI(0, 1, 2);
-            meshp.PushI(1, 2, 3);
+            const u32 halfWay = 2 << subdivisions, total = halfWay * 2 + 1, quarter = halfWay / 2;
+            mesh.ReserveV(total + 1);
 
-            if (opt.subdivisions > 0) {
-                meshp.PushV(f(MData { opt.start + X })); // 4
-                meshp.PushV(f(MData { opt.end   - X })); // 5
+            mesh.VertAt(0)               = f(Vertex2D { start + Y });
+            mesh.VertAt(quarter)         = f(Vertex2D { start - X });
+            mesh.VertAt(halfWay)         = f(Vertex2D { start - Y });
+            mesh.VertAt(halfWay + 1)     = f(Vertex2D { end   - Y });
+            mesh.VertAt(total - quarter) = f(Vertex2D { end   + X });
+            mesh.VertAt(total)           = f(Vertex2D { end   + Y });
+            mesh.PushI(0, quarter, halfWay);
+            mesh.PushI(halfWay + 1, total - quarter, total);
+            mesh.PushI(0, halfWay, halfWay + 1);
+            mesh.PushI(0, halfWay + 1, total);
 
-                meshp.PushI(0, 2, 4);
-                meshp.PushI(1, 3, 5);
-            }
-
-            const u32 nPoints = 1 << opt.subdivisions;
-
-            const auto mapK2Vi = [=](u32 k) -> u32 {
-                if (k == 0) return 0;
-                if (k == nPoints) return 1;
-                const u32 rightMostbit = k - (k & k - 1); // https://stackoverflow.com/a/21624122/19968422
-                const u32 maxI = nPoints / rightMostbit;
-                const u32 maxK = nPoints - rightMostbit;
-                return maxI - (maxK - k) / (2 * rightMostbit);
-            };
-
-            u32 vi = (opt.subdivisions > 0) ? 6 : 4;
-            for (u32 i = 2; i <= opt.subdivisions; ++i) {
-                const u32 dist = nPoints >> i;
-                for (u32 k = dist; k < nPoints; k += dist * 2) {
-                    const float angle = PI * (float)k / (float)nPoints;
-                    const float cos = std::cos(angle), sin = std::sin(angle);
-                    meshp.PushV(f(MData { opt.start + Y * cos + X * sin }));
-                    meshp.PushV(f(MData { opt.end   + Y * cos - X * sin }));
-                    const u32 from = k - dist, to = k + dist;
-                    meshp.PushI(mapK2Vi(from) * 2,     vi + 0, mapK2Vi(to) * 2);
-                    meshp.PushI(mapK2Vi(from) * 2 + 1, vi + 1, mapK2Vi(to) * 2 + 1);
-                    vi += 2;
+            Rotor2D step = Rotor2D::FromComplex({ 0, 1 });
+            for (u32 k = 1; k <= subdivisions; ++k) {
+                const u32 n = 1 << (subdivisions - k), skip = n << 1;
+                const Rotor2D half = step.Halved();
+                Rotor2D r = half;
+                for (usize j = n; j < halfWay; j += skip) {
+                    const u32 jp = j + halfWay + 1;
+                    mesh.VertAt(j)  = f(Vertex2D { r.Rotate(Y) + start });
+                    mesh.VertAt(jp) = f(Vertex2D { r.InvRotate(Y) + end });
+                    mesh.PushI(j  - n, j,  (j  + n) == halfWay ? 0 : (j  + n));
+                    mesh.PushI(jp - n, jp, (jp + n) == total   ? 0 : (jp + n));
+                    r += step;
                 }
+                step = half;
             }
         }
     };
-
-    inline static MeshConstructor<StadiumCreator> Stadium {};
 }

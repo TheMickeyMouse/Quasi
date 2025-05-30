@@ -6,14 +6,12 @@
 namespace Quasi::Graphics {
     class GraphicsDevice;
 
-    class CameraController {
+    class CameraController3D {
     public:
         Math::fv3 worldUp = Math::fv3::Up(), worldFront = Math::fv3::Front();
 
         Math::fv3 position = { 0, 0, -2 };
         float yaw = 0.0f, pitch = 0.0f; // yaw is looking A <-> B rotation, pitch is ^^^ rotation
-        Math::dv2 lastMouse;
-        bool initialMouse = true;
 
         float speed = 1.5f, sensitivity = 0.12f, fov = 45.0f, viewFov = 45.0f;
         fRange fovRange = { 1.0f, 45.0f };

@@ -2,6 +2,11 @@
 #include "Rect.h"
 
 namespace Quasi::Math {
+    struct MatrixTransform2D;
+    struct MatrixTransform3D;
+}
+
+namespace Quasi::Math {
     struct Rotor3D;
     template <usize N, usize M = N> struct Matrix;
 
@@ -65,15 +70,15 @@ namespace Quasi::Math {
             return super();
         }
         ColumnAff GetTranslation() const { return unitVectors[M - 1].RemoveComponent(); }
-        static Super Scaling(const ColumnAff& scale) requires SquareMatrix { return Scaling(scale.AddComponent(1)); }
-        static Super Scaling(const Column& scale) requires SquareMatrix {
+        static Super Scaling(const ColumnAff& scale) requires SquareMatrix { return ScalingLinear(scale.AddComponent(1)); }
+        static Super ScalingLinear(const Column& scale) requires SquareMatrix {
             Super t = { Uninit };
             for (usize i = 0; i < M; ++i)
                 t.unitVectors[i][i] = scale[i];
             return t;
         }
-        Super& ScaleBy(const ColumnAff& scale) { return ScaleBy(scale.AddComponent(1)); }
-        Super& ScaleBy(const Column& scale) {
+        Super& ScaleBy(const ColumnAff& scale) { return ScaleByLinear(scale.AddComponent(1)); }
+        Super& ScaleByLinear(const Column& scale) {
             for (usize i = 0; i < M; ++i)
                 unitVectors[i] *= scale[i];
             return super();
@@ -245,7 +250,7 @@ namespace Quasi::Math {
             return result;
         }
 
-        Column Transform(const Row& vector) const {
+        Column TransformLinear(const Row& vector) const {
             Column result;
             for (usize i = 0; i < N; ++i) {
                 for (usize j = 0; j < M; ++j) {
@@ -254,9 +259,9 @@ namespace Quasi::Math {
             }
             return result;
         }
-        Column TransformAffine(const RowAff& vector) const {
-            Column result;
-            for (usize i = 0; i < N; ++i) {
+        ColumnAff Transform(const RowAff& vector) const {
+            ColumnAff result;
+            for (usize i = 0; i < N - 1; ++i) {
                 for (usize j = 0; j < M - 1; ++j) {
                     result[i] += vector[j] * unitVectors[j][i];
                 }
@@ -264,7 +269,6 @@ namespace Quasi::Math {
             }
             return result;
         }
-
         Super ScalarMul(float s) const {
             Super result { Uninit };
             for (usize i = 0; i < N * M; ++i) {
@@ -322,8 +326,8 @@ namespace Quasi::Math {
         Super  operator* (float s) const { return ScalarMul(s); }
         Super& operator*=(float s) { return ScalarMulAssign(s); }
 
-        Column operator*(const Row& vector) const { return Transform(vector); }
-        Column operator*(const RowAff& vector) const { return TransformAffine(vector); }
+        Column    operator*(const Row& vector) const { return TransformLinear(vector); }
+        ColumnAff operator*(const RowAff& vector) const { return Transform(vector); }
 
         template <usize P> Matrix<N, P> operator*(const Matrix<M, P>& m) const { return Mul(m); }
     };
@@ -350,6 +354,7 @@ namespace Quasi::Math {
         Matrix& RotateByLin(const Rotor3D& rotation);
         Rotor3D GetRotationLin() const;
 
+        MatrixTransform2D AsTransform() const;
         static Matrix Transform(const fv2& translate, const fv2& scale, const Rotor2D& rotate);
     };
 
@@ -361,6 +366,7 @@ namespace Quasi::Math {
         Matrix& RotateBy(const Rotor3D& rotation);
         Rotor3D GetRotation() const;
 
+        MatrixTransform3D AsTransform() const;
         static Matrix OrthoProjection(const fRect3D& box);
         static Matrix PerspectiveProjection(const fRect3D& box);
         static Matrix PerspectiveFov(Radians fovDeg, float aspect, float near, float far);

@@ -123,7 +123,7 @@ namespace Quasi::Math {
 
     Matrix3x3 Transform3D::LinearMatrix() const {
         Matrix3x3 rotmatrix = rotation.AsMatrixLinear();
-        rotmatrix.ScaleBy(scale);
+        rotmatrix.ScaleByLinear(scale);
         return rotmatrix;
     }
 

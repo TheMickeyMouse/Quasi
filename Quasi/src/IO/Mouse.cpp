@@ -23,6 +23,11 @@ namespace Quasi::IO {
 
     void MouseType::Update() {
         prevMouseStates = mouseStates;
+
+        currPos = GetMousePosPx();
+        posDelta = currPos - prevPos;
+        prevPos = currPos;
+
         while (!queuedMouseEvents.empty()) {
             const char event = queuedMouseEvents.front();
             const bool state = event >= 0;
@@ -62,6 +67,18 @@ namespace Quasi::IO {
         glfwSetInputMode(inputWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 
+    Math::dv2 MouseType::MapMouseToPixels(const Math::dv2& mouseReal) const {
+        return (mouseReal + 1).MapFromUnit({ 0.0, (Math::dv2)io->gdevice->GetWindowSize() * 0.5 });
+    }
+
+    Math::dv2 MouseType::MapPixelsToMouse(const Math::dv2& mousePixels) const {
+        return mousePixels.UnmapToUnit({ 0.0, (Math::dv2)io->gdevice->GetWindowSize() * 0.5 }) - 1;
+    }
+
+    Math::dv2 MouseType::FlipMouseY(const Math::dv2& mouse) const {
+        return { mouse.x, -mouse.y };
+    }
+
     Math::dv2 MouseType::GetMousePosPx() const {
         Math::dv2 pos;
         glfwGetCursorPos((GLFWwindow*)inputWindow(), &pos.x, &pos.y);
@@ -69,8 +86,23 @@ namespace Quasi::IO {
     }
 
     Math::dv2 MouseType::GetMousePos() const {
-        const auto r01 = GetMousePosPx() / (Math::dv2)io->gdevice->GetWindowSize(); // range 0 - 1
-        return r01 * 2.0 - 1.0;
+        return MapPixelsToMouse(GetMousePosPx());
+    }
+
+    Math::dv2 MouseType::GetPrevMousePosPx() const {
+        return prevPos;
+    }
+
+    Math::dv2 MouseType::GetPrevMousePos() const {
+        return MapPixelsToMouse(prevPos);
+    }
+
+    Math::dv2 MouseType::GetMousePosDeltaPx() const {
+        return posDelta;
+    }
+
+    Math::dv2 MouseType::GetMousePosDelta() const {
+        return MapPixelsToMouse(posDelta);
     }
 
     bool MouseType::IsInWindow() const {

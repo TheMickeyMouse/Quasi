@@ -5,7 +5,7 @@
 #include "Utils/Array.h"
 
 #include "Complex.h"
-#include "CameraController.h"
+#include "CameraController3D.h"
 #include "Light.h"
 
 #include "Math/Transform2D.h"
@@ -277,7 +277,7 @@ namespace ImGui {
         TreePop();
     }
 
-    Q_IMGUI_EDITOR(EditCameraController, Q Graphics::CameraController& camera) {
+    Q_IMGUI_EDITOR(EditCameraController, Q Graphics::CameraController3D& camera) {
         width = GetRemWidth(width);
 
         static bool showControls = false;

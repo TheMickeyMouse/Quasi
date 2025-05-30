@@ -85,6 +85,11 @@ namespace Quasi::Math {
         return Rotor3D::FromQuat(q);
     }
 
+    MatrixTransform2D Matrix<3, 3>::AsTransform() const {
+        const Matrix2x2 sub = Matrix2x2::FromColumns({ unitVectors[0].As2D(), unitVectors[1].As2D() });
+        return { *this, sub.Inverse() };
+    }
+
     Matrix<3> Matrix<3>::Transform(const fv2& translate, const fv2& scale, const Rotor2D& rotate) {
         Matrix m = rotate.AsMatrix();
         m[0].x *= scale.x; m[1].x *= scale.x;
@@ -144,6 +149,11 @@ namespace Quasi::Math {
         }
         q *= 0.5f / std::sqrt(trace);
         return Rotor3D::FromQuat(q);
+    }
+
+    MatrixTransform3D Matrix<4, 4>::AsTransform() const {
+        const Matrix3x3 sub = Matrix3x3::FromColumns({ unitVectors[0].As3D(), unitVectors[1].As3D(), unitVectors[2].As3D() });
+        return { *this, sub.Inverse() };
     }
 
     Matrix<4> Matrix<4>::OrthoProjection(const fRect3D& box) {
