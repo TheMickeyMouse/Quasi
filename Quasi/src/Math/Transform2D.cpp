@@ -15,7 +15,7 @@ namespace Quasi::Math {
     Rotor2D Rotor2D::RotateByInv(const Rotor2D& r) const { return fComplex { re * r.re + im * r.im, im * r.re - re * r.im }; }
 
     Rotor2D Rotor2D::Halved() const {
-        const f32 x = 1 + re, imul = 1.0f / std::sqrt(x * x + im * im);
+        const f32 x = 1 + re, imul = HALF_ROOT_2 / std::sqrt(x);
         return fComplex { x * imul, im * imul };
     }
     Rotor2D Rotor2D::Mul(f32 p) const { return ExpImag(*Angle() * p); }
@@ -25,7 +25,7 @@ namespace Quasi::Math {
 
     Rotor2D Rotor2D::Lerp(const Rotor2D& z, f32 t) const {
         const Radians theta = AngleBetween(z);
-        const f32 inv = 1 / Sin(theta), p = Sin(theta * (1 - t)) * inv, q = Sin(theta * t) * inv;
+        const f32 inv = 1 / Math::Sin(theta), p = Math::Sin(theta * (1 - t)) * inv, q = Math::Sin(theta * t) * inv;
         return AsComplex() * p + z.AsComplex() * q;
     }
 

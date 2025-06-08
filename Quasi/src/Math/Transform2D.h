@@ -4,7 +4,7 @@
 namespace Quasi::Math {
     struct Rotor2D : private fComplex {
         Rotor2D() : fComplex(1, 0) {}
-        Rotor2D(Radians theta) : fComplex(Cos(theta), Sin(theta)) {}
+        Rotor2D(Radians theta) : fComplex(Math::Cos(theta), Math::Sin(theta)) {}
     private:
         Rotor2D(const fComplex& c) : fComplex(c) {}
     public:
@@ -14,6 +14,8 @@ namespace Quasi::Math {
 
         fv2 IHat() const { return {  re, im }; }
         fv2 JHat() const { return { -im, re }; }
+        f32 Cos() const { return re; }
+        f32 Sin() const { return im; }
 
         Radians Angle() const;
         Radians AngleBetween(const Rotor2D& other) const;

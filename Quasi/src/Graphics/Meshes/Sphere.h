@@ -9,7 +9,7 @@ namespace Quasi::Graphics::Meshes {
         Sphere(float r = 1, u32 lon = 32, u32 lat = 32) : radius(r), sections(lon, lat) {}
 
         template <FnArgs<VertexNormal3D> F>
-        void MergeImpl(F&& f, MeshBatch<FuncResult<F, VertexNormal3D>>& mesh) {
+        void MergeImpl(F&& f, IMeshBatch<FuncResult<F, VertexNormal3D>> auto&& mesh) {
             using namespace Math;
             const Rotor2D LAT_ROT = Radians(PI  / -(float)sections.y),
                           LON_ROT = Radians(TAU / (float)sections.x);

@@ -62,7 +62,6 @@ namespace Quasi::Graphics {
 
 		void Clear();
 		template <class T> void Add(const Mesh<T>& mesh) { mesh.AddTo(*this); }
-		void Add(const CollectionAny auto& arr) { for (const auto& m : arr) Add(m); }
 
 		void Destroy();
 
@@ -72,15 +71,9 @@ namespace Quasi::Graphics {
 		void RenderInstanced(Shader& replaceShader, int instances, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true);
 		void RenderInstanced(int instances, const ShaderArgs& args = {}, bool setDefaultShaderArgs = true) { RenderInstanced(shader, instances, args, setDefaultShaderArgs); }
 
-	    void SetCamera(const Math::Matrix3D& cam) { camera = cam; }
-	    void SetProjection(const Math::Matrix3D& proj) { projection = proj; }
-	    
-	    void UseShader(Str code) { shader = Shader::New(code); }
-	    void UseShaderFromFile(CStr file) { shader = Shader::FromFile(file); }
-	    void UseShaderFromFile(CStr vert, CStr frag, CStr geom = {}) { shader = Shader::FromFile(vert, frag, geom); }
-
 		friend class GraphicsDevice;
 		template <IVertex T> friend class Mesh;
+		template <class T> friend class RenderObject;
 	};
 
 	template <class T> void RenderData::PushVertex(const T& vertex) {

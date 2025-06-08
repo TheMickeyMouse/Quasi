@@ -113,6 +113,8 @@ namespace Quasi {
             u32 approx10 = BitWidth(x) * Math::INV_LOG10_2_MUL >> 16; \
             return approx10 - (x < Math::POWERS_OF_10[approx10]); \
         } \
+        \
+        inline INT CopySign(INT x, INT sign) { return ((x < 0) == (sign < 0)) ? x : -x; } \
     } \
     inline static constexpr INT operator ""_##INT(unsigned long long x) { return (INT)x; }
 
@@ -139,21 +141,22 @@ namespace Quasi {
         static constexpr usize BITS      = sizeof(N) * 8;
         static constexpr usize DIGITS    = 1 + ((BITS - IS_SIGNED) * Math::INV_LOG10_2_MUL >> 16);
 
-        bool AddOverflow(N a, N b, N& out) { return __builtin_add_overflow(a, b, &out); }
-        bool SubOverflow(N a, N b, N& out) { return __builtin_sub_overflow(a, b, &out); }
-        bool MulOverflow(N a, N b, N& out) { return __builtin_mul_overflow(a, b, &out); }
+        static bool AddOverflow(N a, N b, N& out) { return __builtin_add_overflow(a, b, &out); }
+        static bool SubOverflow(N a, N b, N& out) { return __builtin_sub_overflow(a, b, &out); }
+        static bool MulOverflow(N a, N b, N& out) { return __builtin_mul_overflow(a, b, &out); }
 
-        u32  CountOnes (N x) { return std::popcount((UnsignedInt)x); }
-        u32  CountZeros(N x) { return std::popcount((UnsignedInt)~(UnsignedInt)x); }
-        bool IsPow2    (N x) { return x && !(x & (x - 1)); }
-        u32  BitWidth  (N x) { return std::bit_width((UnsignedInt)x); }
-        u32  Log2      (N x) { return BitWidth(x) - 1; }
-        u32  Log10     (N x) {
+        static u32  CountOnes (N x) { return std::popcount((UnsignedInt)x); }
+        static u32  CountZeros(N x) { return std::popcount((UnsignedInt)~(UnsignedInt)x); }
+        static bool IsPow2    (N x) { return x && !(x & (x - 1)); }
+        static u32  BitWidth  (N x) { return std::bit_width((UnsignedInt)x); }
+        static u32  Log2      (N x) { return BitWidth(x) - 1; }
+        static u32  Log10     (N x) {
             u32 approx10 = BitWidth(x) * Math::INV_LOG10_2_MUL >> 16;
             return approx10 - (x < Math::POWERS_OF_10[approx10]);
         }
 
-        N Modulo(N a, N b) { return a % b; } // used to overload floating modulo
+        static N Modulo(N a, N b) { return a % b; } // used to overload floating modulo
+        static N CopySign(N x, N sign) { return ((x < 0) == (sign < 0)) ? x : -x; } // used to generalize floats
     };
 
     enum class FpClassification {
@@ -195,6 +198,7 @@ namespace Quasi {
         inline bool IsSignedNegative(FLOAT f) { return BitsOf(f) & SIGN_MASK != 0; } \
         inline bool IsSignedPositive(FLOAT f) { return BitsOf(f) & SIGN_MASK == 0; } \
         inline FLOAT Sign(FLOAT f) { return f == 0 ? f : f > 0 ? 1 : f < 0 ? -1 : NAN; } \
+        inline FLOAT CopySign(FLOAT f, FLOAT sign) { return std::copysign(f, sign); } \
         \
         inline void  Decomp(FLOAT f, int& exp, FLOAT& mant) { mant = std::frexp(f, &exp); } \
         inline FLOAT Comp(int exp, FLOAT mant) { return std::ldexp(mant, exp); } \
@@ -289,6 +293,7 @@ namespace Quasi {
         static constexpr SAME_SIZED EXPONENT_MASK = ((SAME_SIZED)1 << EXPONENT_BITS) - MANTISSA_MASK - 1; \
         \
         inline static FLOAT Modulo(FLOAT a, FLOAT b) { return std::fmod(a, b); } \
+        inline static FLOAT CopySign(FLOAT f, FLOAT sign) { return std::copysign(f, sign); } \
     };
 
     QUASI_DEFINE_FLOATING(f32, FLT, u32, i32);

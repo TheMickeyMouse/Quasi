@@ -76,20 +76,33 @@ namespace Quasi::Graphics {
         friend class RenderData;
     };
 
+    template <class T, class V>
+    concept IMeshBatch = requires(T mesh, const V& vtx) {
+        { mesh.PushV(vtx) }                    -> SameAs<void>;
+        { mesh.PushI(u32 {}, u32 {}, u32 {}) } -> SameAs<void>;
+        { mesh.ReserveV(u32 {}) }              -> SameAs<void>;
+        { mesh.VertAt(u32 {}) }                -> SameAs<V&>;
+    };
+
     template <IVertex Vtx>
     struct MeshBatch {
         u32 iOffset;
         Ref<Mesh<Vtx>> mesh;
 
         void PushV(const Vtx& v) { mesh->PushVertex(v); }
-        void ReserveV(u32 amount) { mesh->vertices.Resize(mesh->vertices.Length() + amount); }
+        void ResizeV(u32 amount) { mesh->vertices.ResizeExtra(amount); }
+        void ReserveV(u32 amount) { mesh->vertices.Reserve(amount); }
         Vtx& VertAt(u32 i) { return mesh->vertices[iOffset + i]; }
+        const Vtx& VertAt(u32 i) const { return mesh->vertices[iOffset + i]; }
         void PushVs(const Collection<Vtx> auto& vs) { mesh->PushVertices(vs); }
         void PushVs(IList<Vtx> vs) { mesh->PushVertices(vs); }
+        u32 VertCount() const { return mesh.vertices.Length() - iOffset; }
 
+        TriIndices* IndexData() { return mesh->indices.Data() + iOffset; }
         void PushI(TriIndices i) { mesh->PushIndex(i + iOffset); }
         void PushI(u32 i, u32 j, u32 k) { mesh->PushIndex({ i + iOffset, j + iOffset, k + iOffset }); }
-        void ReserveI(u32 amount) { mesh->indices.Resize(mesh->indices.Length() + amount); }
+        void ResizeI(u32 amount) { mesh->indices.ResizeExtra(amount); }
+        void ReserveI(u32 amount) { mesh->indices.Reserve(amount); }
         void PushIs(const Collection<TriIndices> auto& is) { mesh->PushIndices(is); }
         void PushIs(IList<TriIndices> is) { mesh->PushIndices(is); }
 

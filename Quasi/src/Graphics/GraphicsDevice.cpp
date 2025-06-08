@@ -261,13 +261,13 @@ namespace Quasi::Graphics {
                 vCount += data->vbo.dataOffset;
                 tCount += data->ibo.dataOffset / 3;
                 if (ImGui::TreeNode((const void*)(intptr_t)i, "Render #%d", i)) {
-                    ImGui::Text("%d Vertices, %d Triangles", data->vbo.dataOffset, data->ibo.dataOffset / 3);
+                    ImGui::Text("%d Vertices (bytes), %d Triangles", data->vbo.dataOffset, data->ibo.dataOffset / 3);
                     ImGui::Unindent();
 
                     ImGui::TreePop();
                 }
             }
-            ImGui::Text("Total: %d Vertices, %d Triangles", vCount, tCount);
+            ImGui::Text("Total: %d Vertices (bytes), %d Triangles", vCount, tCount);
             ImGui::Text("Draw Calls: %d", renderOptions.drawCalls);
             ImGui::EndTabItem();
         }

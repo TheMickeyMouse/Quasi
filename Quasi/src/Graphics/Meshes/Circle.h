@@ -10,8 +10,8 @@ namespace Quasi::Graphics::Meshes {
         Circle(float r = 1.0f, u32 sub = 4) : radius(r), subdivisions(sub) {}
 
         static constexpr float PRECOMPUTED_POINTS[] = {
-            +1,     0,                 // sub 0
             -0.5f,  Math::HALF_ROOT_3,
+            +1,     0,                 // sub 0
             -0.5f, -Math::HALF_ROOT_3,
 
             +0.5f,  Math::HALF_ROOT_3, // sub 1
@@ -64,44 +64,49 @@ namespace Quasi::Graphics::Meshes {
             +0.991444861374f, -0.130526192220f,
         };
 
-        static const Math::fv2& GetPointBinaryIndex(u32 i, u32 max, u32 bits, const Math::fv2* largerThan4) {
-            const u32 j = i | max, depth = j - (j & j - 1);
-            if (depth == 0) return *Memory::TransmutePtr<const Math::fv2>(&PRECOMPUTED_POINTS[2 * (i >> bits)]);
-            if (depth <= 4)
-                // return *Memory::TransmutePtr<const Math::fv2>(&PRECOMPUTED_POINTS[2 * ((3 << (depth - 1)) + (i >> (bits - depth)))]);
-                return *Memory::TransmutePtr<const Math::fv2>(&PRECOMPUTED_POINTS[3 * depth + 2 * i / depth]);
-            return largerThan4[(depth == 32 ? 0 : 3 * depth) + (i / depth)];
-        }
+        static constexpr u32 PRECOMPUTED_INDICES[] = {
+            1, 0, 2,
+            1, 3, 0, 0, 4, 2, 2, 5, 1, 
+            1, 6, 3, 3, 7, 0, 0, 8, 4, 4, 9, 2, 2, 10, 5, 5, 11, 1, 
+            1, 12, 6, 6, 13, 3, 3, 14, 7, 7, 15, 0, 0, 16, 8, 8, 17, 4, 4, 18, 9, 9, 19, 2, 2, 20, 10, 10, 21, 5, 5, 22, 11, 11, 23, 1, 
+
+            1, 24, 12, 12, 25, 6, 6, 26, 13, 13, 27, 3, 3, 28, 14, 14, 29, 7, 7, 30, 15, 15, 31, 0, 0, 32, 16, 16, 33, 8,
+            8, 34, 17, 17, 35, 4, 4, 36, 18, 18, 37, 9, 9, 38, 19, 19, 39, 2, 2, 40, 20, 20, 41, 10, 10, 42, 21, 21, 43, 5,
+            5, 44, 22, 22, 45, 11, 11, 46, 23, 23, 47, 1, 
+        };
 
         template <FnArgs<Vertex2D> F>
-        void MergeImpl(F&& f, MeshBatch<FuncResult<F, Vertex2D>> mesh) {
+        void MergeImpl(F&& f, IMeshBatch<FuncResult<F, Vertex2D>> auto&& mesh) {
             const u32 total = 3 << subdivisions;
             mesh.ReserveV(total);
-            mesh.VertAt(0)                 = f(Vertex2D { { radius, 0 } });
-            mesh.VertAt(1 << subdivisions) = f(Vertex2D { { -radius * 0.5f,  radius * Math::HALF_ROOT_3 } });
-            mesh.VertAt(2 << subdivisions) = f(Vertex2D { { -radius * 0.5f, -radius * Math::HALF_ROOT_3 } });
-            mesh.PushI( 0, 1 << subdivisions, 2 << subdivisions );
-            const float* pointData = PRECOMPUTED_POINTS;
-            for (u32 k = 1; k <= std::min(subdivisions, 4u); ++k) {
-                pointData += 3 << k;
-                const u32 n = 1 << (subdivisions - k);
-                for (usize j = 1; j < (3 << k); j += 2) {
-                    const u32 v = (j + 1) << (subdivisions - k);
-                    mesh.VertAt(v) = f(Vertex2D { { radius * pointData[j - 1], radius * pointData[j] } });
-                    mesh.PushI(v - n, v, (v + n) == total ? 0 : (v + n));
-                }
+            mesh.ResizeI(total - 2);
+
+            const u32 precompCount = std::min(total, 3u << 4);
+            for (u32 i = 0; i < precompCount; ++i) {
+                mesh.PushV(f(Vertex2D { { radius * PRECOMPUTED_POINTS[2 * i], radius * PRECOMPUTED_POINTS[2 * i + 1] } }));
             }
+            for (u32 i = 0; i < (precompCount - 2); ++i) {
+                const u32* ind = &PRECOMPUTED_INDICES[3 * i];
+                mesh.PushI(ind[0], ind[1], ind[2]);
+            }
+
             if (subdivisions <= 4) return;
 
             Math::Rotor2D step = Math::Rotor2D::FromComplex({ 0.991444861374f, 0.130526192220f });
-            for (u32 k = 4; k <= subdivisions; ++k) {
-                const u32 n = 1 << (subdivisions - k), skip = n << 1;
+            for (u32 i = 4; i < subdivisions; ++i) {
                 const Math::Rotor2D half = step.Halved();
-                Math::Rotor2D r = half;
-                for (usize j = n; j < total; j += skip) {
-                    mesh.VertAt(j) = f(Vertex2D { radius * r.IHat() });
-                    mesh.PushI(j - n, j, (j + n) == total ? 0 : (j + n));
-                    r += step;
+                Math::fv2 vertex = half.IHat() * radius;
+
+                // algorithm from https://oeis.org/search?q=12%2c6%2c13%2c3%2c14%2c7%20id:25480 binary perspective
+                u32 p = 1, q = 3 << i;
+                for (u32 j = 0; j < (3 << i); ++j) {
+                    mesh.PushV(f(Vertex2D { vertex }));
+                    vertex = vertex.RotateBy(step);
+
+                    u32 r = q >> (u32s::CountRightOnes(q) + 1);
+                    mesh.PushI(p, q, r);
+                    p = r;
+                    ++q;
                 }
                 step = half;
             }

@@ -13,16 +13,24 @@ namespace Quasi::Math {
         Quaternion&       AsQuat()       { return static_cast<Quaternion&>(*this); }
         const Quaternion& AsQuat() const { return static_cast<const Quaternion&>(*this); }
 
+        static Rotor3D FromTrig(f32 cosHalf, f32 sinHalf, const fv3& axis);
+        static Rotor3D FromTrig(f32 cosHalf, const fv3& axis);
         static Rotor3D RotateAxis(const fv3& axis, const Rotor2D& r) { return Quaternion::RotateAxis(axis, r); }
         static Rotor3D LookAt(const fv3& direction, const fv3& front) { return Quaternion::LookAt(direction, front); }
         static Rotor3D RotateTo(const fv3& from, const fv3& to) { return Quaternion::RotateTo(from, to); }
         static Rotor3D RotateX(const Rotor2D& r) { return Quaternion::RotateX(r); }
         static Rotor3D RotateY(const Rotor2D& r) { return Quaternion::RotateY(r); }
         static Rotor3D RotateZ(const Rotor2D& r) { return Quaternion::RotateZ(r); }
+        static Rotor3D OrientX(const fv3& xAxis);
+        static Rotor3D OrientY(const fv3& yAxis);
+        static Rotor3D OrientZ(const fv3& zAxis);
 
         fv3 IHat() const;
         fv3 JHat() const;
         fv3 KHat() const;
+        f32 CosHalf() const { return w; }
+        f32 SinHalf() const { return std::sqrt(1 - w * w); }
+        fv3 Axis() const { return { x, y, z }; }
 
         Vec3<Radians> EulerAngles() const { return ToEulerAngles(); }
         Radians AngleBetween(const Rotor3D& r) const;
@@ -31,7 +39,7 @@ namespace Quasi::Math {
         Rotor3D RotateByInv(const Rotor3D& r) const;
 
         Rotor3D Halved() const;
-        Rotor3D Mul(f32 p) const { return Pow(p); }
+        Rotor3D Mul(f32 p) const;
         Rotor3D Doubled()  const;
         Rotor3D Tripled()  const;
         Rotor3D Inverse()  const { return Conj(); }

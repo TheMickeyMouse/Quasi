@@ -40,15 +40,16 @@ set(HEADER_FILES
     src/Graphics/Fonts/TextRenderer.h
     src/Graphics/Fonts/TextStyle.h
     src/Graphics/Meshes/Circle.h
-    src/Graphics/Meshes/MeshConstructor.h
+    src/Graphics/Meshes/MeshBuilder.h
     src/Graphics/Meshes/Cube.h
-    src/Graphics/Meshes/CubeNormless.h
     src/Graphics/Meshes/Sphere.h
     src/Graphics/Meshes/Icosphere.h
     src/Graphics/Meshes/Quad.h
     src/Graphics/Meshes/Plane.h
     src/Graphics/Meshes/Capsule.h
     src/Graphics/Meshes/Stadium.h
+    src/Graphics/Meshes/Arrow2D.h
+    src/Graphics/Meshes/Arrow3D.h
     src/Graphics/GUI/ImGuiExt.h
 
     src/IO/IO.h

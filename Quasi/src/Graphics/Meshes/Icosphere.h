@@ -78,10 +78,10 @@ namespace Quasi::Graphics::Meshes {
 #pragma endregion
 
         template <FnArgs<VertexNormal3D> F>
-        void MergeImpl(F&& f, MeshBatch<FuncResult<F, VertexNormal3D>> mesh) {
+        void MergeImpl(F&& f, IMeshBatch<FuncResult<F, VertexNormal3D>> auto&& mesh) {
             using namespace Math;
 
-            mesh.ReserveV(CORNER_COUNT + EDGE_V_COUNT() * EDGE_COUNT + CENTER_V_COUNT() * CENTER_COUNT);
+            mesh.ResizeV(CORNER_COUNT + EDGE_V_COUNT() * EDGE_COUNT + CENTER_V_COUNT() * CENTER_COUNT);
 
             for (u32 i = 0; i < CORNER_COUNT; ++i)
                 mesh.VertAt(i) = f(VertexNormal3D { .Position = IcoVert[i] * radius, .Normal = IcoVert[i] });

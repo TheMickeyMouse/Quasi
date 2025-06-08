@@ -13,22 +13,20 @@ namespace Quasi::Graphics::Meshes {
             : start(start), end(end), radius(r), sections(lon, lat) {}
 
         template <FnArgs<VertexNormal3D> F>
-        void MergeImpl(F&& f, MeshBatch<FuncResult<F, VertexNormal3D>> mesh) {
+        void MergeImpl(F&& f, IMeshBatch<FuncResult<F, VertexNormal3D>> auto&& mesh) {
             using namespace Math;
-            const Rotor2D LAT_ROT = Radians(HALF_PI / -(float)sections.y),
-                          LON_ROT = Radians(TAU / (float)sections.x);
-
             const fv3 forward = (end - start).Norm();
-            const Matrix3x3 TRANS = Rotor3D::RotateTo({ 0, 1, 0 }, forward).AsMatrixLinear();
+            const Rotor3D orientUp = Rotor3D::OrientY(forward);
+            const Matrix3x3 LON_ROT = Rotor3D::RotateAxis(forward, Radians(TAU / -(float)sections.x)).AsMatrixLinear(),
+                            LAT_ROT = Rotor3D::RotateAxis(orientUp.KHat(), Radians(HALF_PI / -(float)sections.y)).AsMatrixLinear();
 
             mesh.PushV(f(VertexNormal3D { .Position = end + forward * radius, .Normal = forward }));
-            Rotor2D pitch = Rotor2D::FromComplex({ 0, 1 });
+            fv3 pitchBase = forward;
             for (int lat = -(int)sections.y; lat < (int)sections.y; ++lat) {
-                Rotor2D yaw = {};
+                fv3 pos = pitchBase;
                 for (u32 lon = 0; lon < sections.x; ++lon) {
                     if (lat != -(int)sections.y) {
-                        yaw += LON_ROT;
-                        const fv3 pos = TRANS * fv3::FromSpheric(1, yaw, pitch);
+                        pos = LON_ROT * pos;
                         mesh.PushV(f(VertexNormal3D { .Position = (lat < 0 ? end : start) + radius * pos, .Normal = pos }));
                     }
 
@@ -44,7 +42,7 @@ namespace Quasi::Graphics::Meshes {
                         mesh.PushI(off + lon_1, offNext + lon, offNext + lon_1);
                     }
                 }
-                pitch += LAT_ROT;
+                pitchBase = LAT_ROT * pitchBase;
             }
             mesh.PushV(f(VertexNormal3D { .Position = start - forward * radius, .Normal = -forward }));
         }

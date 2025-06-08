@@ -53,8 +53,30 @@ namespace Quasi::Graphics {
 
     	void BeginContext() { rd->BufferUnload(); rd->Clear(); }
     	void AddMesh(const Mesh<T>& mesh) { rd->Add(mesh); }
-    	void AddMeshes(const CollectionAny auto& meshes) { rd->Add(meshes); }
+    	void AddMeshes(const CollectionAny auto& meshes) { for (const Mesh<T>& m : meshes) rd->Add(m); }
     	void AddMeshes(IList<const Mesh<T>*> meshes) { for (auto* m : meshes) rd->Add(*m); }
+
+		struct RawBatch {
+    		u32 iOffset;
+    		Ref<RenderData> rd;
+
+    		void PushV(const T& v) { rd->PushVertex(v); }
+    		void ResizeV(u32) const {}
+    		void ReserveV(u32) const {}
+    		T& VertAt(u32 i) { return rd->vertexData->Transmute<T>()[i]; }
+    		const T& VertAt(u32 i) const { return rd->vertexData->Transmute<T>()[i]; }
+    		u32 VertCount() const { return rd->vertexOffset / sizeof(T) - iOffset; }
+
+    		void ResizeI(u32) const {}
+    		void ReserveI(u32) const {}
+    		void PushI(u32 i, u32 j, u32 k) { rd->PushIndex({ i + iOffset, j + iOffset, k + iOffset }); }
+    		TriIndices* IndexData() { return Memory::TransmutePtr<TriIndices>(rd->indexData.Data()) + iOffset; }
+    	};
+
+		void AddMeshB(auto&& meshBuilder, auto&& gpass) {
+    		meshBuilder.Merge((decltype(gpass))gpass, RawBatch { rd->vertexOffset / sizeof(T), rd });
+    	}
+
     	void EndContext() { rd->BufferLoad(); }
 
      	void DrawContext(const DrawOptions& options = {}) {
@@ -66,13 +88,13 @@ namespace Quasi::Graphics {
 
 		void Destroy() { rd->Destroy(); }
 
-	    void SetCamera(const Math::Matrix3D& cam) { rd->SetCamera(cam); }
-	    void SetProjection(const Math::Matrix3D& proj) { rd->SetProjection(proj); }
+	    void SetCamera(const Math::Matrix3D& cam) { rd->camera = cam; }
+	    void SetProjection(const Math::Matrix3D& proj) { rd->projection = proj; }
 	    
-	    void UseShader(Str code) { rd->UseShader(code); }
-	    void UseShaderFromFile(CStr file) { rd->UseShaderFromFile(file); }
+	    void UseShader(Str code) { rd->shader = Shader::New(code); }
+	    void UseShaderFromFile(CStr file) { rd->shader = Shader::FromFile(file); }
 	    void UseShaderFromFile(CStr vert, CStr frag, CStr geom = {})
-    	{ rd->UseShaderFromFile(vert, frag, geom); }
+    	{ rd->shader = Shader::FromFile(vert, frag, geom); }
     };
 
     template <class T>

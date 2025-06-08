@@ -11,41 +11,63 @@ namespace Quasi::Graphics::Meshes {
             : start(start), end(end), radius(r), subdivisions(sub) {}
 
         template <FnArgs<Vertex2D> F>
-        void MergeImpl(F&& f, MeshBatch<FuncResult<F, Vertex2D>> mesh) {
+        void MergeImpl(F&& f, IMeshBatch<FuncResult<F, Vertex2D>> auto&& mesh) {
             using namespace Math;
 
-            const fv2 X = (end - start).Norm(radius);
-            const fv2 Y = X.PerpendLeft();
+            const fv2 Y = (end - start).Norm(radius);
+            const fv2 X = Y.PerpendRight();
 
-            const u32 halfWay = 2 << subdivisions, total = halfWay * 2 + 1, quarter = halfWay / 2;
-            mesh.ReserveV(total + 1);
+            mesh.ReserveV((4 << subdivisions) + 2);
+            mesh.ReserveI(4 << subdivisions);
 
-            mesh.VertAt(0)               = f(Vertex2D { start + Y });
-            mesh.VertAt(quarter)         = f(Vertex2D { start - X });
-            mesh.VertAt(halfWay)         = f(Vertex2D { start - Y });
-            mesh.VertAt(halfWay + 1)     = f(Vertex2D { end   - Y });
-            mesh.VertAt(total - quarter) = f(Vertex2D { end   + X });
-            mesh.VertAt(total)           = f(Vertex2D { end   + Y });
-            mesh.PushI(0, quarter, halfWay);
-            mesh.PushI(halfWay + 1, total - quarter, total);
-            mesh.PushI(0, halfWay, halfWay + 1);
-            mesh.PushI(0, halfWay + 1, total);
+            {
+                mesh.PushV(f(Vertex2D { end + X }));
+                mesh.PushV(f(Vertex2D { end - X }));
+                mesh.PushV(f(Vertex2D { end + Y }));
+                mesh.PushI(0, 2, 1);
 
-            Rotor2D step = Rotor2D::FromComplex({ 0, 1 });
-            for (u32 k = 1; k <= subdivisions; ++k) {
-                const u32 n = 1 << (subdivisions - k), skip = n << 1;
-                const Rotor2D half = step.Halved();
-                Rotor2D r = half;
-                for (usize j = n; j < halfWay; j += skip) {
-                    const u32 jp = j + halfWay + 1;
-                    mesh.VertAt(j)  = f(Vertex2D { r.Rotate(Y) + start });
-                    mesh.VertAt(jp) = f(Vertex2D { r.InvRotate(Y) + end });
-                    mesh.PushI(j  - n, j,  (j  + n) == halfWay ? 0 : (j  + n));
-                    mesh.PushI(jp - n, jp, (jp + n) == total   ? 0 : (jp + n));
-                    r += step;
+                Rotor2D step = Rotor2D::FromComplex({ 0, 1 });
+                for (u32 i = 0; i < subdivisions; ++i) {
+                    const Rotor2D half = step.Halved();
+                    fv2 vertex = half.Rotate(X);
+                    u32 p = 0, q = (2 << i) + 1;
+                    for (u32 j = 0; j < (2 << i); ++j) {
+                        mesh.PushV(f(Vertex2D { end + vertex }));
+                        vertex = vertex.RotateBy(step);
+                        const u32 r = (q >> (u32s::CountRightZeros(q) + 1)) + 1;
+                        mesh.PushI(p, q, r);
+                        p = r;
+                        ++q;
+                    }
+                    step = half;
                 }
-                step = half;
             }
+            {
+                auto m = mesh.NewBatch();
+                m.PushV(f(Vertex2D { start - X }));
+                m.PushV(f(Vertex2D { start + X }));
+                m.PushV(f(Vertex2D { start - Y }));
+                m.PushI(0, 2, 1);
+
+                Rotor2D step = Rotor2D::FromComplex({ 0, 1 });
+                for (u32 i = 0; i < subdivisions; ++i) {
+                    const Rotor2D half = step.Halved();
+                    fv2 vertex = half.Rotate(X);
+                    u32 p = 0, q = (2 << i) + 1;
+                    for (u32 j = 0; j < (2 << i); ++j) {
+                        m.PushV(f(Vertex2D { start - vertex }));
+                        vertex = vertex.RotateBy(step);
+                        const u32 r = (q >> (u32s::CountRightZeros(q) + 1)) + 1;
+                        m.PushI(p, q, r);
+                        p = r;
+                        ++q;
+                    }
+                    step = half;
+                }
+            }
+            const u32 secondHalf = (2 << subdivisions) + 1;
+            mesh.PushI(0, 1, secondHalf);
+            mesh.PushI(0, secondHalf, secondHalf + 1);
         }
     };
 }

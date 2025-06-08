@@ -7,7 +7,7 @@
 namespace Quasi::Graphics::Meshes {
     struct Cube : IMeshBuilder3D<Cube> {
         template <FnArgs<VertexNormal3D> F>
-        void MergeImpl(F&& f, MeshBatch<FuncResult<F, VertexNormal3D>> mesh) {
+        void MergeImpl(F&& f, IMeshBatch<FuncResult<F, VertexNormal3D>> auto&& mesh) {
             using namespace Math;
             static constexpr u16 cornerData[6] {
                 0b000'010'100'110,

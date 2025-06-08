@@ -2,6 +2,26 @@
 #include "Random.h"
 
 namespace Quasi::Math {
+    Rotor3D Rotor3D::FromTrig(f32 cosHalf, f32 sinHalf, const fv3& axis) {
+        return Quaternion { cosHalf, axis * sinHalf };
+    }
+
+    Rotor3D Rotor3D::FromTrig(f32 cosHalf, const fv3& axis) {
+        return Quaternion { cosHalf, axis };
+    }
+
+    Rotor3D Rotor3D::OrientX(const fv3& xAxis) {
+        return Quaternion { xAxis.x, 0, xAxis.z, -xAxis.y };
+    }
+
+    Rotor3D Rotor3D::OrientY(const fv3& yAxis) {
+        return Quaternion { yAxis.y, -yAxis.z, 0, yAxis.x };
+    }
+
+    Rotor3D Rotor3D::OrientZ(const fv3& zAxis) {
+        return Quaternion { zAxis.z, zAxis.y, -zAxis.x, 0 };
+    }
+
     fv3 Rotor3D::IHat() const {
         return { 1 - 2 * (y * y + z * z),
                      2 * (x * y + z * w),
@@ -35,9 +55,17 @@ namespace Quasi::Math {
     }
 
     Rotor3D Rotor3D::Halved() const {
-        const float u = std::sqrt((1 - w) * 0.5f);
-        return Quaternion { std::sqrt((1 + w) * 0.5f), x * u, y * u, z * u };
+        const float u = 1 + w, imul = HALF_ROOT_2 / std::sqrt(u);
+        return Quaternion { u * imul, x * imul, y * imul, z * imul };
     }
+
+    Rotor3D Rotor3D::Mul(f32 p) const {
+        const f32 angle = std::acos(w), theta = angle * p, sin = std::sin(theta);
+        if (sin == 0) return Quaternion { 1, 0, 0, 0 };
+        const f32 ratio = sin / std::sin(angle);
+        return Quaternion { std::cos(theta), x * ratio, y * ratio, z * ratio };
+    }
+
     Rotor3D Rotor3D::Doubled() const {
         const float w2 = 2 * w;
         return Quaternion { w2 * w - 1, w2 * x, w2 * y, w2 * z };

@@ -383,6 +383,10 @@ namespace Quasi::Math {
         Vector RotateBy(const Rotor2D& r) const;
         Vector TransformBy(const Transform2D& t) const;
 
+        Vector ComplexMul(const Vector& v) const {
+            return { x * v.x - y - v.y, x * v.y + y * v.x };
+        }
+
         Vec3<T> AddZ(T z) const { return { x, y, z }; }
 
         bool operator==(const Vector&) const = default;
@@ -425,6 +429,26 @@ namespace Quasi::Math {
                 (T)(z * other.x - x * other.z),
                 (T)(x * other.y - y * other.x),
             };
+        }
+        Vector AnyPerpend() const requires Floating<T> {
+            // https://math.stackexchange.com/a/4112622
+            return {
+                NumInfo<T>::CopySign(z, x),
+                NumInfo<T>::CopySign(z, y),
+                -NumInfo<T>::CopySign(std::abs(x) + std::abs(y), z),
+            };
+        }
+        // takes in a normal and returns a perpendicular normal
+        Vector AnyTangent() const requires Floating<T> {
+            const T sign = std::copysign(1, z), a = -1 / (sign + z);
+            return { x * y * a, sign + y * y * a, -y };
+        }
+        // this is normalized for you!
+        Tuple<Vector, Vector> AnyOrthoBasis() const requires Floating<T> {
+            // https://graphics.pixar.com/library/OrthonormalB/paper.pdf
+            const T sign = std::copysign(1, z), a = -1 / (sign + z), b = x * y * a;
+            return { Vector { 1 + sign * x * x * a, sign * b, -sign * x },
+                     Vector { b, sign + y * y * a, -y } };
         }
 
         Radians SignedAngleBetween(const Vector& other, const Vector& normal) const {
