@@ -23,6 +23,6 @@ namespace Quasi::Physics2D {
         void UpdateTransform(const PhysicsTransform& xf) = delete;
 
         enum ClipPrimitive { PRIM_CIRCLE, PRIM_LINE, PRIM_POLYGON };
-        enum Type { CIRCLE, CAPSULE, RECT, TRI, QUAD, POLY };
+        enum Type { CIRCLE, CAPSULE, RECT, POLY_SMALL, POLY };
     };
 }

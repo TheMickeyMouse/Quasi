@@ -15,8 +15,8 @@ namespace Quasi::Physics2D {
 
     Shape MakePolygon(Span<const fv2> points) {
         switch (points.Length()) {
-            case 3:  return TriangleShape   { points };
-            case 4:  return QuadShape       { points };
+            case 3:
+            case 4:  return StaticPolygonShape { points };
             default: return DynPolygonShape { points };
         }
     }

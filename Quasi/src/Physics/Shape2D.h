@@ -8,12 +8,11 @@
 namespace Quasi::Physics2D {
     template <class T> static constexpr IShape::Type ShapeTypeIndexOf() {
         Qmatch$ ((typename)T, (
-            case (CircleShape)     { return IShape::CIRCLE; },
-            case (CapsuleShape)    { return IShape::CAPSULE; },
-            case (RectShape)       { return IShape::RECT; },
-            case (TriangleShape)   { return IShape::TRI; },
-            case (QuadShape)       { return IShape::QUAD; },
-            case (DynPolygonShape) { return IShape::POLY; },
+            case (CircleShape)        { return IShape::CIRCLE; },
+            case (CapsuleShape)       { return IShape::CAPSULE; },
+            case (RectShape)          { return IShape::RECT; },
+            case (StaticPolygonShape) { return IShape::POLY_SMALL; },
+            case (DynPolygonShape)    { return IShape::POLY; },
             else { static_assert(false, "oops"); return IShape::CIRCLE; }
         ));
     }
@@ -23,7 +22,7 @@ namespace Quasi::Physics2D {
 
     class Shape :
         public IShape,
-        public Variant<CircleShape, CapsuleShape, RectShape, TriangleShape, QuadShape, DynPolygonShape> {
+        public Variant<CircleShape, CapsuleShape, RectShape, StaticPolygonShape, DynPolygonShape> {
     public:
         Shape() : Variant(CircleShape { 0.0f }) {}
         Shape(Variant v) : Variant(std::move(v)) {}

@@ -16,24 +16,32 @@ namespace Quasi::Physics2D {
 
     class World;
 
+    enum class EventType {
+        HIT,
+        ENTER,
+        EXIT
+    };
+
+    using TriggerFn = FuncRef<void(const Body& self, const Body& other, EventType event)>;
+
     class Body {
     public:
         fv2 position, velocity;
         Rotor2D rotation; float angularVelocity = 0.0;
         float mass = 1.0f, invMass = 1.0f, inertia = 1.0f, invInertia = 1.0f;
+        fRect2D baseBoundingBox;
         fRect2D boundingBox;
-        u32 sortedIndex = 0;
         BodyType type = BodyType::NONE;
-        Ref<World> world;
         bool enabled = true;
         bool shapeHasChanged = true;
 
         Shape shape;
-        fRect2D baseBoundingBox;
+        Ref<World> world;
+        TriggerFn trigger = nullptr;
 
         Body(const fv2& p, const Rotor2D& r, float m, BodyType type, World& world, Shape shape)
-            : position(p), rotation(r), mass(m), invMass(m > 0 ? 1 / m : 0), type(type), world(world),
-              shape(std::move(shape)) { TryUpdateTransforms(); }
+            : position(p), rotation(r), mass(m), invMass(m > 0 ? 1 / m : 0), type(type), shape(std::move(shape)),
+              world(world) { TryUpdateTransforms(); }
 
         void AddVelocity       (const fv2& vel) { velocity += vel; }
         void AddMomentum       (const fv2& newtonSeconds);
@@ -56,6 +64,9 @@ namespace Quasi::Physics2D {
         void Update(float dt);
         void TryUpdateTransforms();
         void SetShapeHasChanged();
+
+        void SetTrigger(TriggerFn trigger);
+        void TryCallTrigger(const Body& other, EventType event);
 
         bool IsStatic()  const { return type == BodyType::STATIC; }
         bool IsDynamic() const { return type == BodyType::DYNAMIC; }

@@ -3,8 +3,9 @@
 
 namespace Quasi::Graphics {
     template <IVertex Vtx> Mesh<Vtx>& Mesh<Vtx>::EmbedTransform() {
+        const auto transform = modelTransform.TransformMatrix().AsTransform();
         for (auto& v : vertices) {
-            v = v.Mul(modelTransform);
+            v = v.Mul(transform);
         }
         modelTransform = {};
         return *this;
@@ -15,16 +16,20 @@ namespace Quasi::Graphics {
     void Mesh<Vtx>::AddTo(RenderData& rd) const {
         rd.PushIndicesOffseted(indices, sizeof(Vtx));
 
+        const auto transform = modelTransform.TransformMatrix().AsTransform();
         for (const Vtx& v : vertices) {
-            rd.PushVertex(v.Mul(modelTransform));
+            rd.PushVertex(v.Mul(transform));
         }
     }
 
     template <IVertex Vtx>
     Mesh<Vtx>& Mesh<Vtx>::Add(const Mesh& m) {
         auto batch = NewBatch();
+        const auto mLocal = m.modelTransform.TransformMatrix(),
+                   modelInverse = modelTransform.TransformMatrix().InvTRS();
+        const auto composition = (modelInverse * mLocal).AsTransform();
         batch.PushSpan(m.vertices.Iter().Map([&] (const Vtx& v) {
-            return v.Mul(m.modelTransform).Mul(modelTransform.Inverse());
+            return v.Mul(composition);
         }), m.indices);
         return *this;
     }
@@ -35,51 +40,6 @@ namespace Quasi::Graphics {
         for (Mesh& m : meshes.SkipMut(1))
             combined.Add(std::move(m));
         return combined;
-    }
-
-    template <IVertex Vtx> template <Fn<void, Ref<Vtx>[]> G>
-    void Mesh<Vtx>::GeometryPassTris(G&& g) {
-        Ref<Vtx> localVtx[3];
-        for (const auto [i, j, k] : indices) {
-            localVtx[0] = vertices[i];
-            localVtx[1] = vertices[j];
-            localVtx[2] = vertices[k];
-            g(localVtx);
-        }
-    }
-
-    template <IVertex Vtx> template <Fn<void, Ref<Vtx>> G>
-    void Mesh<Vtx>::GeometryPass(G&& g) {
-        for (auto& v : vertices) {
-            g(v);
-        }
-    }
-
-    template <IVertex Vtx>
-    template <IVertex U, Fn<void, typename Mesh<U>::BatchProxy, Ref<const Vtx>[]> G>
-    Mesh<U> Mesh<Vtx>::GeometryMapTris(G&& g) const {
-        Mesh<U> newGeometry;
-        Ref<const Vtx> localVtx[3];
-        for (const auto [i, j, k] : indices) {
-            auto batch = newGeometry.NewBatch();
-            localVtx[0] = vertices[i];
-            localVtx[1] = vertices[j];
-            localVtx[2] = vertices[k];
-            g(batch, localVtx);
-        }
-        return newGeometry;
-    }
-
-    template <IVertex Vtx>
-    template <IVertex U, Fn<U, Ref<const Vtx>> G>
-    Mesh<U> Mesh<Vtx>::GeometryMap(G&& g) const {
-        Mesh<U> newGeometry;
-        newGeometry.vertices.Reserve(vertices.Length());
-        newGeometry.indices = indices.Clone();
-        for (const auto& v : vertices) {
-            newGeometry.PushVertex(g(v));
-        }
-        return newGeometry;
     }
 
     template <IVertex Vtx>

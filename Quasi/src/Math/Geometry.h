@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Constants.h"
 #include "Vector.h"
 
 namespace Quasi::Math {

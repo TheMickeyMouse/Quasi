@@ -76,6 +76,15 @@ namespace Quasi::Physics2D {
         shapeHasChanged = true;
     }
 
+    void Body::SetTrigger(TriggerFn trigger) {
+        this->trigger = trigger;
+    }
+
+    void Body::TryCallTrigger(const Body& other, EventType event) {
+        if (trigger)
+            trigger(*this, other, event);
+    }
+
     fRect2D Body::BoundingBox() const {
         return boundingBox;
     }

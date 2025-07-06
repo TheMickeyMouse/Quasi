@@ -1,6 +1,4 @@
 #pragma once
-#include <vector>
-
 #include "Body2D.h"
 
 namespace Quasi::Physics2D {
@@ -17,9 +15,7 @@ namespace Quasi::Physics2D {
         void Clear();
 
         Body& CreateBody(const BodyCreateOptions& options, Shape shape);
-        template <class S, class... Rs> Body& CreateBody(const BodyCreateOptions& options, Rs&&... args) {
-            return this->CreateBody(options, S(std::forward<Rs>(args)...));
-        }
+        Body& CreatePolygon(const BodyCreateOptions& options, Span<const fv2> points);
         void DeleteBody(usize i);
         void DeleteBody(Ref<Body> body);
 
@@ -28,7 +24,5 @@ namespace Quasi::Physics2D {
 
         OptRef<Body> BodyAt(usize i);
         OptRef<const Body> BodyAt(usize i) const;
-
-        friend struct BodyHandle;
     };
 } // Physics

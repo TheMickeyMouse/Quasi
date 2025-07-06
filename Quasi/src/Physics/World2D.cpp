@@ -24,6 +24,26 @@ namespace Quasi::Physics2D {
         ));
     }
 
+    Body& World::CreatePolygon(const BodyCreateOptions& options, Span<const fv2> points) {
+        if (points.Length() <= 4) {
+            StaticPolygonShape shape;
+            shape.SetPointsUnsafe(points);
+            const fv2 cen = shape.CalcCentroid();
+            shape.FixCentroid(cen);
+            Body& b = CreateBody(options, Shape(shape));
+            b.position += cen;
+            return b;
+        } else {
+            DynPolygonShape shape;
+            shape.SetPointsUnsafe(points);
+            const fv2 cen = shape.CalcCentroid();
+            shape.FixCentroid(cen);
+            Body& b = CreateBody(options, Shape(shape));
+            b.position += cen;
+            return b;
+        }
+    }
+
     void World::DeleteBody(usize i) {
         bodies.Pop(i);
     }
@@ -60,6 +80,8 @@ namespace Quasi::Physics2D {
                     if ((bDyn || cDyn) && c->boundingBox.RangeY().Overlaps(b->boundingBox.RangeY())) {
                         const Manifold manifold = b->CollideWith(*c);
                         if (manifold.contactCount && std::max(manifold.contactDepth[0], manifold.contactDepth[1]) > f32s::DELTA) {
+                            b->TryCallTrigger(*c, EventType::HIT);
+                            c->TryCallTrigger(*b, EventType::HIT);
                             StaticResolve (*b, *c, manifold);
                             DynamicResolve(*b, *c, manifold);
                             if (bDyn) b->TryUpdateTransforms();

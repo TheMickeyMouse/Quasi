@@ -12,9 +12,7 @@ namespace Quasi::Graphics {
         template <class T2D, class T3D>
         using VersionOf = IfElse<Vtx::DIMENSION == 2, T2D,
                           IfElse<Vtx::DIMENSION == 3, T3D, void>>;
-        using Transform      = VersionOf<Math::Transform2D, Math::Transform3D>;
-        using Vector         = VersionOf<Math::fv2,         Math::fv3>;
-
+        using Transform = VersionOf<Math::Transform2D, Math::Transform3D>;
     public:
         Vec<Vtx> vertices;
         Vec<TriIndices> indices;
@@ -52,23 +50,24 @@ namespace Quasi::Graphics {
         }
         void PushPolygon(IList<Vtx> vs) { PushPolygon(Span { vs }); }
 
+        template <FnArgs<const Vtx&> F>
+        Mesh<FuncResult<F, const Vtx&>> GeometryConvert(F&& geometryPass) && {
+            using R = FuncResult<F, const Vtx&>;
+            Mesh<R> converted;
+            converted.indices = std::move(indices);
+            converted.modelTransform = modelTransform;
+            converted.vertices.Reserve(vertices.Length());
+
+            for (const Vtx& v : vertices)
+                converted.vertices.Push(geometryPass(v));
+            return converted;
+        }
+
         MeshBatch<Vtx> NewBatch() { return { (u32)vertices.Length(), *this }; }
 
         // moving isnt that efficient bc vertices are easy to copy
         Mesh& Add(const Mesh& m);
         static Mesh Combine(Span<Mesh> meshes);
-
-        template <Fn<void, Ref<Vtx>[]> G>
-        void GeometryPassTris(G&& g);
-
-        template <Fn<void, Ref<Vtx>> G>
-        void GeometryPass(G&& g);
-
-        template <IVertex U, Fn<void, typename Mesh<U>::BatchProxy, Ref<const Vtx>[]> G>
-        Mesh<U> GeometryMapTris(G&& g) const;
-
-        template <IVertex U, Fn<U, Ref<const Vtx>> G>
-        Mesh<U> GeometryMap(G&& g) const;
 
         void Clear();
 

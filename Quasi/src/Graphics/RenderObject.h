@@ -74,7 +74,7 @@ namespace Quasi::Graphics {
     	};
 
 		void AddMeshB(auto&& meshBuilder, auto&& gpass) {
-    		meshBuilder.Merge((decltype(gpass))gpass, RawBatch { rd->vertexOffset / sizeof(T), rd });
+    		meshBuilder.Merge((decltype(gpass))gpass, RawBatch { (u32)(rd->vertexOffset / sizeof(T)), *rd });
     	}
 
     	void EndContext() { rd->BufferLoad(); }

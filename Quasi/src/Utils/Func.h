@@ -24,6 +24,7 @@ namespace Quasi {
         Result operator()(Args... args) const { return Invoke((Args&&)args...); }
 
         FuncRef() = default;
+        FuncRef(Nullptr) : FuncRef() {}
         FuncRef(FuncPtr<Result, Args...> fptr) : userPtr(fptr), functionPtr(+[] (void* f, Args... args) {
             return (*Memory::UpcastPtr<FuncPtr<Result, Args...>>(f))((Args&&)args...);
         }) {}
@@ -32,6 +33,8 @@ namespace Quasi {
 
         FuncRef(const FuncRef& f) = default;
         FuncRef(FuncRef&& f) noexcept = default;
+        FuncRef& operator=(const FuncRef& f) = default;
+        FuncRef& operator=(FuncRef&& f) noexcept = default;
 
         template <class Lamb> requires DistantTo<Lamb, FuncRef>
         FuncRef(Lamb&& lamb)
@@ -40,6 +43,8 @@ namespace Quasi {
                 return (*Memory::UpcastPtr<std::decay_t<Lamb>>(functionObj))((Args&&)args...);
             })
         {}
+
+        operator bool() const { return functionPtr; }
 
         template <class Lamb>
         static FuncRef Recursive(Lamb&& lamb) {
