@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GLObject.h"
+#include "Utils/Math/Rect.h"
 
 namespace Quasi::Graphics {
     class RenderBuffer;
@@ -38,9 +39,17 @@ namespace Quasi::Graphics {
         static void BindObject(GraphicsID id);
         static void UnbindObject();
 
-        void Attach(const Texture& tex, AttachmentType type = AttachmentType::COLOR_0) const;
+        void Attach(const Texture& tex, int mipmapLvl = 0, AttachmentType type = AttachmentType::COLOR_0) const;
         void Attach(const RenderBuffer& rbo, AttachmentType type) const;
         void Complete() const;
+
+        void BindReadSrc() const;
+        void BindDrawDest() const;
+        static void UnbindDrawDest();
+
+        static void BlitFramebuffers(const Math::iRect2D& srcRect, const Math::iRect2D& destRect, bool linear = true);
+        void BlitTo(const FrameBuffer& dest, const Math::iRect2D& srcRect, const Math::iRect2D& destRect, bool linear = true) const;
+        void BlitToScreen(const Math::iRect2D& srcRect, const Math::iRect2D& destRect, bool linear = true) const;
 
         friend class GraphicsDevice;
     };

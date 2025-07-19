@@ -2,8 +2,8 @@
 #include <imgui.h>
 #include "Utils/Str.h"
 #include "Utils/Type.h"
-#include "Math/Rect.h"
-#include "Math/Color.h"
+#include "Utils/Math/Rect.h"
+#include "Utils/Math/Color.h"
 
 namespace Quasi::Math {
     struct Rotor3D;

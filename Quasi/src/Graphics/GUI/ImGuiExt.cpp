@@ -8,8 +8,8 @@
 #include "CameraController3D.h"
 #include "Light.h"
 
-#include "Math/Transform2D.h"
-#include "Math/Transform3D.h"
+#include "Utils/Math/Transform2D.h"
+#include "Utils/Math/Transform3D.h"
 #include "Utils/Text/Formatting.h"
 
 namespace ImGui {

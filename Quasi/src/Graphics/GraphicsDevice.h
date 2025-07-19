@@ -1,10 +1,10 @@
 ﻿#pragma once
 
 #include "RenderObject.h"
-#include "Debug/Timer.h"
+#include "Utils/Debug/Timer.h"
 #include "GLs/Render.h"
 #include "IO/IO.h"
-#include "Math/Random.h"
+#include "Utils/Math/Random.h"
 #include "Utils/Box.h"
 #include "Fonts/FontDevice.h"
 

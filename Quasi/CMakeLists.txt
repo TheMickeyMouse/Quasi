@@ -1,9 +1,9 @@
 set(PROJECT_NAME Quasi)
 
 set(HEADER_FILES
-    src/Debug/internal_debug_break.h
-    src/Debug/Logger.h
-    src/Debug/Timer.h
+    src/Utils/Debug/internal_debug_break.h
+    src/Utils/Debug/Logger.h
+    src/Utils/Debug/Timer.h
 
     src/Graphics/GLs/IndexBuffer.h
     src/Graphics/GLs/VertexBuffer.h
@@ -57,18 +57,18 @@ set(HEADER_FILES
     src/IO/Mouse.h
     src/IO/TimeType.h
 
-    src/Math/Constants.h
-    src/Math/Matrix.h
-    src/Math/Rect.h
-    src/Math/Vector.h
-    src/Math/Geometry.h
-    src/Math/Angles.h
-    src/Math/Random.h
-    src/Math/Color.h
-    src/Math/Complex.h
-    src/Math/Quaternion.h
-    src/Math/Transform2D.h
-    src/Math/Transform3D.h
+    src/Utils/Math/Constants.h
+    src/Utils/Math/Matrix.h
+    src/Utils/Math/Rect.h
+    src/Utils/Math/Vector.h
+    src/Utils/Math/Geometry.h
+    src/Utils/Math/Angles.h
+    src/Utils/Math/Random.h
+    src/Utils/Math/Color.h
+    src/Utils/Math/Complex.h
+    src/Utils/Math/Quaternion.h
+    src/Utils/Math/Transform2D.h
+    src/Utils/Math/Transform3D.h
 
     src/Physics/World2D.h
     src/Physics/Shape2D.h
@@ -132,8 +132,8 @@ set(HEADER_FILES
 source_group("Header Files" FILES ${HEADER_FILES})
 
 set(SOURCE_FILES
-    src/Debug/Logger.cpp
-    src/Debug/Timer.cpp
+    src/Utils/Debug/Logger.cpp
+    src/Utils/Debug/Timer.cpp
 
     src/Graphics/GLs/FrameBuffer.cpp
     src/Graphics/GLs/GLDebug.cpp
@@ -166,14 +166,14 @@ set(SOURCE_FILES
     src/IO/Mouse.cpp
     src/IO/TimeType.cpp
 
-    src/Math/Vector.cpp
-    src/Math/Matrix.cpp
-    src/Math/Rect.cpp
-    src/Math/Color.cpp
-    src/Math/Complex.cpp
-    src/Math/Quaternion.cpp
-    src/Math/Transform2D.cpp
-    src/Math/Transform3D.cpp
+        src/Utils/Math/Vector.cpp
+        src/Utils/Math/Matrix.cpp
+        src/Utils/Math/Rect.cpp
+        src/Utils/Math/Color.cpp
+        src/Utils/Math/Complex.cpp
+        src/Utils/Math/Quaternion.cpp
+        src/Utils/Math/Transform2D.cpp
+        src/Utils/Math/Transform3D.cpp
 
     src/Physics/World2D.cpp
     src/Physics/Shape2D.cpp
@@ -218,6 +218,10 @@ source_group("Source Files" FILES ${SOURCE_FILES})
 set(ALL_FILES
     ${HEADER_FILES}
     ${SOURCE_FILES}
+        src/Graphics/GUI/Layer.cpp
+        src/Graphics/GUI/Layer.h
+        src/Graphics/Effects/Bloom.cpp
+        src/Graphics/Effects/Bloom.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

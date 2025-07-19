@@ -1,7 +1,7 @@
 #pragma once
 #include <queue>
 
-#include "Math/Vector.h"
+#include "Utils/Math/Vector.h"
 
 struct GLFWwindow;
 

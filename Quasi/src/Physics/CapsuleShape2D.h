@@ -1,7 +1,7 @@
 #pragma once
 #include "IShape2D.h"
-#include "Math/Rect.h"
-#include "Math/Vector.h"
+#include "Utils/Math/Rect.h"
+#include "Utils/Math/Vector.h"
 
 namespace Quasi::Physics2D {
     class CapsuleShape : public IShape {

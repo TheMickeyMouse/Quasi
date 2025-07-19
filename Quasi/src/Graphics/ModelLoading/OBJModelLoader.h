@@ -3,7 +3,7 @@
 #include "MTLMaterialLoader.h"
 #include "OBJModel.h"
 
-#include "Math/Vector.h"
+#include "Utils/Math/Vector.h"
 
 namespace Quasi::Graphics {
     class OBJModelLoader {

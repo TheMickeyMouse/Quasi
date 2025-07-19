@@ -1,6 +1,6 @@
 #include "Num.h"
 
-#include "Debug/Logger.h"
+#include "Utils/Debug/Logger.h"
 
 namespace Quasi::Text {
     u32 NumberConversion::Add4Bytes(u32 a, u32 b) {
@@ -404,7 +404,7 @@ namespace Quasi::Text {
         x = U64ToBCD8(x);
         x |= 0x3030303030303030;
 
-        Memory::MemCopyNoOverlap(out, ((const char*)&x) + 8 - (-8 | -len), len);
+        Memory::MemCopyNoOverlap(out, ((const char*)&x) + (8 + (-8 | -len)), len);
         return len;
     }
 

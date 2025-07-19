@@ -1,0 +1,212 @@
+#include "Bloom.h"
+
+#include "glp.h"
+#include "GLs/GLDebug.h"
+#include "GLs/Render.h"
+
+namespace Quasi::Graphics {
+    Bloom::Bloom(const Math::uv2& screenDim) : screenDim(screenDim) {
+        screenTex = FrameBuffer::New();
+        blitter = FrameBuffer::New();
+        depthBuffer = RenderBuffer::New(
+            TextureIFormat::DEPTH, (Math::iv2)screenDim
+        );
+        downsample = Texture::New(nullptr, screenDim, TextureInitParams {
+            .load = { .format = TextureFormat::RGBA, .internalformat = TextureIFormat::RGBA_32F, .type = GLTypeID::FLOAT, .level = 6 },
+            .target = TextureTarget::TEXTURE_2D,
+            .params = { { TextureParamName::MAX_LEVEL, 6 } }
+        });
+        upsample = Texture::New(nullptr, screenDim, TextureInitParams {
+            .load = { .format = TextureFormat::RGBA, .internalformat = TextureIFormat::RGBA_32F, .type = GLTypeID::FLOAT },
+            .target = TextureTarget::TEXTURE_2D
+        });
+
+        screenTex.Bind();
+        screenTex.Attach(depthBuffer, AttachmentType::DEPTH);
+        screenTex.Attach(upsample);
+        screenTex.Unbind();
+
+        highPass = ShaderProgram::NewCompute(
+            "#version 430 core\n"
+            "layout (local_size_x = 1, local_size_y = 1) in;\n"
+            "layout (rgba32f, binding = 0) coherent uniform image2D imgOutput;\n"
+            "layout (rgba32f, binding = 1) coherent uniform image2D imgInput;\n"
+            "layout (location = 0) uniform float threshold;\n"
+            "layout (location = 1) uniform float kneeOff;\n"
+            "void main() {\n"
+            "   ivec2 uv = ivec2(gl_GlobalInvocationID.xy); \n"
+            "   vec4 input = imageLoad(imgInput, uv); \n"
+            "   float brightness = dot(input.rgb, vec3(0.2126, 0.7152, 0.0722)); \n"
+            "   float transparency = smoothstep(threshold - kneeOff, threshold, brightness);"
+            "   imageStore(imgOutput, uv, vec4(input.rgb * transparency, 1.0));\n"
+            "}"
+        );
+
+        // . . . . . .
+        // . . A B . .
+        // . C D E F .
+        // . G H I J .
+        // . . K L . .
+        // . . . . . .
+        downsampler = ShaderProgram::NewCompute(
+            "#version 430 core\n"
+            "layout (local_size_x = 1, local_size_y = 1) in;\n"
+            "layout (rgba32f, binding = 0) uniform image2D imgOutput;\n"
+            "layout (location = 0) uniform sampler2D imgInput;\n"
+            "layout (location = 1) uniform float lod;\n"
+            "void main() {\n"
+            "   vec2 s = 1.0 / vec2(gl_NumWorkGroups.xy); \n"
+            "   vec2 uv = s * (gl_GlobalInvocationID.xy + 0.5); \n"
+            "   vec4 A = textureLod(imgInput, uv + s * 2 * vec2(-1.0, -1.0), lod);"
+            "   vec4 B = textureLod(imgInput, uv + s * 2 * vec2( 0.0, -1.0), lod);"
+            "   vec4 C = textureLod(imgInput, uv + s * 2 * vec2( 1.0, -1.0), lod);"
+            "   vec4 D = textureLod(imgInput, uv + s * 2 * vec2(-0.5, -0.5), lod);"
+            "   vec4 E = textureLod(imgInput, uv + s * 2 * vec2( 0.5, -0.5), lod);"
+            "   vec4 F = textureLod(imgInput, uv + s * 2 * vec2(-1.0,  0.0), lod);"
+            "   vec4 G = textureLod(imgInput, uv                           , lod);"
+            "   vec4 H = textureLod(imgInput, uv + s * 2 * vec2( 1.0,  0.0), lod);"
+            "   vec4 I = textureLod(imgInput, uv + s * 2 * vec2(-0.5,  0.5), lod);"
+            "   vec4 J = textureLod(imgInput, uv + s * 2 * vec2( 0.5,  0.5), lod);"
+            "   vec4 K = textureLod(imgInput, uv + s * 2 * vec2(-1.0,  1.0), lod);"
+            "   vec4 L = textureLod(imgInput, uv + s * 2 * vec2( 0.0,  1.0), lod);"
+            "   vec4 M = textureLod(imgInput, uv + s * 2 * vec2( 1.0,  1.0), lod);"
+            "   vec4 result = (D + E + G + I + J) * 0.125 + (B + F + H + L) * 0.0625 + (A + C + K + M) * 0.03125;"
+            "   imageStore(imgOutput, ivec2(gl_GlobalInvocationID.xy), result); \n"
+            "}"
+            // "#version 430 core\n"
+            // "layout (local_size_x = 1, local_size_y = 1) in;\n"
+            // "layout (rgba32f, binding = 0) uniform image2D imgOutput;\n"
+            // "layout (location = 0) uniform sampler2D imgInput;\n"
+            // "layout (location = 1) uniform float lod;\n"
+            // "void main() {\n"
+            // "   vec2 s = 1.0 / vec2(gl_NumWorkGroups.xy); \n"
+            // "   vec2 uv = s * vec2(gl_GlobalInvocationID.xy); \n"
+            // "   vec4 A = texture(imgInput, uv + s * vec2(-0.5, -0.5));"
+            // "   vec4 B = texture(imgInput, uv + s * vec2( 0.5, -0.5));"
+            // "   vec4 C = texture(imgInput, uv                       );"
+            // "   vec4 D = texture(imgInput, uv + s * vec2(-0.5,  0.5));"
+            // "   vec4 E = texture(imgInput, uv + s * vec2( 0.5,  0.5));"
+            // "   vec4 result = (A + B + D + E) * 0.125 + C * 0.5;"
+            // "   imageStore(imgOutput, ivec2(gl_GlobalInvocationID.xy), result); \n"
+            // "}"
+            // "#version 430 core\n"
+            // "layout (local_size_x = 1, local_size_y = 1) in;\n"
+            // "layout (rgba32f, binding = 0) uniform image2D imgOutput;\n"
+            // "layout (rgba32f, binding = 1) uniform image2D imgInput;\n"
+            // "void main() {\n"
+            // "   ivec2 imgSize = imageSize(imgInput); "
+            // "   ivec2 uv = 2 * ivec2(gl_GlobalInvocationID.xy) + (imgSize & 1) * ivec2(greaterThan(gl_GlobalInvocationID.xy, gl_NumWorkGroups.xy >> 1)); \n"
+            // "   vec3 A = imageLoad(imgInput, uv + ivec2( 0,  2)).rgb;"
+            // "   vec3 B = imageLoad(imgInput, uv + ivec2( 1,  2)).rgb;"
+            // "   vec3 C = imageLoad(imgInput, uv + ivec2(-1,  1)).rgb;"
+            // "   vec3 D = imageLoad(imgInput, uv + ivec2( 0,  1)).rgb;"
+            // "   vec3 E = imageLoad(imgInput, uv + ivec2( 1,  1)).rgb;"
+            // "   vec3 F = imageLoad(imgInput, uv + ivec2( 2,  1)).rgb;"
+            // "   vec3 G = imageLoad(imgInput, uv + ivec2(-1,  0)).rgb;"
+            // "   vec3 H = imageLoad(imgInput, uv + ivec2( 0,  0)).rgb;"
+            // "   vec3 I = imageLoad(imgInput, uv + ivec2( 1,  0)).rgb;"
+            // "   vec3 J = imageLoad(imgInput, uv + ivec2( 2,  0)).rgb;"
+            // "   vec3 K = imageLoad(imgInput, uv + ivec2( 0, -1)).rgb;"
+            // "   vec3 L = imageLoad(imgInput, uv + ivec2( 1, -1)).rgb;"
+            // "   vec3 result = (D + E + H + I) * 0.125 + (A + B + C + F + G + J + K + L) * 0.0625;"
+            // "   imageStore(imgOutput, ivec2(gl_GlobalInvocationID.xy), vec4(result, 1.0)); \n"
+            // "}"
+        );
+
+        upsampler = ShaderProgram::NewCompute(
+            // "#version 430 core\n"
+            // "layout (local_size_x = 1, local_size_y = 1) in;\n"
+            // "layout (rgba32f, binding = 0) uniform image2D imgOutput;\n"
+            // "layout (rgba32f, binding = 1) uniform image2D imgInput;\n"
+            // "void main() {\n"
+            // "   ivec2 uv = ivec2(gl_GlobalInvocationID.xy); \n"
+            // "   vec2 uvf = (uv + 0.5) * imageSize(imgInput) / vec2(gl_NumWorkGroups.xy);"
+            // "   vec2 majorUV = round(uvf);"
+            // "   vec2 minorUV = uvf - majorUV;"
+            // "   ivec4 st = ivec4(ivec2(majorUV), ivec2(majorUV) - 1); "
+            // "   vec3 A = imageLoad(imgInput, st.xy).rgb;"
+            // "   vec3 B = imageLoad(imgInput, st.xw).rgb;"
+            // "   vec3 C = imageLoad(imgInput, st.zy).rgb;"
+            // "   vec3 D = imageLoad(imgInput, st.zw).rgb;"
+            // "   vec4 weights = vec4(0.5 + minorUV, 0.5 - minorUV); "
+            // "   vec3 linear = weights.y * (weights.x * A + weights.z * C) + weights.w * (weights.x * B + weights.z * D);"
+            // "   vec3 result = imageLoad(imgOutput, uv).rgb + linear;"
+            // "   imageStore(imgOutput, uv, vec4(result, 1.0)); \n"
+            // "}"
+            "#version 430 core\n"
+            "layout (local_size_x = 1, local_size_y = 1) in;\n"
+            "layout (rgba32f, binding = 0) uniform image2D imgOutput;\n"
+            "layout (location = 0) uniform sampler2D imgInput;\n"
+            "void main() {\n"
+            "   ivec2 uv = ivec2(gl_GlobalInvocationID.xy); \n"
+            "   vec2 uvf = (uv + 0.5) / vec2(gl_NumWorkGroups.xy);"
+            "   vec3 result = textureLod(imgInput, uvf, 5).rgb;"
+            "   imageStore(imgOutput, uv, vec4(result, 1.0)); \n"
+            "}"
+        );
+
+        addBack = ShaderProgram::NewCompute(
+            "#version 430 core\n"
+            "layout (local_size_x = 1, local_size_y = 1) in;\n"
+            "layout (rgba32f, binding = 0) uniform image2D imgOutput;\n"
+            "layout (rgba32f, binding = 1) uniform image2D currentLod;\n"
+            "layout (location = 0) uniform float intensity;\n"
+            "void main() {\n"
+            "   ivec2 uv = ivec2(gl_GlobalInvocationID.xy); \n"
+            "   vec3 result = imageLoad(imgOutput, uv).rgb + intensity * imageLoad(currentLod, uv).rgb; \n"
+            "   float brightness = dot(result, vec3(0.2126, 0.7152, 0.0722)); \n"
+            "   result *= (4 / (4 + brightness));"
+            "   imageStore(imgOutput, uv, vec4(result, 1.0)); \n"
+            "}"
+        );
+    }
+
+    void Bloom::PreRender() {
+        screenTex.Bind();
+    }
+
+    void Bloom::ApplyEffect() {
+        constexpr u32 SLOT_OUTPUT = 0, SLOT_INPUT = 1;
+        upsample.BindImageTexture(SLOT_INPUT, 0, true, true);
+        downsample.BindImageTexture(SLOT_OUTPUT, 0, true, true);
+        highPass.Bind();
+        QGLCall$(GL::Uniform1f(0, threshold));
+        QGLCall$(GL::Uniform1f(1, kneeOff));
+        highPass.ExecuteCompute(screenDim.AddZ(1));
+
+        Render::MemoryBarrier(MemBarrier::SHADER_IMAGE_ACCESS);
+
+        downsampler.Bind();
+        downsample.Activate(15);
+        GL::Uniform1i(0, 15);
+        for (int i = 1; i <= 6; ++i) {
+            downsample.BindImageTexture(SLOT_OUTPUT, i);
+            GL::Uniform1f(1, i - 1);
+            downsampler.ExecuteCompute(screenDim.x >> i, screenDim.y >> i);
+
+            Render::MemoryBarrier(MemBarrier::SHADER_IMAGE_ACCESS);
+        }
+
+        upsampler.Bind();
+        downsample.Activate(15);
+        GL::Uniform1i(0, 15);
+        for (int i = 6; i --> 0;) {
+            downsample.BindImageTexture(SLOT_OUTPUT, i);
+            downsample.BindImageTexture(SLOT_INPUT, i + 1);
+            upsampler.ExecuteCompute(screenDim.x >> i, screenDim.y >> i);
+
+            Render::MemoryBarrier(MemBarrier::SHADER_IMAGE_ACCESS);
+        }
+
+        addBack.Bind();
+        QGLCall$(GL::Uniform1f(0, intensity));
+        upsample.BindImageTexture(SLOT_OUTPUT);
+        downsample.BindImageTexture(SLOT_INPUT);
+        addBack.ExecuteCompute(screenDim.x, screenDim.y);
+
+        Render::MemoryBarrier(MemBarrier::SHADER_IMAGE_ACCESS);
+
+        screenTex.BlitToScreen({ 0, (screenDim).As<int>() }, { 0, screenDim.As<int>() });
+        screenTex.Unbind();
+    }
+}

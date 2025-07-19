@@ -3,7 +3,7 @@
 
 #include "PhysicsTransform2D.h"
 #include "Shape2D.h"
-#include "Math/Vector.h"
+#include "Utils/Math/Vector.h"
 
 namespace Quasi::Physics2D {
     enum class BodyType {

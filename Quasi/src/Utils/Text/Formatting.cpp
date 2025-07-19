@@ -1,7 +1,7 @@
 #include "Formatting.h"
 
 #include "Num.h"
-#include "Debug/Logger.h"
+#include "Utils/Debug/Logger.h"
 
 namespace Quasi::Text {
     usize FormatToDynamic(StringWriter output, Str fmt, const void* const argParams[],

@@ -20,6 +20,9 @@ namespace Quasi::Graphics {
     void Texture::Init() {
         GL::GetIntegerv(GL::MAX_TEXTURE_IMAGE_UNITS, &SlotCount);
         GLLogger().QInfo$("Texture count: {}", SlotCount);
+        int maxTextureSize = 0;
+        GL::GetIntegerv(GL::MAX_TEXTURE_SIZE, &maxTextureSize);
+        GLLogger().QInfo$("Max Texture Size: {}, Max Mipmap Level: {}", maxTextureSize, i32s::Log2(maxTextureSize));
 
         Slots.Resize(SlotCount, nullptr);
     }
@@ -72,11 +75,20 @@ namespace Quasi::Graphics {
         const int newTarget = overrideTarget == TextureTarget::NONE ? TargetI() : (int)overrideTarget;
         switch (Dimension()) {
             case 1:
-                return QGLCall$(GL::TexImage1D(newTarget, params.level, (int)params.internalformat, dim.x, 0, (int)params.format, params.type->glID, data));
+                for (u32 level = 0; level <= params.level; ++level) {
+                    QGLCall$(GL::TexImage1D(newTarget, level, (int)params.internalformat, dim.x >> level, 0, (int)params.format, params.type->glID, data));
+                }
+                return;
             case 2:
-                return QGLCall$(GL::TexImage2D(newTarget, params.level, (int)params.internalformat, dim.x, dim.y, 0, (int)params.format, params.type->glID, data));
+                for (u32 level = 0; level <= params.level; ++level) {
+                    QGLCall$(GL::TexImage2D(newTarget, level, (int)params.internalformat, dim.x >> level, dim.y >> level, 0, (int)params.format, params.type->glID, data));
+                }
+                return;
             case 3:
-                return QGLCall$(GL::TexImage3D(newTarget, params.level, (int)params.internalformat, dim.x, dim.y, dim.z, 0, (int)params.format, params.type->glID, data));
+                for (u32 level = 0; level <= params.level; ++level) {
+                    QGLCall$(GL::TexImage3D(newTarget, level, (int)params.internalformat, dim.x >> level, dim.y >> level, dim.z >> level, 0, (int)params.format, params.type->glID, data));
+                }
+                return;
             default:;
         }
     }
@@ -146,6 +158,10 @@ namespace Quasi::Graphics {
         Bind();
         Slots[slot] = *this;
         textureSlot.Replace(slot + 1);
+    }
+
+    void Texture::BindImageTexture(int slot, int mipmapLevel, bool read, bool write, TextureIFormat format) {
+        QGLCall$(GL::BindImageTexture(slot, rendererID, mipmapLevel, 0, 0, Render::ReadWriteAccess(read, write), (int)format));
     }
 
     void Texture::Deactivate() {

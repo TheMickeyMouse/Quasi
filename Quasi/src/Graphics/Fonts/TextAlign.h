@@ -1,6 +1,6 @@
 #pragma once
 #include "FontDevice.h"
-#include "Math/Rect.h"
+#include "Utils/Math/Rect.h"
 
 namespace Quasi::Graphics {
     struct Glyph;

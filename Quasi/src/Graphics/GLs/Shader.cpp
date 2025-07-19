@@ -7,36 +7,47 @@
 #include "Utils/Iter/LinesIter.h"
 
 namespace Quasi::Graphics {
-    Shader::Shader(GraphicsID id) : GLObject(id) {}
+    Shader::Shader(GraphicsID id) : ShaderProgram(id) {}
 
-    Shader Shader::New(Str program) {
+    ShaderProgram::ShaderProgram(GraphicsID id) : GLObject(id) {}
+
+    ShaderProgram ShaderProgram::New(Str program) {
         const auto [vtx, frg, geo] = ParseShader(program);
         const GraphicsID rendererID = CreateShader(vtx, frg, geo);
-        return Shader { rendererID };
+        return ShaderProgram { rendererID };
     }
 
-    Shader Shader::New(Str vert, Str frag, Str geom) {
+    ShaderProgram ShaderProgram::New(Str vert, Str frag, Str geom) {
         const GraphicsID rendererID = CreateShader(vert, frag, geom);
-        return Shader { rendererID };
+        return ShaderProgram { rendererID };
     }
 
-    void Shader::DestroyObject(GraphicsID id) {
+    ShaderProgram ShaderProgram::NewCompute(Str program) {
+        const GraphicsID rendererID = CreateShaderCompute(program);
+        return ShaderProgram { rendererID };
+    }
+
+    void ShaderProgram::DestroyObject(GraphicsID id) {
         QGLCall$(GL::DeleteProgram(id));
     }
 
-    void Shader::BindObject(GraphicsID id) {
+    void ShaderProgram::BindObject(GraphicsID id) {
         QGLCall$(GL::UseProgram(id));
     }
 
-    void Shader::UnbindObject() {
+    void ShaderProgram::UnbindObject() {
         QGLCall$(GL::UseProgram(0));
+    }
+
+    int ShaderProgram::GetUniformLocation(CStr name) const {
+        return QGLCall$(GL::GetUniformLocation(rendererID, name.Data()));
     }
 
     int Shader::GetUniformLocation(CStr name) {
         if (const auto cachedLoc = uniformCache.Get(name))
             return *cachedLoc;
 
-        const int location = QGLCall$(GL::GetUniformLocation(rendererID, name.Data()));
+        const int location = ShaderProgram::GetUniformLocation(name);
         GLLogger().Assert(location != -1, "invalid uniform location for '{}'", name);
         uniformCache[String { name }] = location;
         return location;
@@ -137,7 +148,7 @@ namespace Quasi::Graphics {
     void Shader::SetUniformMat4x3Arr(CStr name, Span<const Math::Matrix4x3> mats) { GL::UniformMatrix4x3fv(GetUniformLocation(name), mats.Length(), false, (const float*)mats.Data()); }
     void Shader::SetUniformMat4x4Arr(CStr name, Span<const Math::Matrix4x4> mats) { GL::UniformMatrix4fv  (GetUniformLocation(name), mats.Length(), false, (const float*)mats.Data()); }
 
-    Tuple<Str, Str, Str> Shader::ParseShader(Str program) {
+    Tuple<Str, Str, Str> ShaderProgram::ParseShader(Str program) {
         Str sources[3];
         Str* current = nullptr;
         for (Str line : program.Lines()) {
@@ -164,16 +175,16 @@ namespace Quasi::Graphics {
         return { sources[0], sources[1], sources[2] };
     }
 
-    Shader Shader::FromFile(CStr filepath) {
-        Shader s {};
+    ShaderProgram ShaderProgram::FromFile(CStr filepath) {
+        ShaderProgram s {};
         const String file = Text::ReadFile(filepath).Assert();
         const auto [vtx, frg, geo] = ParseShader(file);
         s.rendererID = CreateShader(vtx, frg, geo);
         return s;
     }
 
-    Shader Shader::FromFile(CStr vert, CStr frag, CStr geom) {
-        Shader s {};
+    ShaderProgram ShaderProgram::FromFile(CStr vert, CStr frag, CStr geom) {
+        ShaderProgram s {};
         s.rendererID = CreateShader(
             Text::ReadFile(vert).Assert(),
             Text::ReadFile(frag).Assert(),
@@ -182,7 +193,15 @@ namespace Quasi::Graphics {
         return s;
     }
 
-    GraphicsID Shader::CompileShader(Str source, ShaderType type) {
+    ShaderProgram ShaderProgram::FromFileCompute(CStr compute) {
+        ShaderProgram s {};
+        s.rendererID = CreateShaderCompute(
+            Text::ReadFile(compute).Assert()
+        );
+        return s;
+    }
+
+    GraphicsID ShaderProgram::CompileShader(Str source, ShaderType type) {
         const GraphicsID id = GL::CreateShader(type->glID);
         const char* src = source.Data();
         const int length = (int)source.Length();
@@ -206,7 +225,7 @@ namespace Quasi::Graphics {
         return id;
     }
 
-    GraphicsID Shader::CreateShader(Str vtx, Str frg, Str geo) {
+    GraphicsID ShaderProgram::CreateShader(Str vtx, Str frg, Str geo) {
         const GraphicsID program = GL::CreateProgram();
         const GraphicsID vs = CompileShaderVert(vtx);
         const GraphicsID fs = CompileShaderFrag(frg);
@@ -226,8 +245,26 @@ namespace Quasi::Graphics {
         return program;
     }
 
-    bool Shader::IsArrayUnif (ShaderUniformType type) { return (u32)type & 0x40; }
-    bool Shader::IsMatrixUnif(ShaderUniformType type) { return (u32)type & 0x0C; }
+    GraphicsID ShaderProgram::CreateShaderCompute(Str prog) {
+        const GraphicsID program = GL::CreateProgram();
+        const GraphicsID comp = CompileShaderCompute(prog);
+        QGLCall$(GL::AttachShader(program, comp));
+        QGLCall$(GL::LinkProgram(program));
+        QGLCall$(GL::ValidateProgram(program));
+        QGLCall$(GL::DeleteShader(comp));
+        return program;
+    }
+
+    bool ShaderProgram::IsArrayUnif (ShaderUniformType type) { return (u32)type & 0x40; }
+    bool ShaderProgram::IsMatrixUnif(ShaderUniformType type) { return (u32)type & 0x0C; }
+
+    void ShaderProgram::ExecuteCompute(const Math::uv3& workSize) const {
+        QGLCall$(GL::DispatchCompute(workSize.x, workSize.y, workSize.z));
+    }
+
+    void ShaderProgram::ExecuteCompute(u32 workX, u32 workY, u32 workZ) const {
+        QGLCall$(GL::DispatchCompute(workX, workY, workZ));
+    }
 
     ShaderParameter::ShaderParameter(Str name, const Math::fColor3& color3) : ShaderParameter(name, color3.AsRGBfVec()) {}
     ShaderParameter::ShaderParameter(Str name, const Math::fColor&  color)  : ShaderParameter(name, color.AsRGBAfVec()) {}

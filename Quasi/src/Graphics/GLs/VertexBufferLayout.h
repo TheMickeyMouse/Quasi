@@ -1,8 +1,8 @@
 ﻿#pragma once
 
 #include "GLTypeID.h"
-#include "Math/Vector.h"
-#include "Math/Color.h"
+#include "Utils/Math/Vector.h"
+#include "Utils/Math/Color.h"
 #include "Utils/Vec.h"
 #include "Utils/Type.h"
 

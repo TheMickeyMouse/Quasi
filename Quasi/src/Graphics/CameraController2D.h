@@ -1,6 +1,6 @@
 #pragma once
-#include "Math/Transform3D.h"
-#include "Math/Vector.h"
+#include "Utils/Math/Transform3D.h"
+#include "Utils/Math/Vector.h"
 
 namespace Quasi::Graphics {
     class GraphicsDevice;

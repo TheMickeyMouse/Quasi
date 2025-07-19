@@ -6,7 +6,7 @@
 
 #include "GLTypeID.h"
 #include "TextureConstants.h"
-#include "Math/Rect.h"
+#include "Utils/Math/Rect.h"
 
 namespace Quasi {
     struct CStr;
@@ -102,6 +102,7 @@ namespace Quasi::Graphics {
         static Texture LoadCubemapPNG(IList<CStr> faces /* in order: rludfb */, const TextureInitParams& init = {});
 
         void Activate(int slot = -1);
+        void BindImageTexture(int slot, int mipmapLevel = 0, bool read = true, bool write = true, TextureIFormat format = TextureIFormat::RGBA_32F);
         void Deactivate();
         static void DeactivateAll();
         static int FindEmptySlot();

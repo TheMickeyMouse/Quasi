@@ -27,8 +27,8 @@ namespace Quasi::Graphics {
         QGLCall$(GL::BindFramebuffer(GL::FRAMEBUFFER, 0));
     }
 
-    void FrameBuffer::Attach(const Texture& tex, AttachmentType type) const {
-        QGLCall$(GL::FramebufferTexture2D(GL::FRAMEBUFFER, (int)type, tex.TargetI(), tex.rendererID, 0));
+    void FrameBuffer::Attach(const Texture& tex, int mipmapLvl, AttachmentType type) const {
+        QGLCall$(GL::FramebufferTexture2D(GL::FRAMEBUFFER, (int)type, tex.TargetI(), tex.rendererID, mipmapLvl));
     }
 
     void FrameBuffer::Attach(const RenderBuffer& rbo, AttachmentType type) const {
@@ -40,5 +40,34 @@ namespace Quasi::Graphics {
         if (status != GL::FRAMEBUFFER_COMPLETE) {
             GLLogger().QError$("Framebuffer was incomplete with code 0x{:04X}.", status);
         }
+    }
+
+    void FrameBuffer::BindReadSrc() const {
+        QGLCall$(GL::BindFramebuffer(GL::READ_FRAMEBUFFER, rendererID));
+    }
+
+    void FrameBuffer::BindDrawDest() const {
+        QGLCall$(GL::BindFramebuffer(GL::DRAW_FRAMEBUFFER, rendererID));
+    }
+
+    void FrameBuffer::UnbindDrawDest() {
+        QGLCall$(GL::BindFramebuffer(GL::DRAW_FRAMEBUFFER, 0));
+    }
+
+    void FrameBuffer::BlitFramebuffers(const Math::iRect2D& srcRect, const Math::iRect2D& destRect, bool linear) {
+        QGLCall$(GL::BlitFramebuffer(srcRect.min.x, srcRect.min.y, srcRect.max.x, srcRect.max.y,
+                                     destRect.min.x, destRect.min.y, destRect.max.x, destRect.max.y, GL::COLOR_BUFFER_BIT, linear ? GL::LINEAR : GL::NEAREST));
+    }
+
+    void FrameBuffer::BlitTo(const FrameBuffer& dest, const Math::iRect2D& srcRect, const Math::iRect2D& destRect, bool linear) const {
+        BindReadSrc();
+        dest.BindDrawDest();
+        BlitFramebuffers(srcRect, destRect, linear);
+    }
+
+    void FrameBuffer::BlitToScreen(const Math::iRect2D& srcRect, const Math::iRect2D& destRect, bool linear) const {
+        BindReadSrc();
+        UnbindDrawDest();
+        BlitFramebuffers(srcRect, destRect, linear);
     }
 }

@@ -2,7 +2,7 @@
 
 #include "MeshBuilder.h"
 #include "Mesh.h"
-#include "Math/Vector.h"
+#include "Utils/Math/Vector.h"
 
 namespace Quasi::Graphics::Meshes {
     struct Capsule : IMeshBuilder3D<Capsule> {

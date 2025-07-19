@@ -91,11 +91,20 @@ namespace Quasi::Graphics::Render {
         QGLCall$(GL::CullFace((int)facing));
     }
 
-    void SetFrontFacing(OrientationMode orientation) {
+    void SetFrontFacing(OrientationMode   orientation) {
         QGLCall$(GL::FrontFace((int)orientation));
     }
 
     void SetColorWrite(BufferMode mode) {
         QGLCall$(GL::DrawBuffer((int)mode));
+    }
+
+    void MemoryBarrier(int barrierBits) {
+        QGLCall$(GL::MemoryBarrier(barrierBits));
+    }
+
+    int ReadWriteAccess(bool read, bool write) {
+        return (int)(read ? (write ? GL::READ_WRITE : GL::READ_ONLY) :
+                            (write ? GL::WRITE_ONLY : 0));
     }
 }

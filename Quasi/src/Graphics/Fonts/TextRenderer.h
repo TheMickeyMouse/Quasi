@@ -3,7 +3,7 @@
 
 #include "Font.h"
 #include "TextAlign.h"
-#include "Math/Vector.h"
+#include "Utils/Math/Vector.h"
 
 namespace Quasi::Graphics {
     struct TextRenderer {

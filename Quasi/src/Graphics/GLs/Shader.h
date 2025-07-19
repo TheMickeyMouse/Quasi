@@ -7,8 +7,8 @@
 #include "Utils/String.h"
 #include "Utils/CStr.h"
 #include "GLObject.h"
-#include "Math/Matrix.h"
-#include "Math/Color.h"
+#include "Utils/Math/Matrix.h"
+#include "Utils/Math/Color.h"
 #include "Utils/HashMap.h"
 
 namespace Quasi::Graphics {
@@ -45,20 +45,52 @@ namespace Quasi::Graphics {
     struct ShaderArgs;
     struct ShaderParameter;
 
-    class Shader : public GLObject<Shader> {
+    struct ShaderProgram : GLObject<ShaderProgram> {
+        explicit ShaderProgram(GraphicsID id);
+        ShaderProgram() = default;
+
+        static void DestroyObject(GraphicsID id);
+        static void BindObject(GraphicsID id);
+        static void UnbindObject();
+
+        static ShaderProgram New(Str program);
+        static ShaderProgram New(Str vert, Str frag, Str geom = {});
+        static ShaderProgram NewCompute(Str program);
+
+        static ShaderProgram FromFile(CStr filepath);
+        static ShaderProgram FromFile(CStr vert, CStr frag, CStr geom = {});
+        static ShaderProgram FromFileCompute(CStr compute);
+
+        static bool IsArrayUnif(ShaderUniformType type);
+        static bool IsMatrixUnif(ShaderUniformType type);
+
+        // if ur executing on a texture, make sure to call WaitForMemory(SHADER_IMAGE_ACCESS_BARRIER_BIT)
+        void ExecuteCompute(const Math::uv3& workSize) const;
+        void ExecuteCompute(u32 workX, u32 workY = 1, u32 workZ = 1) const;
+        int GetUniformLocation(CStr name) const;
+
+        static Tuple<Str, Str, Str> ParseShader  (Str program);
+        static GraphicsID CompileShader    (Str source, ShaderType type);
+        static GraphicsID CompileShaderVert(Str source) { return CompileShader(source, ShaderType::VERTEX); }
+        static GraphicsID CompileShaderFrag(Str source) { return CompileShader(source, ShaderType::FRAGMENT); }
+        static GraphicsID CompileShaderGeom(Str source) { return CompileShader(source, ShaderType::GEOMETRY); }
+        static GraphicsID CompileShaderCompute(Str source) { return CompileShader(source, ShaderType::COMPUTE); }
+        static GraphicsID CreateShader(Str vtx, Str frg, Str geo = {});
+        static GraphicsID CreateShaderCompute(Str prog);
+    };
+
+    class Shader : public ShaderProgram {
         HashMap<String, int> uniformCache;
 
         explicit Shader(GraphicsID id);
     public:
         Shader() = default;
-        static Shader New(Str program);
-        static Shader New(Str vert, Str frag, Str geom = {});
-        static void DestroyObject(GraphicsID id);
-        static void BindObject(GraphicsID id);
-        static void UnbindObject();
+        Shader(ShaderProgram&& prog) : ShaderProgram(std::move(prog)) {}
 
         void SetUniformDyn(CStr name, ShaderUniformType type, Bytes data);
         void SetUniformArgs(const ShaderArgs& args);
+
+        int GetUniformLocation(CStr name);
 
 #pragma region Shader Uniform Types
         void SetUniformFloat(CStr name, float x);
@@ -162,26 +194,8 @@ namespace Quasi::Graphics {
                     }
                 )
             );
-#pragma endregion // Shader Sources
-
-        static Shader FromFile(CStr filepath);
-        static Shader FromFile(CStr vert, CStr frag, CStr geom = {});
-
-        static bool IsArrayUnif(ShaderUniformType type);
-        static bool IsMatrixUnif(ShaderUniformType type);
-    private:
-        int GetUniformLocation(CStr name);
-        static Tuple<Str, Str, Str> ParseShader  (Str program);
-        static GraphicsID CompileShader    (Str source, ShaderType type);
-        static GraphicsID CompileShaderVert(Str source) { return CompileShader(source, ShaderType::VERTEX); }
-        static GraphicsID CompileShaderFrag(Str source) { return CompileShader(source, ShaderType::FRAGMENT); }
-        static GraphicsID CompileShaderGeom(Str source) { return CompileShader(source, ShaderType::GEOMETRY); }
-        static GraphicsID CreateShader(Str vtx, Str frg, Str geo = {});
-
-        friend class GraphicsDevice;
+#pragma endregion // Shader Source
     };
-
-    struct ShaderParameter;
 
     struct ShaderParameter {
         using enum ShaderUniformType;

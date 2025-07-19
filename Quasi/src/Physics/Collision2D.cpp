@@ -4,8 +4,8 @@
 
 #include "Body2D.h"
 #include "SeperatingAxisSolver.h"
-#include "Debug/Logger.h"
-#include "Math/Geometry.h"
+#include "Utils/Debug/Logger.h"
+#include "Utils/Math/Geometry.h"
 
 namespace Quasi::Physics2D {
     float ClosestBetweenSegments(const fv2& a1, const fv2& b1, const fv2& a2, const fv2& b2,

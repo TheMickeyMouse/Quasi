@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Mesh.h"
-#include "Math/Transform2D.h"
+#include "Utils/Math/Transform2D.h"
 
 namespace Quasi::Graphics::Meshes {
     template <class Super>

@@ -53,9 +53,10 @@ namespace Quasi::Graphics {
     void GLReportFn(Str signature, const Debug::SourceLoc& loc) {
         GLErrorCode err;
         while ((err = GLGetErr()) != GLErrorCode::NO_ERROR) {
+            Str funcCall = signature.SplitOnce("::")[2_nd];
             GLLogger().QError$(
-                { "GL Error code {} was uncaught when calling gl{} (see https://docs.gl/gl3/{}).", loc },
-                err, signature.SplitOnce("::")[2_nd], signature.SplitOnce('(')[1_st]);
+                { "GL Error code {} was uncaught when calling gl{} (see https://docs.gl/gl4/gl{}).", loc },
+                err, funcCall, funcCall.SplitOnce('(')[1_st]);
         }
     }
 }

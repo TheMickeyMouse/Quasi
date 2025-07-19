@@ -1,7 +1,7 @@
 #pragma once
 #include "GLObject.h"
 #include "TextureConstants.h"
-#include "Math/Vector.h"
+#include "Utils/Math/Vector.h"
 
 namespace Quasi::Graphics {
     enum class TextureIFormat;

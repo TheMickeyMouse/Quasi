@@ -1,6 +1,6 @@
 #pragma once
 #include "Hash.h"
-#include "Debug/Logger.h"
+#include "Utils/Debug/Logger.h"
 
 // ported from robin_hood's hashmap implementation
 namespace Quasi {

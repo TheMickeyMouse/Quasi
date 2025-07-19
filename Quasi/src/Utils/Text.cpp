@@ -3,7 +3,7 @@
 #include <fstream>
 
 #include "CStr.h"
-#include "Debug/Logger.h"
+#include "Utils/Debug/Logger.h"
 #include "Text/Num.h"
 
 namespace Quasi::Text {

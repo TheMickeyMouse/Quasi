@@ -103,6 +103,43 @@ namespace Quasi::Graphics {
         CLOCKWISE = 0x0900,
         COUNTER_CLOCKWISE = 0x0901,
     };
+
+    namespace MemBarrier {
+        enum BarrierFlags {
+            // vertex data sourced from buffer objects after the barrier will reflect data written by shaders prior to the barrier. The set of buffer objects affected by this bit is derived from the buffer object bindings used for generic vertex attributes derived from the GL_VERTEX_ATTRIB_ARRAY_BUFFER bindings.
+            VERTEX_ATTRIB_ARRAY = 0x1,
+            // vertex array indices sourced from buffer objects after the barrier will reflect data written by shaders prior to the barrier. The buffer objects affected by this bit are derived from the GL_ELEMENT_ARRAY_BUFFER binding.
+            ELEMENT_ARRAY = 0x2,
+            // Shader uniforms sourced from buffer objects after the barrier will reflect data written by shaders prior to the barrier.
+            UNIFORM = 0x4,
+            // Texture fetches from shaders, including fetches from buffer object memory via buffer textures, after the barrier will reflect data written by shaders prior to the barrier.
+            TEXTURE_FETCH = 0x8,
+            // Memory accesses using shader image load, store, and atomic built-in functions issued after the barrier will reflect data written by shaders prior to the barrier. Additionally, image stores and atomics issued after the barrier will not execute until all memory accesses (e.g., loads, stores, texture fetches, vertex fetches) initiated prior to the barrier complete.
+            SHADER_IMAGE_ACCESS = 0x20,
+            // Command data sourced from buffer objects by Draw*Indirect commands after the barrier will reflect data written by shaders prior to the barrier. The buffer objects affected by this bit are derived from the GL_DRAW_INDIRECT_BUFFER binding.
+            COMMAND = 0x40,
+            // Reads and writes of buffer objects via the GL_PIXEL_PACK_BUFFER and GL_PIXEL_UNPACK_BUFFER bindings (via glReadPixels, glTexSubImage1D, etc.) after the barrier will reflect data written by shaders prior to the barrier. Additionally, buffer object writes issued after the barrier will wait on the completion of all shader writes initiated prior to the barrier.
+            PIXEL_BUFFER = 0x80,
+            // Writes to a texture via glTex(Sub)Image*, glCopyTex(Sub)Image*, glCompressedTex(Sub)Image*, and reads via glGetTexImage after the barrier will reflect data written by shaders prior to the barrier. Additionally, texture writes from these commands issued after the barrier will not execute until all shader writes initiated prior to the barrier complete.
+            TEXTURE_UPDATE = 0x100,
+            // Reads or writes via glBufferSubData, glCopyBufferSubData, or glGetBufferSubData, or to buffer object memory mapped by glMapBuffer or glMapBufferRange after the barrier will reflect data written by shaders prior to the barrier. Additionally, writes via these commands issued after the barrier will wait on the completion of any shader writes to the same memory initiated prior to the barrier.
+            BUFFER_UPDATE = 0x200,
+            // Reads and writes via framebuffer object attachments after the barrier will reflect data written by shaders prior to the barrier. Additionally, framebuffer writes issued after the barrier will wait on the completion of all shader writes issued prior to the barrier.
+            FRAMEBUFFER = 0x400,
+            // Writes via transform feedback bindings after the barrier will reflect data written by shaders prior to the barrier. Additionally, transform feedback writes issued after the barrier will wait on the completion of all shader writes issued prior to the barrier.
+            TRANSFORM_FEEDBACK = 0x800,
+            // Accesses to atomic counters after the barrier will reflect writes prior to the barrier.
+            ATOMIC_COUNTER = 0x1000,
+            // Accesses to shader storage blocks after the barrier will reflect writes prior to the barrier.
+            SHADER_STORAGE = 0x2000,
+            // Access by the client to persistent mapped regions of buffer objects will reflect data written by shaders prior to the barrier. Note that this may cause additional synchronization operations.
+            CLIENT_MAPPED_BUFFER = 0x4000,
+            // Writes of buffer objects via the GL_QUERY_BUFFER binding after the barrier will reflect data written by shaders prior to the barrier. Additionally, buffer object writes issued after the barrier will wait on the completion of all shader writes initiated prior to the barrier.
+            QUERY_BUFFER = 0x8000,
+
+            ALL = 0xFFFF
+        };
+    }
 }
 
 namespace Quasi::Graphics::Render {
@@ -161,4 +198,7 @@ namespace Quasi::Graphics::Render {
     void SetViewport(const Math::iRect2D& viewport);
 #undef GL_SWITCH
 #pragma endregion
+
+    void MemoryBarrier(int barrierBits);
+    int ReadWriteAccess(bool read, bool write);
 }

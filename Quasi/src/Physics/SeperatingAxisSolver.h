@@ -1,7 +1,7 @@
 #pragma once
 #include "PhysicsTransform2D.h"
 #include "Utils/Ref.h"
-#include "Math/Vector.h"
+#include "Utils/Math/Vector.h"
 
 namespace Quasi::Physics2D {
     class Shape;

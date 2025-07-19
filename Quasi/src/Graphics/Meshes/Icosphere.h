@@ -2,7 +2,7 @@
 
 #include "MeshBuilder.h"
 #include "Mesh.h"
-#include "Math/Vector.h"
+#include "Utils/Math/Vector.h"
 #include "Utils/Algorithm.h"
 
 namespace Quasi::Graphics::Meshes {
