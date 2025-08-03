@@ -5,8 +5,10 @@
 #include "GLs/Texture.h"
 
 namespace Quasi::Graphics {
+    class RenderData;
+
     struct Bloom {
-        FrameBuffer screenTex, blitter;
+        FrameBuffer screenTex;
         RenderBuffer depthBuffer;
         Texture downsample, upsample;
         ShaderProgram highPass, downsampler, upsampler, addBack;
@@ -16,7 +18,7 @@ namespace Quasi::Graphics {
 
         Bloom(const Math::uv2& screenDim);
 
-        void PreRender();
+        void SetToRenderTarget();
         void ApplyEffect();
     };
 } // Quasi

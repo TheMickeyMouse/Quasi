@@ -1,5 +1,9 @@
 #include "RenderData.h"
+
+#include "glp.h"
 #include "GraphicsDevice.h"
+#include "GLs/FrameBuffer.h"
+#include "GLs/GLDebug.h"
 
 namespace Quasi::Graphics {
 	void RenderData::Transfer(RenderData& dest, RenderData&& from) {

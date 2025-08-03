@@ -79,8 +79,6 @@ namespace Quasi::Graphics {
 
     	void EndContext() { rd->BufferLoad(); }
 
-		void AddPostEffect();
-
      	void DrawContext(const DrawOptions& options = {}) {
     		rd->Render(Memory::AsMut(options.shader.UnwrapOr(rd->shader)), options.arguments, options.useDefaultArguments);
     	}

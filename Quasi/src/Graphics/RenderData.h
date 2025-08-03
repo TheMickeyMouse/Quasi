@@ -7,6 +7,10 @@
 #include "GLs/VertexElement.h"
 
 namespace Quasi::Graphics {
+	class FrameBuffer;
+}
+
+namespace Quasi::Graphics {
 	class GraphicsDevice;
 
 	template <IVertex Vtx> class Mesh;
