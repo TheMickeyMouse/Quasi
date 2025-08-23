@@ -97,7 +97,7 @@ namespace Quasi::Math {
         }
 
         bool IsOnLeft(const VecT& p) const {
-            return forward.CrossZ(p - start) > 0;
+            return forward.Cross(p - start) > 0;
         }
     };
 

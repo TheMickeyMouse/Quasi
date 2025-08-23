@@ -22,7 +22,7 @@ namespace Quasi::Physics2D {
 
     void Body::AddRelativeVelocity(const fv2& relPosition, const fv2& vel) {
         AddMomentum(vel);
-        AddAngularMomentum(relPosition.CrossZ(vel));
+        AddAngularMomentum(relPosition.Cross(vel));
     }
 
     void Body::AddVelocityAt(const fv2& absPosition, const fv2& vel) {

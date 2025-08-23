@@ -14,10 +14,8 @@ namespace Quasi::Math {
     Rotor2D Rotor2D::RotateBy   (const Rotor2D& r) const { return fComplex { re * r.re - im * r.im, re * r.im + im * r.re }; }
     Rotor2D Rotor2D::RotateByInv(const Rotor2D& r) const { return fComplex { re * r.re + im * r.im, im * r.re - re * r.im }; }
 
-    Rotor2D Rotor2D::Halved() const {
-        const f32 x = 1 + re, imul = HALF_ROOT_2 / std::sqrt(x);
-        return fComplex { x * imul, im * imul };
-    }
+    Rotor2D Rotor2D::Halved() const { return UnitSqrt(); }
+    Rotor2D Rotor2D::HalvedCCW() const { return UnitUpperSqrt(); }
     Rotor2D Rotor2D::Mul(f32 p) const { return ExpImag(*Angle() * p); }
 
     fv2 Rotor2D::Rotate   (const fv2& v) const { return { v.x * re - v.y * im, v.x * im + v.y * re }; }

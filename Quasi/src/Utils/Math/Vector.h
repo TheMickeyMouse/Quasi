@@ -364,27 +364,40 @@ namespace Quasi::Math {
         static Vector YPos()                    { return {  0, +1 }; } static Vector Up()                      { return YPos(); }
         static Vector YNeg() requires Signed<T> { return {  0, -1 }; } static Vector Down() requires Signed<T> { return YNeg(); }
 
-        T CrossZ(const Vector& other) const { return x * other.y - y * other.x; }
+        T Cross(const Vector& other) const { return x * other.y - y * other.x; }
 
+        Vector FlipX()    const { return { -x, y }; }
+        Vector FlipY()    const { return { x, -y }; }
+        Vector Conj()    const { return { x, -y }; }
         fT Slope()       const { return (fT)y / (fT)x; }
         fT AspectRatio() const { return (fT)x / (fT)y; }
 
         Radians PolarAngle() const { return Trig::Atan2(y, x); }
-        Radians SignedAngleBetween(const Vector& other) const { return Trig::Atan2(CrossZ(other), this->Dot(other)); }
+        Radians SignedAngleBetween(const Vector& other) const { return Trig::Atan2(Cross(other), this->Dot(other)); }
 
         Tuple<fT, Radians> PolarCoords() const { return { this->Len(), this->PolarAngle() }; }
         static Vector FromPolar(T r, Radians theta) requires Floating<T> { return { r * Cos(theta), r * Sin(theta) }; }
         static Vector FromPolar(T r, const Rotor2D& theta) requires Floating<T>;
 
-        Vector Perpend()      const requires Signed<T> { return { y, -x }; }
-        Vector PerpendLeft()  const requires Signed<T> { return { -y, x }; }
-        Vector PerpendRight() const requires Signed<T> { return { y, -x }; }
+        Vector Perpend()          const { return { -y, x }; }
+        Vector Perpend(bool left) const { return { left ? -y : y, left ? x : -x }; }
+        Vector PerpendLeft()      const { return { -y, x }; }
+        Vector PerpendRight()     const { return { y, -x }; }
 
         Vector RotateBy(const Rotor2D& r) const;
         Vector TransformBy(const Transform2D& t) const;
 
         Vector ComplexMul(const Vector& v) const {
-            return { x * v.x - y - v.y, x * v.y + y * v.x };
+            return { x * v.x - y * v.y, x * v.y + y * v.x };
+        }
+        Vector ComplexMul(T re, T im) const {
+            return { x * re - y * im, x * im + y * re };
+        }
+        Vector GeometricMul(const Vector& v) const {
+            return { x * v.x + y * v.y, x * v.y - y * v.x };
+        }
+        Vector GeometricMul(T re, T im) const {
+            return { x * re + y * im, x * im - y * re };
         }
 
         Vec3<T> AddZ(T z) const { return { x, y, z }; }
@@ -422,6 +435,10 @@ namespace Quasi::Math {
         static Vector YNeg() requires Signed<T> { return {  0, -1,  0 }; } static Vector Down() requires Signed<T> { return YNeg(); }
         static Vector ZPos()                    { return {  0,  0, +1 }; } static Vector Front()                   { return ZPos(); }
         static Vector ZNeg() requires Signed<T> { return {  0,  0, -1 }; } static Vector Back() requires Signed<T> { return ZNeg(); }
+
+        Vector FlipX() const { return { -x, y, z }; }
+        Vector FlipY() const { return { x, -y, z }; }
+        Vector FlipZ() const { return { x, y, -z }; }
 
         Vector Cross(const Vector& other) const {
             return {
@@ -495,7 +512,6 @@ namespace Quasi::Math {
         Vector(T s = 0, T w = 0) : x(s), y(s), z(s), w(w) {}
         Vector(T x, T y, T z, T w = 1) : x(x), y(y), z(z), w(w) {}
 
-
         static Vector XAxis() { return { 1, 0, 0, 0 }; }
         static Vector YAxis() { return { 0, 1, 0, 0 }; }
         static Vector ZAxis() { return { 0, 0, 1, 0 }; }
@@ -508,6 +524,11 @@ namespace Quasi::Math {
         static Vector ZNeg() requires Signed<T> { return {  0,  0, -1,  0 }; } static Vector Back() requires Signed<T> { return ZNeg(); }
         static Vector WPos()                    { return {  0,  0,  0, +1 }; } static Vector In()                      { return WPos(); }
         static Vector WNeg() requires Signed<T> { return {  0,  0,  0, -1 }; } static Vector Out()  requires Signed<T> { return WNeg(); }
+
+        Vector FlipX() const { return { -x, y, z, w }; }
+        Vector FlipY() const { return { x, -y, z, w }; }
+        Vector FlipZ() const { return { x, y, -z, w }; }
+        Vector FlipW() const { return { x, y, z, -w }; }
 
         Vec3<fT> ProjectTo3DPlane() const { const fT invW = (fT)1 / w; return { x * invW, y * invW, z * invW }; }
         Vec3<T> As3D() const { return { x, y, z }; }

@@ -70,6 +70,6 @@ namespace Quasi::Graphics {
 
     Math::Matrix3D CameraController3D::GetProjMat() const {
         const float aspect = GraphicsDevice::GetDeviceInstance().GetWindowSize().AspectRatio();
-        return Math::Matrix3D::PerspectiveFov(Math::Radians::FromDegrees(viewFov), aspect, 0.01f, 100.0f);
+        return Math::Matrix3D::PerspectiveFov(Math::Degrees(viewFov), aspect, 0.01f, 100.0f);
     }
 }

@@ -370,17 +370,17 @@ namespace Quasi::Physics2D {
 
             const float denomN = [&] {
                 if constexpr (BDyn && TDyn) {
-                    const float torqueRadiusNBody   = relBody  [i].CrossZ(normal),
-                                torqueRadiusNTarget = relTarget[i].CrossZ(normal);
+                    const float torqueRadiusNBody   = relBody  [i].Cross(normal),
+                                torqueRadiusNTarget = relTarget[i].Cross(normal);
 
                     return body.invMass + target.invMass +
                           (torqueRadiusNBody   * torqueRadiusNBody)   * body  .invInertia +
                           (torqueRadiusNTarget * torqueRadiusNTarget) * target.invInertia;
                 } else if constexpr (BDyn) {
-                    const float torqueRadius = relBody[i].CrossZ(normal);
+                    const float torqueRadius = relBody[i].Cross(normal);
                     return body.invMass + torqueRadius * torqueRadius * body.invInertia;
                 } else /* targetDyn */ {
-                    const float torqueRadius = relTarget[i].CrossZ(normal);
+                    const float torqueRadius = relTarget[i].Cross(normal);
                     return target.invMass + torqueRadius * torqueRadius * target.invInertia;
                 }
             } ();
@@ -390,8 +390,8 @@ namespace Quasi::Physics2D {
             const fv2 impulse = jn[i] * normal;
 
             totalImpulse      += impulse;
-            if constexpr (BDyn) totalBodyAngMtm   -= relBody  [i].CrossZ(impulse);
-            if constexpr (TDyn) totalTargetAngMtm += relTarget[i].CrossZ(impulse);
+            if constexpr (BDyn) totalBodyAngMtm   -= relBody  [i].Cross(impulse);
+            if constexpr (TDyn) totalTargetAngMtm += relTarget[i].Cross(impulse);
         }
 
         if constexpr (BDyn) {
@@ -427,17 +427,17 @@ namespace Quasi::Physics2D {
 
             const float denomT = [&] {
                 if constexpr (BDyn && TDyn) {
-                    const float torqueRadiusTBody   = relBody  [i].CrossZ(tangent),
-                                torqueRadiusTTarget = relTarget[i].CrossZ(tangent);
+                    const float torqueRadiusTBody   = relBody  [i].Cross(tangent),
+                                torqueRadiusTTarget = relTarget[i].Cross(tangent);
 
                     return body.invMass + target.invMass +
                           (torqueRadiusTBody   * torqueRadiusTBody)   * body  .invInertia +
                           (torqueRadiusTTarget * torqueRadiusTTarget) * target.invInertia;
                 } else if constexpr (BDyn) {
-                    const float torqueRadius = relBody[i].CrossZ(tangent);
+                    const float torqueRadius = relBody[i].Cross(tangent);
                     return body.invMass + torqueRadius * torqueRadius * body.invInertia;
                 } else /* targetDyn */ {
-                    const float torqueRadius = relTarget[i].CrossZ(tangent);
+                    const float torqueRadius = relTarget[i].Cross(tangent);
                     return target.invMass + torqueRadius * torqueRadius * target.invInertia;
                 }
             } ();
@@ -449,8 +449,8 @@ namespace Quasi::Physics2D {
             ); // static/dynamic friction picking
 
             totalImpulse      += frictionImpulse;
-            if constexpr (BDyn) totalBodyAngMtm   -= relBody  [i].CrossZ(frictionImpulse);
-            if constexpr (TDyn) totalTargetAngMtm += relTarget[i].CrossZ(frictionImpulse);
+            if constexpr (BDyn) totalBodyAngMtm   -= relBody  [i].Cross(frictionImpulse);
+            if constexpr (TDyn) totalTargetAngMtm += relTarget[i].Cross(frictionImpulse);
         }
 
         if constexpr (BDyn) {

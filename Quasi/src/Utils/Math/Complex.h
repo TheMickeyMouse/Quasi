@@ -39,9 +39,25 @@ namespace Quasi::Math {
         Complex Exp() const requires Floating<T> { return ExpImag(Imagf()) * std::exp(Realf()); }
         Complex Log() const requires Floating<T> { return { std::log(LenSq()) * 0.5f, *Angle() }; }
 
+        // sqrt has positive real values
         Complex<fT> Sqrt() const requires Floating<T> {
-            const fT r = Abs(), imul = std::sqrt(r / (*this + r).LenSq());
-            return { (re + r) * imul, im * imul };
+            const fT r = Abs(), im2 = HALF_ROOT_2 * std::sqrt(r - re);
+            return { HALF_ROOT_2 * std::sqrt(r + re), im < 0 ? -im2 : im2 };
+        }
+        // sqrt has positive real values
+        Complex<fT> UnitSqrt() const requires Floating<T> {
+            const fT im2 = HALF_ROOT_2 * std::sqrt(1 - re);
+            return { HALF_ROOT_2 * std::sqrt(1 + re), im < 0 ? -im2 : im2 };
+        }
+        // uppersqrt has positive imaginary values
+        Complex<fT> UpperSqrt() const requires Floating<T> {
+            const fT r = Abs(), re2 = HALF_ROOT_2 * std::sqrt(r + re);
+            return { im < 0 ? -re2 : re2, HALF_ROOT_2 * std::sqrt(r - re) };
+        }
+        // uppersqrt has positive imaginary values
+        Complex<fT> UnitUpperSqrt() const requires Floating<T> {
+            const fT re2 = HALF_ROOT_2 * std::sqrt(1 + re);
+            return { im < 0 ? -re2 : re2, HALF_ROOT_2 * std::sqrt(1 - re) };
         }
         Complex<fT> Pow(f32 p) const requires Floating<T> {
             return ExpImag(*Angle() * p) * std::pow(Abs(), p);

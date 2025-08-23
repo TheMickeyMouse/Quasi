@@ -9,9 +9,7 @@ namespace Quasi::Math {
         f32 radians;
         explicit Radians(f32 radians) : radians(radians) {}
     public:
-        static Radians FromDegrees(f32 degrees) { return Radians(DEG_2_RAD * degrees); }
-        static Radians FromCircs(f32 circles) { return Radians(TAU * circles); }
-        f32 InDegrees() const { return RAD_2_DEG * radians; }
+        f32 Degrees() const { return RAD_2_DEG * radians; }
         f32 Revolutions() const { return radians / (f32)TAU; }
         void Normalize() { radians = std::fmod(radians, TAU); }
 
@@ -29,14 +27,22 @@ namespace Quasi::Math {
         Radians& operator/=(f32 div) { radians /= div; return *this; }
     };
 
-    inline Radians operator ""_rad(long double deg) {
-        return Radians((f32)deg);
+    inline Radians Degrees(float deg) {
+        return Radians { deg * DEG_2_RAD };
+    }
+
+    inline Radians Revolutions(float rev) {
+        return Radians { rev * TAU };
+    }
+
+    inline Radians operator ""_rad(long double rad) {
+        return Radians((f32)rad);
     }
     inline Radians operator ""_deg(long double deg) {
-        return Radians::FromDegrees((f32)deg);
+        return Degrees((f32)deg);
     }
-    inline Radians operator ""_rev(long double deg) {
-        return Radians::FromCircs((f32)deg);
+    inline Radians operator ""_rev(long double rev) {
+        return Revolutions((f32)rev);
     }
 
     namespace Trig {

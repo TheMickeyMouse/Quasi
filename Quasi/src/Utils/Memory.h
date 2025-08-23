@@ -201,6 +201,9 @@ namespace Quasi::Memory {
     // usage: just do Memory::QAlloca$(T, 32) or something like that
 #define Q_ALLOCA(T, SIZE) UpcastPtr<T>(_alloca(sizeof(T) * (SIZE)))
 #define QAlloca$(...) Q_ALLOCA(__VA_ARGS__)
+
+    // usage: add a scope guard to a code block without having to type out the variable name, cleans up automatically afterwards
+#define QWith$(...) if (auto __VA_ARGS__; true)
 }
 
 namespace Quasi {

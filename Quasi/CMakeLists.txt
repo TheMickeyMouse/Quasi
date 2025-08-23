@@ -222,6 +222,9 @@ set(ALL_FILES
         src/Graphics/GUI/Layer.h
         src/Graphics/Effects/Bloom.cpp
         src/Graphics/Effects/Bloom.h
+        src/Graphics/Canvas.cpp
+        src/Graphics/Canvas.h
+        src/Graphics/UIVertex.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

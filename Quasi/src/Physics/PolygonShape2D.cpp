@@ -99,7 +99,7 @@ namespace Quasi::Physics2D {
         float inertNum = 0.0f, inertDen = 0.0f;
         u32 i = 0;
         for (; i < size - 1; ++i) {
-            const float z = points[i + 1].CrossZ(points[i]);
+            const float z = points[i + 1].Cross(points[i]);
             inertDen += z;
             const float uSquared = points[i].LenSq(), vSquared = points[i + 1].LenSq();
             inertNum += z * (uSquared + vSquared + std::sqrt(uSquared * vSquared));
@@ -293,7 +293,7 @@ namespace Quasi::Physics2D {
         float inertNum = 0.0f, inertDen = 0.0f;
         u32 i = 0;
         for (; i < data.Length() - 1; ++i) {
-            const float z = data[i + 1].pos.CrossZ(data[i].pos);
+            const float z = data[i + 1].pos.Cross(data[i].pos);
             inertDen += z;
             const float uSquared = data[i].pos.LenSq(), vSquared = data[i + 1].pos.LenSq();
             inertNum += z * (uSquared + vSquared + std::sqrt(uSquared * vSquared));
@@ -337,8 +337,8 @@ namespace Quasi::Physics2D {
 
         const i32 i0 = WrapIndexUp(furthest), i1 = WrapIndexDown(furthest);
         const fv2 &p  = data[furthest].pos;
-        if (std::abs(data[i1].nrm.CrossZ(normal)) >
-            std::abs(data[i1].nrm.CrossZ(normal)))
+        if (std::abs(data[i1].nrm.Cross(normal)) >
+            std::abs(data[i1].nrm.Cross(normal)))
             return { p, data[i1].pos - p };
         return { p, data[i0].pos - p };
     }

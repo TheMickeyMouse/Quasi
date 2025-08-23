@@ -73,8 +73,9 @@ namespace Quasi::Graphics {
     		TriIndices* IndexData() { return Memory::TransmutePtr<TriIndices>(rd->indexData.Data()) + iOffset; }
     	};
 
+		RawBatch NewBatch() { return RawBatch { (u32)(rd->vertexOffset / sizeof(T)), *rd }; }
 		void AddMeshB(auto&& meshBuilder, auto&& gpass) {
-    		meshBuilder.Merge((decltype(gpass))gpass, RawBatch { (u32)(rd->vertexOffset / sizeof(T)), *rd });
+    		meshBuilder.Merge((decltype(gpass))gpass, NewBatch());
     	}
 
     	void EndContext() { rd->BufferLoad(); }

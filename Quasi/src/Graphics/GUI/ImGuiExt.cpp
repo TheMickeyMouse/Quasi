@@ -179,7 +179,7 @@ namespace ImGui {
     Q_IMGUI_EDITOR(EditRotation2D, Q Math::Rotor2D& rot2) {
         width = GetRemWidth(width);
 
-        float theta = rot2.Angle().InDegrees();
+        float theta = rot2.Angle().Degrees();
         DisplayTextCropped(title, GetItemRemainingWidth(width) - GetSpacingWidth());
 
         SameLine(0, GetItemRemainingWidth(width) - GetLastItemWidth());
@@ -189,14 +189,14 @@ namespace ImGui {
         EditScalarWithIcon((const char*)u8"θ:", COLOR_Z_ANGLE, theta, 1, Q fRange { -180, 180 }, "%f°", w);
         PopID();
 
-        rot2 = { Q Math::Radians::FromDegrees(theta) };
+        rot2 = { Q Math::Degrees(theta) };
     }
 
     Q_IMGUI_EDITOR(EditRotation3D, Q Math::Rotor3D& rot3) {
         width = GetRemWidth(width);
 
         auto [xrot, yrot, zrot] = rot3.EulerAngles();
-        float xr = xrot.InDegrees(), yr = yrot.InDegrees(), zr = zrot.InDegrees();
+        float xr = xrot.Degrees(), yr = yrot.Degrees(), zr = zrot.Degrees();
         DisplayTextCropped(title, GetItemRemainingWidth(width) - GetSpacingWidth());
 
         SameLine(0, GetItemRemainingWidth(width) - GetLastItemWidth());
@@ -208,9 +208,9 @@ namespace ImGui {
         EditScalarWithIcon((const char*)u8"φ:", COLOR_Z_ANGLE, zr, 1, nullptr,              "%f°", w);
         PopID();
 
-        rot3 = { Q Math::Radians::FromDegrees(xr),
-                 Q Math::Radians::FromDegrees(yr),
-                 Q Math::Radians::FromDegrees(zr) };
+        rot3 = { Q Math::Degrees(xr),
+                 Q Math::Degrees(yr),
+                 Q Math::Degrees(zr) };
     }
 
     Q_IMGUI_EDITOR(EditYawPitch, float& yaw, float& pitch) {

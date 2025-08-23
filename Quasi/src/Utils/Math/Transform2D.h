@@ -9,9 +9,11 @@ namespace Quasi::Math {
         Rotor2D(const fComplex& c) : fComplex(c) {}
     public:
         static Rotor2D FromComplex(const fComplex& c) { return { c }; }
+        static Rotor2D FromUnitVector(const fv2& c) { return fComplex { c.x, c.y }; }
         fComplex&       AsComplex()       { return static_cast<fComplex&>(*this); }
         const fComplex& AsComplex() const { return static_cast<const fComplex&>(*this); }
 
+        fv2 AsUnitVector() const { return { re, im }; }
         fv2 IHat() const { return {  re, im }; }
         fv2 JHat() const { return { -im, re }; }
         f32 Cos() const { return re; }
@@ -28,6 +30,7 @@ namespace Quasi::Math {
         Rotor2D RotateByInv(const Rotor2D& r) const;
 
         Rotor2D Halved() const;
+        Rotor2D HalvedCCW() const;
         Rotor2D Mul(f32 p) const;
         Rotor2D Doubled()  const { return Squared(); }
         Rotor2D Tripled()  const { return Cubed(); }

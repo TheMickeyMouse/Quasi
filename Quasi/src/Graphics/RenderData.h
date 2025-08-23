@@ -27,7 +27,7 @@ namespace Quasi::Graphics {
 	    Math::Matrix3D projection = Math::Matrix3D::OrthoProjection({{ { -4.0f, 4.0f }, { -3.0f, 3.0f }, { 0.1f, 100.0f } }});
 	    Math::Matrix3D camera {};
 	    Shader shader = {}; // shader can be null if renderId is 0
-	private:
+
 		ArrayBox<byte> vertexData;
 		usize vertexOffset = 0;
 		ArrayBox<u32> indexData;
@@ -37,7 +37,7 @@ namespace Quasi::Graphics {
 		usize deviceIndex = 0;
 
 		friend class GraphicsDevice;
-	public:
+
 		explicit RenderData(GraphicsDevice& gd, usize vsize, usize isize, usize vertSize, const VertexBufferLayout& layout) :
 			varray(VertexArray::New()), vbo(VertexBuffer::New(vsize * vertSize)), ibo(IndexBuffer::New(isize)),
 			vertexData(ArrayBox<byte>::AllocateUninit(vsize * vertSize)), indexData(ArrayBox<u32>::AllocateUninit(isize)), device(gd) {
