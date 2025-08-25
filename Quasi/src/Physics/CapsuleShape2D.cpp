@@ -41,7 +41,7 @@ namespace Quasi::Physics2D {
         return fRange { -f, f }.Extrude(radius);
     }
 
-    fRange CapsuleShape::ProjectOntoOwnAxis(u32 axisID, const fv2& axis) const {
+    fRange CapsuleShape::ProjectOntoOwnAxis(u32, const fv2&) const {
         return { -radius, +radius };
     }
 

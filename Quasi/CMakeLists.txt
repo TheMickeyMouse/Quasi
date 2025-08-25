@@ -30,6 +30,11 @@ set(HEADER_FILES
     src/Graphics/CameraController2D.h
     src/Graphics/CameraController3D.h
     src/Graphics/Light.h
+    src/Graphics/GUI/Layer.h
+    src/Graphics/Canvas.h
+    src/Graphics/UIVertex.h
+
+    src/Graphics/Effects/Bloom.h
 
     src/Graphics/ModelLoading/MTLMaterialLoader.h
     src/Graphics/ModelLoading/OBJModel.h
@@ -151,6 +156,10 @@ set(SOURCE_FILES
     src/Graphics/Light.cpp
     src/Graphics/GraphicsDevice.cpp
     src/Graphics/RenderData.cpp
+    src/Graphics/Canvas.cpp
+    src/Graphics/GUI/Layer.cpp
+
+    src/Graphics/Effects/Bloom.cpp
 
     src/Graphics/ModelLoading/MTLMaterialLoader.cpp
     src/Graphics/ModelLoading/OBJModelLoader.cpp
@@ -166,14 +175,14 @@ set(SOURCE_FILES
     src/IO/Mouse.cpp
     src/IO/TimeType.cpp
 
-        src/Utils/Math/Vector.cpp
-        src/Utils/Math/Matrix.cpp
-        src/Utils/Math/Rect.cpp
-        src/Utils/Math/Color.cpp
-        src/Utils/Math/Complex.cpp
-        src/Utils/Math/Quaternion.cpp
-        src/Utils/Math/Transform2D.cpp
-        src/Utils/Math/Transform3D.cpp
+    src/Utils/Math/Vector.cpp
+    src/Utils/Math/Matrix.cpp
+    src/Utils/Math/Rect.cpp
+    src/Utils/Math/Color.cpp
+    src/Utils/Math/Complex.cpp
+    src/Utils/Math/Quaternion.cpp
+    src/Utils/Math/Transform2D.cpp
+    src/Utils/Math/Transform3D.cpp
 
     src/Physics/World2D.cpp
     src/Physics/Shape2D.cpp
@@ -201,30 +210,12 @@ set(SOURCE_FILES
     src/Utils/Text/StringWriter.cpp
     src/Utils/Text/Formatting.cpp
     src/Utils/Iter/LinesIter.cpp
-
-    src/vendor/imgui/imgui.cpp
-    src/vendor/imgui/imgui_demo.cpp
-    src/vendor/imgui/imgui_draw.cpp
-    src/vendor/imgui/imgui_impl_glfw.cpp
-    src/vendor/imgui/imgui_impl_opengl3.cpp
-    src/vendor/imgui/imgui_tables.cpp
-    src/vendor/imgui/imgui_widgets.cpp
-    src/vendor/imgui/imgui_stdlib.cpp
-
-    src/vendor/stb_image/stb_image.cpp
 )
 source_group("Source Files" FILES ${SOURCE_FILES})
 
 set(ALL_FILES
     ${HEADER_FILES}
     ${SOURCE_FILES}
-        src/Graphics/GUI/Layer.cpp
-        src/Graphics/GUI/Layer.h
-        src/Graphics/Effects/Bloom.cpp
-        src/Graphics/Effects/Bloom.h
-        src/Graphics/Canvas.cpp
-        src/Graphics/Canvas.h
-        src/Graphics/UIVertex.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})
@@ -236,8 +227,8 @@ target_include_directories(${PROJECT_NAME}
         PUBLIC
     src/
     src/Graphics/
-    src/vendor/imgui/
     src/vendor/
+    src/vendor/imgui/
     src/vendor/freetype/
     ${PROJECT_SOURCE_DIR}/OpenGLPort/
 )
@@ -246,10 +237,35 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     Q_EXT_MATCH_SYNTAX # for cool syntax features for pattern matching
 )
 
+target_compile_options(${PROJECT_NAME} PRIVATE
+    -pedantic -Wall -Wextra
+    -Wcast-align
+    -Wctor-dtor-privacy
+    -Wdisabled-optimization
+    -Wformat=2
+    -Winit-self
+    -Wmissing-include-dirs
+    -Woverloaded-virtual
+    -Wstrict-null-sentinel
+    -Wstrict-overflow=5
+    -Wswitch-default
+    -Wundef
+    -Werror
+
+    -Wno-sign-compare # allow comparing ints to uints
+    -Wno-misleading-indentation # too lazy to fix
+    -Wno-sizeof-pointer-div # allow sizeof(U) / sizeof(T)
+    -Wno-missing-field-initializers # allows not initializing certain fields
+    -Wno-dangling-reference # too many false-positives, especially for my Ref<T> class.
+    -Wno-unused-parameter # it's simply too annoying.
+)
+
 target_link_libraries(${PROJECT_NAME} PUBLIC
     OpenGLPort
     # opengl32.dll
     ${CMAKE_SOURCE_DIR}/Dependencies/GLFW/lib-mingw-w64/libglfw3.a
     ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/freetype/libfreetype.a
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/imgui/imgui.a
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/stb_image/stb_image.a
 )
 # execute_process()

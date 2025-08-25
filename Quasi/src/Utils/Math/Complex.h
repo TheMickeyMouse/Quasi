@@ -20,7 +20,7 @@ namespace Quasi::Math {
 
         T  LenSq() const { return re * re + im * im; }
         fT Len() const { return std::sqrt(LenSq()); }
-        fT Abs() const { return Abs(); }
+        fT Abs() const { return Len(); }
         T  DistSq(const Complex& z) const { return (*this - z).LenSq(); }
         fT Dist(const Complex& z) const { return (*this - z).Len(); }
         Complex<fT> Norm() const { return *this / Len(); }

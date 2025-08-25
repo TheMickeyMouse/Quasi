@@ -21,11 +21,11 @@ namespace Quasi::Physics2D {
         return normal * radius;
     }
 
-    fRange CircleShape::ProjectOntoAxis(const fv2& axis) const {
+    fRange CircleShape::ProjectOntoAxis(const fv2&) const {
         return { -radius, +radius };
     }
 
-    fRange CircleShape::ProjectOntoOwnAxis(u32 axisID, const fv2& axis) const {
+    fRange CircleShape::ProjectOntoOwnAxis(u32, const fv2& axis) const {
         return ProjectOntoAxis(axis);
     }
 } // Quasi

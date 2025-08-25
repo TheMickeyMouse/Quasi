@@ -34,14 +34,14 @@ namespace Quasi::Text {
     template <class... Ts>
     usize FormatDynamicTypesTo(StringWriter output, Str fmt, const void* argParams[]) {
         static constexpr FuncPtr<usize, StringWriter, const void*, Str> writerParams[] = {
-            &Text::FormatWriterPtr<Ts>...
+            &Text::FormatWriterPtr<Ts>..., nullptr
         };
         return Text::FormatToDynamic(output, fmt, argParams, writerParams, sizeof...(Ts));
     }
 
     template <class... Ts>
     usize FormatTo(StringWriter output, Str fmt, const Ts&... args) {
-        const void* argParams[] = { (const void*)&args... };
+        const void* argParams[] = { (const void*)&args..., nullptr };
         return Text::FormatDynamicTypesTo<Ts...>(output, fmt, argParams);
     }
 

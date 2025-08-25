@@ -36,17 +36,17 @@ namespace Quasi::Hashing {
         const byte* lastData = bytes.Data() + chunkCount * 8;
         switch (chunkCount & 7) {
             case 7:
-                h ^= (usize)lastData[6] << 48;
+                h ^= (usize)lastData[6] << 48; [[fallthrough]];
             case 6:
-                h ^= (usize)lastData[5] << 40;
+                h ^= (usize)lastData[5] << 40; [[fallthrough]];
             case 5:
-                h ^= (usize)lastData[4] << 32;
+                h ^= (usize)lastData[4] << 32; [[fallthrough]];
             case 4:
-                h ^= (usize)lastData[3] << 24;
+                h ^= (usize)lastData[3] << 24; [[fallthrough]];
             case 3:
-                h ^= (usize)lastData[2] << 16;
+                h ^= (usize)lastData[2] << 16; [[fallthrough]];
             case 2:
-                h ^= (usize)lastData[1] << 8;
+                h ^= (usize)lastData[1] << 8;  [[fallthrough]];
             case 1:
                 h ^= (usize)lastData[0];
                 h *= M_FACTOR;

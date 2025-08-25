@@ -86,9 +86,9 @@ namespace Quasi {
         static constexpr f64 LOG10_2 = 3.321928094887362f;
     }
 
-#define QUASI_DEFINE_INTEGER(INT, UINT) \
+#define QUASI_DEFINE_INTEGER(INT, UINT, LTZERO) \
     namespace INT##s { \
-        static constexpr bool  IS_SIGNED  = ((INT)-1) < 0; \
+        static constexpr bool  IS_SIGNED  = ((INT)-1) LTZERO; \
         static constexpr INT   MAX        = (INT)~(IS_SIGNED ? (INT)1 << (sizeof(INT) * 8 - 1) : 0); \
         static constexpr INT   MIN        = (INT)~MAX; \
         static constexpr usize BITS       = sizeof(INT) * 8; \
@@ -114,20 +114,20 @@ namespace Quasi {
             return approx10 - (x < Math::POWERS_OF_10[approx10]); \
         } \
         \
-        inline INT CopySign(INT x, INT sign) { return ((x < 0) == (sign < 0)) ? x : -x; } \
+        inline INT CopySign(INT x, INT sign) { return ((x LTZERO) == (sign LTZERO)) ? x : -x; } \
     } \
     inline static constexpr INT operator ""_##INT(unsigned long long x) { return (INT)x; }
 
-    QUASI_DEFINE_INTEGER(i8,    u8);
-    QUASI_DEFINE_INTEGER(u8,    u8);
-    QUASI_DEFINE_INTEGER(i16,   u16);
-    QUASI_DEFINE_INTEGER(u16,   u16);
-    QUASI_DEFINE_INTEGER(i32,   u32);
-    QUASI_DEFINE_INTEGER(u32,   u32);
-    QUASI_DEFINE_INTEGER(i64,   u64);
-    QUASI_DEFINE_INTEGER(u64,   u64);
-    QUASI_DEFINE_INTEGER(isize, usize);
-    QUASI_DEFINE_INTEGER(usize, usize);
+    QUASI_DEFINE_INTEGER(i8,    u8,    < 0);
+    QUASI_DEFINE_INTEGER(u8,    u8,    && false);
+    QUASI_DEFINE_INTEGER(i16,   u16,   < 0);
+    QUASI_DEFINE_INTEGER(u16,   u16,   && false);
+    QUASI_DEFINE_INTEGER(i32,   u32,   < 0);
+    QUASI_DEFINE_INTEGER(u32,   u32,   && false);
+    QUASI_DEFINE_INTEGER(i64,   u64,   < 0);
+    QUASI_DEFINE_INTEGER(u64,   u64,   && false);
+    QUASI_DEFINE_INTEGER(isize, usize, < 0);
+    QUASI_DEFINE_INTEGER(usize, usize, && false);
 
 #undef QUASI_DEFINE_INTEGER
 
@@ -156,7 +156,7 @@ namespace Quasi {
         }
 
         static N Modulo(N a, N b) { return a % b; } // used to overload floating modulo
-        static N CopySign(N x, N sign) { return ((x < 0) == (sign < 0)) ? x : -x; } // used to generalize floats
+        static N CopySign(N x, N sign) requires Unsigned<N> { return ((x < 0) == (sign < 0)) ? x : -x; } // used to generalize floats
     };
 
     enum class FpClassification {
@@ -195,8 +195,8 @@ namespace Quasi {
         \
         inline FLOAT FromBits(SAME_SIZED x) { return __builtin_bit_cast(FLOAT, x); } \
         inline SAME_SIZED BitsOf(FLOAT f)   { return __builtin_bit_cast(SAME_SIZED, f); } \
-        inline bool IsSignedNegative(FLOAT f) { return BitsOf(f) & SIGN_MASK != 0; } \
-        inline bool IsSignedPositive(FLOAT f) { return BitsOf(f) & SIGN_MASK == 0; } \
+        inline bool IsSignedNegative(FLOAT f) { return (BitsOf(f) & SIGN_MASK) != 0; } \
+        inline bool IsSignedPositive(FLOAT f) { return (BitsOf(f) & SIGN_MASK) == 0; } \
         inline FLOAT Sign(FLOAT f) { return f == 0 ? f : f > 0 ? 1 : f < 0 ? -1 : NAN; } \
         inline FLOAT CopySign(FLOAT f, FLOAT sign) { return std::copysign(f, sign); } \
         \

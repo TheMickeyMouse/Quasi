@@ -142,7 +142,7 @@ namespace Quasi::Text {
         u32 ParseDigitsLargeRadix4(u32 dig, u32 radix);
 
         template <usize ByteParallelCount>
-        OptionUsize ParseIntBy(Str string, Out<u64&> out, const Fn<bool, u64&, const char*> auto& acc, u32 maxDigs, bool exactDigs, u32 radix) {
+        OptionUsize ParseIntBy(Str string, Out<u64&> out, const Fn<bool, u64&, const char*> auto& acc, u32 maxDigs, u32 radix) {
             const usize originalSize = string.Length();
             string = string.TrimStart('0');
 
@@ -160,7 +160,6 @@ namespace Quasi::Text {
                             out = n;
                             return originalSize - string.Length() + i + j;
                         }
-
                     }
                 }
             }

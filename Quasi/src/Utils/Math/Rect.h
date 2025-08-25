@@ -3,6 +3,19 @@
 #include "Vector.h"
 
 namespace Quasi::Math {
+    enum class Dir {
+        MIDDLE = 0,
+        CENTER = 0,
+        RIGHT = 1,
+        LEFT  = 2,
+        TOP,
+        BOTTOM,
+        FRONT,
+        BACK,
+        IN,
+        OUT,
+    };
+
     template <class T, usize N> struct Rect {
         using fT     = Common<T, f32>;
         using VecT   = Vector<T, N>;
@@ -51,6 +64,11 @@ namespace Quasi::Math {
         RangeT RangeN(usize n) const { return { min[n], max[n] }; }
         RangeT operator[](usize n) const { return RangeN(n); }
 
+        VecT TopRight()    const requires (N == 2) { return max; }
+        VecT TopLeft()     const requires (N == 2) { return { min.x, max.y }; }
+        VecT BottomRight() const requires (N == 2) { return { max.x, min.y }; }
+        VecT BottomLeft()  const requires (N == 2) { return min; }
+
         template <usize M>
         Rect<T, M> SwizzleRect(const char (&swizzle)[M + 1]) const {
             Rect<T, M> swizzled;
@@ -89,11 +107,24 @@ namespace Quasi::Math {
             for (usize i = 0; i < N; ++i) result[i] = rel[i] ? max[i] : min[i];
             return result;
         }
+        VecT Corner(const Dir (&rel)[N]) const {
+            VecT result;
+            for (usize i = 0; i < N; ++i) result[i] = ((int)rel[i] & 1) ? max[i] : min[i];
+            return result;
+        }
         VecT Anchor(const int (&rel)[N]) const { // each int is a ternary decision on min (-1), center (0) or max (1)
             VecT result;
             for (usize i = 0; i < N; ++i)
                 result[i] = rel[i] == -1 ? min[i] :
                             rel[i] == 0 ? (min[i] + max[i]) / 2 :
+                            max[i];
+            return result;
+        }
+        VecT Anchor(const Dir (&rel)[N]) const {
+            VecT result;
+            for (usize i = 0; i < N; ++i)
+                result[i] = ((int)rel[i] & 1) ? min[i] :
+                            (rel[i] == Dir::MIDDLE) ? (min[i] + max[i]) / 2 :
                             max[i];
             return result;
         }

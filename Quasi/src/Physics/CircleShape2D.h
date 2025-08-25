@@ -16,6 +16,6 @@ namespace Quasi::Physics2D {
         fv2 FurthestAlong(const fv2& normal) const;
         fRange ProjectOntoAxis(const fv2& axis) const;
         fRange ProjectOntoOwnAxis(u32 axisID, const fv2& axis) const;
-        bool AddSeperatingAxes(SeperatingAxisSolver& sat) const { return false; }
+        bool AddSeperatingAxes(SeperatingAxisSolver&) const { return false; }
     };
 } // Quasi

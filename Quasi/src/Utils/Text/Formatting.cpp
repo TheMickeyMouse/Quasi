@@ -135,6 +135,7 @@ namespace Quasi::Text {
                     sw.WriteRepeat(options.pad, rest);
                     break;
                 }
+                default:;
             }
             return options.targetLength;
         }

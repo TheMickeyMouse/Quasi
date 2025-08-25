@@ -24,13 +24,14 @@ namespace Quasi::Graphics {
 
         enum RenderStyle {
             ROUND_CAP  = 0x0,
-            SQUARE_CAP = 0x2,
-            FLAT_CAP   = 0x1,
+            SQUARE_CAP = 0x1,
+            ARROW_CAP  = 0x2,
+            FLAT_CAP   = 0x3,
             CAP_MASK   = 0xF,
 
             ROUND_JOIN = 0x00,
-            MITER_JOIN = 0x20,
-            BEVEL_JOIN = 0x10,
+            MITER_JOIN = 0x10,
+            BEVEL_JOIN = 0x20,
             JOIN_MASK  = 0xF0,
 
             NO_FILL    = 0x100,

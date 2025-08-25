@@ -38,7 +38,7 @@ namespace Quasi::Physics2D {
         return { -maxD, maxD };
     }
 
-    fRange RectShape::ProjectOntoOwnAxis(u32 axisID, const fv2& axis) const {
+    fRange RectShape::ProjectOntoOwnAxis(u32 axisID, const fv2&) const {
         const float half = axisID == 0 ? hx : hy;
         return { -half, half };
     }

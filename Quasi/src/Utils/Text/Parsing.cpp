@@ -183,17 +183,17 @@ namespace Quasi::Text {
         if (codepoint <= 0x007F) { // plain ascii
             out.Append((char)codepoint); // 0b'0yyy'zzzz
         } else if (codepoint <= 0x07FF) { // two bytes
-            out.Append((char)((codepoint >> 6) | 0xC0)); // 0b'110x'xxyy
-            out.Append((char)(codepoint & 0x3F | 0x80)); // 0b'10yy'zzzz
+            out.Append((char)((codepoint >> 6)   | 0xC0)); // 0b'110x'xxyy
+            out.Append((char)((codepoint & 0x3F) | 0x80)); // 0b'10yy'zzzz
         } else if (codepoint <= 0xFFFF) { // three bytes
             out.Append((char)((codepoint >> 12)       | 0xE0)); // 0b'1110'wwww
             out.Append((char)((codepoint >> 6 & 0x3F) | 0x80)); // 0b'10xx'xxyy
-            out.Append((char)(codepoint & 0x3F        | 0x80)); // 0b'10yy'zzzz
+            out.Append((char)((codepoint & 0x3F)      | 0x80)); // 0b'10yy'zzzz
         } else if (codepoint <= 0x10FFFF) { // four bytes
             out.Append((char)((codepoint >> 18)        | 0xF0)); // 0b'1111'0uvv
             out.Append((char)((codepoint >> 12 & 0x3F) | 0x80)); // 0b'10vv'wwww
             out.Append((char)((codepoint >> 6 & 0x3F)  | 0x80)); // 0b'10xx'xxyy
-            out.Append((char)(codepoint & 0x3F         | 0x80)); // 0b'10yy'zzzz
+            out.Append((char)((codepoint & 0x3F)       | 0x80)); // 0b'10yy'zzzz
         }
 
         return k;

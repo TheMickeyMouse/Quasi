@@ -89,6 +89,7 @@ namespace Quasi::Graphics {
             case FMAT_4X2:  return SetUniformMat4x2Arr(name, data.Transmute<Math::Matrix4x2>());
             case FMAT_4X3:  return SetUniformMat4x3Arr(name, data.Transmute<Math::Matrix4x3>());
             case FMAT_4X4:  return SetUniformMat4x4Arr(name, data.Transmute<Math::Matrix4x4>());
+            default:;
         }
     }
 

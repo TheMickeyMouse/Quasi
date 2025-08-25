@@ -4,7 +4,7 @@
 #include "Utils/CStr.h"
 #include "Utils/Vec.h"
 #include "GLDebug.h"
-#include "../GraphicsDevice.h"
+#include "GraphicsDevice.h"
 #include "vendor/stb_image/stb_image.h"
 
 namespace Quasi::Graphics {
@@ -160,8 +160,8 @@ namespace Quasi::Graphics {
         textureSlot.Replace(slot + 1);
     }
 
-    void Texture::BindImageTexture(int slot, int mipmapLevel, bool read, bool write, TextureIFormat format) {
-        QGLCall$(GL::BindImageTexture(slot, rendererID, mipmapLevel, 0, 0, Render::ReadWriteAccess(read, write), (int)format));
+    void Texture::BindImageTexture(int slot, int mipmapLevel, Access access, TextureIFormat format) {
+        QGLCall$(GL::BindImageTexture(slot, rendererID, mipmapLevel, 0, 0, (int)access, (int)format));
     }
 
     void Texture::Deactivate() {
@@ -210,10 +210,13 @@ namespace Quasi::Graphics {
         switch (Dimension()) {
             case 3:
                 SetParam(TextureParamName::WRAP_R, b);
+                [[fallthrough]];
             case 2:
                 SetParam(TextureParamName::WRAP_T, b);
+                [[fallthrough]];
             case 1:
                 SetParam(TextureParamName::WRAP_S, b);
+                break;
             default:;
         }
     }

@@ -262,6 +262,7 @@ namespace ImGui {
     }
 
     Q_IMGUI_EDITOR(EditTransform, Q Math::Transform2D& transform, float speed) {
+        (void)width;
         if (!TreeNode(title.Data())) return;
         EditVector    ("Position", transform.position, speed);
         EditVector    ("Scale",    transform.scale, speed);
@@ -270,6 +271,7 @@ namespace ImGui {
     }
 
     Q_IMGUI_EDITOR(EditTransform, Q Math::Transform3D& transform, float speed) {
+        (void)width;
         if (!TreeNode(title.Data())) return;
         EditVector    ("Position", transform.position, speed);
         EditVector    ("Scale",    transform.scale, speed);
@@ -357,6 +359,7 @@ namespace ImGui {
     }
 
     Q_IMGUI_EDITOR(EditLight, Q Graphics::Light& light) {
+        (void)width;
         Separator();
         if (!TreeNode(title.Data())) return;
 

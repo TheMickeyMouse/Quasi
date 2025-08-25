@@ -133,8 +133,8 @@ namespace Quasi::IO {
             case M_SUPER:     return LSUPER;
             case M_CAPS_LOCK: return CAPS_LOCK;
             case M_NUM_LOCK:  return NUM_LOCK;
+            default:          return UNKNOWN;
         }
-        return UNKNOWN;
     }
 
     KeyIndex KeyboardType::IndexFromModBits(ModifierKey mod) {
@@ -274,10 +274,8 @@ namespace Quasi::IO {
             SPECIAL_KEY_CASE(NON_US_1, "Non US 1");
             SPECIAL_KEY_CASE(NON_US_2, "Non US 2");
 
-            case UNKNOWN:
-            return "ERROR";
+            default: return "ERROR";
         }
-        return "ERROR";
 #undef BASIC_KEY_CASE
 #undef PS_KEY_CASE
 #undef SPECIAL_KEY_CASE

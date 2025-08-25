@@ -122,22 +122,19 @@ namespace Quasi::Math {
         using T = decltype(VecT {}.x);
 
         VecT points[3];
-        struct {
-            VecT p1, p2, p3;
-        };
-        struct {
+        struct Coords {
             T x1, y1, x2, y2, x3, y3;
-        };
+        } c;
 
-        Triangle(const VecT& a, const VecT& b, const VecT& c) : p1(a), p2(b), p3(c) {}
+        Triangle(const VecT& a, const VecT& b, const VecT& c) : points { a, b, c } {}
         Line<VecT> LineAt(u32 i) const { return { points[i], points[(i + 1) % 3] }; }
 
-        T DoubledSArea() const { return x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2); }
+        T DoubledSArea() const { return c.x1 * (c.y2 - c.y3) + c.x2 * (c.y3 - c.y1) + c.x3 * (c.y1 - c.y2); }
         T DoubledArea()  const { return std::abs(DoubledSArea()); }
         T SArea()        const { return DoubledSArea() / 2; }
         T Area()         const { return DoubledArea() / 2; }
 
-        VecT Centroid() const { return (p1 + p2 + p3) / (T)3; }
+        VecT Centroid() const { return (points[0] + points[1] + points[2]) / (T)3; }
         // VecT Incenter()     const;
         // VecT Circumcenter() const;
         // VecT Orthocenter()  const;
@@ -145,9 +142,9 @@ namespace Quasi::Math {
 
         fv3 Barycentric(const VecT& p) const {
             const auto [x, y] = p;
-            T det   =  (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
-            T lamb1 = ((y2 - y3) * (x  - x3) + (x3 - x2) * (y  - y3)) / det;
-            T lamb2 = ((y3 - y1) * (x  - x3) + (x1 - x3) * (y  - y3)) / det;
+            T det   =  (c.y2 - c.y3) * (c.x1 - c.x3) + (c.x3 - c.x2) * (c.y1 - c.y3);
+            T lamb1 = ((c.y2 - c.y3) * (x  - c.x3) + (c.x3 - c.x2) * (y  - c.y3)) / det;
+            T lamb2 = ((c.y3 - c.y1) * (x  - c.x3) + (c.x1 - c.x3) * (y  - c.y3)) / det;
             return { lamb1, lamb2, 1 - lamb1 - lamb2 };
         }
 
@@ -156,12 +153,12 @@ namespace Quasi::Math {
         }
 
         VecT FromBarycentric(const fv3& uvw) const {
-            return p1 * uvw.x + p2 * uvw.y + p3 * uvw.z;
+            return points[0] * uvw.x + points[1] * uvw.y + points[2] * uvw.z;
         }
 
         bool Contains(const VecT& p) const { return IsValidBary(Barycentric(p)); }
 
-        template <class V> operator Triangle<V>() const { return { (V)p1, (V)p2, (V)p3 }; }
+        template <class V> operator Triangle<V>() const { return { (V)points[0], (V)points[1], (V)points[2] }; }
     };
 
     template <class T = float> using Triangle2D = Triangle<Vec2<T>>;

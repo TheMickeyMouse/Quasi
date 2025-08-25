@@ -30,17 +30,22 @@ namespace Quasi::Graphics {
         void DrawQuad(const Math::fv2& p1, const Math::fv2& p2, const Math::fv2& p3, const Math::fv2& p4);
         void DrawSquare(const Math::fv2& center, float size);
         void DrawRect(const Math::fRect2D& rect);
+        void DrawRoundedSquare(const Math::fv2& center, float size, float radius);
+        void DrawVarRoundedSquare(const Math::fv2& center, float size, float tr, float br, float tl, float bl);
+        void DrawRoundedRect(const Math::fRect2D& rect, float radius);
+        void DrawVarRoundedRect(const Math::fRect2D& rect, float tr, float br, float tl, float bl);
         void DrawCircle(const Math::fv2& center, float radius);
         void DrawEllipse(const Math::fRect2D& bounds);
         void DrawArc(const Math::fv2& center, float radius, const Math::Rotor2D& startAngle, const Math::Rotor2D& endAngle, ArcDirection direction = CCW, ArcMode mode = OPEN);
         void DrawArcCCW(const Math::fv2& center, float radius, const Math::Rotor2D& startAngle, const Math::Rotor2D& endAngle, ArcMode mode = OPEN);
-        void DrawEllArc(const Math::fv2& center, const Math::fv2& size, float startAngle, float stopAngle, ArcMode mode = OPEN);
+        // void DrawEllArc(const Math::fv2& center, const Math::fv2& size, float startAngle, float stopAngle, ArcMode mode = OPEN);
         void DrawPoint(const Math::fv2& position);
         void DrawLine(const Math::fv2& start, const Math::fv2& end);
 
         struct Batch {
             Canvas& canvas;
             u32 iOffset;
+            UIVertex storedPoint;
 
             void PushV(UIVertex v);
             void ResizeV(u32) const {}
@@ -53,6 +58,16 @@ namespace Quasi::Graphics {
             void ReserveI(u32) const {}
             void PushI(u32 i, u32 j, u32 k);
             TriIndices* IndexData();
+
+            void SetColor(const Math::fColor& color);
+            void SetFill();
+            void SetStroke();
+            void Point(const Math::fv2& position);
+            void PointCirc(const Math::fv2& position, float u, float v, float radiusRatio = 0);
+            void Tri(u32 i, u32 j, u32 k);
+            void Quad(u32 i, u32 j, u32 k, u32 l);
+            void TriStrip(Span<const u32> strip);
+            void TriFan(Span<const u32> fan);
 
             void Refresh();
         };
@@ -82,7 +97,8 @@ namespace Quasi::Graphics {
         void DrawCircularArcCCW(const Math::fv2& center, const Math::Rotor2D& mid, Math::Rotor2D step, float radius, float thickness, const Math::fColor& color);
 
         void DrawSimpleRect(const Math::fRect2D& rect, const Math::fColor& color);
-        void DrawSimpleRoundedRect(const Math::fRect2D& inner, float radius, const Math::fColor& color);
+        void DrawSimpleRoundedRect(const Math::fRect2D& outer, float radius, const Math::fColor& color);
+        void DrawSimpleVarRoundRect(const Math::fRect2D& outer, float tr, float br, float tl, float bl, const Math::fColor& color);
         void DrawRectStroke(const Math::fRect2D& rect);
     public:
 

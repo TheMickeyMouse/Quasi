@@ -57,10 +57,11 @@ namespace Quasi::Graphics {
     void Canvas::DrawTriangle(const Math::fv2& p1, const Math::fv2& p2, const Math::fv2& p3) {
         if (NeedDrawFill()) {
             Batch batch = NewBatch();
-            batch.PushV(UIVertex { p1, 0, drawAttr.fillColor, 0 });
-            batch.PushV(UIVertex { p2, 0, drawAttr.fillColor, 0 });
-            batch.PushV(UIVertex { p3, 0, drawAttr.fillColor, 0 });
-            batch.PushI(0, 1, 2);
+            batch.SetFill();
+            batch.Point(p1);
+            batch.Point(p2);
+            batch.Point(p3);
+            batch.Tri(0, 1, 2);
         }
         if (NeedDrawStroke()) QWith$(p = Path(*this, CLOSED_CURVE)) {
             p.AddPoint(p1);
@@ -72,12 +73,11 @@ namespace Quasi::Graphics {
     void Canvas::DrawQuad(const Math::fv2& p1, const Math::fv2& p2, const Math::fv2& p3, const Math::fv2& p4) {
         if (NeedDrawFill()) {
             Batch batch = NewBatch();
-            batch.PushV(UIVertex { p1, 0, drawAttr.fillColor, 0 });
-            batch.PushV(UIVertex { p2, 0, drawAttr.fillColor, 0 });
-            batch.PushV(UIVertex { p3, 0, drawAttr.fillColor, 0 });
-            batch.PushV(UIVertex { p4, 0, drawAttr.fillColor, 0 });
-            batch.PushI(0, 1, 2);
-            batch.PushI(2, 1, 3);
+            batch.Point(p1);
+            batch.Point(p2);
+            batch.Point(p3);
+            batch.Point(p4);
+            batch.Quad(0, 1, 2, 3);
         }
         if (NeedDrawStroke()) QWith$(p = Path(*this, CLOSED_CURVE)) {
             p.AddPoint(p1);
@@ -97,6 +97,60 @@ namespace Quasi::Graphics {
         }
         if (NeedDrawStroke()) {
             DrawRectStroke(rect);
+        }
+    }
+
+    void Canvas::DrawRoundedSquare(const Math::fv2& center, float size, float radius) {
+        return DrawRoundedRect(Math::fRect2D::FromSize(center, size), radius);
+    }
+
+    void Canvas::DrawVarRoundedSquare(const Math::fv2& center, float size, float tr, float br, float tl, float bl) {
+        return DrawVarRoundedRect(Math::fRect2D::FromSize(center, size), tr, br, tl, bl);
+    }
+
+    void Canvas::DrawRoundedRect(const Math::fRect2D& rect, float radius) {
+        radius = std::min(radius, std::min(rect.Width(), rect.Height()) * 0.5f);
+        if (NeedDrawFill())
+            DrawSimpleRoundedRect(rect, radius, drawAttr.fillColor);
+        if (NeedDrawStroke()) {
+            const Math::fRect2D inner = rect.Inset(radius);
+            Batch batch = NewBatch();
+            batch.SetStroke();
+            const float r = drawAttr.strokeWeight;
+            // sides
+            batch.Point({ rect.max.x - r, inner.max.y });
+            batch.Point({ rect.max.x + r, inner.max.y });
+            batch.Point({ rect.max.x + r, inner.min.y });
+            batch.Point({ rect.max.x - r, inner.min.y });
+            batch.Quad(0, 1, 2, 3);
+            batch.Point({ rect.min.x + r, inner.max.y });
+            batch.Point({ rect.min.x - r, inner.max.y });
+            batch.Point({ rect.min.x - r, inner.min.y });
+            batch.Point({ rect.min.x + r, inner.min.y });
+            batch.Quad(4, 5, 6, 7);
+            batch.Point({ inner.max.x, rect.max.y - r });
+            batch.Point({ inner.max.x, rect.max.y + r });
+            batch.Point({ inner.min.x, rect.max.y + r });
+            batch.Point({ inner.min.x, rect.max.y - r });
+            batch.Quad(8, 9, 10, 11);
+            batch.Point({ inner.max.x, rect.min.y - r });
+            batch.Point({ inner.max.x, rect.min.y + r });
+            batch.Point({ inner.min.x, rect.min.y + r });
+            batch.Point({ inner.min.x, rect.min.y - r });
+            batch.Quad(12, 13, 14, 15);
+            // corners
+            DrawQuarterArc(inner.max,                    Math::Rotor2D::FromComplex({ +1, 0 }), radius, r, drawAttr.strokeColor);
+            DrawQuarterArc({ inner.max.x, inner.min.y }, Math::Rotor2D::FromComplex({ 0, -1 }), radius, r, drawAttr.strokeColor);
+            DrawQuarterArc({ inner.min.x, inner.max.y }, Math::Rotor2D::FromComplex({ 0, +1 }), radius, r, drawAttr.strokeColor);
+            DrawQuarterArc(inner.min,                    Math::Rotor2D::FromComplex({ -1, 0 }), radius, r, drawAttr.strokeColor);
+        }
+    }
+
+    void Canvas::DrawVarRoundedRect(const Math::fRect2D& rect, float tr, float br, float tl, float bl) {
+        if (NeedDrawFill())
+            DrawSimpleVarRoundRect(rect, tr, br, tl, bl, drawAttr.fillColor);
+        if (NeedDrawStroke()) {
+
         }
     }
 
@@ -125,8 +179,8 @@ namespace Quasi::Graphics {
         //     batch.PushV(UIVertex { { bounds.max.x, bounds.min.y }, 0, drawAttr.strokeColor, { +1, -1, inner, 0 }, UIRender::CIRCLE });
         //     batch.PushV(UIVertex { { bounds.min.x, bounds.max.y }, 0, drawAttr.strokeColor, { -1, +1, inner, 0 }, UIRender::CIRCLE });
         //     batch.PushV(UIVertex { bounds.max,                     0, drawAttr.strokeColor, { +1, +1, inner, 0 }, UIRender::CIRCLE });
-        //     batch.PushI(0, 1, 2);
-        //     batch.PushI(2, 0, 3);
+        //     batch.Tri(0, 1, 2);
+        //     batch.Tri(2, 0, 3);
         // }
     }
 
@@ -154,6 +208,7 @@ namespace Quasi::Graphics {
                     mode
                 );
             }
+            default:;
         }
     }
 
@@ -172,14 +227,15 @@ namespace Quasi::Graphics {
 
             if (mode != CHORD || isMajorArc) {
                 Batch batch = NewBatch();
-                batch.PushV({ center + start, 0, drawAttr.fillColor, 0 });
-                batch.PushV({ center + radius * endAngle.IHat(), 0, drawAttr.fillColor, 0 });
+                batch.SetFill();
+                batch.Point(center + start);
+                batch.Point(center + radius * endAngle.IHat());
                 if (mode == CHORD) {
-                    batch.PushV({ center - start, 0, drawAttr.fillColor, 0 });
+                    batch.Point(center - start);
                 } else {
-                    batch.PushV({ center, 0, drawAttr.fillColor, 0 });
+                    batch.Point(center);
                 }
-                batch.PushI(0, 1, 2);
+                batch.Tri(0, 1, 2);
             }
 
             if (isMajorArc) {
@@ -199,10 +255,10 @@ namespace Quasi::Graphics {
         }
     }
 
-    void Canvas::DrawEllArc(const Math::fv2& center, const Math::fv2& size, float startAngle, float stopAngle,
-                            ArcMode mode) {
-        // TODO
-    }
+    // void Canvas::DrawEllArc(const Math::fv2& center, const Math::fv2& size, float startAngle, float stopAngle,
+    //                         ArcMode mode) {
+    //     // TODO
+    // }
 
     void Canvas::DrawPoint(const Math::fv2& position) {
         if (NeedDrawStroke())
@@ -223,8 +279,53 @@ namespace Quasi::Graphics {
     UIVertex& Canvas::Batch::VertAt(u32 i) { return canvas.renderCanvas->vertexData.AsSpanMut().Transmute<UIVertex>()[i]; }
     const UIVertex& Canvas::Batch::VertAt(u32 i) const { return canvas.renderCanvas->vertexData.AsSpan().Transmute<UIVertex>()[i]; }
     u32 Canvas::Batch::VertCount() const { return canvas.renderCanvas->vertexOffset / sizeof(UIVertex) - iOffset; }
-    void Canvas::Batch::PushI(u32 i, u32 j, u32 k) { canvas.renderCanvas->PushIndex({ iOffset + i, iOffset + j, iOffset + k }); }
+    void Canvas::Batch::PushI(u32 i, u32 j, u32 k) { return Tri(i, j, k); }
     TriIndices* Canvas::Batch::IndexData() { return canvas.renderCanvas->indexData.AsSpanMut().Transmute<TriIndices>().Data(); }
+
+    void Canvas::Batch::SetColor(const Math::fColor& color) { storedPoint.Color = color; }
+    void Canvas::Batch::SetFill() { storedPoint.Color = canvas.drawAttr.fillColor; }
+    void Canvas::Batch::SetStroke() { storedPoint.Color = canvas.drawAttr.strokeColor; }
+
+    void Canvas::Batch::Point(const Math::fv2& position) {
+        storedPoint.Position = canvas.TransformToWorldSpace(position);
+        storedPoint.RenderPrim = UIRender::PLAIN;
+        canvas.renderCanvas->PushVertex(storedPoint);
+    }
+
+    void Canvas::Batch::PointCirc(const Math::fv2& position, float u, float v, float radiusRatio) {
+        storedPoint.Position = canvas.TransformToWorldSpace(position);
+        storedPoint.STUV = { u, v, radiusRatio, 0 };
+        storedPoint.RenderPrim = UIRender::CIRCLE;
+        canvas.renderCanvas->PushVertex(storedPoint);
+    }
+
+    void Canvas::Batch::Tri(u32 i, u32 j, u32 k) {
+        canvas.renderCanvas->PushIndex({ iOffset + i, iOffset + j, iOffset + k });
+    }
+    void Canvas::Batch::Quad(u32 i, u32 j, u32 k, u32 l) {
+        canvas.renderCanvas->PushIndex({ iOffset + i, iOffset + j, iOffset + l });
+        canvas.renderCanvas->PushIndex({ iOffset + j, iOffset + k, iOffset + l });
+    }
+
+    void Canvas::Batch::TriStrip(Span<const u32> strip) {
+        u32 tri[3] = { iOffset + strip[0], 0, iOffset + strip[1] };
+        for (u32 i = 2; i < strip.Length(); ++i) {
+            tri[1 ^ (i & 1)] = tri[2];
+            tri[2] = iOffset + strip[i];
+            canvas.renderCanvas->PushIndex({ tri[0], tri[1], tri[2] });
+        }
+    }
+
+    void Canvas::Batch::TriFan(Span<const u32> fan) {
+        const u32 center = iOffset + fan[0];
+        u32 a = iOffset + fan[1];
+        for (u32 i = 2; i < fan.Length(); ++i) {
+            const u32 b = iOffset + fan[i];
+            canvas.renderCanvas->PushIndex({ center, a, b });
+            a = b;
+        }
+    }
+
     void Canvas::Batch::Refresh() { iOffset = canvas.renderCanvas->vertexOffset / sizeof(UIVertex); }
 
     Canvas::Batch Canvas::NewBatch() {
@@ -233,36 +334,44 @@ namespace Quasi::Graphics {
 
     void Canvas::DrawSimpleLine(const Math::fv2& start, const Math::fv2& end, const Math::fv2& tangent) {
         Batch batch = NewBatch();
+        batch.SetStroke();
         const Math::fv2 normal = tangent.Perpend() * drawAttr.strokeWeight;
-        batch.PushV(UIVertex { start + normal, 0, drawAttr.strokeColor, 0 });
-        batch.PushV(UIVertex { start - normal, 0, drawAttr.strokeColor, 0 });
-        batch.PushV(UIVertex { end   - normal, 0, drawAttr.strokeColor, 0 });
-        batch.PushV(UIVertex { end   + normal, 0, drawAttr.strokeColor, 0 });
-        batch.PushI(0, 1, 2);
-        batch.PushI(2, 0, 3);
+        batch.Point(start + normal);
+        batch.Point(end   + normal);
+        batch.Point(end   - normal);
+        batch.Point(start - normal);
+        batch.Quad(0, 1, 2, 3);
     }
 
     void Canvas::DrawLineCap(const Math::fv2& point, const Math::fv2& tangent) {
         Batch batch = NewBatch();
+        batch.SetStroke();
         // no need to draw flat caps: theyre done by default
         switch (drawAttr.drawStyle & UIRender::CAP_MASK) {
             case UIRender::ROUND_CAP: {
                 const Math::fv2 tangentR2 = tangent * (Math::ROOT_2 * drawAttr.strokeWeight), normalR2 = tangentR2.Perpend();
-                batch.PushV(UIVertex { point - tangentR2, 0, drawAttr.strokeColor, { +1, +1, 0, 0 }, UIRender::CIRCLE });
-                batch.PushV(UIVertex { point + normalR2,  0, drawAttr.strokeColor, { -1, +1, 0, 0 }, UIRender::CIRCLE });
-                batch.PushV(UIVertex { point - normalR2,  0, drawAttr.strokeColor, { +1, -1, 0, 0 }, UIRender::CIRCLE });
-                batch.PushI(0, 1, 2);
+                batch.PointCirc(point - tangentR2, +1, +1);
+                batch.PointCirc(point + normalR2,  -1, +1);
+                batch.PointCirc(point - normalR2,  +1, -1);
+                batch.Tri(0, 1, 2);
                 break;
             }
             case UIRender::SQUARE_CAP:  {
                 const Math::fv2 t = tangent * drawAttr.strokeWeight;
                 const Math::fv2 normal = t.Perpend(), left = point + normal, right = point - normal;
-                batch.PushV(UIVertex { left,      0, drawAttr.strokeColor, 0 });
-                batch.PushV(UIVertex { left  - t, 0, drawAttr.strokeColor, 0 });
-                batch.PushV(UIVertex { right - t, 0, drawAttr.strokeColor, 0 });
-                batch.PushV(UIVertex { right,     0, drawAttr.strokeColor, 0 });
-                batch.PushI(0, 1, 2);
-                batch.PushI(2, 0, 3);
+                batch.Point(left);
+                batch.Point(right);
+                batch.Point(right - t);
+                batch.Point(left  - t);
+                batch.Quad(0, 1, 2, 3);
+                break;
+            }
+            case UIRender::ARROW_CAP: {
+                const Math::fv2 tangentR2 = tangent * (2 * drawAttr.strokeWeight), normalR2 = tangentR2.Perpend();
+                batch.Point(point - tangentR2);
+                batch.Point(point + normalR2);
+                batch.Point(point - normalR2);
+                batch.Tri(0, 1, 2);
                 break;
             }
             default:;
@@ -277,12 +386,13 @@ namespace Quasi::Graphics {
         // when cos : [0,1], angle is small, join is minor arc
         // when cos : [-1,0], angle is large, join is major arc
         Batch batch = NewBatch();
+        batch.SetStroke();
 
         // bevel joint by default. all joints use this
-        batch.PushV(UIVertex { point, 0, drawAttr.strokeColor, 0 });
-        batch.PushV(UIVertex { point + normal1, 0, drawAttr.strokeColor, 0 });
-        batch.PushV(UIVertex { point + normal2, 0, drawAttr.strokeColor, 0 });
-        batch.PushI(0, 1, 2);
+        batch.Point(point);
+        batch.Point(point + normal1);
+        batch.Point(point + normal2);
+        batch.Tri(0, 1, 2);
 
         switch (drawAttr.drawStyle & UIRender::JOIN_MASK) {
             case UIRender::ROUND_JOIN: {
@@ -299,8 +409,8 @@ namespace Quasi::Graphics {
                 if (cos > -0.9375f) { // miter join will be too large - only render it when cos is reasonable
                     const float h = (cos - 1) / sin;
                     const Math::fv2 outward = (left ? -drawAttr.strokeWeight : drawAttr.strokeWeight) * tangent1.ComplexMul(h, 1);
-                    batch.PushV(UIVertex { point + outward, 0, drawAttr.strokeColor, 0 });
-                    batch.PushI(1, 3, 2);
+                    batch.Point(point + outward);
+                    batch.Tri(1, 3, 2);
                 }
                 break;
             }
@@ -333,75 +443,80 @@ namespace Quasi::Graphics {
         // ...
         // shut up
         Batch batch = NewBatch();
-        batch.PushV(UIVertex { center + forward * vert,                  0, color, { vert,     0, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { center + forward.ComplexMul(cos, +horiz), 0, color, { cos, +horiz, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { center + forward.ComplexMul(cos, -horiz), 0, color, { cos, -horiz, 0, 0 }, UIRender::CIRCLE });
-        batch.PushI(0, 1, 2);
+        batch.SetColor(color);
+        batch.PointCirc(center + forward * vert,                  vert,     0);
+        batch.PointCirc(center + forward.ComplexMul(cos, +horiz), cos, +horiz);
+        batch.PointCirc(center + forward.ComplexMul(cos, -horiz), cos, -horiz);
+        batch.Tri(0, 1, 2);
     }
 
     void Canvas::DrawHalfCircle(const Math::fv2& center, const Math::fv2& forward, const Math::fColor& color) {
         Batch batch = NewBatch();
         static constexpr float R2 = Math::ROOT_2;
         const Math::fv2 f = R2 * forward;
-        batch.PushV(UIVertex { center + f,                0, color, { +R2, 0, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { center + f.PerpendLeft(),  0, color, { 0, +R2, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { center + f.PerpendRight(), 0, color, { 0, -R2, 0, 0 }, UIRender::CIRCLE });
-        batch.PushI(0, 1, 2);
+        batch.SetColor(color);
+        batch.PointCirc(center + f,                +R2, 0);
+        batch.PointCirc(center + f.PerpendLeft(),  0, +R2);
+        batch.PointCirc(center + f.PerpendRight(), 0, -R2);
+        batch.Tri(0, 1, 2);
     }
 
     void Canvas::DrawSimpleCircle(const Math::fv2& center, float radius, const Math::fColor& color) {
         Batch batch = NewBatch();
         static constexpr float R2 = Math::ROOT_2;
         const float diagonal = R2 * radius;
-        batch.PushV(UIVertex { { center.x + diagonal, center.y }, 0, color, { +R2, 0, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { center.x, center.y + diagonal }, 0, color, { 0, +R2, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { center.x - diagonal, center.y }, 0, color, { -R2, 0, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { center.x, center.y - diagonal }, 0, color, { 0, -R2, 0, 0 }, UIRender::CIRCLE });
-        batch.PushI(0, 1, 2);
-        batch.PushI(2, 0, 3);
+        batch.SetColor(color);
+        batch.PointCirc({ center.x + diagonal, center.y }, +R2, 0);
+        batch.PointCirc({ center.x, center.y + diagonal }, 0, +R2);
+        batch.PointCirc({ center.x - diagonal, center.y }, -R2, 0);
+        batch.PointCirc({ center.x, center.y - diagonal }, 0, -R2);
+        batch.Quad(0, 1, 2, 3);
     }
 
     void Canvas::DrawQuarterChord(const Math::fv2& center, const Math::fv2& rightMostSide, const Math::fColor& color) {
         Batch batch = NewBatch();
         const Math::fv2 leftMostSide = rightMostSide.PerpendLeft(), right = center + rightMostSide;
-        batch.PushV(UIVertex { right,                 0, color, { 1, 0, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { center + leftMostSide, 0, color, { 0, 1, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { right  + leftMostSide, 0, color, { 1, 1, 0, 0 }, UIRender::CIRCLE });
-        batch.PushI(0, 1, 2);
+        batch.SetColor(color);
+        batch.PointCirc(right,                 1, 0);
+        batch.PointCirc(center + leftMostSide, 0, 1);
+        batch.PointCirc(right  + leftMostSide, 1, 1);
+        batch.Tri(0, 1, 2);
     }
 
     void Canvas::DrawSimpleEllipse(const Math::fv2& center, const Math::fv2& radii, const Math::fColor& color) {
         Batch batch = NewBatch();
-        batch.PushV(UIVertex { { center.x - radii.x, center.y - radii.y }, 0, color, { -1, -1, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { center.x + radii.x, center.y - radii.y }, 0, color, { +1, -1, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { center.x - radii.x, center.y + radii.y }, 0, color, { -1, +1, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { center.x + radii.x, center.y + radii.y }, 0, color, { +1, +1, 0, 0 }, UIRender::CIRCLE });
-        batch.PushI(0, 1, 2);
-        batch.PushI(2, 1, 3);
+        batch.SetColor(color);
+        batch.PointCirc({ center.x - radii.x, center.y - radii.y }, -1, -1);
+        batch.PointCirc({ center.x + radii.x, center.y - radii.y }, +1, -1);
+        batch.PointCirc({ center.x + radii.x, center.y + radii.y }, +1, +1);
+        batch.PointCirc({ center.x - radii.x, center.y + radii.y }, -1, +1);
+        batch.Quad(0, 1, 2, 3);
     }
 
     void Canvas::DrawSimpleEllipse(const Math::fRect2D& bounds, const Math::fColor& color) {
         Batch batch = NewBatch();
-        batch.PushV(UIVertex { { bounds.min.x, bounds.min.y }, 0, color, { -1, -1, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { bounds.max.x, bounds.min.y }, 0, color, { +1, -1, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { bounds.min.x, bounds.max.y }, 0, color, { -1, +1, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { bounds.max.x, bounds.max.y }, 0, color, { +1, +1, 0, 0 }, UIRender::CIRCLE });
-        batch.PushI(0, 1, 2);
-        batch.PushI(2, 1, 3);
+        batch.SetColor(color);
+        batch.PointCirc({ bounds.min.x, bounds.min.y }, -1, -1);
+        batch.PointCirc({ bounds.max.x, bounds.min.y }, +1, -1);
+        batch.PointCirc({ bounds.min.x, bounds.max.y }, -1, +1);
+        batch.PointCirc({ bounds.max.x, bounds.max.y }, +1, +1);
+        batch.Quad(0, 1, 2, 3);
     }
 
     void Canvas::DrawCircleOutline(const Math::fv2& center, float radius, float thickness, const Math::fColor& color) {
         Batch batch = NewBatch();
-        static constexpr float R2 = Math::ROOT_2;
-        const float diagonal = R2 * (radius + thickness);
-        float inner = (radius - thickness) / (radius + thickness);
-        inner *= inner;
-        batch.PushV(UIVertex { { center.x + diagonal, center.y }, 0, color, { +R2, 0, inner, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { center.x, center.y + diagonal }, 0, color, { 0, +R2, inner, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { center.x - diagonal, center.y }, 0, color, { -R2, 0, inner, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { center.x, center.y - diagonal }, 0, color, { 0, -R2, inner, 0 }, UIRender::CIRCLE });
-        batch.PushI(0, 1, 2);
-        batch.PushI(2, 0, 3);
+        const float innerRadius = radius - thickness, outerRadius = (radius + thickness) * Math::ROOT_2,
+                    innerUV = innerRadius / (radius + thickness), innerSq = innerUV * innerUV;
+        batch.SetColor(color);
+        batch.PointCirc({ center.x + innerRadius, center.y }, +innerUV,      0, innerSq);
+        batch.PointCirc({ center.x + outerRadius, center.y }, +Math::ROOT_2, 0, innerSq);
+        batch.PointCirc({ center.x, center.y + innerRadius }, 0, +innerUV,      innerSq);
+        batch.PointCirc({ center.x, center.y + outerRadius }, 0, +Math::ROOT_2, innerSq);
+        batch.PointCirc({ center.x - innerRadius, center.y }, -innerUV,      0, innerSq);
+        batch.PointCirc({ center.x - outerRadius, center.y }, -Math::ROOT_2, 0, innerSq);
+        batch.PointCirc({ center.x, center.y - innerRadius }, 0, -innerUV,      innerSq);
+        batch.PointCirc({ center.x, center.y - outerRadius }, 0, -Math::ROOT_2, innerSq);
+        batch.TriStrip({{ 0, 1, 2, 3, 4, 5, 6, 7, 0, 1 }});
     }
 
     void Canvas::DrawQuarterArc(const Math::fv2& center, const Math::Rotor2D& start, float radius, float thickness, const Math::fColor& color) {
@@ -410,12 +525,12 @@ namespace Quasi::Graphics {
         Batch batch = NewBatch();
         const Math::fv2 innerForward = start.IHat() * innerRadius,
                         outerForward = start.IHat() * (Math::ROOT_2 * (radius + thickness));
-        batch.PushV({ center + innerForward,               0, color, { innerUV, 0, innerSq, 0 }, UIRender::CIRCLE });
-        batch.PushV({ center + innerForward.PerpendLeft(), 0, color, { 0, innerUV, innerSq, 0 }, UIRender::CIRCLE });
-        batch.PushV({ center + outerForward,               0, color, { Math::ROOT_2, 0, innerSq, 0 }, UIRender::CIRCLE });
-        batch.PushV({ center + outerForward.PerpendLeft(), 0, color, { 0, Math::ROOT_2, innerSq, 0 }, UIRender::CIRCLE });
-        batch.PushI(0, 1, 2);
-        batch.PushI(2, 1, 3);
+        batch.SetColor(color);
+        batch.PointCirc(center + innerForward,               innerUV, 0, innerSq);
+        batch.PointCirc(center + innerForward.PerpendLeft(), 0, innerUV, innerSq);
+        batch.PointCirc(center + outerForward.PerpendLeft(), 0, Math::ROOT_2, innerSq);
+        batch.PointCirc(center + outerForward,               Math::ROOT_2, 0, innerSq);
+        batch.Quad(0, 1, 2, 3);
     }
 
     void Canvas::DrawCircularArcCCW(const Math::fv2& center, const Math::Rotor2D& mid, Math::Rotor2D step, float radius, float thickness, const Math::fColor& color) {
@@ -428,66 +543,82 @@ namespace Quasi::Graphics {
         const float secant = Math::ROOT_2 / std::sqrt(1 + step.Cos()), outerRadius = secant * (radius + thickness),
                     innerUV = innerRadius / (radius + thickness), innerSq = innerUV * innerUV;
         Batch batch = NewBatch();
+        batch.SetColor(color);
         Math::fv2 fwd = mid.IHat();
-        batch.PushV({ center + fwd * innerRadius, 0, color, { innerUV, 0, innerSq, 0 }, UIRender::CIRCLE });
-        batch.PushV({ center + fwd * outerRadius, 0, color, { secant,  0, innerSq, 0 }, UIRender::CIRCLE });
+        batch.PointCirc(center + fwd * innerRadius, innerUV, 0, innerSq);
+        batch.PointCirc(center + fwd * outerRadius, secant,  0, innerSq);
         fwd = fwd.RotateBy(step);
         const Math::fv2 iUV = step.IHat() * innerUV, sUV = step.IHat() * secant;
-        batch.PushV({ center + fwd * innerRadius, 0, color, { iUV.x, iUV.y, innerSq, 0 }, UIRender::CIRCLE });
-        batch.PushV({ center + fwd * outerRadius, 0, color, { sUV.x, sUV.y, innerSq, 0 }, UIRender::CIRCLE });
+        batch.PointCirc(center + fwd * innerRadius, iUV.x, iUV.y, innerSq);
+        batch.PointCirc(center + fwd * outerRadius, sUV.x, sUV.y, innerSq);
         fwd = step.InvRotate(mid.IHat());
-        batch.PushV({ center + fwd * innerRadius, 0, color, { iUV.x, -iUV.y, innerSq, 0 }, UIRender::CIRCLE });
-        batch.PushV({ center + fwd * outerRadius, 0, color, { sUV.x, -sUV.y, innerSq, 0 }, UIRender::CIRCLE });
-        batch.PushI(0, 1, 2); batch.PushI(2, 1, 3);
-        batch.PushI(0, 5, 1); batch.PushI(5, 0, 4);
+        batch.PointCirc(center + fwd * innerRadius, iUV.x, -iUV.y, innerSq);
+        batch.PointCirc(center + fwd * outerRadius, sUV.x, -sUV.y, innerSq);
+        batch.Quad(0, 1, 3, 2);
+        batch.Quad(1, 0, 4, 5);
     }
 
     void Canvas::DrawSimpleRect(const Math::fRect2D& rect, const Math::fColor& color) {
         Batch batch = NewBatch();
-        batch.PushV(UIVertex { rect.Corner({ false, false }), 0, color, 0 });
-        batch.PushV(UIVertex { rect.Corner({ false, true  }), 0, color, 0 });
-        batch.PushV(UIVertex { rect.Corner({ true,  false }), 0, color, 0 });
-        batch.PushV(UIVertex { rect.Corner({ true,  true  }), 0, color, 0 });
-        batch.PushI(0, 1, 2);
-        batch.PushI(2, 1, 3);
+        batch.SetColor(color);
+        batch.Point(rect.TopRight());
+        batch.Point(rect.TopLeft());
+        batch.Point(rect.BottomLeft());
+        batch.Point(rect.BottomRight());
+        batch.Quad(0, 1, 2, 3);
     }
 
-    void Canvas::DrawSimpleRoundedRect(const Math::fRect2D& inner, float radius, const Math::fColor& color) {
-        const Math::fRect2D outer = inner.Extrude(radius);
+    void Canvas::DrawSimpleRoundedRect(const Math::fRect2D& outer, float radius, const Math::fColor& color) {
+        const Math::fRect2D inner = outer.Inset(radius);
 
         Batch batch = NewBatch();
-        batch.PushV(UIVertex { { inner.min.x, outer.min.y }, 0, color, { 1, 0, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { outer.min.x, inner.min.y }, 0, color, { 0, 1, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { outer.min.x, outer.min.y }, 0, color, { 1, 1, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { inner.max.x, outer.min.y }, 0, color, { 1, 0, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { outer.max.x, inner.min.y }, 0, color, { 0, 1, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { outer.max.x, outer.min.y }, 0, color, { 1, 1, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { inner.min.x, outer.max.y }, 0, color, { 1, 0, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { outer.min.x, inner.max.y }, 0, color, { 0, 1, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { outer.min.x, outer.max.y }, 0, color, { 1, 1, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { inner.max.x, outer.max.y }, 0, color, { 1, 0, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { outer.max.x, inner.max.y }, 0, color, { 0, 1, 0, 0 }, UIRender::CIRCLE });
-        batch.PushV(UIVertex { { outer.max.x, outer.max.y }, 0, color, { 1, 1, 0, 0 }, UIRender::CIRCLE });
-        batch.PushI(0, 1, 2); batch.PushI(3, 4, 5); batch.PushI(6, 7, 8); batch.PushI(9, 10, 11);
+        batch.SetColor(color);
+        batch.PointCirc({ inner.min.x, outer.min.y }, 1, 0);
+        batch.PointCirc({ outer.min.x, inner.min.y }, 0, 1);
+        batch.PointCirc({ outer.min.x, outer.min.y }, 1, 1);
+        batch.PointCirc({ inner.max.x, outer.min.y }, 1, 0);
+        batch.PointCirc({ outer.max.x, inner.min.y }, 0, 1);
+        batch.PointCirc({ outer.max.x, outer.min.y }, 1, 1);
+        batch.PointCirc({ inner.min.x, outer.max.y }, 1, 0);
+        batch.PointCirc({ outer.min.x, inner.max.y }, 0, 1);
+        batch.PointCirc({ outer.min.x, outer.max.y }, 1, 1);
+        batch.PointCirc({ inner.max.x, outer.max.y }, 1, 0);
+        batch.PointCirc({ outer.max.x, inner.max.y }, 0, 1);
+        batch.PointCirc({ outer.max.x, outer.max.y }, 1, 1);
+        batch.Tri(0, 1, 2); batch.Tri(3, 4, 5); batch.Tri(6, 7, 8); batch.Tri(9, 10, 11);
 
-        batch.PushV(UIVertex { { inner.min.x, outer.min.y }, 0, color, 0 });
-        batch.PushV(UIVertex { { inner.max.x, outer.min.y }, 0, color, 0 });
-        batch.PushV(UIVertex { { outer.min.x, inner.min.y }, 0, color, 0 });
-        batch.PushV(UIVertex { { outer.max.x, inner.min.y }, 0, color, 0 });
-        batch.PushV(UIVertex { { outer.min.x, inner.max.y }, 0, color, 0 });
-        batch.PushV(UIVertex { { outer.max.x, inner.max.y }, 0, color, 0 });
-        batch.PushV(UIVertex { { inner.min.x, outer.max.y }, 0, color, 0 });
-        batch.PushV(UIVertex { { inner.min.x, outer.max.y }, 0, color, 0 });
-        batch.PushI(12, 13, 14); batch.PushI(14, 13, 15);
-        batch.PushI(14, 15, 16); batch.PushI(16, 15, 17);
-        batch.PushI(16, 17, 18); batch.PushI(18, 17, 19);
+        batch.Point({ inner.min.x, outer.min.y });
+        batch.Point({ inner.max.x, outer.min.y });
+        batch.Point({ outer.min.x, inner.min.y });
+        batch.Point({ outer.max.x, inner.min.y });
+        batch.Point({ outer.min.x, inner.max.y });
+        batch.Point({ outer.max.x, inner.max.y });
+        batch.Point({ inner.min.x, outer.max.y });
+        batch.Point({ inner.max.x, outer.max.y });
+        batch.TriStrip({{ 12, 13, 14, 15, 16, 17, 18, 19 }});
     }
+
+    void Canvas::DrawSimpleVarRoundRect(const Math::fRect2D& outer, float tr, float br, float tl, float bl, const Math::fColor& color) {
+        const Math::fv2 TR = outer.max - tr,
+                        TL = { outer.min.x + tl, outer.max.y - tl },
+                        BR = { outer.max.x - br, outer.min.y + br },
+                        BL = outer.min + bl;
+        Batch batch = NewBatch();
+        batch.SetColor(color);
+        batch.Point(TR);
+        batch.Point(TL);
+        batch.Point(BR);
+        batch.Point(BL);
+
+    }
+
 
     void Canvas::DrawRectStroke(const Math::fRect2D& rect) {
         const Math::fRect2D outer = rect.Extrude(drawAttr.strokeWeight),
                             inner = rect.Inset(drawAttr.strokeWeight);
 
         Batch batch = NewBatch();
+        batch.SetStroke();
         switch (drawAttr.drawStyle & UIRender::JOIN_MASK) {
             case UIRender::ROUND_JOIN:
                 // just add the corners, the rest will be done by BEVEL_JOIN
@@ -499,57 +630,42 @@ namespace Quasi::Graphics {
                 [[fallthrough]];
             case UIRender::BEVEL_JOIN: {
                 /*
-                 *     E          G
-                 *   J              L
-                 *        F    H
+                 *     C          B
+                 *   E              L
+                 *        D    A
                  *
-                 *        B    D
-                 *   I              K
-                 *     A          C
+                 *        H    I
+                 *   F              K
+                 *     G          J
                  */
-                // top and bottom rows
-                batch.PushV({ { rect.min.x,  outer.min.y }, 0, drawAttr.strokeColor, 0 });
-                batch.PushV({ { inner.min.x, inner.min.y }, 0, drawAttr.strokeColor, 0 });
-                batch.PushV({ { rect.max.x,  outer.min.y }, 0, drawAttr.strokeColor, 0 });
-                batch.PushV({ { inner.max.x, inner.min.y }, 0, drawAttr.strokeColor, 0 });
-                batch.PushI(0, 1, 2); batch.PushI(2, 1, 3); // ABCD
-
-                batch.PushV({ { rect.min.x,  outer.max.y }, 0, drawAttr.strokeColor, 0 });
-                batch.PushV({ { inner.min.x, inner.max.y }, 0, drawAttr.strokeColor, 0 });
-                batch.PushV({ { rect.max.x,  outer.max.y }, 0, drawAttr.strokeColor, 0 });
-                batch.PushV({ { inner.max.x, inner.max.y }, 0, drawAttr.strokeColor, 0 });
-                batch.PushI(4, 5, 6); batch.PushI(6, 5, 7); // EFGH
-
-                batch.PushV({ { outer.min.x, rect.min.y }, 0, drawAttr.strokeColor, 0 });
-                batch.PushV({ { outer.min.x, rect.max.y }, 0, drawAttr.strokeColor, 0 });
-                batch.PushV({ { outer.max.x, rect.min.y }, 0, drawAttr.strokeColor, 0 });
-                batch.PushV({ { outer.max.x, rect.max.y }, 0, drawAttr.strokeColor, 0 });
-                batch.PushI(0, 8, 1); batch.PushI(8, 9, 1);
-                batch.PushI(9, 5, 1); batch.PushI(9, 4, 5); // AIB IJB JFB JEF
-                batch.PushI(3, 10, 2); batch.PushI(3, 11, 10);
-                batch.PushI(3, 7, 11); batch.PushI(7, 6, 11); // DKC DLK DHL HGL
+                batch.Point({ inner.max.x, inner.max.y });
+                batch.Point({ rect.max.x,  outer.max.y });
+                batch.Point({ rect.min.x,  outer.max.y });
+                batch.Point({ inner.min.x, inner.max.y });
+                batch.Point({ outer.min.x, rect.max.y  });
+                batch.Point({ outer.min.x, rect.min.y  });
+                batch.Point({ rect.min.x,  outer.min.y });
+                batch.Point({ inner.min.x, inner.min.y });
+                batch.Point({ inner.max.x, inner.min.y });
+                batch.Point({ rect.max.x,  outer.min.y });
+                batch.Point({ outer.max.x, rect.min.y  });
+                batch.Point({ outer.max.x, rect.max.y  });
+                batch.Quad(0, 1, 2, 3); // ABCD
+                batch.TriFan({{ 2, 4, 5, 6, 7, 3 }}); // C, EFGHD
+                batch.Quad(6, 9, 8, 7); // GJIH
+                batch.TriFan({{ 9, 10, 11, 1, 0, 8 }}); // J, KLBAI
                 break;
             }
             case UIRender::MITER_JOIN: {
-                // top and bottom rows
-                batch.PushV({ { inner.min.x, outer.min.y }, 0, drawAttr.strokeColor, 0 });
-                batch.PushV({ { inner.min.x, inner.min.y }, 0, drawAttr.strokeColor, 0 });
-                batch.PushV({ { inner.max.x, outer.min.y }, 0, drawAttr.strokeColor, 0 });
-                batch.PushV({ { inner.max.x, inner.min.y }, 0, drawAttr.strokeColor, 0 });
-                batch.PushI(0, 1, 2); batch.PushI(2, 1, 3);
-
-                batch.PushV({ { inner.min.x, outer.max.y }, 0, drawAttr.strokeColor, 0 });
-                batch.PushV({ { inner.min.x, inner.max.y }, 0, drawAttr.strokeColor, 0 });
-                batch.PushV({ { inner.max.x, outer.max.y }, 0, drawAttr.strokeColor, 0 });
-                batch.PushV({ { inner.max.x, inner.max.y }, 0, drawAttr.strokeColor, 0 });
-                batch.PushI(4, 5, 6); batch.PushI(6, 5, 7);
-
-                batch.PushV({ outer.min,                    0, drawAttr.strokeColor, 0 }); // 8
-                batch.PushV({ { outer.max.x, outer.min.y }, 0, drawAttr.strokeColor, 0 }); // 9
-                batch.PushV({ { outer.min.x, outer.max.y }, 0, drawAttr.strokeColor, 0 }); // 10
-                batch.PushV({ outer.max,                    0, drawAttr.strokeColor, 0 }); // 11
-                batch.PushI(0, 10, 8); batch.PushI(0, 4, 10);
-                batch.PushI(2, 9, 11); batch.PushI(2, 11, 6);
+                batch.Point(outer.BottomLeft());
+                batch.Point(inner.BottomLeft());
+                batch.Point(outer.TopLeft());
+                batch.Point(inner.TopLeft());
+                batch.Point(outer.TopRight());
+                batch.Point(inner.TopRight());
+                batch.Point(outer.BottomRight());
+                batch.Point(inner.BottomRight());
+                batch.TriStrip({{ 0, 1, 2, 3, 4, 5, 6, 7, 0, 1 }});
                 break;
             }
             default:;

@@ -172,8 +172,8 @@ namespace Quasi::Graphics {
                       UNIF_TEXTURE_LOD = 1,
                       UNIF_INTENSITY = 0;
 
-        upsample.BindImageTexture(SLOT_INPUT, 0, true, true);
-        downsample.BindImageTexture(SLOT_OUTPUT, 0, true, true);
+        upsample.BindImageTexture(SLOT_INPUT, 0, Access::READ);
+        downsample.BindImageTexture(SLOT_OUTPUT, 0, Access::WRITE);
         highPass.Bind();
         GL::Uniform1f(UNIF_THRESHOLD, threshold);
         GL::Uniform1f(UNIF_KNEEOFF, kneeOff);
@@ -185,7 +185,7 @@ namespace Quasi::Graphics {
         downsample.Activate(15);
         GL::Uniform1i(UNIF_INPUT_TEXTURE, 15);
         for (int i = 1; i <= 6; ++i) {
-            downsample.BindImageTexture(SLOT_OUTPUT, i, false, true);
+            downsample.BindImageTexture(SLOT_OUTPUT, i, Access::WRITE);
             GL::Uniform1f(UNIF_TEXTURE_LOD, (float)(i - 1));
             downsampler.ExecuteCompute(screenDim.x >> i, screenDim.y >> i);
 
@@ -195,7 +195,7 @@ namespace Quasi::Graphics {
         upsampler.Bind();
         GL::Uniform1i(UNIF_INPUT_TEXTURE, 15);
         for (int i = 6; i --> 0;) {
-            downsample.BindImageTexture(SLOT_OUTPUT, i);
+            downsample.BindImageTexture(SLOT_OUTPUT, i, Access::WRITE);
             GL::Uniform1f(UNIF_TEXTURE_LOD, (float)(i + 1));
             // downsample.BindImageTexture(SLOT_INPUT, i + 1);
             upsampler.ExecuteCompute(screenDim.x >> i, screenDim.y >> i);
@@ -205,8 +205,8 @@ namespace Quasi::Graphics {
 
         addBack.Bind();
         GL::Uniform1f(UNIF_INTENSITY, intensity);
-        upsample.BindImageTexture(SLOT_OUTPUT);
-        downsample.BindImageTexture(SLOT_INPUT);
+        upsample.BindImageTexture(SLOT_OUTPUT, 0, Access::WRITE);
+        downsample.BindImageTexture(SLOT_INPUT, 0, Access::READ);
         addBack.ExecuteCompute(screenDim.x, screenDim.y);
 
         Render::MemoryBarrier(MemBarrier::SHADER_IMAGE_ACCESS);

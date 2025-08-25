@@ -151,6 +151,7 @@ namespace Quasi::Text {
 
     RichString RichString::ParseHtml(Str html) {
         // TODO: add plz
+        (void)html;
         return {};
     }
 
@@ -180,7 +181,7 @@ namespace Quasi::Text {
         switch (s->byteEncodingSize) {
             case 0: {
                 const u32 i = s.Ord() / 2;
-                styleFlags = (byte)(styleFlags & ~(1 << i) | (s->isOn << i));
+                styleFlags = (byte)((styleFlags & ~(1 << i)) | (s->isOn << i));
             }
             return;
             case 1: Qmatch$ (s, (

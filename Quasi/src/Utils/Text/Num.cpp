@@ -147,7 +147,7 @@ namespace Quasi::Text {
             digs = (digs * 0x80'40'20'10'08'04'02'01) >> 56;
             n = (n << 8) + digs;
             return true;
-        }, bits, true, 2);
+        }, bits, 2);
     }
 
     OptionUsize NumberConversion::ParseDecimalInt(Str string, Out<u64&> out, u32 bits) {
@@ -157,7 +157,7 @@ namespace Quasi::Text {
             digs = ParseDigits4(digs);
             n = n * 10'000 + digs;
             return true;
-        }, bits * Math::INV_LOG10_2_MUL >> 16, false, 10);
+        }, bits * Math::INV_LOG10_2_MUL >> 16, 10);
     }
 
     OptionUsize NumberConversion::ParseHexInt(Str string, Out<u64&> out, u32 bits) {
@@ -167,7 +167,7 @@ namespace Quasi::Text {
             digs = ParseHexDigits4(digs);
             n = (n << 16) + digs;
             return true;
-        }, bits * 2, true, 16);
+        }, bits * 2, 16);
     }
 
     OptionUsize NumberConversion::ParseTinyRadixInt(Str string, Out<u64&> out, u32 bits, u32 radix) {
@@ -179,7 +179,7 @@ namespace Quasi::Text {
             digs = ParseDigitsTinyRadix4(digs, radix);
             n = n * r4 + digs;
             return true;
-        }, hasInexactDigit + (bits * Math::INV_LOG2_LOOKUP[radix] >> 16), !hasInexactDigit, radix);
+        }, hasInexactDigit + (bits * Math::INV_LOG2_LOOKUP[radix] >> 16), radix);
     }
 
     OptionUsize NumberConversion::ParseSmallRadixInt(Str string, Out<u64&> out, u32 bits, u32 radix) {
@@ -190,7 +190,7 @@ namespace Quasi::Text {
             digs = ParseDigitsSmallRadix4(digs, radix);
             n = n * r4 + digs;
             return true;
-        }, 1 + (bits * Math::INV_LOG2_LOOKUP[radix] >> 16), false, radix);
+        }, 1 + (bits * Math::INV_LOG2_LOOKUP[radix] >> 16), radix);
     }
 
     OptionUsize NumberConversion::ParseAsciiRadixInt(Str string, Out<u64&> out, u32 bits, u32 radix) {
@@ -201,7 +201,7 @@ namespace Quasi::Text {
             digs = ParseDigitsSmallRadix4(digs, radix);
             n = n * r4 + digs;
             return true;
-        }, 1 + (bits * Math::INV_LOG2_LOOKUP[radix] >> 16), false, radix);
+        }, 1 + (bits * Math::INV_LOG2_LOOKUP[radix] >> 16), radix);
     }
 
     OptionUsize NumberConversion::ParseLargeRadixInt(Str string, Out<u64&> out, u32 bits, u32 radix) {
@@ -212,7 +212,7 @@ namespace Quasi::Text {
             digs = ParseDigitsLargeRadix4(digs, radix);
             n = n * r4 + digs;
             return true;
-        }, 1 + (bits * Math::INV_LOG2_LOOKUP[radix] >> 16), false, radix);
+        }, 1 + (bits * Math::INV_LOG2_LOOKUP[radix] >> 16), radix);
     }
 
     template <Integer I>
@@ -426,6 +426,7 @@ namespace Quasi::Text {
             case IntFormatter::FormatOptions::OCTAL:   nlen = (u64s::BitWidth(num) + 2) / 3; break;
             case IntFormatter::FormatOptions::HEX:
             case IntFormatter::FormatOptions::CAP_HEX: nlen = (u64s::BitWidth(num) + 3) / 4; break;
+            default:;
         }
 
         const u32 targetnLen = std::max(nlen, options.numLen) + (sign != '\0');
@@ -444,6 +445,7 @@ namespace Quasi::Text {
             case IntFormatter::FormatOptions::OCTAL:   WriteU64Octal(sw, num, nlen);      break;
             case IntFormatter::FormatOptions::HEX:     WriteU64Hex(sw, num, nlen, false); break;
             case IntFormatter::FormatOptions::CAP_HEX: WriteU64Hex(sw, num, nlen, true);  break;
+            default:;
         }
 
         sw.WriteRepeat(options.pad, right);
@@ -498,8 +500,8 @@ namespace Quasi::Text {
             // x = 00 00 00 00 ab cd ef gh
             x |= x << 16;
             // x = 00 00 ab cd ?? ?? ef gh
-            x = (x << 8) & 0x00FF0000'00FF0000 | // 00 ab 00 00 00 ef 00 00
-                (x       & 0x000000FF'000000FF); // 00 00 00 cd 00 00 00 gh
+            x = ((x << 8) & 0x00FF0000'00FF0000) | // 00 ab 00 00 00 ef 00 00
+                 (x       & 0x000000FF'000000FF);  // 00 00 00 cd 00 00 00 gh
             // 00 ab 00 cd 00 ef 00 gh
             x |= x << 4;
             // 0a ?b 0c ?d 0e ?f 0g ?h

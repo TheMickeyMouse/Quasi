@@ -15,7 +15,7 @@ namespace Quasi::Physics2D {
 
         fv2 NearestPointTo(const fv2& point) const = delete;
         fv2 FurthestAlong(const fv2& normal) const = delete;
-        fLine2D BestEdgeFor(const fv2& normal) const { return { {}, {} }; }
+        fLine2D BestEdgeFor(const fv2& /* normal */) const { return { {}, {} }; }
         fRange ProjectOntoAxis(const fv2& axis) const = delete;
         fRange ProjectOntoOwnAxis(u32 axisID, const fv2& axis) const = delete;
         bool AddSeperatingAxes(SeperatingAxisSolver& sat) const = delete;

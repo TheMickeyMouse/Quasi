@@ -136,7 +136,7 @@ namespace Quasi::Math {
 
 #pragma region Operations
 #define CHANNEL_OP(NAME, SECOND_ARG, U8, F32) \
-    struct NAME { u8 operator()(u8 a, SECOND_ARG(u8) b) const { return U8; } f32 operator()(f32 a, SECOND_ARG(f32) b) const { return F32; } };
+    struct NAME { u8 operator()(u8 a, SECOND_ARG(u8) b) const { (void)b; return U8; } f32 operator()(f32 a, SECOND_ARG(f32) b) const { (void)b; return F32; } };
 #define BINARY(X) X
 #define FLOAT_OP(X) f32
     CHANNEL_OP(ChannelAdd, BINARY, a + b > 255 ? 255_u8 : (u8)(a + b), a + b)
@@ -287,7 +287,7 @@ namespace Quasi::Math {
             }
             case 6: {
                 u32 gr = Memory::ReadU32(hex.Data());
-                u32 b  = Memory::ReadU32(hex.Data() + 4) & 0xFFFF | 0x30300000;
+                u32 b  = (Memory::ReadU32(hex.Data() + 4) & 0xFFFF )| 0x30300000;
                 if (!Text::NumberConversion::AreAllHexDigits4(gr) ||
                     !Text::NumberConversion::AreAllHexDigits4(b)) return nullptr;
 

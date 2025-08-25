@@ -140,6 +140,12 @@ namespace Quasi::Graphics {
             ALL = 0xFFFF
         };
     }
+
+    enum class Access {
+        READ       = 0x88B8,
+        WRITE      = 0x88B9,
+        READ_WRITE = 0x88BA,
+    };
 }
 
 namespace Quasi::Graphics::Render {
@@ -200,5 +206,4 @@ namespace Quasi::Graphics::Render {
 #pragma endregion
 
     void MemoryBarrier(int barrierBits);
-    int ReadWriteAccess(bool read, bool write);
 }
