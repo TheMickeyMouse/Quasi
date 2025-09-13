@@ -198,43 +198,43 @@ namespace Quasi::Physics2D {
     void DynPolygonShape::SetPointsUnsafe(Span<const fv2> points) {
         u32 i = 0;
         for (; i < points.Length() - 1; ++i) {
-            data.Push({ points[i], points[i + 1].DirTowards(points[i]).PerpendRight() });
+            data.Push({ points[i], points[i + 1].Tangent(points[i]).PerpendRight() });
         }
-        data.Push({ points[i], points[i + 1].DirTowards(points[i]).PerpendRight() });
+        data.Push({ points[i], points[i + 1].Tangent(points[i]).PerpendRight() });
     }
 
     void DynPolygonShape::AddPoint(const fv2& p) {
-        data.Last().nrm = data.Last().pos.DirTowards(p);
-        data.Push({ p, p.DirTowards(data[0].pos).PerpendRight() });
+        data.Last().nrm = data.Last().pos.Tangent(p);
+        data.Push({ p, p.Tangent(data[0].pos).PerpendRight() });
     }
 
     void DynPolygonShape::AddPoint(const fv2& p, u32 i) {
         // doesnt need i + 1 because length is not updated
         const i32 prev = WrapIndexDown((i32)i);
-        data[prev].nrm = data[prev].pos.DirTowards(p).PerpendRight();
-        data.Insert({ p, p.DirTowards(data[i].pos).PerpendRight() }, i);
+        data[prev].nrm = data[prev].pos.Tangent(p).PerpendRight();
+        data.Insert({ p, p.Tangent(data[i].pos).PerpendRight() }, i);
     }
 
     void DynPolygonShape::RemovePoint(u32 i) {
         data.Pop(i);
         const i32 j = WrapIndexDown((i32)i);
-        data[j].nrm = data[j].pos.DirTowards(data[WrapIndexUp(j)].pos).PerpendRight();
+        data[j].nrm = data[j].pos.Tangent(data[WrapIndexUp(j)].pos).PerpendRight();
     }
 
     void DynPolygonShape::PopPoint() {
         data.Pop();
-        data.Last().nrm = data.Last().pos.DirTowards(data[0].pos).PerpendRight();
+        data.Last().nrm = data.Last().pos.Tangent(data[0].pos).PerpendRight();
     }
 
     void DynPolygonShape::SetPoint(const fv2& p, i32 i) {
         data[i].pos = p;
         const i32 j = WrapIndexDown((i32)i);
-        data[j].nrm = data[j].pos.DirTowards(p).PerpendRight();
+        data[j].nrm = data[j].pos.Tangent(p).PerpendRight();
     }
 
     void DynPolygonShape::FixPolygon() {
         for (u32 i = 0; i < data.Length(); ++i) {
-            data[i].nrm = data[i].pos.DirTowards(data[WrapIndexUp(i)].pos).PerpendRight();
+            data[i].nrm = data[i].pos.Tangent(data[WrapIndexUp(i)].pos).PerpendRight();
         }
     }
 

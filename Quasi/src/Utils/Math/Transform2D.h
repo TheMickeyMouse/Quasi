@@ -120,6 +120,7 @@ namespace Quasi::Math {
         Transform2D AppliedTo(const Transform2D& transformed) const { return transformed.Applied(*this); }
         Transform2D& Apply(const Transform2D& transformer); // apply transform onto self
         void ApplyTo(Transform2D& transformed) const { transformed.Apply(*this); }
+        void ApplyMatrix(const Matrix2D& matrix);
 
         Transform2D Then(const Transform2D& t) const { return AppliedTo(t); }
 

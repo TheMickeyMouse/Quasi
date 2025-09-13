@@ -1,4 +1,5 @@
 #pragma once
+#include "Mesh.h"
 #include "UIVertex.h"
 #include "RenderObject.h"
 
@@ -10,12 +11,32 @@ namespace Quasi::Graphics {
         u32 drawStyle = 0;
     };
 
+    struct Gradient {
+        Math::fv2    startPoint, direction;
+        Math::fColor startColor, endColor;
+
+        static Gradient Vertical(float s, float e, const Math::fColor& sc, const Math::fColor& ec);
+        static Gradient Horizontal(float s, float e, const Math::fColor& sc, const Math::fColor& ec);
+
+        Math::fColor At(const Math::fv2& p) const;
+    };
+
+    class UIMesh : public Mesh<UIVertex> {
+    public:
+        void SetTextureFill();
+        void FillGradient(const Gradient& g);
+        void OverlayGradient(const Gradient& g);
+    };
+
     class Canvas {
         RenderObject<UIVertex> renderCanvas;
+        UIMesh worldMesh;
+        OptRef<UIMesh> drawMesh = nullptr; // can be set to any mesh. by default it draws to the world mesh
         DrawAttributes drawAttr;
-        Math::Matrix2x2 modelTransform;
-        Math::fv2 modelTranslate;
     public:
+        Math::Transform2D transform;
+
+
         Canvas();
         Canvas(GraphicsDevice& gd);
 
@@ -42,8 +63,12 @@ namespace Quasi::Graphics {
         void DrawPoint(const Math::fv2& position);
         void DrawLine(const Math::fv2& start, const Math::fv2& end);
 
+        void DrawMesh(const UIMesh& mesh);
+
+        UIMesh& DestinationMesh();
         struct Batch {
             Canvas& canvas;
+            UIMesh& mesh;
             u32 iOffset;
             UIVertex storedPoint;
 
@@ -62,12 +87,29 @@ namespace Quasi::Graphics {
             void SetColor(const Math::fColor& color);
             void SetFill();
             void SetStroke();
+            void SetPrim(u32 prim);
+            void SetPrimAndStyle(u32 primAndStyle);
+            void SetPosition(const Math::fv2& point);
+            void SetUV(float u, float v);
+            void SetSTUV(float s, float t, float u, float v = 0);
             void Point(const Math::fv2& position);
             void PointCirc(const Math::fv2& position, float u, float v, float radiusRatio = 0);
+            void PointQBezGeneric(const Math::fv2& position, float u, float v, bool flip); // start
+            void PointQBezA(const Math::fv2& position, bool flip); // start
+            void PointQBezB(const Math::fv2& position, bool flip); // control
+            void PointQBezC(const Math::fv2& position, bool flip); // end
+            void PointQTriple(const Math::fv2& position, bool innerSide); // flat + start + end
+            void PointQDoubleS(const Math::fv2& position, bool innerSide); // flat + start
+            void PointQDoubleE(const Math::fv2& position, bool innerSide); // flat + end
+            void PointQDoubleC(const Math::fv2& position, bool innerSide); // flat + control
+            void PointsQBez(Span<const Math::fv2> bezpoints, bool innerSide);
+            void PointsQBezClosed(Span<const Math::fv2> outer, Span<const Math::fv2> inner);
             void Tri(u32 i, u32 j, u32 k);
             void Quad(u32 i, u32 j, u32 k, u32 l);
             void TriStrip(Span<const u32> strip);
             void TriFan(Span<const u32> fan);
+            void Push();
+            void PushAsPlain();
 
             void Refresh();
         };
@@ -112,7 +154,8 @@ namespace Quasi::Graphics {
                 OPEN_CURVE_SECOND_POINT = 2,
                 OPEN_CURVE_MIDDLE_POINT = 3,
                 CLOSED_CURVE_SECOND_POINT = 4,
-                CLOSED_CURVE_MIDDLE_POINT = 5
+                CLOSED_CURVE_MIDDLE_POINT = 5,
+                COMPLETED = -1,
             };
         private:
             Math::fv2 firstPoint, firstTangent, lastPoint, lastTangent;
@@ -123,13 +166,15 @@ namespace Quasi::Graphics {
 
             void DrawCircularArcCCW(const Math::fv2& startPoint, const Math::fv2& center, const Math::Rotor2D& turn);
         public:
-            Path(Canvas& canvas, CurveMode mode = CLOSED_CURVE) : canvas(canvas), closing(mode) {}
+            Path(Canvas& canvas, CurveMode mode) : canvas(canvas), closing(mode) {}
             void AddPoint(const Math::fv2& point);
             // from lastPoint to current point is a full turn
             void AddCircularArc(const Math::fv2& center, const Math::Rotor2D& turn, ArcDirection dir = CCW);
-
+            void AddQuadBez(const Math::fv2& control, const Math::fv2& end);
+            void ClosePath();
             ~Path();
         };
+        Path NewPath(CurveMode mode = CLOSED_CURVE);
 
         DrawAttributes& DrawAttr() { return drawAttr; }
         const DrawAttributes& DrawAttr() const { return drawAttr; }
@@ -143,22 +188,23 @@ namespace Quasi::Graphics {
         void NoStroke();
         void NoFill();
 
-        struct PushStyles {
+        struct DeferRenderScope {
+            Canvas& canvas;
+            OptRef<UIMesh> prevDestination;
+            DeferRenderScope(Canvas& canvas, UIMesh& newDest);
+            ~DeferRenderScope();
+        };
+        DeferRenderScope RenderTo(UIMesh& mesh);
+
+        struct PushStylesScope {
             Canvas& canvas;
             DrawAttributes originalAttr;
-            PushStyles(Canvas& canvas);
-            ~PushStyles();
+            PushStylesScope(Canvas& canvas);
+            ~PushStylesScope();
         };
+        PushStylesScope PushStyles();
 
         Math::fv2 TransformToWorldSpace(const Math::fv2& point) const;
-        void ApplyMatrix(const Math::Matrix2x2& matrix);
-        void ResetMatrix();
-        void Rotate(const Math::Rotor2D& rotor);
-        void Scale(const Math::fv2& scale);
-        void RotateAround(const Math::Rotor2D& rotor, const Math::fv2& origin);
-        void ScaleAround(const Math::fv2& scale, const Math::fv2& origin);
-        void Shear(const Math::fv2& shear);
-        void Translate(const Math::fv2& translate);
 
         void BeginFrame();
         void EndFrame();

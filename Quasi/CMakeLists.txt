@@ -30,7 +30,6 @@ set(HEADER_FILES
     src/Graphics/CameraController2D.h
     src/Graphics/CameraController3D.h
     src/Graphics/Light.h
-    src/Graphics/GUI/Layer.h
     src/Graphics/Canvas.h
     src/Graphics/UIVertex.h
 
@@ -157,7 +156,6 @@ set(SOURCE_FILES
     src/Graphics/GraphicsDevice.cpp
     src/Graphics/RenderData.cpp
     src/Graphics/Canvas.cpp
-    src/Graphics/GUI/Layer.cpp
 
     src/Graphics/Effects/Bloom.cpp
 
@@ -265,7 +263,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     # opengl32.dll
     ${CMAKE_SOURCE_DIR}/Dependencies/GLFW/lib-mingw-w64/libglfw3.a
     ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/freetype/libfreetype.a
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/imgui/imgui.a
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/stb_image/stb_image.a
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/imgui/lib/libimgui.a
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/stb_image/libstb_image.a
 )
 # execute_process()

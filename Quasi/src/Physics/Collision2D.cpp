@@ -117,7 +117,7 @@ namespace Quasi::Physics2D {
         const auto& circle = *s1.As<CircleShape>();
 
         sat.SetCheckFor(SeperatingAxisSolver::NEITHER);
-        sat.CheckAxis(xf2.Transform(s2.NearestPointTo(xf2.TransformInverse(xf1.position))).DirTowards(xf1.position));
+        sat.CheckAxis(xf2.Transform(s2.NearestPointTo(xf2.TransformInverse(xf1.position))).Tangent(xf1.position));
 
         sat.CheckAxisFor(SeperatingAxisSolver::TARGET);
 
@@ -191,8 +191,8 @@ namespace Quasi::Physics2D {
         const auto& cap = *s2.As<CapsuleShape>();
         sat.SetCheckFor(SeperatingAxisSolver::NEITHER);
         const fv2 tip = xf2.Transform(cap.forward), end = 2 * xf2.position - tip;
-        sat.CheckAxis(xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(tip))).DirTowards(tip));
-        sat.CheckAxis(xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(end))).DirTowards(end));
+        sat.CheckAxis(xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(tip))).Tangent(tip));
+        sat.CheckAxis(xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(end))).Tangent(end));
 
         if (!sat.Collides())
             return Manifold::None();
@@ -244,7 +244,7 @@ namespace Quasi::Physics2D {
         SeperatingAxisSolver sat = SeperatingAxisSolver::CheckOverlapFor(s1, xf1, s2, xf2);
         sat.CheckAxisFor(SeperatingAxisSolver::TARGET);
         sat.SetCheckFor(SeperatingAxisSolver::NEITHER);
-        sat.CheckAxis(xf2.Transform(s2.NearestPointTo(xf2.TransformInverse(xf1.position))).DirTowards(xf1.position));
+        sat.CheckAxis(xf2.Transform(s2.NearestPointTo(xf2.TransformInverse(xf1.position))).Tangent(xf1.position));
         return sat.Collides();
     }
 
@@ -272,8 +272,8 @@ namespace Quasi::Physics2D {
         const auto& cap = *s2.As<CapsuleShape>();
         sat.SetCheckFor(SeperatingAxisSolver::NEITHER);
         const fv2 tip = xf2.Transform(cap.forward), end = 2 * xf2.position - tip;
-        sat.CheckAxis(xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(tip))).DirTowards(tip));
-        sat.CheckAxis(xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(end))).DirTowards(end));
+        sat.CheckAxis(xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(tip))).Tangent(tip));
+        sat.CheckAxis(xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(end))).Tangent(end));
 
         return sat.Collides();
     }
@@ -327,7 +327,7 @@ namespace Quasi::Physics2D {
 
     template <u32 ContactCount, bool BDyn, bool TDyn>
     void DynamicResolveFor(Body& body, Body& target, const Manifold& manifold) {
-        const fv2& normal = manifold.seperatingNormal, tangent = normal.Perpend();
+        const fv2& normal = manifold.seperatingNormal, tangent = normal.PerpendRight();
         const float share = ContactCount == 2 ? 0.5f : 1.0f;
         // this makes contactCount known in compile time for loop unrolling
 
@@ -359,9 +359,9 @@ namespace Quasi::Physics2D {
                     return (target.velocity + angularVelTarget) -
                            (body  .velocity + angularVelBody);
                 } else if constexpr (BDyn) {
-                    return -body.velocity + relBody[i].Perpend() * body.angularVelocity;
+                    return -body.velocity - relBody[i].Perpend() * body.angularVelocity;
                 } else /* targetDyn */ {
-                    return target.velocity - relTarget[i].Perpend() * target.angularVelocity;
+                    return target.velocity + relTarget[i].Perpend() * target.angularVelocity;
                 }
             } ();
 
@@ -415,9 +415,9 @@ namespace Quasi::Physics2D {
                     return (target.velocity + angularVelTarget) -
                            (body  .velocity + angularVelBody);
                 } else if constexpr (BDyn) {
-                    return -body.velocity + relBody[i].Perpend() * body.angularVelocity;
+                    return -body.velocity - relBody[i].Perpend() * body.angularVelocity;
                 } else /* targetDyn */ {
-                    return target.velocity - relTarget[i].Perpend() * target.angularVelocity;
+                    return target.velocity + relTarget[i].Perpend() * target.angularVelocity;
                 }
             } ();
 

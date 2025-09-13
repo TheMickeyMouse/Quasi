@@ -229,15 +229,15 @@ namespace Quasi::Math {
             //       = [ S' R^T -S' (R^T . t) ]
             //         [ 0       1            ]
             Super inv { Uninit };
-            const Column invScaleSq = 1.0f / GetScaleSq();
+            const ColumnAff invScaleSq = 1.0f / GetScaleSq();
             // transpose rotation part
             for (usize i = 0; i < M - 1; ++i)
                 for (usize j = 0; j < N - 1; ++j)
                     inv.unitVectors[j][i] = unitVectors[i][j] * invScaleSq[j];
 
-            for (usize i = 0; i < N; ++i) {
+            for (usize i = 0; i < N - 1; ++i) {
                 for (usize j = 0; j < N - 1; ++j)
-                    inv.unitVectors[M - 1][i] -= unitVectors[i][j] *= unitVectors[N - 1][j];
+                    inv.unitVectors[M - 1][i] -= unitVectors[i][j] * unitVectors[N - 1][j];
                 inv.unitVectors[M - 1][i] *= invScaleSq[i];
             }
             inv[M - 1][N - 1] = 1.0f;

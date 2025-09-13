@@ -10,7 +10,7 @@ namespace Quasi::Graphics {
         Math::fv4 STUV;
         u32 RenderPrim = 0;
 
-        QuasiDefineVertex$(UIVertex, 3D, (Position, Position)(TexCoord)(Color)(STUV)(RenderPrim))
+        QuasiDefineVertex$(UIVertex, 2D, (Position, Position)(TexCoord)(Color)(STUV)(RenderPrim))
     };
 
     namespace UIRender {
@@ -19,7 +19,8 @@ namespace Quasi::Graphics {
             CIRCLE = 1,
             QBEZ   = 2,
             CBEZ   = 3,
-            INVERT = 0x8
+            PRIMITIVE_TYPE = 0x7,
+            INVERT = 0x8,
         };
 
         enum RenderStyle {

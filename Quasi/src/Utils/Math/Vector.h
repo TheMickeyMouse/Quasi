@@ -199,8 +199,9 @@ namespace Quasi::Math {
         Super Norm()        const requires Floating<T> { return Div(Len()); }
         Super Norm(float d) const requires Floating<T> { return Norm() * d; }
         Tuple<Super, fT> NormAndLen() const requires Floating<T> { const fT len = Len(); return { Div(len), len }; }
-        Super DirTowards(const Super& other)           const requires Floating<T> { return (other - super()).Norm(); }
-        Super DirTowards(const Super& other, float d)  const requires Floating<T> { return (other - super()).Norm(d); }
+        Super Tangent(const Super& other)          const requires Floating<T> { return (other - super()).Norm(); }
+        Super Tangent(const Super& other, float d) const requires Floating<T> { return (other - super()).Norm(d); }
+        Super Normal(const Super& other)           const requires Floating<T> { return (other - super()).Norm().Perpend(); }
         Tuple<Super, fT> DirAndLen(const Super& other) const requires Floating<T> { const fT len = (other - super()).NormAndLen(); return { Div(len), len }; }
         Super SafeNorm()    const requires Floating<T> { return NearZero() ? 0 : Norm(); }
 
@@ -210,7 +211,7 @@ namespace Quasi::Math {
             return sum;
         }
         Super Project(const Super& axis) const { return axis.Mul(Dot(axis) / axis.LenSq()); }
-        Super Reflect(const Super& normal) const { return Add((2 * Dot(normal)) * normal); }
+        Super Reflect(const Super& normal) const { return Sub((2 * Dot(normal)) * normal); }
 
         Vector<fT, N> Lerp(const Super& other, fT t) { return BinaryMap(other, [t = t, u = 1 - t] (T a, T b) { return u * a + t * b; }); }
         Super& LerpToward(const Super& other, T t) requires Floating<T> { return BinaryAssign(other, [=] (T& a, T b) { a += (b - a) * t; }); }

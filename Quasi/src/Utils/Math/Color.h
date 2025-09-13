@@ -210,8 +210,8 @@ namespace Quasi::Math {
         static IColor Lime()         { return FromIntCode(0x80ff00); } // lime   (100% green +  50%   red): rgb(128, 255, 000) or #80ff00
         static IColor Green()        { return FromIntCode(0x00ff00); } // green  (100% green):              rgb(000, 255, 000) or #00ff00
         static IColor Seafoam()      { return FromIntCode(0x00ff80); } // seafoam(100% green +  50%  blue): rgb(000, 255, 128) or #00ff80
-        static IColor Cyan()         { return FromIntCode(0x00ffff); } // cyan   (100% green + 100%  blue): rgb(000, 255, 255) or #00ffff
-        static IColor Azure()        { return FromIntCode(0x0080ff); } // azure  (100%  blue +  50% green): rgb(000, 128, 255) or #0080ff
+        static IColor Aqua()         { return FromIntCode(0x00ffff); } // aqua   (100% green + 100%  blue): rgb(000, 255, 255) or #00ffff
+        static IColor Cyan()         { return FromIntCode(0x0080ff); } // cyan   (100%  blue +  50% green): rgb(000, 128, 255) or #0080ff
         static IColor Blue()         { return FromIntCode(0x0000ff); } // blue   (100%  blue):              rgb(000, 000, 255) or #0000ff
         static IColor Purple()       { return FromIntCode(0x8000ff); } // purple (100%  blue +  50%   red): rgb(128, 000, 255) or #8000ff
         static IColor Magenta()      { return FromIntCode(0xff00ff); } // magenta(100%  blue + 100%   red): rgb(255, 000, 255) or #ff00ff
@@ -219,8 +219,8 @@ namespace Quasi::Math {
         static IColor LightRed()     { return FromIntCode(0xff8080); } // light red    (100%   red +  50% green +  50%  blue): rgb(255, 128, 128) or #ff8080
         static IColor LightYellow()  { return FromIntCode(0xffff80); } // light yellow (100%   red + 100% green +  50%  blue): rgb(255, 255, 128) or #ffff80
         static IColor LightGreen()   { return FromIntCode(0x80ff80); } // light green  ( 50%   red + 100% green +  50%  blue): rgb(128, 255, 128) or #80ff80
-        static IColor LightCyan()    { return FromIntCode(0x80ffff); } // light cyan   ( 50%   red + 100% green + 100%  blue): rgb(128, 255, 255) or #80ffff
-        static IColor LightBlue()    { return FromIntCode(0x8080ff); } // light blue   ( 50%   red +  50% green + 100%  blue): rgb(128, 128, 255) or #8080ff
+        static IColor LightAqua()    { return FromIntCode(0x80ffff); } // light aqua   ( 50%   red + 100% green + 100%  blue): rgb(128, 255, 255) or #80ffff
+        static IColor LightBlue()    { return FromIntCode(0x4080ff); } // light blue   ( 25%   red +  50% green + 100%  blue): rgb( 64, 128, 255) or #4080ff (manually adjusted)
         static IColor LightMagenta() { return FromIntCode(0xff80ff); } // light magenta(100%   red +  50% green + 100%  blue): rgb(255, 128, 255) or #ff80ff
         static IColor DarkRed()      { return FromIntCode(0x800000); } // dark red   ( 50%   red):              rgb(128, 000, 000) or #800000
         static IColor DarkYellow()   { return FromIntCode(0x808000); } // dark yellow( 50%   red +  50% green): rgb(128, 128, 000) or #808000

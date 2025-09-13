@@ -1,6 +1,5 @@
 ﻿#pragma once
-#include <algorithm>
-
+#include "Utils/Iter/MapIter.h"
 #include "RenderObject.h"
 #include "TriIndices.h"
 
@@ -28,6 +27,12 @@ namespace Quasi::Graphics {
         Mesh& EmbedTransform();
 
         void AddTo(RenderData& rd) const;
+        void CopyTo(RenderData& rd) const {
+            Memory::MemCopy(rd.vertexData.Data() + rd.vertexOffset, vertices.Data(), vertices.ByteSize());
+            Memory::MemCopy(rd.indexData.Data() + rd.indexOffset, indices.Data(), indices.ByteSize());
+            rd.vertexOffset += vertices.ByteSize();
+            rd.indexOffset += indices.Length() * 3;
+        }
 
         void PushVertex(const Vtx& v) { vertices.Push(v); }
         void PushIndex(TriIndices i) { indices.Push(i); }
