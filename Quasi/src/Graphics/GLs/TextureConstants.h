@@ -48,18 +48,18 @@ namespace Quasi::Graphics {
         DEPTH_32F_STENCIL_8 = 0x8CAD,          DEPTH_24_STENCIL_8 = 0x88F0
     };
 
-    enum class TextureTarget {
-        TEXTURE_1D       = 0xDE0,
-        TEXTURE_1D_ARRAY = 0x8C18,
+    enum class TextureTarget : int {
+        _1D      = 0xDE0,
+        ARRAY_1D = 0x8C18,
 
-        TEXTURE_2D                   = 0x0DE1,
-        TEXTURE_2D_ARRAY             = 0x8C1A,
-        TEXTURE_2D_MULTISAMPLE       = 0x9100,
-        TEXTURE_2D_MULTISAMPLE_ARRAY = 0x9102,
+        _2D      = 0x0DE1,
+        ARRAY_2D = 0x8C1A,
+        // TEXTURE_2D_MULTISAMPLE       = 0x9100,
+        // TEXTURE_2D_MULTISAMPLE_ARRAY = 0x9102,
 
-        TEXTURE_3D = 0x806F,
+        _3D = 0x806F,
 
-        TEXTURE_RECTANGLE = 0x84F5,
+        // TEXTURE_RECTANGLE = 0x84F5,
 
         CUBEMAP       = 0x8513,
         CUBEMAP_POS_X = 0x8515, CUBEMAP_RIGHT = CUBEMAP_POS_X,

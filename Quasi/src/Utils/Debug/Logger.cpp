@@ -93,7 +93,7 @@ namespace Quasi::Text {
         const Debug::DateTime& time, Str fmt) {
         const auto d = floor<std::chrono::days>(time);
         const std::chrono::year_month_day ymd = d;
-        const std::chrono::hh_mm_ss       hms { floor<std::chrono::milliseconds>(time - d) };
+        const std::chrono::hh_mm_ss       hms { round<std::chrono::milliseconds>(time - d) };
         constexpr Str MONTH_NAMES[] = {
             "January"_str,
             "Febuary"_str,

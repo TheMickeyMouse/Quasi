@@ -366,7 +366,10 @@ namespace Quasi::Physics2D {
             } ();
 
             velocityMag[i] = relVel.Dot(normal);
-            if (velocityMag[i] > 0.0f) continue;
+            if (velocityMag[i] > 0.0f) {
+                jn[i] = 0;
+                continue;
+            }
 
             const float denomN = [&] {
                 if constexpr (BDyn && TDyn) {

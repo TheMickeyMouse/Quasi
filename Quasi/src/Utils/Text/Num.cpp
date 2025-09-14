@@ -419,7 +419,7 @@ namespace Quasi::Text {
             return options.totalLength;
         }
 
-        u32 nlen;
+        u32 nlen = 0;
         switch (options.base) {
             case IntFormatter::FormatOptions::DECIMAL: nlen = 1 + u64s::Log10(num); break;
             case IntFormatter::FormatOptions::BINARY:  nlen = u64s::BitWidth(num);  break;
@@ -875,18 +875,6 @@ namespace Quasi::Text {
         return options;
     }
 
-    template struct Formatter<bool>;
-
-    template struct Formatter<u16>;
-    template struct Formatter<i16>;
-    template struct Formatter<u32>;
-    template struct Formatter<i32>;
-    template struct Formatter<u64>;
-    template struct Formatter<i64>;
-
-    template struct Formatter<f32>;
-    template struct Formatter<f64>;
-
     OptionUsize BoolParser::ParseUntil(Str string, Out<bool&> out, ParseOptions options) {
         if (options.format & ParseOptions::ALLOW_NUMERIC) {
             if (!string) return nullptr;
@@ -1030,16 +1018,4 @@ namespace Quasi::Text {
 
     template struct NumberConversion::FloatConv<float>;
     template struct NumberConversion::FloatConv<double>;
-
-    template struct Parser<bool>;
-
-    template struct Parser<u16>;
-    template struct Parser<i16>;
-    template struct Parser<u32>;
-    template struct Parser<i32>;
-    template struct Parser<u64>;
-    template struct Parser<i64>;
-
-    template struct Parser<f32>;
-    template struct Parser<f64>;
 }

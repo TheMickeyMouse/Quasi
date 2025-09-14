@@ -12,19 +12,23 @@
 #include "Utils/HashMap.h"
 
 namespace Quasi::Graphics {
+    enum class TextureTarget : int;
+    class TextureBase;
+    template <TextureTarget> class TextureObject;
+
     struct ShaderTypeData {
         u32 glID;
         Str shaderName;
 
-        QDefineEnum$(ShaderType,
-            (VERTEX,   (0x8B31, "Vertex"))
-            (FRAGMENT, (0x8B30, "Fragment"))
-            (GEOMETRY, (0x8DD9, "Geometry"))
-            // all below requires OpenGL 4.3 above
-            (COMPUTE,         (0x91B9, "Compute"))
-            (TESS_CONTROL,    (0x8E88, "Tesselation Control"))
-            (TESS_EVALUATION, (0x8E87, "Tesselation Eval")),
-        NONE)
+    QDefineEnum$(ShaderType,
+                     (VERTEX, (0x8B31, "Vertex"))
+                     (FRAGMENT, (0x8B30, "Fragment"))
+                     (GEOMETRY, (0x8DD9, "Geometry"))
+                     // all below requires OpenGL 4.3 above
+                     (COMPUTE, (0x91B9, "Compute"))
+                     (TESS_CONTROL, (0x8E88, "Tesselation Control"))
+                     (TESS_EVALUATION, (0x8E87, "Tesselation Eval")),
+                     NONE)
     };
 
     enum class ShaderUniformType {
@@ -120,7 +124,11 @@ namespace Quasi::Graphics {
 
         void SetUniformColor(CStr name, const Math::fColor3& color3);
         void SetUniformColor(CStr name, const Math::fColor&  color);
-        void SetUniformTex(CStr name, const class Texture& texture);
+        void SetUniformTex(CStr name, const TextureBase& texture, TextureTarget target, int slot);
+        template <TextureTarget Target>
+        void SetUniformTex(CStr name, const TextureObject<Target>& texture, int slot) {
+            SetUniformTex(name, (const TextureBase&)texture, Target, slot);
+        }
 
         void SetUniformMat2x2(CStr name, const Math::Matrix2x2& mat) { SetUniformMat2x2Arr(name, Spans::Only(mat)); }
         void SetUniformMat2x3(CStr name, const Math::Matrix2x3& mat) { SetUniformMat2x3Arr(name, Spans::Only(mat)); }
@@ -206,27 +214,27 @@ namespace Quasi::Graphics {
         ShaderParameter(Str name, ShaderUniformType utype, const u32 (&p) [4]) : name(name), utype(utype) { payload.InitWith<Array<u32, 4>>(p); }
         ShaderParameter(Str name, ShaderUniformType utype, const f32 (&p) [4]) : name(name), utype(utype) { payload.InitWith<Array<f32, 4>>(p); }
         ShaderParameter(Str name, ShaderUniformType utype, Bytes p) : name(name), utype(utype) { payload.InitWith(p); }
-        ShaderParameter(Str name, float x)                        : ShaderParameter(name, F_UNIT, { x, 0.f, 0.f, 0.f }) {}
+        ShaderParameter(Str name, float x)                   : ShaderParameter(name, F_UNIT, { x, 0.f, 0.f, 0.f }) {}
         ShaderParameter(Str name, const Math::fv2& v2s)      : ShaderParameter(name, FV2,    { v2s.x, v2s.y, 0.f, 0.f }) {}
         ShaderParameter(Str name, const Math::fv3& v3s)      : ShaderParameter(name, FV3,    { v3s.x, v3s.y, v3s.z, 0.f }) {}
         ShaderParameter(Str name, const Math::fv4& v4s)      : ShaderParameter(name, FV4,    { v4s.x, v4s.y, v4s.z, v4s.w }) {}
-        ShaderParameter(Str name, Span<const float> xs)           : ShaderParameter(name, F_ARRAY,   xs.AsBytes()) {}
+        ShaderParameter(Str name, Span<const float> xs)      : ShaderParameter(name, F_ARRAY,   xs.AsBytes()) {}
         ShaderParameter(Str name, Span<const Math::fv2> v2s) : ShaderParameter(name, FV2_ARRAY, v2s.AsBytes()) {}
         ShaderParameter(Str name, Span<const Math::fv3> v3s) : ShaderParameter(name, FV3_ARRAY, v3s.AsBytes()) {}
         ShaderParameter(Str name, Span<const Math::fv4> v4s) : ShaderParameter(name, FV4_ARRAY, v4s.AsBytes()) {}
-        ShaderParameter(Str name, int x)                          : ShaderParameter(name, I_UNIT, { (u32)x, 0u, 0u, 0u }) {}
+        ShaderParameter(Str name, int x)                     : ShaderParameter(name, I_UNIT, { (u32)x, 0u, 0u, 0u }) {}
         ShaderParameter(Str name, const Math::iv2& v2s)      : ShaderParameter(name, IV2,    { (u32)v2s.x, (u32)v2s.y, 0u, 0u }) {}
         ShaderParameter(Str name, const Math::iv3& v3s)      : ShaderParameter(name, IV3,    { (u32)v3s.x, (u32)v3s.y, (u32)v3s.z, 0u }) {}
         ShaderParameter(Str name, const Math::iv4& v4s)      : ShaderParameter(name, IV4,    { (u32)v4s.x, (u32)v4s.y, (u32)v4s.z, (u32)v4s.w }) {}
-        ShaderParameter(Str name, Span<const int> xs)             : ShaderParameter(name, I_ARRAY,   xs.AsBytes()) {}
+        ShaderParameter(Str name, Span<const int> xs)        : ShaderParameter(name, I_ARRAY,   xs.AsBytes()) {}
         ShaderParameter(Str name, Span<const Math::iv2> v2s) : ShaderParameter(name, IV2_ARRAY, v2s.AsBytes()) {}
         ShaderParameter(Str name, Span<const Math::iv3> v3s) : ShaderParameter(name, IV3_ARRAY, v3s.AsBytes()) {}
         ShaderParameter(Str name, Span<const Math::iv4> v4s) : ShaderParameter(name, IV4_ARRAY, v4s.AsBytes()) {}
-        ShaderParameter(Str name, uint x)                         : ShaderParameter(name, I_UNIT, { x, 0u, 0u, 0u }) {}
+        ShaderParameter(Str name, uint x)                    : ShaderParameter(name, I_UNIT, { x, 0u, 0u, 0u }) {}
         ShaderParameter(Str name, const Math::uv2& v2s)      : ShaderParameter(name, IV2,    { v2s.x, v2s.y, 0u, 0u }) {}
         ShaderParameter(Str name, const Math::uv3& v3s)      : ShaderParameter(name, IV3,    { v3s.x, v3s.y, v3s.z, 0u }) {}
         ShaderParameter(Str name, const Math::uv4& v4s)      : ShaderParameter(name, IV4,    { v4s.x, v4s.y, v4s.z, v4s.w }) {}
-        ShaderParameter(Str name, Span<const uint> xs)            : ShaderParameter(name, U_ARRAY,   xs.AsBytes()) {}
+        ShaderParameter(Str name, Span<const uint> xs)       : ShaderParameter(name, U_ARRAY,   xs.AsBytes()) {}
         ShaderParameter(Str name, Span<const Math::uv2> v2s) : ShaderParameter(name, UV2_ARRAY, v2s.AsBytes()) {}
         ShaderParameter(Str name, Span<const Math::uv3> v3s) : ShaderParameter(name, UV3_ARRAY, v3s.AsBytes()) {}
         ShaderParameter(Str name, Span<const Math::uv4> v4s) : ShaderParameter(name, UV4_ARRAY, v4s.AsBytes()) {}
@@ -234,7 +242,10 @@ namespace Quasi::Graphics {
         ShaderParameter(Str name, const Math::fColor&  color);
         ShaderParameter(Str name, Span<const Math::fColor3> color3s);
         ShaderParameter(Str name, Span<const Math::fColor>  colors);
-        ShaderParameter(Str name, const Texture& tex);
+        ShaderParameter(Str name, const TextureBase& tex, TextureTarget target, int slot);
+        template <TextureTarget Target>
+        ShaderParameter(Str name, const TextureObject<Target>& tex, int slot)
+            : ShaderParameter(name, (const TextureBase&)tex, Target, slot) {}
         ShaderParameter(Str name, const Math::Matrix2x2& mat)       : ShaderParameter(name, FMAT_2X2, Bytes::BytesOf(mat)) {}
         ShaderParameter(Str name, const Math::Matrix2x3& mat)       : ShaderParameter(name, FMAT_2X3, Bytes::BytesOf(mat)) {}
         ShaderParameter(Str name, const Math::Matrix2x4& mat)       : ShaderParameter(name, FMAT_2X4, Bytes::BytesOf(mat)) {}

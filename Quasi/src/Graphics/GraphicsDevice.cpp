@@ -19,9 +19,8 @@ namespace Quasi::Graphics {
     class RenderData;
 
     GraphicsDevice::GraphicsDevice(GLFWwindow* window, Math::iv2 winSize) :
-        windowSize(winSize), mainWindow{ window }, ioDevice(*this) {
+        windowSize(winSize), mainWindow{ window } {
         Instance = *this;
-        Texture::Init();
     }
 
     void GraphicsDevice::Quit() {

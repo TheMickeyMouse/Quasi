@@ -137,7 +137,10 @@ namespace Quasi::Graphics {
 
     void Shader::SetUniformColor(CStr name, const Math::fColor3& color3) { GL::Uniform3f(GetUniformLocation(name), color3.r, color3.g, color3.b); }
     void Shader::SetUniformColor(CStr name, const Math::fColor&  color)  { GL::Uniform4f(GetUniformLocation(name), color.r, color.g, color.b, color.a); }
-    void Shader::SetUniformTex(CStr name, const class Texture& texture)  { GL::Uniform1i(GetUniformLocation(name), texture.Slot()); }
+    void Shader::SetUniformTex(CStr name, const TextureBase& texture, TextureTarget target, int slot) {
+        texture.Activate(target, slot);
+        GL::Uniform1i(GetUniformLocation(name), slot);
+    }
     
     void Shader::SetUniformMat2x2Arr(CStr name, Span<const Math::Matrix2x2> mats) { GL::UniformMatrix2fv  (GetUniformLocation(name), mats.Length(), false, (const float*)mats.Data()); }
     void Shader::SetUniformMat2x3Arr(CStr name, Span<const Math::Matrix2x3> mats) { GL::UniformMatrix2x3fv(GetUniformLocation(name), mats.Length(), false, (const float*)mats.Data()); }
@@ -271,7 +274,9 @@ namespace Quasi::Graphics {
     ShaderParameter::ShaderParameter(Str name, const Math::fColor&  color)  : ShaderParameter(name, color.AsRGBAfVec()) {}
     ShaderParameter::ShaderParameter(Str name, Span<const Math::fColor3> color3s) : ShaderParameter(name, FV3_ARRAY, color3s.AsBytes()) {}
     ShaderParameter::ShaderParameter(Str name, Span<const Math::fColor>  colors)  : ShaderParameter(name, FV4_ARRAY, colors.AsBytes()) {}
-    ShaderParameter::ShaderParameter(Str name, const Texture&       tex)    : ShaderParameter(name, tex.Slot()) {}
+    ShaderParameter::ShaderParameter(Str name, const TextureBase& tex, TextureTarget target, int slot) : ShaderParameter(name, slot) {
+        tex.Activate(target, slot);
+    }
 
     ShaderArgs::ShaderArgs(IList<ShaderParameter> p) {
         for (const auto& param : p) {

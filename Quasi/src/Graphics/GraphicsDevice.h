@@ -101,8 +101,6 @@ namespace Quasi::Graphics {
         const Math::RandomGenerator& GetRand() const { return randDevice; }
 
         static GraphicsDevice Initialize(Math::iv2 winSize = { 640, 480 });
-
-        friend class Texture;
     };
 
     template <class T>

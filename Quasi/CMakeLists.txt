@@ -214,6 +214,8 @@ source_group("Source Files" FILES ${SOURCE_FILES})
 set(ALL_FILES
     ${HEADER_FILES}
     ${SOURCE_FILES}
+        src/Graphics/TextureAtlas.h
+        src/Graphics/GLs/Image.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})
@@ -250,6 +252,9 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     -Wundef
     -Werror
 
+    -Wno-strict-overflow # way too buggy and aggresive
+    -Wno-unused-but-set-variable
+    -Wno-unused-variable # allow empty code paths (ex: not calculating logging info) when optimizing
     -Wno-sign-compare # allow comparing ints to uints
     -Wno-misleading-indentation # too lazy to fix
     -Wno-sizeof-pointer-div # allow sizeof(U) / sizeof(T)

@@ -27,8 +27,8 @@ namespace Quasi::Graphics {
         QGLCall$(GL::BindFramebuffer(GL::FRAMEBUFFER, 0));
     }
 
-    void FrameBuffer::Attach(const Texture& tex, int mipmapLvl, AttachmentType type) const {
-        QGLCall$(GL::FramebufferTexture2D(GL::FRAMEBUFFER, (int)type, tex.TargetI(), tex.rendererID, mipmapLvl));
+    void FrameBuffer::Attach(const TextureBase& tbase, int target, int mipmapLvl, AttachmentType type) const {
+        QGLCall$(GL::FramebufferTexture2D(GL::FRAMEBUFFER, (int)type, target, tbase.rendererID, mipmapLvl));
     }
 
     void FrameBuffer::Attach(const RenderBuffer& rbo, AttachmentType type) const {

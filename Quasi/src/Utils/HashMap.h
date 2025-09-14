@@ -18,7 +18,7 @@ namespace Quasi {
 
             static_assert(MaxNumAllocs >= MinNumAllocs && MinNumAllocs > 0);
 
-            using LinkedListPtr = void*;
+            using LinkedListPtr = u8*;
             // memory that hasn't been used yet
             LinkedListPtr usableMemory = nullptr;
             // memory that hasn't been freed yet
@@ -83,7 +83,7 @@ namespace Quasi {
         private:
             static LinkedListPtr& Next(LinkedListPtr list) {
                 // turns the current node into an address to the next item, then dereferencing
-                return *((LinkedListPtr*)list);
+                return *Memory::TransmutePtr<LinkedListPtr>(list);
             }
 
             // calculates amt. of memory to allocate next, without storing to save 1 int
@@ -110,8 +110,8 @@ namespace Quasi {
 
                 // create linked list for newly allocated data,
                 // skipping 1 pointer ahead used to keep track of listToFree
-                const LinkedListPtr headOfT = (LinkedListPtr)(newData + ALIGNMENT);
-                void* h = headOfT;
+                const LinkedListPtr headOfT = (LinkedListPtr)((u8*)newData + ALIGNMENT);
+                u8* h = headOfT;
 
                 // makes trivial linked list, each node pointing to the next
                 for (usize i = 0; i < numElements; ++i) {

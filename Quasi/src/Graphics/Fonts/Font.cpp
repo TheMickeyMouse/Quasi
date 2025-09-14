@@ -61,12 +61,9 @@ namespace Quasi::Graphics {
             textureSize.y += y;
         }
 
-        Texture::SetPixelStore(PixelStoreParam::UNPACK_ALIGNMENT, 1);
-        atlas = Texture::New(
-            nullptr, { textureSize.x, textureSize.y },
-            {
-                .load = { .format = TextureFormat::RED, .internalformat = TextureIFormat::RGBA_8 },
-            }
+        Texture2D::SetPixelStore(PixelStoreParam::UNPACK_ALIGNMENT, 1);
+        atlas = Texture2D::New(nullptr, textureSize,
+            { .format = TextureFormat::RED, .internalformat = TextureIFormat::RGBA_8 }
         ); // create blank texture
         atlas.Bind(); // set this texture to the active one
         glyphs.Resize(NUM_GLYPHS * faceHandles.Length()); // amt of glyphs-
@@ -97,7 +94,7 @@ namespace Quasi::Graphics {
             }
             pen = 0;
         }
-        Texture::SetPixelStore(PixelStoreParam::UNPACK_ALIGNMENT, 4);
+        Texture2D::SetPixelStore(PixelStoreParam::UNPACK_ALIGNMENT, 4);
     }
 
     const Glyph& Font::GetGlyphRect(char c, FontStyle style, u32 id) const {

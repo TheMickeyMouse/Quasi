@@ -49,7 +49,7 @@ namespace Quasi::Graphics {
         Vec<Glyph> glyphs;
         Vec<FontMetrics> metrics;
         Math::uv2 textureSize;
-        Texture atlas;
+        Texture2D atlas;
     public:
         Font() { faceHandles.Push({ nullptr }); }
         Font(FT_FaceRec_* fHand) { faceHandles.Push(FaceHandle::Own(fHand)); }
@@ -75,8 +75,8 @@ namespace Quasi::Graphics {
             const TextAlign& align = { { 0, f32s::INFINITY } }
         ) const;
         
-        Texture& GetTexture() { return atlas; }
-        const Texture& GetTexture() const { return atlas; }
+        Texture2D& GetTexture() { return atlas; }
+        const Texture2D& GetTexture() const { return atlas; }
         
         static Font LoadFile (CStr filename);
         static Font LoadBytes(const byte* data, u32 len);

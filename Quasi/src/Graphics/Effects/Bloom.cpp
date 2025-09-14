@@ -11,14 +11,14 @@ namespace Quasi::Graphics {
         depthBuffer = RenderBuffer::New(
             TextureIFormat::DEPTH, (Math::iv2)screenDim
         );
-        downsample = Texture::New(nullptr, screenDim, TextureInitParams {
-            .load = { .format = TextureFormat::RGBA, .internalformat = TextureIFormat::RGBA_32F, .type = GLTypeID::FLOAT, .level = 6 },
-            .target = TextureTarget::TEXTURE_2D,
-            .params = { { TextureParamName::MAX_LEVEL, 6 }, { TextureParamName::MIN_FILTER, TextureSample::LINEAR_NEAREST_MIP } }
+        downsample = Texture2D::New(nullptr, screenDim, {
+            .format = TextureFormat::RGBA, .internalformat = TextureIFormat::RGBA_32F, .type = GLTypeID::FLOAT, .level = 6,
         });
-        upsample = Texture::New(nullptr, screenDim, TextureInitParams {
-            .load = { .format = TextureFormat::RGBA, .internalformat = TextureIFormat::RGBA_32F, .type = GLTypeID::FLOAT },
-            .target = TextureTarget::TEXTURE_2D
+        downsample.Bind();
+        downsample.SetMaxMip(6);
+        downsample.SetMinifySample(TextureSample::LINEAR_NEAREST_MIP);
+        upsample = Texture2D::New(nullptr, screenDim, {
+            .format = TextureFormat::RGBA, .internalformat = TextureIFormat::RGBA_32F, .type = GLTypeID::FLOAT,
         });
 
         screenTex.Bind();
@@ -38,7 +38,7 @@ namespace Quasi::Graphics {
             "   vec4 input = imageLoad(imgInput, uv); \n"
             "   float brightness = dot(input.rgb, vec3(0.2126, 0.7152, 0.0722)); \n"
             "   float transparency = smoothstep(threshold - kneeOff, threshold, brightness);"
-            "   imageStore(imgOutput, uv, vec4(input.rgb * transparency, 1.0));\n"
+            "   imageStore(imgOutput, uv / 2, vec4(input.rgb * transparency, 1.0));\n"
             "}"
         );
         downsampler = ShaderProgram::NewCompute(
@@ -140,7 +140,7 @@ namespace Quasi::Graphics {
             "                     textureLod(imgInput, uvf + vec2(0, s.y), lod).rgb +"
             "                     textureLod(imgInput, uvf + s,            lod).rgb) * 0.25;"
             "   vec3 result = upsampled + imageLoad(imgOutput, uv).rgb;"
-            "   imageStore(imgOutput, uv, vec4(result, 1.0)); \n"
+            "   imageStore(imgOutput, uv, vec4(result * 0.5f, 1.0)); \n"
             "}"
         );
 
@@ -173,7 +173,7 @@ namespace Quasi::Graphics {
                       UNIF_INTENSITY = 0;
 
         upsample.BindImageTexture(SLOT_INPUT, 0, Access::READ);
-        downsample.BindImageTexture(SLOT_OUTPUT, 0, Access::WRITE);
+        downsample.BindImageTexture(SLOT_OUTPUT, 1, Access::WRITE);
         highPass.Bind();
         GL::Uniform1f(UNIF_THRESHOLD, threshold);
         GL::Uniform1f(UNIF_KNEEOFF, kneeOff);
@@ -184,7 +184,7 @@ namespace Quasi::Graphics {
         downsampler.Bind();
         downsample.Activate(15);
         GL::Uniform1i(UNIF_INPUT_TEXTURE, 15);
-        for (int i = 1; i <= 6; ++i) {
+        for (int i = 2; i <= 6; ++i) {
             downsample.BindImageTexture(SLOT_OUTPUT, i, Access::WRITE);
             GL::Uniform1f(UNIF_TEXTURE_LOD, (float)(i - 1));
             downsampler.ExecuteCompute(screenDim.x >> i, screenDim.y >> i);

@@ -5,7 +5,9 @@
 
 namespace Quasi::Graphics {
     class RenderBuffer;
-    class Texture;
+    class TextureBase;
+    enum class TextureTarget : int;
+    template <TextureTarget> class TextureObject;
 
     enum class AttachmentType {
         COLOR_0  = 0x8CE0,
@@ -39,7 +41,11 @@ namespace Quasi::Graphics {
         static void BindObject(GraphicsID id);
         static void UnbindObject();
 
-        void Attach(const Texture& tex, int mipmapLvl = 0, AttachmentType type = AttachmentType::COLOR_0) const;
+        template <TextureTarget Target>
+        void Attach(const TextureObject<Target>& tex, int mipmapLvl = 0, AttachmentType type = AttachmentType::COLOR_0) const {
+            Attach((const TextureBase&)tex, (int)Target, mipmapLvl, type);
+        }
+        void Attach(const TextureBase& tbase, int target, int mipmapLvl = 0, AttachmentType type = AttachmentType::COLOR_0) const;
         void Attach(const RenderBuffer& rbo, AttachmentType type) const;
         void Complete() const;
 
