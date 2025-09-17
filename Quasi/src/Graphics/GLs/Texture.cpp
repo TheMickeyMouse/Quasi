@@ -5,6 +5,7 @@
 #include "Utils/Vec.h"
 #include "GLDebug.h"
 #include "GraphicsDevice.h"
+#include "Image.h"
 #include "vendor/stb_image/stb_image.h"
 
 namespace Quasi::Graphics {
@@ -99,21 +100,24 @@ namespace Quasi::Graphics {
     }
 
     template <TextureTarget Target>
+    TextureObject<Target> TextureObject<Target>::New(const Image& image, const TextureLoadParams& loadMode) requires (Target == _2D) {
+        GraphicsID rendererID;
+        QGLCall$(GL::GenTextures(1, &rendererID));
+        TextureObject t { rendererID, image.Size() };
+        t.LoadTexture(image.Data(), loadMode);
+        return t;
+    }
+
+    template <TextureTarget Target>
     TextureObject<Target> TextureObject<Target>::LoadPNGBytes(Bytes pngbytes, const TextureLoadParams& loadMode) requires (Target == _2D) {
-        Math::iv2 size;
-        int BPPixel;
-        stbi_set_flip_vertically_on_load(1);
-        const auto localTexture = STBIImage::Own(stbi_load_from_memory(pngbytes.Data(), (int)pngbytes.Length(), &size.x, &size.y, &BPPixel, 4));
-        return New(localTexture, (Math::uv2)size, loadMode);
+        const Image img = Image::LoadPNGBytes(pngbytes);
+        return New(img.Data(), img.Size(), loadMode);
     }
 
     template <TextureTarget Target>
     TextureObject<Target> TextureObject<Target>::LoadPNG(CStr fname, const TextureLoadParams& loadMode) requires (Target == _2D) {
-        Math::iv2 size;
-        int BPPixel;
-        stbi_set_flip_vertically_on_load(1);
-        const auto localTexture = STBIImage::Own(stbi_load(fname.Data(), &size.x, &size.y, &BPPixel, 4));
-        return New(localTexture, (Math::uv2)size, loadMode);
+        const Image img = Image::LoadPNG(fname);
+        return New(img.Data(), img.Size(), loadMode);
     }
 
     template <TextureTarget Target>

@@ -10,6 +10,29 @@ namespace Quasi {
         template <class T> Vec<T> FromIList(IList<T> list) { return Vec<T>::FromIList(list); }
         template <class T, usize N> Vec<T> New(const T (&arr)[N]) { return Vec<T>::New(arr); }
         template <class T, usize N> Vec<T> New(T (&&arr)[N])      { return Vec<T>::New(std::move(arr)); }
+
+        template <Numeric N>
+        Vec<N> Range(N start, N end) {
+            if (end < start) return {};
+
+            Vec<N> range = Vec<N>::WithCap((usize)(end - start));
+            for (N x = 0; x < end; x += N(1)) { range.Push(x); }
+            return range;
+        }
+
+        template <Numeric N>
+        Vec<N> Range(N start, N end, N step) {
+            // bad range!
+            if (step == 0 || (end < start) == (step < 0)) return {};
+
+            Vec<N> range = Vec<N>::WithCap((usize)((end - start) / step));
+            if (step < 0) {
+                for (N x = start; x > end; x -= step) range.Push(x);
+            } else {
+                for (N x = start; x <= end; x += step) range.Push(x);
+            }
+            return range;
+        }
     }
 
     template <class T>

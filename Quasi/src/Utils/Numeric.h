@@ -34,8 +34,8 @@ namespace Quasi {
     template <class T> concept Floating  = std::is_floating_point_v<T>;
     template <class T> concept Numeric   = std::is_arithmetic_v<T>;
 
-    template <class T> using IntoSigned   = std::make_signed<T>;
-    template <class T> using IntoUnsigned = std::make_unsigned<T>;
+    template <class T> using IntoSigned   = std::make_signed_t<T>;
+    template <class T> using IntoUnsigned = std::make_unsigned_t<T>;
 
     template <class T> struct NumInfo {};
 

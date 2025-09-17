@@ -147,6 +147,8 @@ namespace Quasi {
         template <Extends<T> U> requires IsMut<T>
         OptRef<U> As() { return dynamic_cast<U*>(obj); }
 
+        Option<RemConst<T>> Copied() const { return obj ? Options::Some(*obj) : nullptr; }
+
         template <class Re> OptRef<Re> TransmuteAs() { return Memory::TransmutePtr<Re>(obj); }
         template <class Re> OptRef<const Re> TransmuteAs() const { return Memory::TransmutePtr<const Re>(obj); }
 

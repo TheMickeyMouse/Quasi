@@ -163,6 +163,11 @@ namespace Quasi::Math {
         Rect operator*(const VecT& scale)    const { return { min * scale, max * scale }; }
         Rect operator/(const VecT& invScale) const { return { min / invScale, max / invScale }; }
 
+        template <class U>
+        Rect<U, N> As() const { return { min.template As<U>(), max.template As<U>() }; }
+        template <class U>
+        operator Rect<U, N>() const { return As<U>(); }
+
         VecT Clamp(const VecT& val) const { return val.Clamp(min, max); }
 
         Rect Fixed() const { return { VecT::Min(min, max), VecT::Max(min, max) }; }

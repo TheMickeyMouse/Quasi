@@ -1,20 +1,28 @@
 #pragma once
+#include "Image.h"
 #include "GLs/Texture.h"
 
 namespace Quasi::Graphics {
     class TextureAtlas {
         Texture2D fullTexture;
-        Vec<Math::fRect2D> spritesheet;
-        HashMap<Str, u32> spriteLookup;
+        Vec<Math::uRect2D> spritesheet;
+        HashMap<String, u32> spriteLookup;
     public:
         TextureAtlas() = default;
-        TextureAtlas(Vec<Math::fv2>&& imageSizes);
-        TextureAtlas(Vec<Math::fRect2D>&&, Span<const Str> spriteNames);
+        TextureAtlas(Vec<ImageView> sprites);
+        TextureAtlas(Vec<ImageView> sprites, Span<const Str> spriteNames);
+    private:
+        void PackSprites(Span<ImageView> sprites);
+    public:
+        Texture2D& GetTexture() { return fullTexture; }
+        const Texture2D& GetTexture() const { return fullTexture; }
 
-        Texture2D& GetTexture();
-        const Texture2D& GetTexture() const;
+        Math::uRect2D GetPx(Str name) const;
+        Math::uRect2D GetPx(u32 id)   const;
+        Math::fRect2D GetUV(Str name) const;
+        Math::fRect2D GetUV(u32 id)   const;
 
-        const Math::fRect2D& Get(Str name) const;
-        const Math::fRect2D& Get(u32 id) const;
+        Math::fRect2D operator[](Str name) const { return GetUV(name); }
+        Math::fRect2D operator[](u32 id)   const { return GetUV(id);   }
     };
 }

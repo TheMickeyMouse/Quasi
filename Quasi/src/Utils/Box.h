@@ -1,4 +1,6 @@
 #pragma once
+#include <cstdlib>
+
 #include "Memory.h"
 #include "Ref.h"
 
@@ -134,4 +136,14 @@ namespace Quasi {
         operator T*()                  { return DataMut(); }
         explicit operator bool() const { return data != nullptr; }
     };
+
+    struct GlobalArrayDelete {
+        void operator()(auto* ptr) const { Memory::FreeArray(ptr); }
+    };
+    template <class T> using BufferBox = Box<T, GlobalArrayDelete>;
+
+    struct MallocFreeDelete {
+        void operator()(auto* ptr) const { std::free(ptr); }
+    };
+    template <class T> using CBox = Box<T, MallocFreeDelete>;
 }

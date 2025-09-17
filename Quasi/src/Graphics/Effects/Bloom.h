@@ -10,7 +10,7 @@ namespace Quasi::Graphics {
     struct Bloom {
         FrameBuffer screenTex;
         RenderBuffer depthBuffer;
-        Texture2D downsample, upsample;
+        Texture2D downsample;
         ShaderProgram highPass, downsampler, upsampler, addBack;
         Math::uv2 screenDim;
 

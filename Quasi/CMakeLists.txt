@@ -215,7 +215,9 @@ set(ALL_FILES
     ${HEADER_FILES}
     ${SOURCE_FILES}
         src/Graphics/TextureAtlas.h
-        src/Graphics/GLs/Image.h
+        src/Graphics/Image.h
+        src/Graphics/TextureAtlas.cpp
+        src/Graphics/Image.cpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})
@@ -269,6 +271,6 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     ${CMAKE_SOURCE_DIR}/Dependencies/GLFW/lib-mingw-w64/libglfw3.a
     ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/freetype/libfreetype.a
     ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/imgui/lib/libimgui.a
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/stb_image/libstb_image.a
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/stb_image/lib/libstbimage.a
 )
 # execute_process()

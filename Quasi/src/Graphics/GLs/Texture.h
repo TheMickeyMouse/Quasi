@@ -9,6 +9,10 @@
 #include "TextureConstants.h"
 #include "Utils/Math/Rect.h"
 
+namespace Quasi::Graphics {
+    struct Image;
+}
+
 namespace Quasi {
     struct CStr;
 }
@@ -62,6 +66,7 @@ namespace Quasi::Graphics {
 
         TextureObject() = default;
         static TextureObject New(const byte* raw, const Math::Vector<u32, DIM>& size, const TextureLoadParams& loadMode = {});
+        static TextureObject New(const Image& image, const TextureLoadParams& loadMode = {}) requires (Target == _2D);
         void Bind() const { BindObject(Target, rendererID); }
         void Unbind() const { UnbindObject(Target); }
 
@@ -93,6 +98,18 @@ namespace Quasi::Graphics {
         void TexImage(const byte* data, const Math::Vector<u32, DIM>& dim, const TextureLoadParams& params = {});
 
         const Math::Vector<u32, DIM>& Size() const { return size; }
+        Math::Vector<f32, DIM> Px2UV(const Math::Vector<u32, DIM>& px) const {
+            return px.template As<f32>().DivComps(size.template As<f32>());
+        }
+        Math::Vector<u32, DIM> UV2Px(const Math::Vector<f32, DIM>& uv) const {
+            return (uv.MulComps(size.template As<f32>())).template As<u32>();
+        }
+        Math::Rect<f32, DIM> Px2UV(const Math::Rect<u32, DIM>& pxRect) const {
+            return pxRect.template As<f32>().Scale(size.template As<f32>());
+        }
+        Math::Rect<u32, DIM> UV2Px(const Math::Rect<f32, DIM>& uvRect) const {
+            return (uvRect / size.template As<f32>()).template As<u32>();
+        }
 
         friend class FrameBuffer;
     };
