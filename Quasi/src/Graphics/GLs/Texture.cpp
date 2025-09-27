@@ -73,7 +73,7 @@ namespace Quasi::Graphics {
     TextureBase::TextureBase(GraphicsID id) : GLObject(id) {}
 
     template <TextureTarget Target>
-    TextureObject<Target>::TextureObject(GraphicsID id, const Math::Vector<u32, DIM>& size)
+    TextureObject<Target>::TextureObject(GraphicsID id, const Math::Vector<int, DIM>& size)
         : TextureBase(id), size(size) {}
 
     template <TextureTarget Target>
@@ -91,7 +91,7 @@ namespace Quasi::Graphics {
     }
 
     template <TextureTarget Target>
-    TextureObject<Target> TextureObject<Target>::New(const byte* raw, const Math::Vector<u32, DIM>& size, const TextureLoadParams& loadMode) {
+    TextureObject<Target> TextureObject<Target>::New(const byte* raw, const Math::Vector<int, DIM>& size, const TextureLoadParams& loadMode) {
         GraphicsID rendererID;
         QGLCall$(GL::GenTextures(1, &rendererID));
         TextureObject t { rendererID, size };
@@ -154,7 +154,7 @@ namespace Quasi::Graphics {
     }
 
     template <TextureTarget Target>
-    void TextureObject<Target>::SetSubTexture(const void* data, const Math::Rect<u32, DIM>& rect, const TextureLoadParams& params) {
+    void TextureObject<Target>::SetSubTexture(const void* data, const Math::Rect<int, DIM>& rect, const TextureLoadParams& params) {
         if constexpr (DIM == 1) {
             QGLCall$(GL::TexSubImage1D((int)Target, params.level, rect.min.x, rect.Width(), (int)params.format, params.type->glID, data));
         } else if constexpr (DIM == 2) {
@@ -165,7 +165,7 @@ namespace Quasi::Graphics {
     }
 
     template <TextureTarget Target>
-    void TextureObject<Target>::TexImage(const byte* data, const Math::Vector<u32, DIM>& dim, const TextureLoadParams& params) {
+    void TextureObject<Target>::TexImage(const byte* data, const Math::Vector<int, DIM>& dim, const TextureLoadParams& params) {
         if constexpr (DIM == 1) {
             for (u32 level = 0; level <= params.level; ++level) {
                 QGLCall$(GL::TexImage1D((int)Target, level, (int)params.internalformat, dim.x >> level, 0, (int)params.format, params.type->glID, data));

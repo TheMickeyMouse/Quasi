@@ -8,11 +8,13 @@
 #include "../Graphics/GraphicsDevice.h"
 
 namespace Quasi::IO {
-    IO::IO(Graphics::GraphicsDevice& gd) :
-        gdevice(gd),
-        Keyboard(*this),
-        Mouse(*this) {
+    IO::IO(Graphics::GraphicsDevice& gd) : gdevice(gd) {
         SetUserPtr();
+
+        glfwSetFramebufferSizeCallback(gd.GetWindow(), [] (GLFWwindow* window, int width, int height) {
+            IO* ioInstance = GetIOPtr(window);
+            ioInstance->gdevice->windowSize = { width, height };
+        });
     }
 
     void IO::SetUserPtr() {

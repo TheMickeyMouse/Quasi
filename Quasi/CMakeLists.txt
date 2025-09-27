@@ -30,8 +30,8 @@ set(HEADER_FILES
     src/Graphics/CameraController2D.h
     src/Graphics/CameraController3D.h
     src/Graphics/Light.h
-    src/Graphics/Canvas.h
-    src/Graphics/UIVertex.h
+        src/Graphics/GUI/Canvas.h
+        src/Graphics/GUI/UIVertex.h
 
     src/Graphics/Effects/Bloom.h
 
@@ -41,8 +41,6 @@ set(HEADER_FILES
     src/Graphics/Fonts/Font.h
     src/Graphics/Fonts/FontDevice.h
     src/Graphics/Fonts/TextAlign.h
-    src/Graphics/Fonts/TextRenderer.h
-    src/Graphics/Fonts/TextStyle.h
     src/Graphics/Meshes/Circle.h
     src/Graphics/Meshes/MeshBuilder.h
     src/Graphics/Meshes/Cube.h
@@ -155,7 +153,7 @@ set(SOURCE_FILES
     src/Graphics/Light.cpp
     src/Graphics/GraphicsDevice.cpp
     src/Graphics/RenderData.cpp
-    src/Graphics/Canvas.cpp
+        src/Graphics/GUI/Canvas.cpp
 
     src/Graphics/Effects/Bloom.cpp
 
@@ -164,8 +162,6 @@ set(SOURCE_FILES
     src/Graphics/ModelLoading/OBJModel.cpp
     src/Graphics/Fonts/Font.cpp
     src/Graphics/Fonts/FontDevice.cpp
-    src/Graphics/Fonts/TextAlign.cpp
-    src/Graphics/Fonts/TextRenderer.cpp
     src/Graphics/GUI/ImGuiExt.cpp
 
     src/IO/IO.cpp

@@ -5,7 +5,7 @@
 namespace Quasi::Graphics {
     class TextureAtlas {
         Texture2D fullTexture;
-        Vec<Math::uRect2D> spritesheet;
+        Vec<Math::iRect2D> spritesheet;
         HashMap<String, u32> spriteLookup;
     public:
         TextureAtlas() = default;
@@ -17,8 +17,8 @@ namespace Quasi::Graphics {
         Texture2D& GetTexture() { return fullTexture; }
         const Texture2D& GetTexture() const { return fullTexture; }
 
-        Math::uRect2D GetPx(Str name) const;
-        Math::uRect2D GetPx(u32 id)   const;
+        Math::iRect2D GetPx(Str name) const;
+        Math::iRect2D GetPx(u32 id)   const;
         Math::fRect2D GetUV(Str name) const;
         Math::fRect2D GetUV(u32 id)   const;
 

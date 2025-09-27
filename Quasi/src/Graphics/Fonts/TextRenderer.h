@@ -28,7 +28,7 @@ namespace Quasi::Graphics {
         PointPer64 fontSize = 0;
 
         TextAlign align = { { 0, f32s::INFINITY } };
-        using Vertex = Font::Vertex;
+        using Vertex = VertexTexture2D;
         Vec<Vertex> textVertices, bgVertices;
         Vec<TriIndices> bgIndices;
         
@@ -48,7 +48,7 @@ namespace Quasi::Graphics {
         TextRenderer(const Font& fnt) : font(fnt) {}
 
         void SetAlign(const TextAlign& txtAlign) { align = txtAlign; }
-        void SetFontSize(PointPer64 fSize) { fontSize = fSize; }
+        void SetFontSize(int fSize) { fontSize = fSize; }
         void Prepare();
 
               CharQuad* Begin();

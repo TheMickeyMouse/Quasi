@@ -1,5 +1,8 @@
 #include "Canvas.h"
+
+#include "glp.h"
 #include "GraphicsDevice.h"
+#include "Fonts/TextAlign.h"
 
 namespace Quasi::Graphics {
     Gradient Gradient::Vertical(float s, float e, const Math::fColor& sc, const Math::fColor& ec) {
@@ -37,7 +40,7 @@ namespace Quasi::Graphics {
 
         renderCanvas.UseShader(
             "#shader vertex\n"
-            "#version 330 core\n"
+            "#version 450 core\n"
             "layout (location = 0) in vec2 position;"
             "layout (location = 1) in vec2 texCoord;"
             "layout (location = 2) in vec4 color;"
@@ -45,6 +48,7 @@ namespace Quasi::Graphics {
             "layout (location = 4) in int renderPrim;"
             ""
             "out vec4 vColor;"
+            "out vec2 vTexCoord;"
             "out vec4 vSTUV;"
             "flat out int vRenderPrim;"
             ""
@@ -53,36 +57,63 @@ namespace Quasi::Graphics {
             "void main() {"
             "    gl_Position = u_projection * u_view * vec4(position, 0.0, 1.0);"
             "    vColor = color;"
+            "    vTexCoord = texCoord;"
             "    vSTUV = stuv;"
             "    vRenderPrim = renderPrim;"
             "}\n"
             "#shader fragment\n"
-            "#version 330 core\n"
+            "#version 450 core\n"
             ""
             "layout (location = 0) out vec4 FragColor;"
             ""
             "in vec4 vColor;"
+            "in vec2 vTexCoord;"
             "in vec4 vSTUV;"
             "flat in int vRenderPrim;"
+            "layout (binding = 0) uniform sampler2D u_textures[8];"
             ""
             "void main() {"
-            "    bool invert = (vRenderPrim & 8) == 8; "
-            "    bool shouldDiscard = false;"
-            "    switch (vRenderPrim & 7) {"
+            "    bool invert = (vRenderPrim & 8) == 8;"
+            "    int samplerID = (vRenderPrim >> 4) - 1, prim = vRenderPrim & 7;"
+            "    vec4 color = vColor;"
+            "    if (samplerID != -1 && prim != 6) color *= texture(u_textures[samplerID], vTexCoord);"
+            "    switch (prim) {"
             "        case 1: {"
-            "            float distSq  = vSTUV.x * vSTUV.x + vSTUV.y * vSTUV.y;"
-            "            shouldDiscard = (distSq > 1.0) || (vSTUV.z > distSq);"
+            "            float dist = 1 - length(vSTUV.xy);"
+            "            color.a = clamp(0.5 + dist / fwidth(dist), 0.0, 1.0);"
             "            break;"
             "        }"
             "        case 2: {"
-            "           shouldDiscard = vSTUV.x * vSTUV.x > vSTUV.y;"
+            "            float dist = (1 - vSTUV.z) * 0.5f - abs(length(vSTUV.xy) - (vSTUV.z + 1) * 0.5);"
+            "            color.a = clamp(0.5 + dist / fwidth(dist), 0.0, 1.0);"
+            "            break;"
+            "        }"
+            "        case 3: {"
+            // https://iquilezles.org/articles/distfunctions2d - parabola with k=1
+            "            float p = (vSTUV.y - 0.5)/3.0;"
+            "            float q = 0.25 * vSTUV.x;"
+            "            float h = q * q - p * p * p;"
+            "            float r = sqrt(abs(h)); "
+            "            float x = (h > 0.0) ? "
+            "                pow(q+r,1.0/3.0) + pow(abs(q-r),1.0/3.0)*sign(p) :"
+            "                2.0*cos(atan(r,q)/3.0)*sqrt(p); "
+            "            float dist = length(vSTUV.xy-vec2(x,x*x)) * sign(vSTUV.x-x);"
+            // "            color.b = p;"
+            "            color.a = clamp(0.5 + (invert ? 1 : -1) * dist / fwidth(dist), 0.0, 1.0);"
+            "            break;"
+            "        }"
+            "        case 6: {"
+            "           float distance = texture(u_textures[samplerID], vTexCoord).r - 0.5;"
+            "           float ds = fwidth(distance);"
+            "           color.a = clamp(0.5 + distance / ds, 0.0, 1.0);"
+            // "           color = texture(u_textures[samplerID], vTexCoord);"
             "           break;"
             "        }"
             "    }"
-            "    if (shouldDiscard ^^ invert) discard;"
-            "    FragColor = vColor;"
+            "    FragColor = color;"
             "}"
         );
+        // renderCanvas->shader.SetUniformIntArr("u_textures", CArray<int, 8> { 0, 1, 2, 3, 4, 5, 6, 7 });
     }
 
     void Canvas::DrawTriangle(const Math::fv2& p1, const Math::fv2& p2, const Math::fv2& p3) {
@@ -120,8 +151,11 @@ namespace Quasi::Graphics {
         }
     }
 
-    void Canvas::DrawSquare(const Math::fv2& center, float size) {
-        DrawRect(Math::fRect2D::FromCenter(center, size));
+    void Canvas::DrawSquare(const Math::fv2& position, float size, bool center) {
+        const Math::fRect2D rect = center ?
+            Math::fRect2D::FromCenter(position, size / 2) :
+            Math::fRect2D::FromSize  (position, size);
+        DrawRect(rect);
     }
 
     void Canvas::DrawRect(const Math::fRect2D& rect) {
@@ -133,12 +167,18 @@ namespace Quasi::Graphics {
         }
     }
 
-    void Canvas::DrawRoundedSquare(const Math::fv2& center, float size, float radius) {
-        return DrawRoundedRect(Math::fRect2D::FromSize(center, size), radius);
+    void Canvas::DrawRoundedSquare(const Math::fv2& position, float size, float radius, bool center) {
+        const Math::fRect2D rect = center ?
+            Math::fRect2D::FromCenter(position, size / 2) :
+            Math::fRect2D::FromSize  (position, size);
+        return DrawRoundedRect(rect, radius);
     }
 
-    void Canvas::DrawVarRoundedSquare(const Math::fv2& center, float size, float tr, float br, float tl, float bl) {
-        return DrawVarRoundedRect(Math::fRect2D::FromSize(center, size), tr, br, tl, bl);
+    void Canvas::DrawVarRoundedSquare(const Math::fv2& position, float size, float tr, float br, float tl, float bl, bool center) {
+        const Math::fRect2D rect = center ?
+            Math::fRect2D::FromCenter(position, size / 2) :
+            Math::fRect2D::FromSize  (position, size);
+        return DrawVarRoundedRect(rect, tr, br, tl, bl);
     }
 
     void Canvas::DrawRoundedRect(const Math::fRect2D& rect, float radius) {
@@ -215,11 +255,12 @@ namespace Quasi::Graphics {
         }
     }
 
-    void Canvas::DrawCircle(const Math::fv2& center, float radius) {
+    void Canvas::DrawCircle(const Math::fv2& position, float radius, bool center) {
+        const Math::fv2 c = center ? position : position + radius * 0.5f;
         if (NeedDrawFill())
-            DrawSimpleCircle(center, radius, drawAttr.fillColor);
+            DrawSimpleCircle(c, radius, drawAttr.fillColor);
         if (NeedDrawStroke())
-            DrawCircleOutline(center, radius, drawAttr.strokeWeight, drawAttr.strokeColor);
+            DrawCircleOutline(c, radius, drawAttr.strokeWeight, drawAttr.strokeColor);
     }
 
     void Canvas::DrawEllipse(const Math::fRect2D& bounds) {
@@ -336,6 +377,60 @@ namespace Quasi::Graphics {
         DestinationMesh().Add(mesh);
     }
 
+    void Canvas::DrawTexture(const Texture2D& texture, const Math::fv2& pos, const Math::fv2& size, bool center, const SpriteOptions& options) {
+        const Math::fRect2D rect = center ?
+            Math::fRect2D::FromCenter(pos, size / 2) :
+            Math::fRect2D::FromSize  (pos, size);
+        DrawTextureEx(texture, rect, options);
+    }
+
+    void Canvas::DrawTextureW(const Texture2D& texture, const Math::fv2& pos, float w, bool center, const SpriteOptions& options) {
+        return DrawTexture(texture, pos, { w, w / texture.size.AspectRatio() }, center, options);
+    }
+
+    void Canvas::DrawTextureH(const Texture2D& texture, const Math::fv2& pos, float h, bool center,
+        const SpriteOptions& options) {
+        return DrawTexture(texture, pos, { h * texture.size.AspectRatio(), h }, center, options);
+    }
+
+    void Canvas::DrawTextureEx(const Texture2D& texture, const Math::fRect2D& rect, const SpriteOptions& options) {
+        Batch batch = NewBatch();
+        batch.SetColor(options.tint);
+        batch.SetTexture(texture.rendererID);
+
+        batch.SetTextureCoord(options.mask.min.x, options.mask.min.y);
+        batch.Point(rect.min);
+        batch.SetTextureCoord(options.mask.min.x, options.mask.max.y);
+        batch.Point({ rect.min.x, rect.max.y });
+        batch.SetTextureCoord(options.mask.max.x, options.mask.max.y);
+        batch.Point(rect.max);
+        batch.SetTextureCoord(options.mask.max.x, options.mask.min.y);
+        batch.Point({ rect.max.x, rect.min.y });
+
+        batch.Quad(0, 1, 2, 3);
+    }
+
+    void Canvas::DrawText(Str text, float fontSize, const Math::fv2& pos /*, const TextAlign& align */) {
+        // by default we render in 1/64 pixels; but the user will probably not expect that
+        const Font& font = GetCurrentFont();
+        const float relativeFontSize = fontSize * 64.0f / (float)font.FontSize();
+
+        const Texture2D& fontAtlas = font.GetTexture();
+        Batch batch = NewBatch();
+        batch.SetStroke();
+        batch.SetTexture(fontAtlas.rendererID);
+
+        Math::fv2 pen = pos;
+        for (const char c : text) {
+            pen.x += batch.PushGlyph(font.GetGlyphRect(c), relativeFontSize, pen, fontAtlas);
+        }
+    }
+
+    void Canvas::ForceDrawCurrentBatch() {
+        EndFrame();
+        BeginFrame();
+    }
+
     UIMesh& Canvas::DestinationMesh() {
         return drawMesh.UnwrapOr(worldMesh);
     }
@@ -361,6 +456,32 @@ namespace Quasi::Graphics {
     void Canvas::Batch::SetPosition(const Math::fv2& point) { storedPoint.Position = canvas.TransformToWorldSpace(point); }
     void Canvas::Batch::SetUV(float u, float v) { storedPoint.STUV = { u, v, 0, 0 }; }
     void Canvas::Batch::SetSTUV(float s, float t, float u, float v) { storedPoint.STUV = { s, t, u, v }; }
+    void Canvas::Batch::SetTextureCoord(float u, float v) { storedPoint.TexCoord = { u, v }; }
+
+    void Canvas::Batch::SetTexture(GraphicsID textureID) {
+        storedPoint.RenderPrim &= ~UIRender::TEXTURE_ID_MASK;
+
+        OptionUsize samplerSlot = Spans::Slice(canvas.textures, canvas.usedTextures).Find(textureID);
+
+        if (samplerSlot) {
+            storedPoint.RenderPrim |= UIRender::TEXTURE_ID * (*samplerSlot + 1);
+            return;
+        }
+
+        if (canvas.usedTextures >= MAX_TEXTURE_SAMPLERS)
+            canvas.ForceDrawCurrentBatch();
+        canvas.textures[canvas.usedTextures] = textureID;
+        storedPoint.RenderPrim |= UIRender::TEXTURE_ID * (canvas.usedTextures + 1);
+
+        GL::ActiveTexture(GL::TEXTURE0 + canvas.usedTextures);
+        GL::BindTexture(GL::TEXTURE_2D, textureID);
+
+        ++canvas.usedTextures;
+    }
+
+    void Canvas::Batch::SetNoTexture() {
+        storedPoint.RenderPrim &= ~UIRender::TEXTURE_ID_MASK;
+    }
 
     void Canvas::Batch::Point(const Math::fv2& position) {
         storedPoint.Position = canvas.TransformToWorldSpace(position);
@@ -368,10 +489,17 @@ namespace Quasi::Graphics {
         Push();
     }
 
-    void Canvas::Batch::PointCirc(const Math::fv2& position, float u, float v, float radiusRatio) {
+    void Canvas::Batch::PointCirc(const Math::fv2& position, float u, float v) {
+        SetPosition(position);
+        storedPoint.STUV = { u, v, 0, 0 };
+        SetPrim(UIRender::CIRCLE);
+        Push();
+    }
+
+    void Canvas::Batch::PointArc(const Math::fv2& position, float u, float v, float radiusRatio) {
         SetPosition(position);
         storedPoint.STUV = { u, v, radiusRatio, 0 };
-        SetPrim(UIRender::CIRCLE);
+        SetPrim(UIRender::ARC);
         Push();
     }
 
@@ -497,9 +625,35 @@ namespace Quasi::Graphics {
     }
 
     void Canvas::Batch::Push() { mesh.PushVertex(storedPoint); }
+    void Canvas::Batch::Push(const Math::fv2& point) {
+        SetPosition(point);
+        mesh.PushVertex(storedPoint);
+    }
+
     void Canvas::Batch::PushAsPlain() {
         storedPoint.RenderPrim = UIRender::PLAIN;
         Push();
+    }
+
+    float Canvas::Batch::PushGlyph(const Glyph& glyph, float scaling, const Math::fv2& position, const Texture2D& atlas) {
+        const Math::fv2 rsize = glyph.rect.Size() * (Math::fv2)atlas.Size(); // real-scale size of the quad
+        const Math::fRect2D uv = glyph.rect;
+        const Math::fv2 start = (Math::fv2)glyph.offset * scaling + position,
+                        dim   = rsize * scaling;
+
+        SetPrim(UIRender::SDF);
+        SetTextureCoord(uv.min.x, uv.min.y);
+        Push({ start.x,         start.y });
+        SetTextureCoord(uv.max.x, uv.min.y);
+        Push({ start.x + dim.x, start.y });
+        SetTextureCoord(uv.max.x, uv.max.y);
+        Push({ start.x + dim.x, start.y - dim.y });
+        SetTextureCoord(uv.min.x, uv.max.y);
+        Push({ start.x,         start.y - dim.y });
+        Quad(0, 1, 2, 3);
+        Refresh();
+
+        return (float)glyph.advance.x * scaling;
     }
 
     void Canvas::Batch::Refresh() { iOffset = mesh.vertices.Length(); }
@@ -683,31 +837,31 @@ namespace Quasi::Graphics {
     void Canvas::DrawCircleOutline(const Math::fv2& center, float radius, float thickness, const Math::fColor& color) {
         Batch batch = NewBatch();
         const float innerRadius = radius - thickness, outerRadius = (radius + thickness) * Math::ROOT_2,
-                    innerUV = innerRadius / (radius + thickness), innerSq = innerUV * innerUV;
+                    innerUV = innerRadius / (radius + thickness);
         batch.SetColor(color);
-        batch.PointCirc({ center.x + innerRadius, center.y }, +innerUV,      0, innerSq);
-        batch.PointCirc({ center.x + outerRadius, center.y }, +Math::ROOT_2, 0, innerSq);
-        batch.PointCirc({ center.x, center.y + innerRadius }, 0, +innerUV,      innerSq);
-        batch.PointCirc({ center.x, center.y + outerRadius }, 0, +Math::ROOT_2, innerSq);
-        batch.PointCirc({ center.x - innerRadius, center.y }, -innerUV,      0, innerSq);
-        batch.PointCirc({ center.x - outerRadius, center.y }, -Math::ROOT_2, 0, innerSq);
-        batch.PointCirc({ center.x, center.y - innerRadius }, 0, -innerUV,      innerSq);
-        batch.PointCirc({ center.x, center.y - outerRadius }, 0, -Math::ROOT_2, innerSq);
+        batch.PointArc({ center.x + innerRadius, center.y }, +innerUV,      0, innerUV);
+        batch.PointArc({ center.x + outerRadius, center.y }, +Math::ROOT_2, 0, innerUV);
+        batch.PointArc({ center.x, center.y + innerRadius }, 0, +innerUV,      innerUV);
+        batch.PointArc({ center.x, center.y + outerRadius }, 0, +Math::ROOT_2, innerUV);
+        batch.PointArc({ center.x - innerRadius, center.y }, -innerUV,      0, innerUV);
+        batch.PointArc({ center.x - outerRadius, center.y }, -Math::ROOT_2, 0, innerUV);
+        batch.PointArc({ center.x, center.y - innerRadius }, 0, -innerUV,      innerUV);
+        batch.PointArc({ center.x, center.y - outerRadius }, 0, -Math::ROOT_2, innerUV);
         batch.TriStrip({{ 0, 1, 2, 3, 4, 5, 6, 7, 0, 1 }});
     }
 
     void Canvas::DrawQuarterArc(const Math::fv2& center, const Math::Rotor2D& start, float radius, float thickness, const Math::fColor& color) {
         if (radius < thickness) { radius = thickness = (radius + thickness) * 0.5f; }
         const float innerRadius = radius - thickness,
-                    innerUV = innerRadius / (radius + thickness), innerSq = innerUV * innerUV;
+                    innerUV = innerRadius / (radius + thickness);
         Batch batch = NewBatch();
         const Math::fv2 innerForward = start.IHat() * innerRadius,
                         outerForward = start.IHat() * (Math::ROOT_2 * (radius + thickness));
         batch.SetColor(color);
-        batch.PointCirc(center + innerForward,               innerUV, 0, innerSq);
-        batch.PointCirc(center + innerForward.PerpendLeft(), 0, innerUV, innerSq);
-        batch.PointCirc(center + outerForward.PerpendLeft(), 0, Math::ROOT_2, innerSq);
-        batch.PointCirc(center + outerForward,               Math::ROOT_2, 0, innerSq);
+        batch.PointArc(center + innerForward,               innerUV, 0, innerUV);
+        batch.PointArc(center + innerForward.PerpendLeft(), 0, innerUV, innerUV);
+        batch.PointArc(center + outerForward.PerpendLeft(), 0, Math::ROOT_2, innerUV);
+        batch.PointArc(center + outerForward,               Math::ROOT_2, 0, innerUV);
         batch.Quad(0, 1, 2, 3);
     }
 
@@ -718,20 +872,21 @@ namespace Quasi::Graphics {
             step = step.RotateCW90();
             DrawQuarterArc(center, mid.RotateBy(step), radius, thickness, color);
         }
-        const float secant = Math::ROOT_2 / std::sqrt(1 + step.Cos()), outerRadius = secant * (radius + thickness),
-                    innerUV = innerRadius / (radius + thickness), innerSq = innerUV * innerUV;
+        const float secant = Math::ROOT_2 / std::sqrt(1 + step.Cos()),
+                    outerRadius = secant * (radius + thickness),
+                    innerUV = innerRadius / (radius + thickness);
         Batch batch = NewBatch();
         batch.SetColor(color);
         Math::fv2 fwd = mid.IHat();
-        batch.PointCirc(center + fwd * innerRadius, innerUV, 0, innerSq);
-        batch.PointCirc(center + fwd * outerRadius, secant,  0, innerSq);
+        batch.PointArc(center + fwd * innerRadius, innerUV, 0, innerUV);
+        batch.PointArc(center + fwd * outerRadius, secant,  0, innerUV);
         fwd = fwd.RotateBy(step);
         const Math::fv2 iUV = step.IHat() * innerUV, sUV = step.IHat() * secant;
-        batch.PointCirc(center + fwd * innerRadius, iUV.x, iUV.y, innerSq);
-        batch.PointCirc(center + fwd * outerRadius, sUV.x, sUV.y, innerSq);
+        batch.PointArc(center + fwd * innerRadius, iUV.x, iUV.y, innerUV);
+        batch.PointArc(center + fwd * outerRadius, sUV.x, sUV.y, innerUV);
         fwd = step.InvRotate(mid.IHat());
-        batch.PointCirc(center + fwd * innerRadius, iUV.x, -iUV.y, innerSq);
-        batch.PointCirc(center + fwd * outerRadius, sUV.x, -sUV.y, innerSq);
+        batch.PointArc(center + fwd * innerRadius, iUV.x, -iUV.y, innerUV);
+        batch.PointArc(center + fwd * outerRadius, sUV.x, -sUV.y, innerUV);
         batch.Quad(0, 1, 3, 2);
         batch.Quad(1, 0, 4, 5);
     }
@@ -1206,6 +1361,10 @@ namespace Quasi::Graphics {
         return Path { *this, mode };
     }
 
+    const Font& Canvas::GetCurrentFont() const {
+        return drawAttr.currentFont.UnwrapOr(defaultFont);
+    }
+
     void Canvas::StrokeWeight(float weight) {
         drawAttr.strokeWeight = weight;
         drawAttr.drawStyle &= ~UIRender::NO_STROKE;
@@ -1268,11 +1427,18 @@ namespace Quasi::Graphics {
     void Canvas::BeginFrame() {
         renderCanvas.BeginContext();
         worldMesh.Clear();
+        usedTextures = 0;
     }
 
     void Canvas::EndFrame() {
         worldMesh.CopyTo(renderCanvas.GetRenderData());
         renderCanvas.EndContext();
+
+        // GL::ActiveTexture(GL::TEXTURE0);
+        // TextureBase::BindObject(TextureTarget::_2D, textures[0]);
+        // GL::ActiveTexture(GL::TEXTURE1);
+        // TextureBase::BindObject(TextureTarget::_2D, textures[1]);
+
         renderCanvas.DrawContext();
     }
 }

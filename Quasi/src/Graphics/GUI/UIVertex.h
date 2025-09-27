@@ -1,5 +1,5 @@
 #pragma once
-#include "GLs/VertexElement.h"
+#include "../GLs/VertexElement.h"
 #include "Utils/Math/Color.h"
 
 namespace Quasi::Graphics {
@@ -15,12 +15,19 @@ namespace Quasi::Graphics {
 
     namespace UIRender {
         enum RenderPrimitive {
-            PLAIN  = 0,
-            CIRCLE = 1,
-            QBEZ   = 2,
-            CBEZ   = 3,
+            PLAIN  = 0, // flat triangles
+            CIRCLE = 1, // circles
+            ARC    = 2, // defines a inner radius
+            QBEZ   = 3, // quadratic bezier
+            CBEZ   = 4, // cubic bezier
+            RADIAL = 5, // a radial glow object
+            SDF    = 6, // an sdf texture
+
             PRIMITIVE_TYPE = 0x7,
             INVERT = 0x8,
+
+            TEXTURE_ID_MASK = 0xF0,
+            TEXTURE_ID = 0x10,
         };
 
         enum RenderStyle {

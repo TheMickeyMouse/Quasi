@@ -33,6 +33,8 @@ namespace Quasi::Graphics {
         IO::IO ioDevice { *this };
         Math::RandomGenerator randDevice {};
 
+        friend IO::IO;
+
         Debug::DateTime frameBeginTime;
         Debug::TimeDuration frameDurationTime;
 

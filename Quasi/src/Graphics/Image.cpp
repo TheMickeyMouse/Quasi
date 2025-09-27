@@ -1,23 +1,30 @@
 #include "Image.h"
 
+#include "glp.h"
+#include "GraphicsDevice.h"
+#include "GLFW/glfw3.h"
 #include "stb_image/stb_image.h"
 #include "stb_image/stb_image_write.h"
 #include "Utils/CStr.h"
 
 namespace Quasi::Graphics {
-    Image Image::New(u32 w, u32 h) {
-        return { CBox<u8>::Own(Memory::AllocateArrayUninit<u8>(w * h * 4)), w, h };
+    u8* Image::AllocImage(int w, int h) {
+        return Memory::AllocateArrayUninit<u8>(w * h * 4);
     }
 
-    Image Image::SolidColor(const Math::uColor& color, u32 w, u32 h) {
+    Image Image::New(int w, int h) {
+        return { CBox<u8>::Own(AllocImage(w, h)), w, h };
+    }
+
+    Image Image::SolidColor(const Math::uColor& color, int w, int h) {
         Image solidColor = New(w, h);
         Memory::RangeSet(solidColor.PixelData(), color, w * h);
         return solidColor;
     }
 
     Image Image::CopyData(ImageView view) {
-        u8* data = Memory::AllocateArrayUninit<u8>(view.width * view.height * 4);
-        for (u32 y = 0; y < view.height; y++) {
+        u8* data = AllocImage(view.width, view.height);
+        for (int y = 0; y < view.height; y++) {
             Memory::MemCopyNoOverlap(&data[y * view.width], &view.data[y * view.stride], view.width * 4);
         }
         return { data, view.width, view.height };
@@ -27,53 +34,71 @@ namespace Quasi::Graphics {
         int w, h, BPPixel;
         stbi_set_flip_vertically_on_load(1);
         u8* localTexture = stbi_load_from_memory(pngbytes.Data(), (int)pngbytes.Length(), &w, &h, &BPPixel, 4);
-        return FromData(localTexture, (u32)w, (u32)h);
+        return FromData(localTexture, w, h);
     }
 
     Image Image::LoadPNG(CStr fname) {
         int w, h, BPPixel;
         stbi_set_flip_vertically_on_load(1);
         u8* localTexture = stbi_load(fname.Data(), &w, &h, &BPPixel, 4);
-        return FromData(localTexture, (u32)w, (u32)h);
+        return FromData(localTexture, w, h);
+    }
+
+    Image Image::CaptureScreen() {
+        const Math::iv2 size = GraphicsDevice::GetDeviceInstance().GetWindowSize();
+        return CaptureScreen(0, 0, size.x, size.y);
+    }
+
+    Image Image::CaptureScreen(int x, int y, int w, int h) {
+        u8* screenBuf = AllocImage(w, h);
+        // note: this returns the screen but flipped horizontally
+        GL::ReadPixels(x, y, w, h, GL::RGBA, GL::UNSIGNED_BYTE, screenBuf);
+        Image screen = { screenBuf, w, h };
+        screen.FlipHorizontal();
+        return screen;
+    }
+
+    Image Image::CaptureScreen(const Math::iRect2D& screenRect) {
+        return CaptureScreen(screenRect.min.x, screenRect.min.y, screenRect.Width(), screenRect.Height());
     }
 
     ImageView Image::AsView() const {
         return { *this };
     }
 
-    ImageView Image::SubImage(u32 x, u32 y, u32 w, u32 h) const {
+    ImageView Image::SubImage(int x, int y, int w, int h) const {
         return ImageView::FromData(Data() + 4 * (x + y * width), w, h, width);
     }
 
-    ImageView Image::SubImage(const Math::uRect2D& subrect) const {
-        return ImageView::FromData(Data() + 4 * (subrect.min.x + subrect.min.y * width), subrect.Width(), subrect.Height(), width);
+    ImageView Image::SubImage(const Math::iRect2D& subrect) const {
+        return SubImage(subrect.min.x, subrect.min.y, subrect.Width(), subrect.Height());
     }
 
     bool Image::InBounds(const Math::iv2& coord) const {
         return 0 < coord.x && coord.x < width && 0 < coord.y && coord.y < height;
     }
 
-    const Math::uColor& Image::GetPx(const Math::uv2& coord) const {
+    const Math::uColor& Image::GetPx(const Math::iv2& coord) const {
         return PixelData()[coord.x + coord.y * width];
     }
 
-    Math::uColor& Image::GetPx(const Math::uv2& coord) {
+    Math::uColor& Image::GetPx(const Math::iv2& coord) {
         return PixelData()[coord.x + coord.y * width];
     }
 
     OptRef<const Math::uColor> Image::TryGetPx(const Math::iv2& coord) const {
-        return InBounds(coord) ? OptRefs::SomeRef(GetPx((Math::uv2)coord)) : nullptr;
+        return InBounds(coord) ? OptRefs::SomeRef(GetPx(coord)) : nullptr;
     }
 
     OptRef<Math::uColor> Image::TryGetPx(const Math::iv2& coord) {
-        return InBounds(coord) ? OptRefs::SomeRef(GetPx((Math::uv2)coord)) : nullptr;
+        return InBounds(coord) ? OptRefs::SomeRef(GetPx(coord)) : nullptr;
     }
 
-    Span<const Math::uColor> Image::GetRow(u32 y) const {
+    Span<const Math::uColor> Image::GetRow(int y) const {
         return Spans::Slice(PixelData() + y * width, width);
     }
 
-    Span<Math::uColor> Image::GetRow(u32 y) {
+    Span<Math::uColor> Image::GetRow(int y) {
         return Spans::Slice(PixelData() + y * width, width);
     }
 
@@ -84,9 +109,36 @@ namespace Quasi::Graphics {
         return Memory::TransmutePtr<Math::uColor>(imageData.Data());
     }
 
-    void Image::BlitImage(const Math::uv2& dest, const ImageView& image) {
+    void Image::Crop(const Math::iRect2D& rect) {
+        const int oldWidth = width;
+        width = rect.Width();
+        height = rect.Height();
+        u8* newBuf = AllocImage(width, height);
+        for (int y = 0; y < height; y++) {
+            Memory::MemCopyNoOverlap(&newBuf[y * width], &imageData[y * oldWidth], width * 4);
+        }
+        imageData.Replace(newBuf);
+    }
+
+    void Image::FlipHorizontal() {
+        for (int y = 0; y < height / 2; y++) {
+            Memory::MemSwap(&imageData[y * width], &imageData[(height - y) * width], width * 4);
+        }
+    }
+
+    void Image::FlipVertical() {
+        for (int y = 0; y < height; y++) {
+            Memory::MemReverse(&imageData[y * width], width * 4);
+        }
+    }
+
+    void Image::Flip180() {
+        Memory::MemReverse(Data(), width * height * 4);
+    }
+
+    void Image::BlitImage(const Math::iv2& dest, const ImageView& image) {
         u8* begin = (u8*)&PixelData()[dest.x + dest.y * width];
-        for (u32 y = 0; y < image.height; y++) {
+        for (int y = 0; y < image.height; y++) {
             Memory::MemCopyNoOverlap(begin + y * width, &image.data[y * image.stride], image.width * 4);
         }
     }
@@ -95,35 +147,39 @@ namespace Quasi::Graphics {
         stbi_write_png(fdest.Data(), (int)width, (int)height, 4, imageData.Data(), 0);
     }
 
-    ImageView ImageView::FromData(const u8* imageData, u32 w, u32 h) {
+    void Image::Free() {
+        imageData.Close();
+    }
+
+    ImageView ImageView::FromData(const u8* imageData, int w, int h) {
         return { imageData, w, h, w };
     }
 
-    ImageView ImageView::FromData(const u8* imageData, u32 w, u32 h, u32 stride) {
+    ImageView ImageView::FromData(const u8* imageData, int w, int h, int stride) {
         return { imageData, w, h, stride };
     }
 
-    ImageView ImageView::SubImage(u32 x, u32 y, u32 w, u32 h) const {
+    ImageView ImageView::SubImage(int x, int y, int w, int h) const {
         return { data + 4 * (x + y * stride), w, h, stride };
     }
 
-    ImageView ImageView::SubImage(const Math::uRect2D& subrect) const {
-        return { data + 4 * (subrect.min.x + subrect.min.y * stride), subrect.Width(), subrect.Height(), stride };
+    ImageView ImageView::SubImage(const Math::iRect2D& subrect) const {
+        return SubImage(subrect.min.x, subrect.min.y, subrect.Width(), subrect.Height());
     }
 
     bool ImageView::InBounds(const Math::iv2& coord) const {
         return 0 < coord.x && coord.x < width && 0 < coord.y && coord.y < height;
     }
 
-    const Math::uColor& ImageView::GetPx(const Math::uv2& coord) const {
+    const Math::uColor& ImageView::GetPx(const Math::iv2& coord) const {
         return PixelData()[coord.x + coord.y * stride];
     }
 
     OptRef<const Math::uColor> ImageView::TryGetPx(const Math::iv2& coord) const {
-        return InBounds(coord) ? OptRefs::SomeRef(GetPx((Math::uv2)coord)) : nullptr;
+        return InBounds(coord) ? OptRefs::SomeRef(GetPx(coord)) : nullptr;
     }
 
-    Span<const Math::uColor> ImageView::GetRow(u32 y) const {
+    Span<const Math::uColor> ImageView::GetRow(int y) const {
         return Spans::Slice(PixelData() + y * stride, width);
     }
 
@@ -132,6 +188,6 @@ namespace Quasi::Graphics {
     }
 
     void ImageView::ExportPNG(Str fdest) {
-        stbi_write_png(fdest.Data(), (int)width, (int)height, 4, data, (int)stride * 4);
+        stbi_write_png(fdest.Data(), width, height, 4, data, stride * 4);
     }
 }

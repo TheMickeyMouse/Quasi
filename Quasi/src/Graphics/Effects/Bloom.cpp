@@ -1,15 +1,16 @@
 #include "Bloom.h"
 
 #include "glp.h"
+#include "GraphicsDevice.h"
 #include "RenderData.h"
 #include "GLs/GLDebug.h"
 #include "GLs/Render.h"
 
 namespace Quasi::Graphics {
-    Bloom::Bloom(const Math::uv2& screenDim) : screenDim(screenDim) {
+    Bloom::Bloom(const Math::iv2& screenDim) : screenDim(screenDim) {
         screenTex = FrameBuffer::New();
         depthBuffer = RenderBuffer::New(
-            TextureIFormat::DEPTH, (Math::iv2)screenDim
+            TextureIFormat::DEPTH, screenDim
         );
         downsample = Texture2D::New(nullptr, screenDim, {
             .format = TextureFormat::RGBA, .internalformat = TextureIFormat::RGBA_32F, .type = GLTypeID::FLOAT, .level = 6,
@@ -159,6 +160,7 @@ namespace Quasi::Graphics {
 
     void Bloom::SetToRenderTarget() {
         screenTex.BindDrawDest();
+        GL::Viewport(0, 0, screenDim.x, screenDim.y);
     }
 
     void Bloom::ApplyEffect() {
@@ -208,7 +210,10 @@ namespace Quasi::Graphics {
 
         Render::MemoryBarrier(MemBarrier::SHADER_IMAGE_ACCESS);
 
-        screenTex.BlitToScreen({ 0, (screenDim).As<int>() }, { 0, screenDim.As<int>() });
+        const Math::iv2 actualScreenDim = GraphicsDevice::GetDeviceInstance().GetWindowSize();
+        screenTex.BlitToScreen({ 0, (screenDim).As<int>() }, { 0, actualScreenDim });
         screenTex.Unbind();
+
+        GL::Viewport(0, 0, actualScreenDim.x, actualScreenDim.y);
     }
 }

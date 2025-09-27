@@ -166,7 +166,7 @@ namespace Quasi::Math {
         template <class U>
         Rect<U, N> As() const { return { min.template As<U>(), max.template As<U>() }; }
         template <class U>
-        operator Rect<U, N>() const { return As<U>(); }
+        explicit operator Rect<U, N>() const { return As<U>(); }
 
         VecT Clamp(const VecT& val) const { return val.Clamp(min, max); }
 

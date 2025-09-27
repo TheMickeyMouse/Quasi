@@ -27,9 +27,9 @@ namespace Quasi::Graphics {
         // first fit the first √N elements
         const int firstRow = (int)std::sqrt(sprites.Length());
 
-        Math::uv2 pen;
+        Math::iv2 pen;
         for (int i = 0; i < firstRow; i++) {
-            spritesheet.Push(Math::uRect2D::FromSize(pen, sprites[i].Size()));
+            spritesheet.Push(Math::iRect2D::FromSize(pen, sprites[i].Size()));
             pen.x += sprites[i].width;
         }
         const u32 width = pen.x;
@@ -40,7 +40,7 @@ namespace Quasi::Graphics {
             pen.x = 0;
             const u32 initialHeight = sprites[i].height;
             while (pen.x < width) {
-                spritesheet.Push(Math::uRect2D::FromSize(pen, sprites[i].Size()));
+                spritesheet.Push(Math::iRect2D::FromSize(pen, sprites[i].Size()));
                 pen.x += sprites[i].width;
             }
             pen.y += initialHeight;
@@ -55,13 +55,13 @@ namespace Quasi::Graphics {
         fullTexture = Texture2D::New(atlas);
     }
 
-    Math::uRect2D TextureAtlas::GetPx(Str name) const {
+    Math::iRect2D TextureAtlas::GetPx(Str name) const {
         const Option<u32> id = spriteLookup.Get(name).Copied();
-        if (!id) return Math::uRect2D::Empty();
+        if (!id) return Math::iRect2D::Empty();
         return GetPx(*id);
     }
 
-    Math::uRect2D TextureAtlas::GetPx(u32 id) const {
+    Math::iRect2D TextureAtlas::GetPx(u32 id) const {
         return spritesheet[id];
     }
 

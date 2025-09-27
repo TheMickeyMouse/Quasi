@@ -2,13 +2,18 @@
 #include "Mesh.h"
 #include "UIVertex.h"
 #include "RenderObject.h"
+#include "TextureAtlas.h"
+#include "Fonts/TextAlign.h"
 
 namespace Quasi::Graphics {
+    class Font;
+
     struct DrawAttributes {
         Math::fColor fillColor = 1;
         Math::fColor strokeColor = 0;
         float strokeWeight = 5;
         u32 drawStyle = 0;
+        OptRef<const Font> currentFont = nullptr;
     };
 
     struct Gradient {
@@ -28,14 +33,26 @@ namespace Quasi::Graphics {
         void OverlayGradient(const Gradient& g);
     };
 
+    namespace UIDetails {
+        struct SpriteOptions {
+            Math::fColor tint = 1;
+            Math::fRect2D mask = { 0, 1 };
+        };
+    }
+
     class Canvas {
         RenderObject<UIVertex> renderCanvas;
         UIMesh worldMesh;
         OptRef<UIMesh> drawMesh = nullptr; // can be set to any mesh. by default it draws to the world mesh
         DrawAttributes drawAttr;
+        // TODO: replace this with a better method to fetch fonts
+        Font defaultFont = Font::LoadFile(R"(C:\Windows\Fonts\arial.ttf)", 64);
+
+        static constexpr u32 MAX_TEXTURE_SAMPLERS = 8;
+        GraphicsID textures[MAX_TEXTURE_SAMPLERS] = {};
+        u32 usedTextures = 0;
     public:
         Math::Transform2D transform;
-
 
         Canvas();
         Canvas(GraphicsDevice& gd);
@@ -49,13 +66,13 @@ namespace Quasi::Graphics {
 
         void DrawTriangle(const Math::fv2& p1, const Math::fv2& p2, const Math::fv2& p3);
         void DrawQuad(const Math::fv2& p1, const Math::fv2& p2, const Math::fv2& p3, const Math::fv2& p4);
-        void DrawSquare(const Math::fv2& center, float size);
+        void DrawSquare(const Math::fv2& position, float size, bool center = true);
         void DrawRect(const Math::fRect2D& rect);
-        void DrawRoundedSquare(const Math::fv2& center, float size, float radius);
-        void DrawVarRoundedSquare(const Math::fv2& center, float size, float tr, float br, float tl, float bl);
+        void DrawRoundedSquare(const Math::fv2& position, float size, float radius, bool center = true);
+        void DrawVarRoundedSquare(const Math::fv2& position, float size, float tr, float br, float tl, float bl, bool center = true);
         void DrawRoundedRect(const Math::fRect2D& rect, float radius);
         void DrawVarRoundedRect(const Math::fRect2D& rect, float tr, float br, float tl, float bl);
-        void DrawCircle(const Math::fv2& center, float radius);
+        void DrawCircle(const Math::fv2& position, float radius, bool center = true);
         void DrawEllipse(const Math::fRect2D& bounds);
         void DrawArc(const Math::fv2& center, float radius, const Math::Rotor2D& startAngle, const Math::Rotor2D& endAngle, ArcDirection direction = CCW, ArcMode mode = OPEN);
         void DrawArcCCW(const Math::fv2& center, float radius, const Math::Rotor2D& startAngle, const Math::Rotor2D& endAngle, ArcMode mode = OPEN);
@@ -64,6 +81,23 @@ namespace Quasi::Graphics {
         void DrawLine(const Math::fv2& start, const Math::fv2& end);
 
         void DrawMesh(const UIMesh& mesh);
+
+        using SpriteOptions = UIDetails::SpriteOptions;
+
+        void DrawTexture (const Texture2D& texture, const Math::fv2& pos, const Math::fv2& size, bool center = true, const SpriteOptions& options = {});
+        void DrawTextureW(const Texture2D& texture, const Math::fv2& pos, float w, bool center = true, const SpriteOptions& options = {});
+        void DrawTextureH(const Texture2D& texture, const Math::fv2& pos, float h, bool center = true, const SpriteOptions& options = {});
+        // full method
+        void DrawTextureEx(const Texture2D& texture, const Math::fRect2D& rect, const SpriteOptions& options = {});
+
+        void DrawText(Str text, float fontSize, const Math::fv2& pos /*, const TextAlign& align = {} */);
+
+        // if for some reason we either:
+        //      1. run out of index/vertex memory
+        //   or 2. use up all the texture slots,
+        // we draw the batch immediately to clear the current mesh,
+        // leaving up more space for more objects
+        void ForceDrawCurrentBatch();
 
         UIMesh& DestinationMesh();
         struct Batch {
@@ -92,8 +126,12 @@ namespace Quasi::Graphics {
             void SetPosition(const Math::fv2& point);
             void SetUV(float u, float v);
             void SetSTUV(float s, float t, float u, float v = 0);
+            void SetTextureCoord(float u, float v);
+            void SetTexture(GraphicsID textureID);
+            void SetNoTexture();
             void Point(const Math::fv2& position);
-            void PointCirc(const Math::fv2& position, float u, float v, float radiusRatio = 0);
+            void PointCirc(const Math::fv2& position, float u, float v);
+            void PointArc(const Math::fv2& position, float u, float v, float radiusRatio);
             void PointQBezGeneric(const Math::fv2& position, float u, float v, bool flip); // start
             void PointQBezA(const Math::fv2& position, bool flip); // start
             void PointQBezB(const Math::fv2& position, bool flip); // control
@@ -109,7 +147,11 @@ namespace Quasi::Graphics {
             void TriStrip(Span<const u32> strip);
             void TriFan(Span<const u32> fan);
             void Push();
+            void Push(const Math::fv2& point);
             void PushAsPlain();
+
+            // returns advance
+            float PushGlyph(const Glyph& glyph, float scaling, const Math::fv2& position, const Texture2D& atlas);
 
             void Refresh();
         };
@@ -178,6 +220,8 @@ namespace Quasi::Graphics {
 
         DrawAttributes& DrawAttr() { return drawAttr; }
         const DrawAttributes& DrawAttr() const { return drawAttr; }
+
+        const Font& GetCurrentFont() const;
 
         void StrokeWeight(float weight);
         void StrokeCap(UIRender::RenderStyle cap);

@@ -3,6 +3,8 @@
 #include "Type.h"
 
 namespace Quasi {
+    template <class T, usize N> using CArray = T[N];
+
     template <class T>
     struct ZeroArray {
         operator T*() const { return nullptr; }

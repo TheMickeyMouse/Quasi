@@ -12,11 +12,11 @@ namespace Quasi::Graphics {
         RenderBuffer depthBuffer;
         Texture2D downsample;
         ShaderProgram highPass, downsampler, upsampler, addBack;
-        Math::uv2 screenDim;
+        Math::iv2 screenDim;
 
         float threshold = 1.0f, kneeOff = 0.3f, intensity = 0.2f;
 
-        Bloom(const Math::uv2& screenDim);
+        Bloom(const Math::iv2& screenDim);
 
         void SetToRenderTarget();
         void ApplyEffect();

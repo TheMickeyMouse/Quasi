@@ -156,4 +156,22 @@ namespace Quasi {
         for (usize i = 0; i < bytes; ++i)
             ((byte*)dest)[i] = value;
     }
+
+    void Memory::MemSwap(void* a, void* b, usize bytes) {
+        byte* p1 = (byte*)a, *p2 = (byte*)b;
+        while (bytes--) {
+            const byte tmp = *p1;
+            *p1++ = *p2;
+            *p2++ = tmp;
+        }
+    }
+
+    void Memory::MemReverse(void* arr, usize bytes) {
+        byte* lo = (byte*)arr, *hi = lo + bytes - 1;
+        while (lo < hi) {
+            const byte tmp = *lo;
+            *lo++ = *hi;
+            *hi-- = tmp;
+        }
+    }
 }

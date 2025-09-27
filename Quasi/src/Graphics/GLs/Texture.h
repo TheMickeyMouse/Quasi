@@ -60,12 +60,12 @@ namespace Quasi::Graphics {
         void DefaultParams(bool pixelated, TextureBorder b) const;
         void LoadTexture(const byte* img, const TextureLoadParams& loadMode = {});
 
-        explicit TextureObject(GraphicsID id, const Math::Vector<u32, DIM>& size);
+        explicit TextureObject(GraphicsID id, const Math::Vector<int, DIM>& size);
     public:
-        Math::Vector<u32, DIM> size;
+        Math::Vector<int, DIM> size;
 
         TextureObject() = default;
-        static TextureObject New(const byte* raw, const Math::Vector<u32, DIM>& size, const TextureLoadParams& loadMode = {});
+        static TextureObject New(const byte* raw, const Math::Vector<int, DIM>& size, const TextureLoadParams& loadMode = {});
         static TextureObject New(const Image& image, const TextureLoadParams& loadMode = {}) requires (Target == _2D);
         void Bind() const { BindObject(Target, rendererID); }
         void Unbind() const { UnbindObject(Target); }
@@ -94,21 +94,21 @@ namespace Quasi::Graphics {
         void SetParam(TextureParamName paramName, const int*   value) const { TextureBase::SetParam(Target, paramName, value); }
         void SetParam(TextureParamName paramName, const float* value) const { TextureBase::SetParam(Target, paramName, value); }
 
-        void SetSubTexture(const void* data, const Math::Rect<u32, DIM>& rect, const TextureLoadParams& params = {});
-        void TexImage(const byte* data, const Math::Vector<u32, DIM>& dim, const TextureLoadParams& params = {});
+        void SetSubTexture(const void* data, const Math::Rect<int, DIM>& rect, const TextureLoadParams& params = {});
+        void TexImage(const byte* data, const Math::Vector<int, DIM>& dim, const TextureLoadParams& params = {});
 
-        const Math::Vector<u32, DIM>& Size() const { return size; }
-        Math::Vector<f32, DIM> Px2UV(const Math::Vector<u32, DIM>& px) const {
+        const Math::Vector<int, DIM>& Size() const { return size; }
+        Math::Vector<f32, DIM> Px2UV(const Math::Vector<int, DIM>& px) const {
             return px.template As<f32>().DivComps(size.template As<f32>());
         }
-        Math::Vector<u32, DIM> UV2Px(const Math::Vector<f32, DIM>& uv) const {
-            return (uv.MulComps(size.template As<f32>())).template As<u32>();
+        Math::Vector<int, DIM> UV2Px(const Math::Vector<f32, DIM>& uv) const {
+            return (uv.MulComps(size.template As<f32>())).template As<int>();
         }
-        Math::Rect<f32, DIM> Px2UV(const Math::Rect<u32, DIM>& pxRect) const {
+        Math::Rect<f32, DIM> Px2UV(const Math::Rect<int, DIM>& pxRect) const {
             return pxRect.template As<f32>().Scale(size.template As<f32>());
         }
-        Math::Rect<u32, DIM> UV2Px(const Math::Rect<f32, DIM>& uvRect) const {
-            return (uvRect / size.template As<f32>()).template As<u32>();
+        Math::Rect<int, DIM> UV2Px(const Math::Rect<f32, DIM>& uvRect) const {
+            return (uvRect / size.template As<f32>()).template As<int>();
         }
 
         friend class FrameBuffer;

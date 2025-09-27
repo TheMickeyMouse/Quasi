@@ -111,6 +111,9 @@ namespace Quasi::Memory {
     void MemCopyRev(void* out, const void* in, usize bytes);
     void MemSet(void* dest, byte value, usize bytes);
 
+    void MemSwap(void* __restrict__ a, void* __restrict__ b, usize bytes);
+    void MemReverse(void* __restrict__ arr, usize bytes);
+
     template <class T> constexpr void RangeSet(T* out, const T& fill, usize count) {
         for (usize i = 0; i < count; ++i)
             out[i] = fill;

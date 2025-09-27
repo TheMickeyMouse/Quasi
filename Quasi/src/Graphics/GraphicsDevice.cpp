@@ -286,6 +286,7 @@ namespace Quasi::Graphics {
         /* Create a windowed mode window and its OpenGL context */
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        // glfwWindowHint(GLFW_SAMPLES, 4);
 
         // glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
         // glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
@@ -316,6 +317,8 @@ namespace Quasi::Graphics {
 
         Render::EnableDepth();
         Render::UseDepthFunc(CmpOperation::LEQUAL);
+
+        // Render::EnableMultisample();
 
         // IMGUI INIT
         IMGUI_CHECKVERSION();
