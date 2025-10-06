@@ -90,7 +90,7 @@ namespace Quasi::Graphics {
         // full method
         void DrawTextureEx(const Texture2D& texture, const Math::fRect2D& rect, const SpriteOptions& options = {});
 
-        void DrawText(Str text, float fontSize, const Math::fv2& pos /*, const TextAlign& align = {} */);
+        void DrawText(Str text, float fontSize, const Math::fv2& pos, const TextAlign& align = {});
 
         // if for some reason we either:
         //      1. run out of index/vertex memory
@@ -184,6 +184,9 @@ namespace Quasi::Graphics {
         void DrawSimpleRoundedRect(const Math::fRect2D& outer, float radius, const Math::fColor& color);
         void DrawSimpleVarRoundRect(const Math::fRect2D& outer, float tr, float br, float tl, float bl, const Math::fColor& color);
         void DrawRectStroke(const Math::fRect2D& rect);
+
+        void DrawTextLine(Str line, float relSize, const Math::fv2& pos, float letterSpacing, const Font& font);
+        void DrawTextJustify(Str line, float relSize, const Math::fv2& pos, float letterSpacing, float width, const Font& font);
     public:
 
         enum CurveMode {

@@ -410,10 +410,11 @@ namespace Quasi::Graphics {
         batch.Quad(0, 1, 2, 3);
     }
 
-    void Canvas::DrawText(Str text, float fontSize, const Math::fv2& pos /*, const TextAlign& align */) {
+    void Canvas::DrawText(Str text, float fontSize, const Math::fv2& pos, const TextAlign& align) {
         // by default we render in 1/64 pixels; but the user will probably not expect that
         const Font& font = GetCurrentFont();
         const float relativeFontSize = fontSize * 64.0f / (float)font.FontSize();
+        const float lineHeight = (float)font.GetMetric().fontHeight / 64.0f * relativeFontSize * align.lineSpacing;
 
         const Texture2D& fontAtlas = font.GetTexture();
         Batch batch = NewBatch();
@@ -421,8 +422,27 @@ namespace Quasi::Graphics {
         batch.SetTexture(fontAtlas.rendererID);
 
         Math::fv2 pen = pos;
-        for (const char c : text) {
-            pen.x += batch.PushGlyph(font.GetGlyphRect(c), relativeFontSize, pen, fontAtlas);
+        const u32 horizontalAlignment = align.alignment & TextAlign::ALIGN_MASK;
+        for (const Str line : text.Split("\n")) {
+            pen.y -= lineHeight;
+
+            float beginOffset = 0;
+            switch (horizontalAlignment) {
+                case TextAlign::RIGHT: case TextAlign::CENTER: {
+                    const float lineWidth = font.CalcTextWidth(line) * relativeFontSize;
+                    beginOffset = (align.rect.x - lineWidth) * (horizontalAlignment == TextAlign::CENTER ? 0.5f : 1.0f);
+                    [[fallthrough]];
+                }
+                case TextAlign::LEFT: {
+                    DrawTextLine(line, relativeFontSize, { pen.x + beginOffset, pen.y }, align.letterSpacing, font);
+                    break;
+                }
+                case TextAlign::JUSTIFY: {
+                    DrawTextJustify(line, relativeFontSize, pen, align.letterSpacing, align.rect.x, font);
+                    break;
+                }
+                default:;
+            }
         }
     }
 
@@ -1013,6 +1033,54 @@ namespace Quasi::Graphics {
                 break;
             }
             default:;
+        }
+    }
+
+    void Canvas::DrawTextLine(Str line, float relSize, const Math::fv2& pos, float letterSpacing, const Font& font) {
+        const Texture2D& fontAtlas = font.GetTexture();
+        Batch batch = NewBatch();
+        batch.SetStroke();
+        batch.SetTexture(fontAtlas.rendererID);
+
+        Math::fv2 pen = pos;
+        for (const char c : line) {
+            if (Chr::IsWhitespace(c)) {
+                pen.x += font.GetGlyphRect(' ').advance.x * relSize + letterSpacing;
+                continue;
+            }
+            pen.x += batch.PushGlyph(font.GetGlyphRect(c), relSize, pen, fontAtlas) + letterSpacing;
+        }
+    }
+
+    void Canvas::DrawTextJustify(Str line, float relSize, const Math::fv2& pos, float letterSpacing, float width, const Font& font) {
+        float usedWidth = 0;
+        int gaps = 0;
+        // first pass to calculate widths and spacings
+        for (int i = 0; i < line.Length(); i++) {
+            if (Chr::IsWhitespace(line[i])) {
+                gaps++;
+                while (++i < line.Length() && Chr::IsWhitespace(line[i])) {}
+                --i;
+            } else {
+                usedWidth += font.GetGlyphRect(line[i]).advance.x * relSize + letterSpacing;
+            }
+        }
+        const float wordSpacing = (width - usedWidth) / (float)gaps;
+
+        const Texture2D& fontAtlas = font.GetTexture();
+        Batch batch = NewBatch();
+        batch.SetStroke();
+        batch.SetTexture(fontAtlas.rendererID);
+
+        Math::fv2 pen = pos;
+        for (int i = 0; i < line.Length(); i++) {
+            if (Chr::IsWhitespace(line[i])) {
+                pen.x += wordSpacing;
+                while (++i < line.Length() && Chr::IsWhitespace(line[i])) {}
+                --i;
+            } else {
+                pen.x += batch.PushGlyph(font.GetGlyphRect(line[i]), relSize, pen, fontAtlas) + letterSpacing;
+            }
         }
     }
 
