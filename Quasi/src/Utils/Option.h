@@ -92,7 +92,7 @@ namespace Quasi {
         Super& Inspect(Fn<void, T&> auto&& inspect) { if (HasValue()) inspect(Unwrap()); return *this; }
         const Super& Inspect(Fn<void, const T&> auto&& inspect) const { if (HasValue()) inspect(Unwrap()); return *this; }
 
-        Super Filter(Fn<bool, T> auto&& pred) const { return this->HasValue() && pred(this->Unwrap()) ? *this : NoneImpl(); }
+        Super Filter(Fn<bool, T> auto&& pred) const { return this->HasValue() && pred(this->Unwrap()) ? *this : super().NoneImpl(); }
 
         T& Insert(const T& value)              { Set(value);            return Unwrap(); }
         T& Insert(T&& value) requires USE_RREF { Set(std::move(value)); return Unwrap(); }

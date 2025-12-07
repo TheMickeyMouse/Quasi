@@ -1,4 +1,5 @@
 #pragma once
+#include "Interactable.h"
 #include "Mesh.h"
 #include "UIVertex.h"
 #include "RenderObject.h"
@@ -47,6 +48,8 @@ namespace Quasi::Graphics {
         DrawAttributes drawAttr;
         // TODO: replace this with a better method to fetch fonts
         Font defaultFont = Font::LoadFile(R"(C:\Windows\Fonts\arial.ttf)", 64);
+
+        Vec<Ref<Interactable>> interactables;
 
         static constexpr u32 MAX_TEXTURE_SAMPLERS = 8;
         GraphicsID textures[MAX_TEXTURE_SAMPLERS] = {};
@@ -252,6 +255,10 @@ namespace Quasi::Graphics {
         PushStylesScope PushStyles();
 
         Math::fv2 TransformToWorldSpace(const Math::fv2& point) const;
+
+        void Update(float dt);
+        void AddInteractable(Ref<Interactable> inter);
+        void RemoveInteractable(Ref<Interactable> inter);
 
         void BeginFrame();
         void EndFrame();

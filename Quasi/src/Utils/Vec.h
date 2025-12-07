@@ -224,6 +224,7 @@ namespace Quasi {
             }
             SetLengthUnsafe(slow + 1);
         }
+        void Remove(const T& item) { OptionUsize i = this->Find(item); if (i) Pop(*i); }
         void RemoveDups() { return RemoveDupIf(Cmp::Equality {}); }
         void RemoveDupKeys(FnArgs<const T&> auto&& keyf);
         void RemoveDupIf(EqualPred<T> auto&& eq) {

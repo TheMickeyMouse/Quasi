@@ -16,10 +16,11 @@ namespace Quasi {
     struct FuncRef<Result(Args...)> {
     private:
         void* userPtr = nullptr;
-        FuncPtr<Result, void*, Args...> functionPtr = nullptr;
+        FuncPtr<Result, void*, Args...> functionPtr = &Empty;
 
         FuncRef(void* uptr, FuncPtr<Result, void*, Args...> fptr) : userPtr(uptr), functionPtr(fptr) {}
     public:
+        static Result Empty(void*, Args...) { return Result {}; }
         Result Invoke(Args... args) const { return functionPtr(userPtr, (Args&&)args...); }
         Result operator()(Args... args) const { return Invoke((Args&&)args...); }
 
@@ -60,6 +61,86 @@ namespace Quasi {
         template <class OtherFn>
         FuncRef<OtherFn> Transmute() const {
             return Memory::Transmute<FuncRef<OtherFn>>(*this);
+        }
+    };
+
+    inline void ZeroDestructor(void*) {}
+
+    template <class Fn>
+    struct FuncBox {};
+
+    template <class Result, class... Args>
+    struct FuncBox<Result(Args...)> {
+    private:
+        void* userPtr = nullptr;
+        FuncPtr<void, void*> destructor = &ZeroDestructor;
+        FuncPtr<Result, void*, Args...> functionPtr = &FuncRef<Result(Args...)>::Empty;
+
+        FuncBox(void* uptr, FuncPtr<Result, void*, Args...> fptr) : userPtr(uptr), functionPtr(fptr) {}
+        FuncBox(void* uptr, FuncPtr<void, void*> destructor, FuncPtr<Result, void*, Args...> fptr)
+            : userPtr(uptr), destructor(destructor), functionPtr(fptr) {}
+    public:
+        Result Invoke(Args... args) const { return functionPtr(userPtr, (Args&&)args...); }
+        Result operator()(Args... args) const { return Invoke((Args&&)args...); }
+
+        FuncBox() = default;
+        FuncBox(Nullptr) : FuncBox() {}
+        FuncBox(FuncPtr<Result, Args...> fptr) : userPtr(fptr), functionPtr(+[] (void* f, Args... args) {
+            return (*Memory::UpcastPtr<FuncPtr<Result, Args...>>(f))((Args&&)args...);
+        }) {}
+        ~FuncBox() {
+            if (userPtr)
+                destructor(userPtr);
+        }
+
+        static FuncBox FromRaw(void* uptr, FuncPtr<Result, void*, Args...> fptr) { return { uptr, fptr }; }
+        static FuncBox FromRaw(void* uptr, FuncPtr<void, void*> destructor, FuncPtr<Result, void*, Args...> fptr) {
+            return { uptr, destructor, fptr };
+        }
+
+        FuncBox(const FuncBox& f) = delete;
+        FuncBox(FuncBox&& f) noexcept {
+            userPtr     = f.userPtr;     f.userPtr     = nullptr;
+            destructor  = f.destructor;  f.destructor  = nullptr;
+            functionPtr = f.functionPtr; f.functionPtr = nullptr;
+        }
+        FuncBox& operator=(const FuncBox& f) = delete;
+        FuncBox& operator=(FuncBox&& f) noexcept {
+            if (userPtr) destructor(userPtr);
+            userPtr     = f.userPtr;     f.userPtr     = nullptr;
+            destructor  = f.destructor;  f.destructor  = nullptr;
+            functionPtr = f.functionPtr; f.functionPtr = nullptr;
+            return *this;
+        }
+
+        template <class Lamb> requires DistantTo<Lamb, FuncBox>
+        FuncBox(Lamb&& lamb)
+            : userPtr(new Lamb(std::forward<Lamb>(lamb))), destructor([] (void* f) { delete (Lamb*)f; }),
+            functionPtr(+[] (void* functionObj, Args... args) {
+                return (*Memory::UpcastPtr<std::decay_t<Lamb>>(functionObj))((Args&&)args...);
+            })
+        {}
+
+        operator bool() const { return functionPtr; }
+
+        template <class Lamb>
+        static FuncBox Recursive(Lamb&& lamb) {
+            return {
+                &lamb,
+                [] (void* functionObj, Args... args) {
+                    auto* f = Memory::UpcastPtr<std::decay_t<Lamb>>(functionObj);
+                    return (*f)(f, (Args&&)args...);
+                }
+            };
+        }
+
+        template <class OtherFn>
+        FuncBox<OtherFn> Transmute() const {
+            return Memory::Transmute<FuncRef<OtherFn>>(*this);
+        }
+
+        FuncRef<Result(Args...)> AsRef() const {
+            return FuncRef<Result(Args...)>::FromRaw(userPtr, functionPtr);
         }
     };
 

@@ -25,8 +25,8 @@ namespace Quasi::Memory {
     }
 
     void* AllocateRaw(usize size);
-    template <class T> T* Allocate(auto&&... args) { return new T { args... }; }
-    template <class T> T* AllocateArray(usize size, auto&&... args) { return new T[size] { args... }; }
+    template <class T> T* Allocate(auto&&... args) { return new T { std::forward<decltype(args)>(args)... }; }
+    template <class T> T* AllocateArray(usize size, auto&&... args) { return new T[size] { std::forward<decltype(args)>(args)... }; }
     template <class T> T* AllocateUninit() { return (T*) ::operator new (sizeof(T)); }
     template <class T> T* AllocateArrayUninit(usize size) { return (T*) ::operator new (size * sizeof(T)); }
     void FreeRaw(void* mem);

@@ -60,6 +60,7 @@ namespace Quasi {
         Box() : data(nullptr) {}
         Box(Nullptr) : data(nullptr) {}
         Box(Box&& box) noexcept { this->MoveConstructOp(box); }
+        template <Extends<T> Derived> Box(Box<Derived>&& box) : data(box.Release()), allocator(std::move(box.allocator)) {}
         Box& operator=(Box&& box) noexcept { this->MoveAssignOp(box); return *this; }
 
         static Box New        (T value)                 { return { Memory::Allocate<T>(std::move(value)) }; }
@@ -135,6 +136,8 @@ namespace Quasi {
         operator const T*()      const { return Data(); }
         operator T*()                  { return DataMut(); }
         explicit operator bool() const { return data != nullptr; }
+
+        template <class _T, class _A> friend struct Box;
     };
 
     struct GlobalArrayDelete {

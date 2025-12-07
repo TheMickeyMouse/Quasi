@@ -214,6 +214,8 @@ set(ALL_FILES
         src/Graphics/Image.h
         src/Graphics/TextureAtlas.cpp
         src/Graphics/Image.cpp
+        src/Graphics/GUI/Interactable.cpp
+        src/Graphics/GUI/Interactable.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

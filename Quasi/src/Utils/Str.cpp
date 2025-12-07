@@ -120,7 +120,7 @@ namespace Quasi {
 
     strdef Iter::SplitIter<Str> strcls::Split(Str sep) const { return Iter::SplitIter<Str>::New(AsStr(), sep); }
     strdef Iter::LinesIter strcls::Lines() const { return Iter::LinesIter::New(AsStr()); }
-    strdef usize strcls::CountLines() const { return CountChars('\n'); }
+    strdef usize strcls::CountLines() const { return CountChars('\n') + 1; }
     strdef usize strcls::CountChars(char c) const {
         usize zeroCount = 0;
         for (usize i = 0; i < this->Length(); ++i) {

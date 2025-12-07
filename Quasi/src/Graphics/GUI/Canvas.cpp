@@ -414,7 +414,8 @@ namespace Quasi::Graphics {
         // by default we render in 1/64 pixels; but the user will probably not expect that
         const Font& font = GetCurrentFont();
         const float relativeFontSize = fontSize * 64.0f / (float)font.FontSize();
-        const float lineHeight = (float)font.GetMetric().fontHeight / 64.0f * relativeFontSize * align.lineSpacing;
+        const float pointScale = relativeFontSize / 64.0f;
+        const float lineHeight = (float)font.GetMetric().fontHeight * pointScale * align.lineSpacing;
 
         const Texture2D& fontAtlas = font.GetTexture();
         Batch batch = NewBatch();
@@ -422,6 +423,16 @@ namespace Quasi::Graphics {
         batch.SetTexture(fontAtlas.rendererID);
 
         Math::fv2 pen = pos;
+
+        pen.y += (float)font.GetMetric().ascend * pointScale;
+        const float totalHeight = (float)font.GetMetric().fontHeight * pointScale * ((float)((int)text.CountLines() - 2) * align.lineSpacing + 1);
+        switch (align.alignment & TextAlign::VMASK) {
+            case TextAlign::VTOP: break;
+            case TextAlign::VCENTER: pen.y -= 0.5f * (align.rect.y - totalHeight); break;
+            case TextAlign::VBOTTOM: pen.y -= align.rect.y - totalHeight; break;
+            default:;
+        }
+
         const u32 horizontalAlignment = align.alignment & TextAlign::ALIGN_MASK;
         for (const Str line : text.Split("\n")) {
             pen.y -= lineHeight;
@@ -1490,6 +1501,43 @@ namespace Quasi::Graphics {
 
     Math::fv2 Canvas::TransformToWorldSpace(const Math::fv2& point) const {
         return transform * point;
+    }
+
+    void Canvas::Update(float dt) {
+        (void)dt;
+
+        IO::IO& io = GraphicsDevice::GetDeviceInstance().GetIO();
+        Math::fv2 mousePos = io.Mouse.currPos.As<float>();
+        mousePos.y = (float)GraphicsDevice::GetDeviceInstance().GetWindowSize().y - mousePos.y;
+
+        int mouseEventPress = (io.Mouse.AnyOnPress()   ? MouseEventType::CLICK : 0) |
+                              (io.Mouse.AnyOnRelease() ? MouseEventType::RELEASE : 0);
+        for (Ref i : interactables) {
+            int event = MouseEventType::NONE;
+
+            if (!i->hitbox.Contains(mousePos)) { // leave
+                if (i->hovered) {
+                    event = MouseEventType::LEAVE;
+                }
+            } else { // enter
+                event = MouseEventType::ENTER | mouseEventPress;
+            }
+
+            if (event == MouseEventType::NONE) continue;
+
+
+            // send events
+            const bool shouldPassthrough = i->CaptureEvent((MouseEventType::E)event, io);
+            if (!shouldPassthrough) break;
+        }
+    }
+
+    void Canvas::AddInteractable(Ref<Interactable> inter) {
+        interactables.Push(inter);
+    }
+
+    void Canvas::RemoveInteractable(Ref<Interactable> inter) {
+        interactables.Keep([=] (Ref<Interactable> element) { return !element.RefEquals(inter); });
     }
 
     void Canvas::BeginFrame() {
