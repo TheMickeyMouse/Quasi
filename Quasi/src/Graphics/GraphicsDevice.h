@@ -11,6 +11,20 @@
 namespace Quasi::Graphics {
     class RenderData;
 
+    struct WindowArgs {
+        // default args
+        bool resizable     = true,
+             initalVisible = true,
+             decorated     = true,
+             initalFocused = true,
+             floating      = false,
+             maximized     = false,
+             transparent   = false,
+             focusOnShow   = true,
+             passthru      = false;
+        Math::iv2 beginPosition;
+    };
+
     class GraphicsDevice {
         static constexpr usize MAX_VERTEX_COUNT = 1024;
         static constexpr usize MAX_INDEX_COUNT = 1024;
@@ -102,7 +116,7 @@ namespace Quasi::Graphics {
         Math::RandomGenerator& GetRand() { return randDevice; }
         const Math::RandomGenerator& GetRand() const { return randDevice; }
 
-        static GraphicsDevice Initialize(Math::iv2 winSize = { 640, 480 });
+        static GraphicsDevice Initialize(Math::iv2 winSize = { 640, 480 }, const WindowArgs& windowArgs = {});
     };
 
     template <class T>

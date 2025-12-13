@@ -276,7 +276,7 @@ namespace Quasi::Graphics {
         ImGui::End();
     }
 
-    GraphicsDevice GraphicsDevice::Initialize(Math::iv2 winSize) {
+    GraphicsDevice GraphicsDevice::Initialize(Math::iv2 winSize, const WindowArgs& windowArgs) {
         InitGLDebugTools();
         /* Initialize the library */
         if (!glfwInit()) {
@@ -288,9 +288,17 @@ namespace Quasi::Graphics {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         // glfwWindowHint(GLFW_SAMPLES, 4);
 
-        // glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
-        // glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
-        // glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
+        glfwWindowHint(GLFW_RESIZABLE,               windowArgs.resizable);
+        glfwWindowHint(GLFW_VISIBLE,                 windowArgs.initalVisible);
+        glfwWindowHint(GLFW_DECORATED,               windowArgs.decorated);
+        glfwWindowHint(GLFW_FOCUSED,                 windowArgs.initalFocused);
+        glfwWindowHint(GLFW_FLOATING,                windowArgs.floating);
+        glfwWindowHint(GLFW_MAXIMIZED,               windowArgs.maximized);
+        glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, windowArgs.transparent);
+        glfwWindowHint(GLFW_FOCUS_ON_SHOW,           windowArgs.focusOnShow);
+        glfwWindowHint(GLFW_MOUSE_PASSTHROUGH,       windowArgs.passthru);
+        glfwWindowHint(GLFW_POSITION_X, windowArgs.beginPosition.x);
+        glfwWindowHint(GLFW_POSITION_Y, windowArgs.beginPosition.y);
 
         GLFWwindow* window = glfwCreateWindow(winSize.x, winSize.y, "Hello World", nullptr, nullptr);
 

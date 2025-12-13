@@ -413,8 +413,8 @@ namespace Quasi::Graphics {
     void Canvas::DrawText(Str text, float fontSize, const Math::fv2& pos, const TextAlign& align) {
         // by default we render in 1/64 pixels; but the user will probably not expect that
         const Font& font = GetCurrentFont();
-        const float relativeFontSize = fontSize * 64.0f / (float)font.FontSize();
-        const float pointScale = relativeFontSize / 64.0f;
+        const float pointScale = fontSize / (float)font.FontSize();
+        const float relativeFontSize = pointScale * 64.0f;
         const float lineHeight = (float)font.GetMetric().fontHeight * pointScale * align.lineSpacing;
 
         const Texture2D& fontAtlas = font.GetTexture();
@@ -424,8 +424,10 @@ namespace Quasi::Graphics {
 
         Math::fv2 pen = pos;
 
-        pen.y += (float)font.GetMetric().ascend * pointScale;
-        const float totalHeight = (float)font.GetMetric().fontHeight * pointScale * ((float)((int)text.CountLines() - 2) * align.lineSpacing + 1);
+        // i actually have no idea why this is needed. but somehow by some miracle it works.
+        // pray to god next time you have to refactor this.
+        pen.y -= (float)font.GetMetric().descend * pointScale;
+        const float totalHeight = (float)font.GetMetric().fontHeight * pointScale * ((float)((int)text.CountLines() - 1) * align.lineSpacing + 1);
         switch (align.alignment & TextAlign::VMASK) {
             case TextAlign::VTOP: break;
             case TextAlign::VCENTER: pen.y -= 0.5f * (align.rect.y - totalHeight); break;
@@ -682,6 +684,7 @@ namespace Quasi::Graphics {
         SetTextureCoord(uv.min.x, uv.max.y);
         Push({ start.x,         start.y - dim.y });
         Quad(0, 1, 2, 3);
+
         Refresh();
 
         return (float)glyph.advance.x * scaling;
