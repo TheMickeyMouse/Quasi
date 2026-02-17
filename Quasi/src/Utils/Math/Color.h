@@ -39,7 +39,7 @@ namespace Quasi::Math {
 
         template <class U> U ChannelAs(usize i) const {
             if constexpr (Floating<T>) {
-                if constexpr (Floating<U>) return At(i); else return (U)f32s::FastToIntUnsigned(At(i) * 255.0f);
+                if constexpr (Floating<U>) return At(i); else return (U)f32s::FastToIntUnsigned(std::clamp(At(i), 0.0f, 1.0f) * 255.0f);
             } else {
                 if constexpr (Floating<U>) return At(i) / 255.0f; else return (U)At(i);
             }
@@ -178,7 +178,7 @@ namespace Quasi::Math {
         IColor AdjustShade(f32 brightOff) const requires Floating<T>;
         IColor Product(const IColor& other) const;
         IColor Screen (const IColor& other) const;
-        IColor Overlay(const IColor& other) const requires HasAlpha;
+        IColor Over   (const IColor& other) const;
         IColor<T, false> MulAlpha() const;
         f32 Luminance() const;
 
@@ -194,6 +194,7 @@ namespace Quasi::Math {
 
         bool operator==(const IColor&) const = default;
         bool LooseEq(const IColor& other) const;
+
 
         static IColor Random(RandomGenerator& rand);
         static IColor RandomPure(RandomGenerator& rand);

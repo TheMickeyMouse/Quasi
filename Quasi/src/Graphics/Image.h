@@ -17,6 +17,7 @@ namespace Quasi::Graphics {
 
         static u8* AllocImage(int w, int h);
     public:
+        static Image Empty();
         static Image New(int w, int h);
         static Image SolidColor(const Math::uColor& color, int w, int h);
         static Image FromData(u8* imageData, int w, int h) { return { imageData, w, h }; }
@@ -24,9 +25,9 @@ namespace Quasi::Graphics {
         static Image LoadPNGBytes(Bytes pngbytes);
         static Image LoadPNG(CStr fname);
 
-        static Image CaptureScreen();
-        static Image CaptureScreen(int x, int y, int w, int h);
-        static Image CaptureScreen(const Math::iRect2D& screenRect);
+        static Image CaptureScreen(bool flip = true);
+        static Image CaptureScreen(int x, int y, int w, int h, bool flip = true);
+        static Image CaptureScreen(const Math::iRect2D& screenRect, bool flip = true);
 
         ImageView AsView() const;
         ImageView SubImage(int x, int y, int w, int h) const;
@@ -59,6 +60,9 @@ namespace Quasi::Graphics {
         void FlipHorizontal();
         void FlipVertical();
         void Flip180();
+        // converts RGB to BGR pixel format or vice-versa; useful for alternative pixel sources like winapi.
+        // note this could also be avoided by just uploading to gpu using GL_BGRA.
+        void SwapBytes();
 
         void BlitImage(const Math::iv2& dest, const ImageView& image);
 

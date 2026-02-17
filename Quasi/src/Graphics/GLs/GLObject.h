@@ -29,7 +29,7 @@ namespace Quasi::Graphics {
         void Bind() const { G::BindObject(rendererID); }
         void Unbind() const { G::UnbindObject(); }
 
-        void Destroy() { G::DestroyObject(rendererID); rendererID = GraphicsNoID; }
+        void Destroy() { if (rendererID) G::DestroyObject(rendererID); rendererID = GraphicsNoID; }
 
         bool IsNull() const { return rendererID == GraphicsNoID; }
 

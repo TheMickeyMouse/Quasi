@@ -25,6 +25,7 @@ namespace Quasi::Graphics {
 
     void GraphicsDevice::Quit() {
         DeleteAllRenders(); // delete gl objects
+        emptyVAO.Destroy();
         glfwSetWindowShouldClose(mainWindow, true);
     }
 
@@ -309,7 +310,21 @@ namespace Quasi::Graphics {
         glfwWindowHint(GLFW_POSITION_X, windowArgs.beginPosition.x);
         glfwWindowHint(GLFW_POSITION_Y, windowArgs.beginPosition.y);
 
-        GLFWwindow* window = glfwCreateWindow(winSize.x, winSize.y, "Hello World", nullptr, nullptr);
+        GLFWwindow* window;
+        if (windowArgs.fullscreen) {
+            GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+            const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+            glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+            glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+            glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+            glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+
+            window = glfwCreateWindow(winSize.x, winSize.y, "Hello World", monitor, nullptr);
+        } else {
+            window = glfwCreateWindow(winSize.x, winSize.y, "Hello World", nullptr, nullptr);
+        }
+
 
         if (!window) {
             glfwTerminate();

@@ -20,18 +20,18 @@ namespace Quasi::Text {
     String Quote(Str txt);
 
     // adapted from https://stackoverflow.com/a/59522794/19968422
-    namespace details {
+    namespace _helper {
         template <class T> constexpr const char* t() { return Q_FUNC_NAME(); }
         static constexpr usize T_START_IDX = [] {
-            const char* templateString = t<int>();
-            for (usize i = 0; templateString[i]; ++i) if (templateString[i] == 'i') return i;
+            const char* templateString = t<void>();
+            for (usize i = 0; templateString[i]; ++i) if (templateString[i] == 'v') return i;
             return 0_usize;
         } ();
         static constexpr usize T_TOTAL_SIZE = [] {
-            const char* templateString = t<int>();
+            const char* templateString = t<void>();
             usize i = 0;
             for (; templateString[i]; ++i) {}
-            return i - Q_STRLIT_LEN("int");
+            return i - Q_STRLIT_LEN("void");
         } ();
 
         // ReSharper disable once CppStaticAssertFailure
@@ -39,8 +39,8 @@ namespace Quasi::Text {
     }
 
     template <class T> Str TypeName() {
-        const Str fullname = details::t<T>();
-        return fullname.Substr(details::T_START_IDX, fullname.Length() - details::T_TOTAL_SIZE);
+        const Str fullname = _helper::t<T>();
+        return fullname.Substr(_helper::T_START_IDX, fullname.Length() - _helper::T_TOTAL_SIZE);
     }
     template <usize N>
     struct FixedString  {

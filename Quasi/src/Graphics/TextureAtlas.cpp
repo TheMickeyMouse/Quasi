@@ -27,8 +27,13 @@ namespace Quasi::Graphics {
 
         // getting the max width for a singular image and multiplying by sqrt(n)
         // should be good enough of an approximation.
-        const usize maxWidthImg = sprites.Iter().Map([] (const ImageView& img) { return img.width; }).Max().UnwrapOr(0);
-        const int width = (int)std::sqrt(sprites.Length()) * (maxWidthImg + padding);
+        int minWidth = 0;
+        usize area = 0;
+        for (const auto& img : sprites) {
+            minWidth = std::max(minWidth, img.width);
+            area += img.width * img.height;
+        }
+        const int width = std::max((int)std::sqrt(area), minWidth);
 
         Math::iv2 pen;
         // proceed to fit the next sprites, making sure to not exceed the first row

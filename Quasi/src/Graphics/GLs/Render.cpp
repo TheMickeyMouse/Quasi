@@ -1,6 +1,7 @@
 ﻿#include "Render.h"
 #include <glp.h>
 #include "GLDebug.h"
+#include "GraphicsDevice.h"
 #include "VertexArray.h"
 #include "../RenderData.h"
 
@@ -33,6 +34,12 @@ namespace Quasi::Graphics::Render {
 
     void DrawInstanced(const RenderData& dat, int instances) {
         DrawInstanced(dat, dat.shader, instances);
+    }
+
+    void DrawScreenQuad(const Shader& s) {
+        GL::BindVertexArray(GraphicsDevice::GetEmptyVAO().rendererID);
+        s.Bind();
+        QGLCall$(GL::DrawArrays(GL::TRIANGLES, 0, 3));
     }
 
     void Clear(const BufferBit bit) {
@@ -105,5 +112,17 @@ namespace Quasi::Graphics::Render {
 
     void MemoryBarrier(int barrierBits) {
         QGLCall$(GL::MemoryBarrier(barrierBits));
+    }
+
+    void FinishPrevious() {
+        GL::Finish();
+    }
+
+    void ReadFromFrontBuffer() {
+        GL::ReadBuffer(GL::FRONT);
+    }
+
+    void ReadFromBackBuffer() {
+        GL::ReadBuffer(GL::BACK);
     }
 }

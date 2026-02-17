@@ -13,9 +13,10 @@ namespace Quasi::Graphics {
             TextureIFormat::DEPTH, screenDim
         );
         downsample = Texture2D::New(nullptr, screenDim, {
-            .format = TextureFormat::RGBA, .internalformat = TextureIFormat::RGBA_32F, .type = GLTypeID::FLOAT, .level = 6,
+            .format = TextureFormat::RGBA, .internalformat = TextureIFormat::RGBA_32F, .type = GLTypeID::FLOAT,
         });
         downsample.Bind();
+        downsample.GenerateEmptyMipmaps(6);
         downsample.SetMaxMip(6);
         downsample.SetMinifySample(TextureSample::LINEAR_NEAREST_MIP);
 
