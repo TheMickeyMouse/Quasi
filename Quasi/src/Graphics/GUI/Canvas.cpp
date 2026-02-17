@@ -23,13 +23,13 @@ namespace Quasi::Graphics {
 
     void UIMesh::FillGradient(const Gradient& g) {
         for (UIVertex& v : vertices) {
-            v.Color = g.At(v.Position);
+            v.Color = (Math::uColor)g.At(v.Position);
         }
     }
 
     void UIMesh::OverlayGradient(const Gradient& g) {
         for (UIVertex& v : vertices) {
-            v.Color *= g.At(v.Position);
+            v.Color *= (Math::uColor)g.At(v.Position);
         }
     }
 
@@ -505,9 +505,9 @@ namespace Quasi::Graphics {
     void Canvas::Batch::PushI(u32 i, u32 j, u32 k) { return Tri(i, j, k); }
     TriIndices* Canvas::Batch::IndexData() { return mesh.indices.Data(); }
 
-    void Canvas::Batch::SetColor(const Math::fColor& color) { storedPoint.Color = color; }
-    void Canvas::Batch::SetFill()   { storedPoint.Color = canvas.drawAttr.fillColor; }
-    void Canvas::Batch::SetStroke() { storedPoint.Color = canvas.drawAttr.strokeColor; }
+    void Canvas::Batch::SetColor(const Math::fColor& color) { storedPoint.Color = (Math::uColor)color; }
+    void Canvas::Batch::SetFill()   { storedPoint.Color = (Math::uColor)canvas.drawAttr.fillColor; }
+    void Canvas::Batch::SetStroke() { storedPoint.Color = (Math::uColor)canvas.drawAttr.strokeColor; }
     void Canvas::Batch::SetPrim(u32 prim) {
         storedPoint.RenderPrim &= ~UIRender::PRIMITIVE_TYPE;
         storedPoint.RenderPrim |= prim;
@@ -566,7 +566,7 @@ namespace Quasi::Graphics {
     void Canvas::Batch::PointQBezGeneric(const Math::fv2& position, float u, float v, bool flip) {
         SetPosition(position);
         storedPoint.STUV = { u, v, 0, 0 };
-        SetPrim((UIRender::RenderPrimitive)(UIRender::QBEZ | (flip << 3)));
+        SetPrim((UIRender::QBEZ | (flip << 3)));
         Push();
     }
 
@@ -1545,23 +1545,30 @@ namespace Quasi::Graphics {
 
         // this flags prevent other interactables from getting triggered when their
         // hitboxes overlap.
-        bool alreadyTriggered = false;
+        bool alreadyTriggered = false, entered = false;
         for (Ref i : interactables) {
             int event = MouseEventType::NONE;
 
-            if (!i->hitbox.Contains(mousePos)) { // leave
-                if (i->hovered) {
-                    event = MouseEventType::LEAVE;
-                }
-            } else if (!alreadyTriggered) { // enter
-                event = MouseEventType::ENTER | mouseEventPress;
+            const bool enters = i->hitbox.Contains(mousePos), capturesEnter = i->capturedEvents & MouseEventType::ENTER;
+            entered |= enters && capturesEnter;
+            // leave: either the mouse leaves the hitbox OR the object becomes disabled
+            if (i->hovered && (!enters || !capturesEnter)) {
+                event = MouseEventType::LEAVE;
+            } else
+            // enter: the mouse must enter the hitbox AND not enter any previous objects that lay above it.
+            if (enters && !alreadyTriggered) {
+                if (!i->hovered) event = MouseEventType::ENTER;
+                event |= mouseEventPress;
             }
 
-            if (event == MouseEventType::NONE || !(event & i->capturedEvents)) continue;
+            if (event == MouseEventType::NONE) continue;
+            // we still want to send 'leave' and 'release' events even if it's disabled
+            if (!(event & (i->capturedEvents | 0b1010))) continue;
 
-            // send events
+            // send events, also record cursor shape updates
             alreadyTriggered |= !i->CaptureEvent((MouseEventType::E)event, io);
         }
+        GraphicsDevice::GetDeviceInstance().GetIO().Mouse.SetShape(entered ? IO::CursorShape::HAND : IO::CursorShape::DEFAULT);
     }
 
     void Canvas::AddInteractable(Ref<Interactable> inter) {
@@ -1586,7 +1593,6 @@ namespace Quasi::Graphics {
         // TextureBase::BindObject(TextureTarget::_2D, textures[0]);
         // GL::ActiveTexture(GL::TEXTURE1);
         // TextureBase::BindObject(TextureTarget::_2D, textures[1]);
-
         renderCanvas.DrawContext();
     }
 }

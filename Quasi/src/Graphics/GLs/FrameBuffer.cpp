@@ -54,6 +54,14 @@ namespace Quasi::Graphics {
         QGLCall$(GL::BindFramebuffer(GL::DRAW_FRAMEBUFFER, 0));
     }
 
+    void FrameBuffer::UnbindReadSrc() {
+        QGLCall$(GL::BindFramebuffer(GL::READ_FRAMEBUFFER, 0));
+    }
+
+    FrameBuffer FrameBuffer::Screen() {
+        return {};
+    }
+
     void FrameBuffer::BlitFramebuffers(const Math::iRect2D& srcRect, const Math::iRect2D& destRect, bool linear) {
         QGLCall$(GL::BlitFramebuffer(srcRect.min.x, srcRect.min.y, srcRect.max.x, srcRect.max.y,
                                      destRect.min.x, destRect.min.y, destRect.max.x, destRect.max.y, GL::COLOR_BUFFER_BIT, linear ? GL::LINEAR : GL::NEAREST));
@@ -68,6 +76,12 @@ namespace Quasi::Graphics {
     void FrameBuffer::BlitToScreen(const Math::iRect2D& srcRect, const Math::iRect2D& destRect, bool linear) const {
         BindReadSrc();
         UnbindDrawDest();
+        BlitFramebuffers(srcRect, destRect, linear);
+    }
+
+    void FrameBuffer::BlitFromScreen(const Math::iRect2D& srcRect, const Math::iRect2D& destRect, bool linear) const {
+        BindDrawDest();
+        UnbindReadSrc();
         BlitFramebuffers(srcRect, destRect, linear);
     }
 }

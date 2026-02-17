@@ -240,9 +240,12 @@ namespace Quasi::Math {
     coldef colcls colcls::Screen (const IColor& other) const {
         return BinaryMap(other, ChannelScreen {});
     }
-    coldef colcls colcls::Overlay(const IColor& other) const requires HasAlpha {
-        if constexpr (Floating<T>) return a < 0.5f ? Product(other) : Screen(other);
-        else return a < 127 ? Product(other) : Screen(other);
+
+    coldef colcls colcls::Over(const IColor& other) const {
+        if constexpr (HasAlpha) {
+            const float alpha = AlphaAs<float>(), premulA = other.AlphaAs<float>() * (1 - a);
+            return BinaryMapRGB(other, ChannelLerp { alpha, premulA }, alpha + premulA);
+        } else return *this;
     }
     coldef IColor<T, false> colcls::MulAlpha() const {
         constexpr auto mul = ChannelMul {};

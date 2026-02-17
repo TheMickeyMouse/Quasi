@@ -23,7 +23,7 @@ namespace Quasi::Graphics {
         };
 
         int alignment = DEFAULT;
-        Math::fv2 rect = { Math::Infinity };
+        Math::fv2 rect = { Math::Infinity, 0 };
         float letterSpacing = 0; // this is extra offset
         float lineSpacing = 1; // this is a multiplier
 

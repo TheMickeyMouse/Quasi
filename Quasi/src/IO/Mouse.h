@@ -4,6 +4,7 @@
 #include "Utils/Math/Vector.h"
 
 struct GLFWwindow;
+struct GLFWcursor;
 
 namespace Quasi::Graphics {
     class GraphicsDevice;
@@ -11,6 +12,19 @@ namespace Quasi::Graphics {
 
 namespace Quasi::IO {
     class IO;
+
+    enum class CursorShape {
+        DEFAULT = 0, ARROW = DEFAULT,
+        TEXT_SELECT,
+        CROSSHAIR,
+        HAND,
+        H_RESIZE,    // (horizontal resize)
+        V_RESIZE,    // (vertical resize)
+        BS_RESIZE,   // (diagonal top-left to bottom-right)
+        FS_RESIZE,   // (diagonal top-right to bottom-left)
+        ALL_RESIZE,  // (omnidirectional resize)
+        NOT_ALLOWED, // (action not allowed/slash)
+    };
 
     struct MouseType {
         static constexpr int LEFT_MOUSE   = 0;
@@ -24,6 +38,8 @@ namespace Quasi::IO {
 
         Math::dv2 currPos, prevPos, posDelta, scroll, scrollDelta;
         std::queue<Math::dv2> queuedScrolls;
+        CursorShape cursorShape = CursorShape::DEFAULT;
+        static GLFWcursor* DEFAULT_CURSOR_SHAPES[10];
 
         Ref<IO> io;
 
@@ -79,6 +95,8 @@ namespace Quasi::IO {
         static bool IsStandardMouseButton(int btn);
         static bool IsValidMouseButton(int btn);
         static Str  MouseButtonToStr(int btn);
+
+        void SetShape(CursorShape shape);
         
         private:
             GLFWwindow* inputWindow();

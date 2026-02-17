@@ -30,11 +30,11 @@ namespace Quasi::Graphics {
         for (u32 i = 0; i < elements.Length(); i++) {
             const auto& elem = elements[i];
             QGLCall$(GL::EnableVertexAttribArray(i));
-            if (elem.flags & VertexBufferComponent::INTEGER_FLAG)
+            if (elem.integer)
                 QGLCall$(GL::VertexAttribIPointer(i, elem.count, elem.type->glID, layout.GetStride(), (const void*)offset));
             else
-                QGLCall$(GL::VertexAttribPointer(i, elem.count, elem.type->glID, elem.flags & elem.NORMALIZED_FLAG, layout.GetStride(), (const void*)offset));
-            offset += elem.count * elem.type->typeSize;
+                QGLCall$(GL::VertexAttribPointer(i, elem.count, elem.type->glID, elem.norm, layout.GetStride(), (const void*)offset));
+            offset += elem.width;
         }
     }
 

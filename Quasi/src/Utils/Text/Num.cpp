@@ -425,7 +425,7 @@ namespace Quasi::Text {
         x = U64ToBCD8(x);
         x |= 0x3030303030303030;
 
-        Memory::MemCopyNoOverlap(out, ((const char*)&x) + 8 - len, len);
+        Memory::WriteU64Big(x << ((8 - len) * 8), out);
         return len;
     }
 

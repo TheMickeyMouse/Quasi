@@ -156,6 +156,8 @@ namespace Quasi::Graphics::Render {
     void DrawInstanced(const RenderData& dat, const Shader& s, int instances);
     void DrawInstanced(const RenderData& dat, int instances);
 
+    void DrawScreenQuad(const Shader& s);
+
 #pragma region GL Functions
 #define GL_SWITCH(F, NAME, E) inline void F##NAME() { F(E); }
 
@@ -207,4 +209,7 @@ namespace Quasi::Graphics::Render {
 #pragma endregion
 
     void MemoryBarrier(int barrierBits);
+    void FinishPrevious();
+    void ReadFromFrontBuffer();
+    void ReadFromBackBuffer();
 }

@@ -6,7 +6,7 @@ namespace Quasi::Graphics {
     struct UIVertex {
         Math::fv2 Position;
         Math::fv2 TexCoord;
-        Math::fColor Color;
+        Math::uColor Color;
         Math::fv4 STUV;
         u32 RenderPrim = 0;
 
@@ -27,7 +27,7 @@ namespace Quasi::Graphics {
             INVERT = 0x8,
 
             TEXTURE_ID_MASK = 0xF0,
-            TEXTURE_ID = 0x10,
+            TEXTURE_ID = 0x10
         };
 
         enum RenderStyle {

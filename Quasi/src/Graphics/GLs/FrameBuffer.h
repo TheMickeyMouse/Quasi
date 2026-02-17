@@ -52,10 +52,13 @@ namespace Quasi::Graphics {
         void BindReadSrc() const;
         void BindDrawDest() const;
         static void UnbindDrawDest();
+        static void UnbindReadSrc();
+        static FrameBuffer Screen();
 
         static void BlitFramebuffers(const Math::iRect2D& srcRect, const Math::iRect2D& destRect, bool linear = true);
         void BlitTo(const FrameBuffer& dest, const Math::iRect2D& srcRect, const Math::iRect2D& destRect, bool linear = true) const;
         void BlitToScreen(const Math::iRect2D& srcRect, const Math::iRect2D& destRect, bool linear = true) const;
+        void BlitFromScreen(const Math::iRect2D& srcRect, const Math::iRect2D& destRect, bool linear = true) const;
 
         friend class GraphicsDevice;
     };

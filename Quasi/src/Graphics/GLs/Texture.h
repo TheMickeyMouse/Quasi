@@ -5,6 +5,7 @@
 #include "GLObject.h"
 
 #include "GLTypeID.h"
+#include "Image.h"
 #include "Render.h"
 #include "TextureConstants.h"
 #include "Utils/Math/Rect.h"
@@ -24,7 +25,6 @@ namespace Quasi::Graphics {
         bool pixelated = false;
         TextureBorder border = TextureBorder::CLAMP_TO_EDGE;
         GLTypeID type = GLTypeID::BYTE;
-        int level = 0;
     };
 
     struct STBIImageHandler { void operator()(byte* dat) const; };
@@ -94,8 +94,10 @@ namespace Quasi::Graphics {
         void SetParam(TextureParamName paramName, const int*   value) const { TextureBase::SetParam(Target, paramName, value); }
         void SetParam(TextureParamName paramName, const float* value) const { TextureBase::SetParam(Target, paramName, value); }
 
-        void SetSubTexture(const void* data, const Math::Rect<int, DIM>& rect, const TextureLoadParams& params = {});
-        void TexImage(const byte* data, const Math::Vector<int, DIM>& dim, const TextureLoadParams& params = {});
+        void SetSubTexture(const byte* data, const Math::Rect<int, DIM>& rect, const TextureLoadParams& params = {}, int level = 0);
+        void SetSubTexture(ImageView image, const Math::iv2& pos, const TextureLoadParams& params = {}, int level = 0) requires (DIM == 2);
+        void SetTexture(const byte* data, const Math::Vector<int, DIM>& dim, const TextureLoadParams& params = {}, int level = 0);
+        void GenerateEmptyMipmaps(const Math::Vector<int, DIM>& dim, const TextureLoadParams& params = {}, u32 levels = 0);
 
         const Math::Vector<int, DIM>& Size() const { return size; }
         Math::Vector<f32, DIM> Px2UV(const Math::Vector<int, DIM>& px) const {
