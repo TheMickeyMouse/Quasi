@@ -55,7 +55,7 @@ namespace Quasi::Physics2D {
     }
 
     void World::Update(float dt) {
-        for (Body* b : bodies) {
+        for (Box<Body>& b : bodies) {
             if (!b->enabled) continue;
 
             if (b->type == BodyType::DYNAMIC)
@@ -70,7 +70,7 @@ namespace Quasi::Physics2D {
         // sweep impl
         // std::vector<std::tuple<Body*, Body*, Collision::Event>> collisionPairs;
         Vec<Ref<Body>> active;
-        for (Body* b : bodies) {
+        for (Box<Body>& b : bodies) {
             if (!b->enabled) continue;
             const float min = b->boundingBox.min.x;
             for (u32 j = 0; j < active.Length();) {

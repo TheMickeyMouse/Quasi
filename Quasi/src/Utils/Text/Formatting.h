@@ -105,6 +105,7 @@ namespace Quasi::Text {
     };
 }
 
+
 #pragma region Extra Type Formattings
 namespace Quasi::Text {
     template <> struct Formatter<void*> {

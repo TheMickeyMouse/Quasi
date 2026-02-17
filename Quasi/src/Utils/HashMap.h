@@ -3,6 +3,7 @@
 #include "Utils/Debug/Logger.h"
 
 // ported from robin_hood's hashmap implementation
+// https://github.com/martinus/robin-hood-hashing
 namespace Quasi {
     namespace Memory {
         // allocates bulks of memory for objects of type T.
@@ -163,6 +164,29 @@ namespace Quasi {
         inline void AbortOverflowError() { Debug::QCritical$("hashmap encountered overflow"); }
     }
 
+    // A highly optimized hashmap implementation, using the Robin Hood algorithm.
+    //
+    // This implementation uses the following memory layout:
+    //
+    // [Node, Node, ... Node | info, info, ... infoSentinel ]
+    //
+    // * Node: either a DataNode that directly has the std::pair<key, val> as member,
+    //   or a DataNode with a pointer to std::pair<key,val>. Which DataNode representation to use
+    //   depends on how fast the swap() operation is. Heuristically, this is automatically choosen
+    //   based on sizeof(). there are always 2^n Nodes.
+    //
+    // * info: Each Node in the map has a corresponding info byte, so there are 2^n info bytes.
+    //   Each byte is initialized to 0, meaning the corresponding Node is empty. Set to 1 means the
+    //   corresponding node contains data. Set to 2 means the corresponding Node is filled, but it
+    //   actually belongs to the previous position and was pushed out because that place is already
+    //   taken.
+    //
+    // * infoSentinel: Sentinel byte set to 1, so that iterator's ++ can stop at end() without the
+    //   need for a idx variable.
+    //
+    // According to STL, order of templates has effect on throughput. That's why I've moved the
+    // boolean to the front.
+    // https://www.reddit.com/r/cpp/comments/ahp6iu/compile_time_binary_size_reductions_and_cs_future/eeguck4/
     template <bool IsFlat, class Key, class Value, class Hasher>
     struct HashTable
         : Memory::NodeAllocator<KeyValuePair<Key, Value>, 4, 16384, IsFlat>,
@@ -576,7 +600,7 @@ namespace Quasi {
         }
 
         void NextWhileLessThan(InfoType* info, usize* idx) const {
-            while (*info < info[*idx]) {
+            while (*info < infoData[*idx]) {
                 Next(info, idx);
             }
         }
@@ -871,7 +895,6 @@ namespace Quasi {
         TableIter<const Key>   Keys()   const { return TableIter<const Key>  ::FromFwd(kvData, KvEnd(), infoData); }
         TableIter<const Value> Values() const { return TableIter<const Value>::FromFwd(kvData, KvEnd(), infoData); }
         TableIter<Value>       ValuesMut()    { return TableIter<Value>      ::FromFwd(kvData, KvEnd(), infoData); }
-
 
         // reserves space for the specified number of elements. Makes sure the old data fits.
         // exactly the same as reserve(c).

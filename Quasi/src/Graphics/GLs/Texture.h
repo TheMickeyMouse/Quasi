@@ -105,10 +105,10 @@ namespace Quasi::Graphics {
             return (uv.MulComps(size.template As<f32>())).template As<int>();
         }
         Math::Rect<f32, DIM> Px2UV(const Math::Rect<int, DIM>& pxRect) const {
-            return pxRect.template As<f32>().Scale(size.template As<f32>());
+            return pxRect.template As<f32>() / size.template As<f32>();
         }
         Math::Rect<int, DIM> UV2Px(const Math::Rect<f32, DIM>& uvRect) const {
-            return (uvRect / size.template As<f32>()).template As<int>();
+            return (uvRect * size.template As<f32>()).template As<int>();
         }
 
         friend class FrameBuffer;

@@ -340,7 +340,7 @@ namespace Quasi::Text {
     u64 NumberConversion::U64ToBCD8(u64 x) {
         // x   = [00000000ABCDEFGH]
         // top = [000000000000ABCD]
-        u32 top = (x * 109951163) >> 40; // 1/10000
+        u64 top = (x * 109951163) >> 40; // 1/10000
         // x   = [0000ABCD0000EFGH]
         x += top * ((1_u64 << 32) - 10000);
         // top = [000000AB000000EF]
@@ -392,31 +392,52 @@ namespace Quasi::Text {
             else
                 len = x > 99999 ? 6 : 5;
         } else {
-            const u64 skip8 = x * 0x55E63B89 >> 57; // 10^-8
+            // max num digits is 20
+
+            u64 skip8 = x / 100'000'000;
             x -= (skip8 * 100'000'000);
-            // h will be at most 42
-            // calc num digits
-            len = U64ToString(skip8, out);
-            out += 8;
-            len += 8;
+
+            if (skip8 >= 100'000'000) {
+                const u64 skip16 = skip8 / 100'000'000;
+                skip8 -= (skip16 * 100'000'000);
+                len = U64ToString(skip16, out);
+                out += len;
+                skip8 = U64ToBCD8(skip8);
+                skip8 |= 0x3030303030303030;
+                Memory::WriteU64Big(skip8, out);
+                len += 8;
+                out += 8;
+            } else {
+                len = u32s::Log10(skip8) + 1;
+                skip8 = U64ToBCD8(skip8);
+                skip8 |= 0x3030303030303030;
+                Memory::MemCopyNoOverlap(out, ((const char*)&skip8) + 8 - len, len);
+                out += len;
+            }
+
+            x = U64ToBCD8(x);
+            x |= 0x3030303030303030;
+
+            Memory::WriteU64Big(x, out);
+            return len + 8;
         }
 
         x = U64ToBCD8(x);
         x |= 0x3030303030303030;
 
-        Memory::MemCopyNoOverlap(out, ((const char*)&x) + (8 + (-8 | -len)), len);
+        Memory::MemCopyNoOverlap(out, ((const char*)&x) + 8 - len, len);
         return len;
     }
 
     usize NumberConversion::FormatU64(StringWriter sw, u64 num, const IntFormatter::FormatOptions& options, char sign) {
         if (num == 0) {
-            const u32 padLen = options.totalLength - options.numLen;
+            const u32 padLen = std::max(options.width, options.numLen) - options.numLen;
             const u32 right = padLen * (usize)options.alignment / 2;
             sw.WriteRepeat(options.pad, padLen - right);
             sw.WriteRepeat(options.shouldPadZero ? '0' : ' ', std::max(options.numLen, 1u) - 1);
             sw.Write('0');
             sw.WriteRepeat(options.pad, padLen - right);
-            return options.totalLength;
+            return options.width;
         }
 
         u32 nlen = 0;
@@ -430,8 +451,13 @@ namespace Quasi::Text {
         }
 
         const u32 targetnLen = std::max(nlen, options.numLen) + (sign != '\0');
-        const u32 padLen = options.totalLength - std::min(options.totalLength, targetnLen);
+        u32 padLen = options.width - std::min(options.width, targetnLen);
         const u32 right = padLen * (usize)options.alignment / 2;
+
+        if (options.showPrefix && options.base != IntFormatter::FormatOptions::DECIMAL) {
+            sw.Write(Str::Slice(&"0b0o0x0X"[options.base * 2 - 2], 2));
+            padLen = std::max(2u, padLen) - 2;
+        }
 
         sw.WriteRepeat(options.pad, padLen - right);
         sw.WriteRepeat(options.shouldPadZero ? '0' : ' ', targetnLen - nlen);
@@ -450,7 +476,7 @@ namespace Quasi::Text {
 
         sw.WriteRepeat(options.pad, right);
 
-        return std::max(options.totalLength, targetnLen);
+        return std::max(options.width, targetnLen);
     }
 
     usize NumberConversion::FormatI64(StringWriter sw, i64 num, const IntFormatter::FormatOptions& options) {
@@ -694,7 +720,7 @@ namespace Quasi::Text {
         );
         return Formatter<Str>::FormatTo(sw,
             Str::Slice(strbuf, end - strbuf),
-            { options.totalLength, options.alignment, options.pad, false }
+            { options.width, options.alignment, options.pad, false }
         );
     }
 
@@ -713,11 +739,11 @@ namespace Quasi::Text {
             options.width,
             options.precision,
             log10,
-            options.shouldPadZero ? '0' : ' '
+            options.pad
         );
         return Formatter<Str>::FormatTo(sw,
             Str::Slice(strbuf, end - strbuf),
-            { options.totalLength, options.alignment, options.pad, false }
+            { options.width, options.alignment, options.pad, false }
         );
     }
 
@@ -730,14 +756,14 @@ namespace Quasi::Text {
         if (f == Math::NaN) {
             return Formatter<Str>::FormatTo(sw,
                 Str::Slice(NaNString, 3 + options.mode == PERCENTAGE),
-                { options.totalLength, options.alignment, options.pad, false }
+                { options.width, options.alignment, options.pad, false }
             );
         }
         if (f64s::IsInf(f)) {
             const bool isPositive = f > 0;
             return Formatter<Str>::FormatTo(sw,
                 Str::Slice(InfString + isPositive, 9 - isPositive + options.mode == PERCENTAGE),
-                { options.totalLength, options.alignment, options.pad, false }
+                { options.width, options.alignment, options.pad, false }
             );
         }
 
@@ -771,43 +797,92 @@ namespace Quasi::Text {
     }
 
     IntFormatter::FormatOptions IntFormatter::ConfigureOptions(Str opt) {
+        // see https://github.com/fmtlib/fmt/blob/0e078f6ed0624be8babc43bd145371d9f3a08aab/include/fmt/base.h#L1473
+
+        enum State {
+            BEGIN, ALIGN, SIGN, PREFIX, ZERO, WIDTH
+        } state = BEGIN;
+
+#define ENTER(S) Debug::QAssert$(S > state, "bad format spec"); state = S
+
+        using Align = TextFormatOptions::Alignment;
+
         FormatOptions options;
-        if (opt.Length() > 1 && opt[0] != '+') {
-            if (opt[0] != '<' && opt[0] != '^' && opt[0] != '>') {
-                options.pad = opt[0];
-                opt.Advance(1);
-            } else if (opt[0] == '^') {
-                options.alignment = TextFormatOptions::CENTER;
-                opt.Advance(1);
-            } else if (opt[0] == '<') {
-                options.alignment = TextFormatOptions::LEFT;
-                opt.Advance(1);
-            } else if (opt[0] == '>') {
-                options.alignment = TextFormatOptions::RIGHT;
-                opt.Advance(1);
-            }
-            const auto [n, totalLen] = ParsePartial<u32>(opt);
-            options.totalLength = totalLen.Assert();
-            opt.Advance(*n);
-            if (opt.IsEmpty())
-                return options;
-            Debug::AssertEq(opt[0], ',');
-            opt.Advance(1);
+        if (opt.IsEmpty()) { return options; }
+
+        char c = 0;
+        if (opt.Length() == 1) { c = opt[0]; }
+        else {
+            c = "<^>"_str.Contains(opt[1]) ? '\0' : opt[0];
         }
 
-        if (opt.StartsWith('+')) {
-            options.showSign = true;
-            opt.Advance(1);
+        while (true) {
+            switch (c) {
+                case '<': case '>': case '^':
+                    ENTER(ALIGN);
+                    options.alignment = c == '<' ? Align::LEFT : c == '^' ? Align::CENTER : Align::RIGHT;
+                    opt.Advance(1);
+                    if (!opt.IsEmpty() && Chr::IsDigit(opt[0])) {
+                        const auto [n, w] = ParsePartial<u32>(opt);
+                        options.width = w.Assert();
+                        opt.Advance(*n);
+                    }
+                    break;
+                case '+': case ' ': case '-':
+                    ENTER(SIGN);
+                    // TODO: add the 'space' showSign option
+                    options.showSign = c == '+';
+                    opt.Advance(1);
+                    break;
+                case '#':
+                    ENTER(PREFIX);
+                    options.showPrefix = true;
+                    opt.Advance(1);
+                    break;
+                case '0':
+                    ENTER(ZERO);
+                    options.shouldPadZero = true;
+                    opt.Advance(1);
+                    break;
+                case '1': case '2': case '3': case '4': case '5':
+                case '6': case '7': case '8': case '9': {
+                    ENTER(WIDTH);
+                    const auto [n, w] = ParsePartial<u32>(opt);
+                    options.numLen = w.Assert();
+                    opt.Advance(*n);
+                    break;
+                }
+                // case '.':
+                //     ENTER(PRECISION);
+                //
+                //     const auto [] = parse_precision(begin, end, specs, specs.precision_ref, ctx);
+                //     break;
+                case 'd': return options;
+                case 'X': options.base = FormatOptions::CAP_HEX; return options;
+                case 'x': options.base = FormatOptions::HEX;     return options;
+                case 'o': options.base = FormatOptions::OCTAL;   return options;
+                case 'b': options.base = FormatOptions::BINARY;  return options;
+                // case 'E': specs.set_upper(); FMT_FALLTHROUGH;
+                // case 'e': return parse_presentation_type(pres::exp, float_set);
+                // case 'F': specs.set_upper(); FMT_FALLTHROUGH;
+                // case 'f': return parse_presentation_type(pres::fixed, float_set);
+                // case 'G': specs.set_upper(); FMT_FALLTHROUGH;
+                // case 'g': return parse_presentation_type(pres::general, float_set);
+                default: {
+                    if (opt.IsEmpty()) return options;
+                    // Parse fill and alignment.
+                    const char align = opt[1];
+                    Debug::Assert("<^>"_str.Contains(align), "no align spec");
+                    ENTER(ALIGN);
+                    options.pad = c;
+                    options.alignment = align == '<' ? Align::LEFT : align == '^' ? Align::CENTER : Align::RIGHT;
+                    opt.Advance(2);
+                }
+            }
+            if (opt.IsEmpty()) return options;
+            c = opt[0];
         }
-        if (opt.StartsWith('0')) {
-            options.shouldPadZero = true;
-            opt.Advance(1);
-        }
-        if (const auto i = "dboxX"_str.Find(opt.Last())) {
-            options.base = (FormatOptions::Base)*i;
-            opt.Shorten(1);
-        }
-        options.numLen = Parse<u32>(opt).UnwrapOr(0);
+
         return options;
     }
 
@@ -827,51 +902,80 @@ namespace Quasi::Text {
     template usize IntFormatter::FormatTo<i64>(StringWriter sw, i64 num, const FormatOptions& options);
 
     FloatFormatter::FormatOptions FloatFormatter::ConfigureOptions(Str opt) {
-        // ((?'pad'.?)(?'align'[<^>])(?'totalLen'[0-9]+)\,)?(?'showSign'\+?)(?'shouldPadZero'0?)(?'width'[0-9]*)\.(?'precision'[0-9]*)(?'mode'[feEgG%])
+        // see https://github.com/fmtlib/fmt/blob/0e078f6ed0624be8babc43bd145371d9f3a08aab/include/fmt/base.h#L1473
+
+        enum State {
+            BEGIN, ALIGN, SIGN, ZERO, WIDTH, PRECISION
+        } state = BEGIN;
+
+#define ENTER(S) Debug::QAssert$(S > state, "bad format spec"); state = S
+
+        using Align = TextFormatOptions::Alignment;
+
         FormatOptions options;
-        if (opt.IsEmpty()) return {};
-        if (opt.Length() > 1 && opt[0] != '+') {
-            if (opt[0] != '<' && opt[0] != '^' && opt[0] != '>') {
-                options.pad = opt[0];
-                opt.Advance(1);
-            } else if (opt[0] == '^') {
-                options.alignment = TextFormatOptions::CENTER;
-                opt.Advance(1);
-            } else {
-                options.alignment = (TextFormatOptions::Alignment)(opt[0] - '<');
-                opt.Advance(1);
+        if (opt.IsEmpty()) { return options; }
+
+        char c = 0;
+        if (opt.Length() == 1) { c = opt[0]; }
+        else {
+            c = "<^>"_str.Contains(opt[1]) ? '\0' : opt[0];
+        }
+
+        while (true) {
+            switch (c) {
+                case '<': case '>': case '^':
+                    ENTER(ALIGN);
+                    options.alignment = c == '<' ? Align::LEFT : c == '^' ? Align::CENTER : Align::RIGHT;
+                    opt.Advance(1);
+                    break;
+                case '+': case ' ': case '-':
+                    ENTER(SIGN);
+                    // TODO: add the 'space' showSign option
+                    options.showSign = c == '+';
+                    opt.Advance(1);
+                    break;
+                case '0':
+                    ENTER(ZERO);
+                    options.shouldPadZero = true;
+                    opt.Advance(1);
+                    break;
+                case '1': case '2': case '3': case '4': case '5':
+                case '6': case '7': case '8': case '9': {
+                    ENTER(WIDTH);
+                    const auto [n, w] = ParsePartial<u32>(opt);
+                    options.width = w.Assert();
+                    opt.Advance(*n);
+                    break;
+                }
+                case '.': {
+                    ENTER(PRECISION);
+                    opt.Advance(1);
+                    const auto [n, p] = ParsePartial<u32>(opt);
+                    options.precision = p.Assert();
+                    opt.Advance(*n);
+                    break;
+                }
+                case 'E': options.mode = FormatOptions::SCI_CAP;    return options;
+                case 'e': options.mode = FormatOptions::SCIENTIFIC; return options;
+                case 'F': [[fallthrough]];
+                case 'f': options.mode = FormatOptions::FIXED;      return options;
+                case 'G': options.mode = FormatOptions::GEN_CAP;    return options;
+                case 'g': options.mode = FormatOptions::GENERAL;    return options;
+                default: {
+                    if (opt.IsEmpty()) return options;
+                    // Parse fill and alignment.
+                    const char align = opt[1];
+                    Debug::Assert("<^>"_str.Contains(align), "no align spec");
+                    ENTER(ALIGN);
+                    options.pad = c;
+                    options.alignment = align == '<' ? Align::LEFT : align == '^' ? Align::CENTER : Align::RIGHT;
+                    opt.Advance(2);
+                }
+                if (opt.IsEmpty()) return options;
+                c = opt[0];
             }
-            const auto [n, totalLen] = ParsePartial<u32>(opt.Tail());
-            options.totalLength = totalLen.Assert();
-            opt.Advance(*n);
-            if (opt.IsEmpty())
-                return options;
-            Debug::AssertEq(opt[0], ',');
-            opt.Advance(1);
         }
 
-        if (opt.StartsWith('+')) {
-            options.showSign = true;
-            opt.Advance(1);
-        }
-        if (opt.StartsWith('0')) {
-            options.shouldPadZero = true;
-            opt.Advance(1);
-        }
-        const auto [wlen, width] = ParsePartial<u32>(opt);
-        if (options.shouldPadZero) {
-            Debug::Assert((bool)wlen, "float spec can't have 0 width");
-        }
-        options.width = *width;
-
-        Debug::AssertEq(opt[*wlen], '.');
-        opt.Advance(*wlen + 1);
-
-        if (const auto i = "efgEG%"_str.Find(opt.Last())) {
-            options.mode = (FormatOptions::Mode)*i;
-            opt.Shorten(1);
-        }
-        options.precision = opt ? std::min(Parse<u32>(opt).Assert(), 32u) : ~0;
         return options;
     }
 

@@ -93,7 +93,14 @@ namespace Quasi::Graphics {
         // full method
         void DrawTextureEx(const Texture2D& texture, const Math::fRect2D& rect, const SpriteOptions& options = {});
 
+        void DrawSTexture  (const SubTexture& subtex, const Math::fv2& pos, const Math::fv2& size, bool center = true, const Math::fColor& tint = 1);
+        void DrawSTextureW (const SubTexture& subtex, const Math::fv2& pos, float w, bool center = true, const Math::fColor& tint = 1);
+        void DrawSTextureH (const SubTexture& subtex, const Math::fv2& pos, float h, bool center = true, const Math::fColor& tint = 1);
+        void DrawSTextureEx(const SubTexture& subtex, const Math::fRect2D& rect, const Math::fColor& tint = 1);
+
         void DrawText(Str text, float fontSize, const Math::fv2& pos, const TextAlign& align = {});
+
+        void ShowHitboxes();
 
         // if for some reason we either:
         //      1. run out of index/vertex memory

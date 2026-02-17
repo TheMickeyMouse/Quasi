@@ -98,6 +98,6 @@ namespace Quasi::Graphics {
         const Math::uColor* PixelData() const;
         Math::iv2 Size() const { return { width, height }; }
 
-        void ExportPNG(Str fdest);
+        void ExportPNG(Str fdest) const;
     };
 }

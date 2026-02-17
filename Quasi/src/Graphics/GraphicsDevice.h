@@ -97,6 +97,8 @@ namespace Quasi::Graphics {
         GLFWwindow* GetWindow() { return mainWindow; }
         const GLFWwindow* GetWindow() const { return mainWindow; }
 
+        void EnterFullscreen();
+
         FontDevice& GetFontDevice() { return fontDevice; }
         const FontDevice& GetFontDevice() const { return fontDevice; }
 

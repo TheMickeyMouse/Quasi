@@ -11,14 +11,14 @@ namespace Quasi::Text {
     };
 
     struct IntFormatter {
-        // :((?'pad'.?)(?'align'[<^>])(?'totalLen'[0-9]+)\,)?(?'showSign'\+?)(?'shouldPadZero'0?)(?'numLen'[0-9]*)(?'base'[dboxX])
+        // see python's int options
         struct FormatOptions {
             u32 numLen = 0;
-            u32 totalLength = 0;
+            u32 width = 0;
 
             TextFormatOptions::Alignment alignment = TextFormatOptions::LEFT;
             char pad = ' ';
-            bool showSign = false, shouldPadZero = false;
+            bool showSign = false, shouldPadZero = false, showPrefix = false;
             enum Base { DECIMAL, BINARY, OCTAL, HEX, CAP_HEX } base = DECIMAL;
         };
         static FormatOptions ConfigureOptions(Str opt);
@@ -36,7 +36,6 @@ namespace Quasi::Text {
         // ((?'pad'.?)(?'align'[<^>])(?'totalLen'[0-9]+)\,)?(?'showSign'\+?)(?'shouldPadZero'0?)(?'width'[0-9]*)\.(?'precision'[0-9]*)(?'mode'[feEgG%])
         struct FormatOptions {
             u32 width = 0, precision = ~0;
-            u32 totalLength = 0;
 
             TextFormatOptions::Alignment alignment = TextFormatOptions::LEFT;
             char pad = ' ';

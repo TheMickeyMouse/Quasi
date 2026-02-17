@@ -150,6 +150,15 @@ namespace Quasi::Graphics {
         return mainWindow && !glfwWindowShouldClose(mainWindow);
     }
 
+    void GraphicsDevice::EnterFullscreen() {
+        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+        Debug::QInfo$("Window Size: {} by {} px", mode->width, mode->height);
+        // Switch to fullscreen
+        glfwSetWindowMonitor(mainWindow, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+    }
+
     void GraphicsDevice::SetDrawMode(const RenderMode mode) {
         renderOptions.renderMode = mode;
     }

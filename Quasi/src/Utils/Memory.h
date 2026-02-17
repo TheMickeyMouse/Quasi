@@ -16,6 +16,7 @@ namespace Quasi::Memory {
     template <class T> const    T* UpcastPtr(const void* t) { return (const T*)t; }
 
     template <class T> const T&  AsConst   (T& val)       { return const_cast<const T&>(val); }
+    template <class T> const T&  AsConst   (T&& val)      { return const_cast<const T&>(val); }
     template <class T> const T*  AsConstPtr(T* ptr)       { return const_cast<const T*>(ptr); }
     template <class T> T&        AsMut     (const T& val) { return const_cast<T&>(val); }
     template <class T> T*        AsMutPtr  (const T* ptr) { return const_cast<T*>(ptr); }

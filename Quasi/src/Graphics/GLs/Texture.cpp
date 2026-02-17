@@ -133,7 +133,7 @@ namespace Quasi::Graphics {
             const auto localTexture = STBIImage::Own(stbi_load(face.Data(), &sx, &sy, &bpx, 4));
             QGLCall$(GL::TexImage2D(
                 faceTarget, 0, (int)loadMode.internalformat, sx, sy, 0,
-                (int)loadMode.format, loadMode.type->glID, localTexture));
+                (int)loadMode.format, loadMode.type->glID, localTexture.Data()));
             ++faceTarget;
         }
         cubemap.DefaultParams(loadMode.pixelated, loadMode.border);

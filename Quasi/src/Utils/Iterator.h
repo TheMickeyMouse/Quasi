@@ -123,10 +123,10 @@ namespace Quasi {
         Option<Item> Reduce(Fn<Item, Item, const Item&> auto&& reducer) {
             if (!CanNext()) return nullptr;
             Item acc = Current();
-            do {
-                Advance();
+            Advance();
+            for (; CanNext(); Advance()) {
                 acc = reducer(std::move(acc), Current());
-            } while (CanNext());
+            }
             return acc;
         }
 
@@ -136,10 +136,10 @@ namespace Quasi {
             }
             return starting;
         }
-        Item Sum() { return Reduce(Operators::Add {}); }
-        Item Sum(Item begin) { return Reduce(Operators::Add {}, begin); }
-        Item Min() { return Reduce(Qfn$(std::min)); }
-        Item Max() { return Reduce(Qfn$(std::max)); }
+        Option<Item> Sum() { return Reduce(Operators::Add {}); }
+        Item         Sum(Item begin) { return Reduce(Operators::Add {}, begin); }
+        Option<Item> Min() { return Reduce(Qfn$(std::min)); }
+        Option<Item> Max() { return Reduce(Qfn$(std::max)); }
 
         bool All(Predicate<Item> auto&& pred = Combinate::Identity {}) {
             for (; CanNext(); Advance())
