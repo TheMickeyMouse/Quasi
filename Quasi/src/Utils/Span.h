@@ -331,7 +331,7 @@ namespace Quasi {
 
         void RotateLeft(usize num) mut;
         void RotateRight(usize num) mut;
-        void RotateSigned(isize off)  mut { return off == 0 ? void() : off < 0 ? RotateLeft(off) : RotateRight(off); }
+        void RotateSigned(isize off)  mut { return off == 0 ? void() : off < 0 ? RotateLeft(-off) : RotateRight(off); }
         void RotateSigned(WrappingIndex off)  mut { return RotateRight(off(size)); }
         void RotateSignedWrapped(isize off)  mut { return RotateRight((off % (isize)size + (isize)size) % (isize)size); }
 

@@ -17,16 +17,16 @@ namespace Quasi::Graphics {
 
 namespace ImGui {
 #define Q Quasi::
-#define Q_IMGUI_EDITOR(NAME, ...) void NAME(Q Str title, __VA_ARGS__, float width = Q floats::NAN)
+#define Q_IMGUI_EDITOR(NAME, ...) void NAME(Q Str title, __VA_ARGS__, float width = Q f32s::NAN)
 
     template <class T> ImGuiDataType ImGuiDataEnum();
 
     float GetUsableWidth();
-    float GetRemWidth(float width = Q floats::NAN);
+    float GetRemWidth(float width = Q f32s::NAN);
     float GetLastItemWidth();
     float GetSpacingWidth();
-    float GetItemDefaultWidth(float totalWidth = Q floats::NAN);
-    float GetItemRemainingWidth(float totalWidth = Q floats::NAN);
+    float GetItemDefaultWidth(float totalWidth = Q f32s::NAN);
+    float GetItemRemainingWidth(float totalWidth = Q f32s::NAN);
 
     void DisplaySimpleIcon(const char* text, const Q Math::fColor3& bgColor);
 

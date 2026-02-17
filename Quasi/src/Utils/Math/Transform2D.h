@@ -106,6 +106,7 @@ namespace Quasi::Math {
         static Transform2D Translate(const fv2& p);
         static Transform2D Scale(const fv2& s);
         static Transform2D Rotation(const Rotor2D& r);
+        static Transform2D RotateAround(const Rotor2D& r, const fv2& center);
 
         Transform2D NormalTransform() const;
 
@@ -116,13 +117,9 @@ namespace Quasi::Math {
 
         InverseTransform2D<Transform2D> Inverse() const { return { *this }; }
 
-        Transform2D Applied(const Transform2D& transformer) const; // apply transform onto self
-        Transform2D AppliedTo(const Transform2D& transformed) const { return transformed.Applied(*this); }
-        Transform2D& Apply(const Transform2D& transformer); // apply transform onto self
-        void ApplyTo(Transform2D& transformed) const { transformed.Apply(*this); }
         void ApplyMatrix(const Matrix2D& matrix);
 
-        Transform2D Then(const Transform2D& t) const { return AppliedTo(t); }
+        Transform2D Then(const Transform2D& t) const { return t * (*this); }
 
         Transform3D As3D() const;
 
@@ -132,8 +129,8 @@ namespace Quasi::Math {
         Matrix2D  TransformMatrix() const;
 
         fv2 operator*(const fv2& p) const { return Transform(p); }
-        Transform2D operator*(const Transform2D& t) const { return Applied(t); }
-        Transform2D& operator*=(const Transform2D& t) { return Apply(t); }
+        Transform2D operator*(const Transform2D& t) const;
+        Transform2D& operator*=(const Transform2D& t);
     };
 
     template <Numeric T> Vector<T, 2> Vector<T, 2>::RotateBy(const Rotor2D& r) const {

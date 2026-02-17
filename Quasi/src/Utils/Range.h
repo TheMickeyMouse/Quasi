@@ -85,6 +85,12 @@ namespace Quasi {
         bool Overlaps       (const Range& other) const requires Integer<T>  { return min <  other.max && other.min <  max; }
         bool Overlaps       (const Range& other) const requires Floating<T> { return min <= other.max && other.min <= max; }
         T    OverlappingSize(const Range& other) const { return std::max(max - other.min, other.max - min); }
+
+        // support iteration
+        T begin()  const { return min; }
+        T cbegin() const { return min; }
+        T end()  const { return max; }
+        T cend() const { return max; }
     };
 
     using iRange = Range<int>;
