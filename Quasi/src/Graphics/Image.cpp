@@ -109,6 +109,14 @@ namespace Quasi::Graphics {
         return Memory::TransmutePtr<Math::uColor>(imageData.Data());
     }
 
+    Span<const Math::uColor> Image::Pixels() const {
+        return Spans::Slice(PixelData(), (usize)(width * height));
+    }
+
+    Span<Math::uColor> Image::Pixels() {
+        return Spans::Slice(PixelData(), (usize)(width * height));
+    }
+
     void Image::Crop(const Math::iRect2D& rect) {
         const int oldWidth = width;
         width = rect.Width();

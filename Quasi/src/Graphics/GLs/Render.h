@@ -195,6 +195,7 @@ namespace Quasi::Graphics::Render {
 
     void UseBlendConstColor(const Math::fColor& ref);
     void UseBlendFunc(BlendFactor src, BlendFactor dest);
+    void UseBlendFuncSeparate(BlendFactor src, BlendFactor dest, BlendFactor srcAlpha, BlendFactor destAlpha);
 
     void SetCullFace(FacingMode facing);
     void SetFrontFacing(OrientationMode orientation);

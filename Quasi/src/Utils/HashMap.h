@@ -265,25 +265,27 @@ namespace Quasi {
 
         // generic iterator for keys, values, valuesmut, pairs, and pairsmut
         template <class T>
-        struct TableIter : IIterator<AddConstIf<PairType, T>&, TableIter<T>> {
+        struct TableIter : IIterator<T&, TableIter<T>> {
             friend IIterator<AddConstIf<PairType, T>&, TableIter>;
         private:
+            using NodePtr = AddConstIf<Node, T>*;
             friend struct HashTable;
-            T* kvData = nullptr;
-            const T* kvEnd = nullptr;
+            NodePtr kvData = nullptr;
+            const Node* kvEnd = nullptr;
             const u8* infoData = nullptr;
 
-            TableIter(T* kv, const T* end, const u8* inf) : kvData(kv), kvEnd(end), infoData(inf) {}
+            TableIter(NodePtr kv, const Node* end, const u8* inf) : kvData(kv), kvEnd(end), infoData(inf) {}
         public:
-            using Item = AddConstIf<PairType, T>&;
+            using Item = T&;
 
             TableIter() = default;
-
+            TableIter(const TableIter&) = default;
+            TableIter(TableIter&&) = default;
             // Iter<T> -> Iter<const T>
             TableIter(const TableIter<RemConst<T>>& other) requires IsConst<T>
-                : kvData(other.kvData), infoData(other.infoData) {}
+                : kvData(other.kvData), kvEnd(other.kvEnd), infoData(other.infoData) {}
 
-            static TableIter FromFastForward(T* kv, const T* end, const u8* inf) {
+            static TableIter FromFwd(NodePtr kv, const Node* end, const u8* inf) {
                 TableIter it { kv, end, inf };
                 it.FastForward();
                 return it;
@@ -307,7 +309,7 @@ namespace Quasi {
                 infoData += inc;
             }
 
-            Item CurrentImpl() {
+            Item CurrentImpl() const {
                 return (Item)*kvData;
             }
             void AdvanceImpl() {
@@ -315,7 +317,7 @@ namespace Quasi {
                 ++kvData;
                 FastForward();
             }
-            bool CanNextImpl() { return kvData != kvEnd; }
+            bool CanNextImpl() const { return kvData != kvEnd; }
         };
     public:
         // Creates an empty hash map. Nothing is allocated yet, this happens at the first insert.
@@ -542,7 +544,7 @@ namespace Quasi {
         OptRef<const Value> operator[](const Key& key) const { return Get(key); }
         OptRef<const Value> Get(const Key& key) const {
             const OptionUsize i = FindIndexOf(key);
-            return i ? kvData[*i].GetValue() : nullptr;
+            return i ? OptRefs::SomeRef(kvData[*i].GetValue()) : nullptr;
         }
         OptRef<const Value> operator[](const auto& kview) const { return Get(kview); }
         OptRef<const Value> Get(const auto& kview) const {
@@ -857,8 +859,8 @@ namespace Quasi {
             return FindIndexOf(kview).HasValue();
         }
     protected:
-        TableIter<const PairType> IterImpl() const { return { kvData, KvEnd(), infoData }; }
-        TableIter<PairType>    IterMutImpl()       { return { kvData, KvEnd(), infoData }; }
+        TableIter<const PairType> IterImpl() const { return TableIter<const PairType>::FromFwd(kvData, KvEnd(), infoData); }
+        TableIter<PairType>    IterMutImpl()       { return TableIter<PairType>      ::FromFwd(kvData, KvEnd(), infoData); }
     public:
         TableIter<const PairType> IterStartingAt(const Key& k) const {
             const OptionUsize i = FindIndexOf(k);
@@ -866,9 +868,10 @@ namespace Quasi {
             return { &kvData[*i], KvEnd(), &infoData[*i] };
         }
 
-        TableIter<const Key>   Keys()   const { return { kvData, KvEnd(), infoData }; }
-        TableIter<const Value> Values() const { return { kvData, KvEnd(), infoData }; }
-        TableIter<Value>       ValuesMut()    { return { kvData, KvEnd(), infoData }; }
+        TableIter<const Key>   Keys()   const { return TableIter<const Key>  ::FromFwd(kvData, KvEnd(), infoData); }
+        TableIter<const Value> Values() const { return TableIter<const Value>::FromFwd(kvData, KvEnd(), infoData); }
+        TableIter<Value>       ValuesMut()    { return TableIter<Value>      ::FromFwd(kvData, KvEnd(), infoData); }
+
 
         // reserves space for the specified number of elements. Makes sure the old data fits.
         // exactly the same as reserve(c).
@@ -1076,6 +1079,8 @@ namespace Quasi {
             infoInc        = InitialInfoInc;
             infoHashShift  = InitialInfoHashShift;
         }
+
+        friend ICollection<KeyValuePair<Key, Value>, HashTable>;
     };
 
     template <class K, class V, class Hasher = Hashing::DefaultHasher>

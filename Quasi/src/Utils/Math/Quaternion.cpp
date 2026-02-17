@@ -34,7 +34,8 @@ namespace Quasi::Math {
         };
     }
     Quaternion Quaternion::RotateTo(const fv3& from, const fv3& to) {
-        return { from.Dot(to), from.Cross(to) };
+        const float w = 1 + from.Dot(to), invlen = INV_ROOT_2 / std::sqrt(w);
+        return { w * invlen, from.Cross(to) * invlen };
     }
 
     Vec3<Radians> Quaternion::ToEulerAngles() const {

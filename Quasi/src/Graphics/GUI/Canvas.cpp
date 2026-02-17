@@ -110,7 +110,7 @@ namespace Quasi::Graphics {
             "           break;"
             "        }"
             "    }"
-            "    FragColor = color;"
+            "    FragColor = vec4(color.rgb * color.a, color.a);"
             "}"
         );
         // renderCanvas->shader.SetUniformIntArr("u_textures", CArray<int, 8> { 0, 1, 2, 3, 4, 5, 6, 7 });

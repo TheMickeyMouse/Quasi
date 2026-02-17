@@ -114,12 +114,12 @@ namespace Quasi::Text {
     template <class T> struct Formatter<Ref<T>> : Formatter<T> {};
 
     template <class T>
-    struct Formatter<OptRef<T>> : Formatter<T> {
-        using typename Formatter<T>::FormatOptions;
+    struct Formatter<OptRef<T>> : Formatter<RemConst<T>> {
+        using typename Formatter<RemConst<T>>::FormatOptions;
         static usize FormatTo(StringWriter sw, OptRef<T> optref, const FormatOptions& options) {
             if (optref) {
                 sw.Write("Some(&"_str);
-                const usize i = Formatter<T>::FormatTo(sw, *optref, options);
+                const usize i = Formatter<RemConst<T>>::FormatTo(sw, *optref, options);
                 sw.Write(')');
                 return i + 7;
             } else { sw.Write("&None"_str); return 5; }
