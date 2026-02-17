@@ -87,6 +87,10 @@ namespace Quasi::Graphics::Render {
         QGLCall$(GL::BlendFunc((int)src, (int)dest));
     }
 
+    void UseBlendFuncSeparate(BlendFactor src, BlendFactor dest, BlendFactor srcAlpha, BlendFactor destAlpha) {
+        QGLCall$(GL::BlendFuncSeparate((int)src, (int)dest, (int)srcAlpha, (int)destAlpha));
+    }
+
     void SetCullFace(FacingMode facing) {
         QGLCall$(GL::CullFace((int)facing));
     }

@@ -51,6 +51,8 @@ namespace Quasi::Graphics {
         u8* Data() { return imageData.Data(); }
         const Math::uColor* PixelData() const;
         Math::uColor* PixelData();
+        Span<const Math::uColor> Pixels() const;
+        Span<Math::uColor> Pixels();
         Math::iv2 Size() const { return { width, height }; }
 
         void Crop(const Math::iRect2D& rect);
