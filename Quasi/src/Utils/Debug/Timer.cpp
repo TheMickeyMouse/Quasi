@@ -41,6 +41,6 @@ namespace Quasi::Debug {
     void Timer::Log() {
         if (!outputLog) return;
         const u64 ns = TotalElapsedUnits<Nanosecond>();
-        outputLog->QDebug$("{} timer elapsed {}.{:03}ms", name, ns / 1000, ns % 1000);
+        outputLog->QDebug$("{} timer elapsed {}.{:.03f}ms", name, ns / 1000, ns % 1000);
     }
 } // Quasi

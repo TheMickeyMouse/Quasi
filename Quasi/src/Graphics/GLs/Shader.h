@@ -151,54 +151,54 @@ namespace Quasi::Graphics {
 #pragma endregion
 
 #pragma region Shader Sources
-#define Q_GLSL_SHADER(VERSION, V, F) "#shader vertex\n" "#version " #VERSION " core\n" Q_TOSTR(Q_REMOVE_SCOPE(V)) "\n#shader fragment\n" "#version " #VERSION " core\n" Q_TOSTR(Q_REMOVE_SCOPE(F))
+#define Q_GLSL_SHADER(VERSION, V, F) "// #shader vertex\n" "#version " #VERSION "\n" Q_TOSTR(Q_REMOVE_SCOPE(V)) "\n// #shader fragment\n" "#version " #VERSION "\n" Q_TOSTR(Q_REMOVE_SCOPE(F))
 
         static constexpr Str StdColored =
-            Q_GLSL_SHADER(330,
+            Q_GLSL_SHADER(330 core,
                 (
                     layout(location = 0) in vec4 position;
                     layout(location = 1) in vec4 color;
-                    out vec4 v_color;
+                    out vec4 vColor;
                     uniform mat4 u_projection;
                     uniform mat4 u_view;
                     void main() {
                         gl_Position = u_projection * u_view * position;
-                        v_color = color;
+                        vColor = color;
                     }
                 ),
                 (
-                    layout(location = 0) out vec4 color;
-                    in vec4 v_color;
+                    layout(location = 0) out vec4 glColor;
+                    in vec4 vColor;
                     void main() {
-                        color = v_color;
+                        glColor = vColor;
                     }
                 )
             );
 
         static constexpr Str StdTextured =
-            Q_GLSL_SHADER(330,
+            Q_GLSL_SHADER(330 core,
                 (
                     layout(location = 0) in vec4 position;
                     layout(location = 1) in vec4 color;
                     layout(location = 2) in vec2 texCoord;
-                    out vec2 v_TexCoord;
-                    out vec4 v_color;
+                    out vec2 vTexCoord;
+                    out vec4 vColor;
                     uniform mat4 u_projection;
                     uniform mat4 u_view;
                     void main() {
                         gl_Position = u_projection * u_view * position;
-                        v_color = color;
-                        v_TexCoord = texCoord;
+                        vColor = color;
+                        vTexCoord = texCoord;
                     }
                 ),
                 (
-                    layout(location = 0) out vec4 color;
-                    in vec2 v_TexCoord;
-                    in vec4 v_color;
-                    uniform sampler2D u_Texture;
+                    layout(location = 0) out vec4 glColor;
+                    in vec2 vTexCoord;
+                    in vec4 vColor;
+                    uniform sampler2D uTexture;
                     void main() {
-                        vec4 texColor = texture(u_Texture, v_TexCoord);
-                        color = v_color * texColor;
+                        vec4 texColor = texture(uTexture, vTexCoord);
+                        color = vColor * texColor;
                     }
                 )
             );
@@ -270,7 +270,7 @@ namespace Quasi::Graphics {
         // packed in: [utype] [byteCount (8 bytes)] [payload (arbitrary)] [unifName (arbitrary)] [NULL]
         Vec<u8> rawBytes;
 
-        ShaderArgs() {}
+        ShaderArgs() = default;
         ShaderArgs(IList<ShaderParameter> p);
 
         ShaderArgs& Then(const ShaderParameter& val);

@@ -156,13 +156,13 @@ namespace Quasi::Graphics {
         Str sources[3];
         Str* current = nullptr;
         for (Str line : program.Lines()) {
-            if (!line.StartsWith("#shader")) continue;
+            if (!line.StartsWith("// #shader")) continue;
 
             if (current) {
                 current->TakeAfter(current->Unaddress(line.Data()));
             }
 
-            line.Advance(8);
+            line.Advance(11);
             if (line.StartsWith("vertex"))
                 current = &sources[0];
             else if (line.StartsWith("fragment"))

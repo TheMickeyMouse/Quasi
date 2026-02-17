@@ -170,6 +170,7 @@ namespace Quasi::Math {
         IColor Inverted() const;
         IColor Lerp(const IColor& other, f32 t) const;
         IColor Lerp(const IColor& other, int p, int q) const;
+        IColor& LerpTowards(const IColor& other, f32 t);
         IColor Blend(const IColor& top) requires HasAlpha;
         IColor LogBlend(const IColor& other, f32 t) const;
         IColor LogBlend(const IColor& other, int p, int q) const;

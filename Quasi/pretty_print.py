@@ -97,6 +97,13 @@ class QuasiOptionPrinter:
             yield 'Some', self.val['value']
         return
 
+class QuasiOptionUsizePrinter:
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        return f'Some({self.val["value"]})' if self.val['value'] == -1 else 'None()'
+
 
 class QuasiRefPrinter:
     def __init__(self, typename, val):
@@ -239,14 +246,15 @@ class QuasiHashTablePrinter:
                 kv += 8
                 n = int(info.reinterpret_cast(byteptrt).dereference())
 
-            n = (((n << 56) & 0xFF00000000000000) |
-                 ((n << 40) & 0x00FF000000000000) |
-                 ((n << 24) & 0x0000FF0000000000) |
-                 ((n <<  8) & 0x000000FF00000000) |
-                 ((n >>  8) & 0x00000000FF000000) |
-                 ((n >> 24) & 0x0000000000FF0000) |
-                 ((n >> 40) & 0x000000000000FF00) |
-                 ((n >> 56) & 0x00000000000000FF))
+            n = int(info.reinterpret_cast(byteptrt).dereference())
+            # n = (((n << 56) & 0xFF00000000000000) |
+            #      ((n << 40) & 0x00FF000000000000) |
+            #      ((n << 24) & 0x0000FF0000000000) |
+            #      ((n <<  8) & 0x000000FF00000000) |
+            #      ((n >>  8) & 0x00000000FF000000) |
+            #      ((n >> 24) & 0x0000000000FF0000) |
+            #      ((n >> 40) & 0x000000000000FF00) |
+            #      ((n >> 56) & 0x00000000000000FF))
 
             inc = ((n & -n).bit_length() - 1) // 8
             kv += inc
@@ -259,6 +267,8 @@ class QuasiHashTablePrinter:
                 yield f'[{node["key"]}]', node["value"]
             else:
                 yield f'[{node["key"]}]', ()
+            info += 1
+            kv += 1
     #
     # def display_hint(self):
     #     return 'map'
@@ -299,21 +309,22 @@ def quasi_lookup(val):
     last = lookup.find('<')
     last = len(lookup) if last == -1 else last
     match lookup[:last]:
-        case 'Vec':      return QuasiVecPrinter      (lookup, val)
-        case 'Span':     return QuasiSpanPrinter     (lookup, val)
-        case 'Array':    return QuasiArrayPrinter    (lookup, val)
-        case 'Option':   return QuasiOptionPrinter   (val)
-        case 'Ref':      return QuasiRefPrinter      (lookup, val)
-        case 'OptRef':   return QuasiOptRefPrinter   (val)
-        case 'Box':      return QuasiBoxPrinter      (val)
-        case 'ArrayBox': return QuasiArrayBoxPrinter (val)
-        case 'String':   return QuasiStringPrinter   (val)
-        case 'Str':      return QuasiStrPrinter      (val)
-        case 'CStr':     return QuasiStrPrinter      (val)
-        case 'Range':    return QuasiRangePrinter    (val)
-        case 'Tuple':    return QuasiTuplePrinter    (lookup, val)
-        case 'Variant':  return QuasiVariantPrinter  (val)
-        case 'HashTable': return QuasiHashTablePrinter(val)
+        case 'Vec':         return QuasiVecPrinter      (lookup, val)
+        case 'Span':        return QuasiSpanPrinter     (lookup, val)
+        case 'Array':       return QuasiArrayPrinter    (lookup, val)
+        case 'Option':      return QuasiOptionPrinter   (val)
+        case 'OptionUsize': return QuasiOptionUsizePrinter   (val)
+        case 'Ref':         return QuasiRefPrinter      (lookup, val)
+        case 'OptRef':      return QuasiOptRefPrinter   (val)
+        case 'Box':         return QuasiBoxPrinter      (val)
+        case 'ArrayBox':    return QuasiArrayBoxPrinter (val)
+        case 'String':      return QuasiStringPrinter   (val)
+        case 'Str':         return QuasiStrPrinter      (val)
+        case 'CStr':        return QuasiStrPrinter      (val)
+        case 'Range':       return QuasiRangePrinter    (val)
+        case 'Tuple':       return QuasiTuplePrinter    (lookup, val)
+        case 'Variant':     return QuasiVariantPrinter  (val)
+        case 'HashTable':   return QuasiHashTablePrinter(val)
         case 'Math::Vector':     return QuasiMathVecPrinter(val)
         case 'Math::Matrix':     return QuasiMathMatrixPrinter(val)
     return None

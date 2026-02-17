@@ -212,6 +212,10 @@ namespace Quasi::Math {
         if constexpr (Integer<T>) return BinaryMap(other, ChannelLerpFraction { p, q - p, q });
         else return Lerp(other, (f32)p / (f32)q);
     }
+
+    coldef colcls& colcls::LerpTowards(const IColor& other, f32 t) {
+        return *this = BinaryMap(other, ChannelLerp { t, 1 - t });
+    }
     coldef colcls colcls::Blend(const IColor& top) requires HasAlpha {
         if constexpr (Floating<T>)
             return BinaryMapRGB(top, ChannelLerp { top.a, 1 - top.a }, 1 - (1 - a) * (1 - top.a));

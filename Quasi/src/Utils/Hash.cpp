@@ -14,12 +14,12 @@ namespace Quasi::Hashing {
     }
 
     Hash HashBytes(Span<const byte> bytes) {
-        // from https://github.com/martinus/robin-hood-hashing/blob/master/src/include/robin_hood.h#L1348
-        static constexpr uint64_t M_FACTOR = 0xc6a4a7935bd1e995,
-                                  H_SEED   = 0xe17a1465;
+        // from https://github.com/martinus/robin-hood-hashing/blob/master/src/include/robin_hood.h#L692
+        static constexpr u64 M_FACTOR = 0xc6a4a7935bd1e995,
+                             H_SEED   = 0xe17a1465;
         static constexpr u32 RSHIFT = 47;
 
-        uint64_t h = H_SEED ^ (bytes.Length() * M_FACTOR);
+        u64 h = H_SEED ^ (bytes.Length() * M_FACTOR);
 
         const u64 chunkCount = bytes.Length() / 8;
         for (u64 i = 0; i < chunkCount; ++i) {
@@ -34,7 +34,7 @@ namespace Quasi::Hashing {
         }
 
         const byte* lastData = bytes.Data() + chunkCount * 8;
-        switch (chunkCount & 7) {
+        switch (bytes.Length() & 7) {
             case 7:
                 h ^= (usize)lastData[6] << 48; [[fallthrough]];
             case 6:

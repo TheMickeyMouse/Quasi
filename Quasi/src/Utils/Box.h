@@ -103,7 +103,7 @@ namespace Quasi {
         T*   Take   (T* val) { T* out = Release(); data = val; return out; }
         void Swap(Box& other) { std::swap(data, other.data); std::swap(allocator, other.allocator); }
 
-        Box Clone() const { return Box::NewIn(*data, allocator); }
+        Box Clone() const { return Box::NewIn(allocator, *data); }
 
         template <Extends<T> Derived> Box<Derived> Downcast() {
             Derived* dyn = Memory::DynCastPtr<Derived>(data);
@@ -133,12 +133,15 @@ namespace Quasi {
         [[nodiscard]] bool IsNull()    const { return data == nullptr; }
         [[nodiscard]] bool OwnsValue() const { return data != nullptr; }
 
-        operator const T*()      const { return Data(); }
-        operator T*()                  { return DataMut(); }
         explicit operator bool() const { return data != nullptr; }
 
         template <class _T, class _A> friend struct Box;
     };
+
+    namespace Boxs {
+        template <class T>
+        Box<T> New(T val) { return Box<T>::New(std::move(val)); }
+    }
 
     struct GlobalArrayDelete {
         void operator()(auto* ptr) const { Memory::FreeArray(ptr); }

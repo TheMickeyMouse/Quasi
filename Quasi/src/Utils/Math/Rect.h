@@ -41,7 +41,7 @@ namespace Quasi::Math {
         Rect(const VecT& min, const VecT& max, InclusiveMarker) requires Floating<T> : min(min), max(max) {}
 
         static Rect FromSize  (const VecT& min,    const VecT& size) { return { min, min + size }; }
-        static Rect FromCenter(const VecT& center, const VecT& size) { return { center - size, center + size, Inclusive }; }
+        static Rect FromCenter(const VecT& center, const VecT& size) { return { center - size * 0.5f, center + size * 0.5f, Inclusive }; }
         static Rect Empty()      { return {}; }
         static Rect FullDomain() { return { NumInfo<T>::MIN, NumInfo<T>::MAX }; }
         static Rect AntiDomain() { return { NumInfo<T>::MIN, NumInfo<T>::MAX }; }

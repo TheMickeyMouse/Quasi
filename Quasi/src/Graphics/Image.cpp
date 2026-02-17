@@ -2,7 +2,6 @@
 
 #include "glp.h"
 #include "GraphicsDevice.h"
-#include "GLFW/glfw3.h"
 #include "stb_image/stb_image.h"
 #include "stb_image/stb_image_write.h"
 #include "Utils/CStr.h"
@@ -13,7 +12,7 @@ namespace Quasi::Graphics {
     }
 
     Image Image::New(int w, int h) {
-        return { CBox<u8>::Own(AllocImage(w, h)), w, h };
+        return { AllocImage(w, h), w, h };
     }
 
     Image Image::SolidColor(const Math::uColor& color, int w, int h) {
@@ -123,31 +122,31 @@ namespace Quasi::Graphics {
         height = rect.Height();
         u8* newBuf = AllocImage(width, height);
         for (int y = 0; y < height; y++) {
-            Memory::MemCopyNoOverlap(&newBuf[y * width], &imageData[y * oldWidth], width * 4);
+            Memory::MemCopyNoOverlap(&newBuf[4 * y * width], &imageData.Data()[4 * y * oldWidth], width * 4);
         }
         imageData.Replace(newBuf);
     }
 
     void Image::FlipHorizontal() {
-        for (int y = 0; y < height / 2; y++) {
-            Memory::MemSwap(&imageData[y * width], &imageData[(height - y) * width], width * 4);
+        for (int y = 0; y < height; y++) {
+            GetRow(y).Reverse();
         }
     }
 
     void Image::FlipVertical() {
-        for (int y = 0; y < height; y++) {
-            Memory::MemReverse(&imageData[y * width], width * 4);
+        for (int y = 0; y < height / 2; y++) {
+            Memory::MemSwap(&imageData.Data()[4 * y * width], &imageData.Data()[4 * (height - y) * width], width * 4);
         }
     }
 
     void Image::Flip180() {
-        Memory::MemReverse(Data(), width * height * 4);
+        Pixels().Reverse();
     }
 
     void Image::BlitImage(const Math::iv2& dest, const ImageView& image) {
         u8* begin = (u8*)&PixelData()[dest.x + dest.y * width];
         for (int y = 0; y < image.height; y++) {
-            Memory::MemCopyNoOverlap(begin + y * width, &image.data[y * image.stride], image.width * 4);
+            Memory::MemCopyNoOverlap(begin + 4 * y * width, &image.data[4 * y * image.stride], image.width * 4);
         }
     }
 
@@ -195,7 +194,7 @@ namespace Quasi::Graphics {
         return Memory::TransmutePtr<const Math::uColor>(data);
     }
 
-    void ImageView::ExportPNG(Str fdest) {
+    void ImageView::ExportPNG(Str fdest) const {
         stbi_write_png(fdest.Data(), width, height, 4, data, stride * 4);
     }
 }

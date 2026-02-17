@@ -36,5 +36,14 @@ namespace Quasi {
         Array<ArrayElement<A>, ArrayLength<A>> FromCArray(A&& array) {
             return { array };
         }
+
+        template <Numeric T, usize N>
+        Array<T, N> Range(T start = 0, T step = 1) {
+            Array<T, N> range;
+            for (usize i = 0; i < N; ++i, start += step) {
+                range[i] = start;
+            }
+            return range;
+        }
     }
 }
