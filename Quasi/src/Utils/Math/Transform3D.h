@@ -111,20 +111,13 @@ namespace Quasi::Math {
 
         InverseTransform3D<Transform3D> Inverse() const { return { *this }; }
 
-        Transform3D Applied(const Transform3D& transformer) const; // apply transform onto self
-        Transform3D AppliedTo(const Transform3D& transformed) const { return transformed.Applied(*this); }
-        Transform3D& Apply(const Transform3D& transformer); // apply transform onto self
-        void ApplyTo(Transform3D& transformed) const { transformed.Apply(*this); }
-
-        Transform3D Then(const Transform3D& t) const { return AppliedTo(t); }
-
         void Reset();
 
         Matrix3x3 LinearMatrix() const;
         Matrix3D  TransformMatrix() const;
 
         fv3 operator*(const fv3& p) const { return Transform(p); }
-        Transform3D operator*(const Transform3D& t) const { return Applied(t); }
-        Transform3D& operator*=(const Transform3D& t) { return Apply(t); }
+        Transform3D operator*(const Transform3D& t) const;
+        Transform3D& operator*=(const Transform3D& t);
     };
 } // Quasi

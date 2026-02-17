@@ -56,9 +56,9 @@ namespace Quasi::Text {
     }
 
     template <class... Ts>
-    String Format(Str fmt, Ts&&... args) {
+    String Format(Str fmt, const Ts&... args) {
         String s {};
-        FormatTo(StringWriter::WriteTo(s), fmt, (Ts&&)args...);
+        FormatTo(StringWriter::WriteTo(s), fmt, args...);
         return s;
     }
 

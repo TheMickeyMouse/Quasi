@@ -64,7 +64,7 @@ namespace Quasi {
         static Vec FromIList(IList<T> elms) { return New(Spans::FromIList(elms)); }
         static Vec MoveNew(Span<T> movElms) {
             Vec v = WithCap(movElms.Length());
-            Memory::RangeMoveNoOverlap(v.Data(), movElms.Data(), movElms.Length());
+            Memory::RangeConstructMove(v.Data(), movElms.Data(), movElms.Length());
             v.SetLengthUnsafe(movElms.Length());
             return v;
         }

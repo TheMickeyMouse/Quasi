@@ -34,6 +34,9 @@ namespace Quasi::Math {
     Transform2D Transform2D::Translate(const fv2& p)        { return { p }; }
     Transform2D Transform2D::Scale    (const fv2& s)        { return { 0, s }; }
     Transform2D Transform2D::Rotation (const Rotor2D& r) { return { 0, 1, r }; }
+    Transform2D Transform2D::RotateAround(const Rotor2D& r, const fv2& center) {
+        return { center - r.Rotate(center), 1, r };
+    }
 
     Transform2D Transform2D::NormalTransform() const { return { 0, 1.0f / scale, rotation }; }
 
@@ -41,16 +44,6 @@ namespace Quasi::Math {
     fv2 Transform2D::TransformInverse      (const fv2& point)  const { return rotation.InvRotate(point - position) / scale;}
     fv2 Transform2D::TransformNormal       (const fv2& normal) const { return rotation.Rotate(normal / scale).Norm(); }
     fv2 Transform2D::TransformInverseNormal(const fv2& normal) const { return (rotation.InvRotate(normal) * scale).Norm(); }
-
-    Transform2D Transform2D::Applied(const Transform2D& transformer) const {
-        return { transformer.Transform(position), scale * transformer.scale, rotation + transformer.rotation };
-    }
-    Transform2D& Transform2D::Apply(const Transform2D& transformer) {
-        position = transformer.Transform(position);
-        scale    *= transformer.scale;
-        rotation += transformer.rotation;
-        return *this;
-    }
 
     Transform3D Transform2D::As3D() const {
         return { position.AddZ(0), scale.AddZ(1), Rotor3D::RotateZ(rotation) };
@@ -68,5 +61,16 @@ namespace Quasi::Math {
         return {{ r.re * scale.x, -r.im * scale.x, position.x,
                   r.im * scale.y,  r.re * scale.y, position.y,
                   0,               0             , 1 }};
+    }
+
+    Transform2D Transform2D::operator*(const Transform2D& t) const {
+        return { position + t.position.RotateBy(rotation) * scale, scale * t.scale, rotation + t.rotation };
+    }
+
+    Transform2D& Transform2D::operator*=(const Transform2D& t) {
+        position += t.position.RotateBy(rotation) * scale;
+        scale *= t.scale;
+        rotation += t.rotation;
+        return *this;
     }
 } // Quasi

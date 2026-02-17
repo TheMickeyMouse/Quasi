@@ -10,7 +10,7 @@ namespace Quasi::Graphics {
     TextureAtlas::TextureAtlas(Vec<ImageView> sprites, Span<const Str> spriteNames) {
         Vec<u32> indices = Vecs::Range<u32>(0, sprites.Length());
         indices.SortByKey([&] (u32 i) { return sprites[i].height; });
-        Algorithm::ApplyPermutation(sprites.AsSpan(), indices.AsSpan());
+        Algorithm::ApplyPermutationInPlace(sprites.AsSpan(), indices.AsSpan());
 
         spriteLookup.Reserve(spriteNames.Length());
         for (usize i = 0; i < spriteNames.Length(); ++i) {

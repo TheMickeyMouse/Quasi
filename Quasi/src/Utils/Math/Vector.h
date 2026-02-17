@@ -213,7 +213,7 @@ namespace Quasi::Math {
         Super Project(const Super& axis) const { return axis.Mul(Dot(axis) / axis.LenSq()); }
         Super Reflect(const Super& normal) const { return Sub((2 * Dot(normal)) * normal); }
 
-        Vector<fT, N> Lerp(const Super& other, fT t) { return BinaryMap(other, [t = t, u = 1 - t] (T a, T b) { return u * a + t * b; }); }
+        Vector<fT, N> Lerp(const Super& other, fT t) const { return BinaryMap(other, [t = t, u = 1 - t] (T a, T b) { return u * a + t * b; }); }
         Super& LerpToward(const Super& other, T t) requires Floating<T> { return BinaryAssign(other, [=] (T& a, T b) { a += (b - a) * t; }); }
         Super& StepToward(const Super& other, T d) requires Floating<T> { const auto [dir, s] = (other - super()).NormAndLen(); return AddAssign(dir * std::min(s, d)); }
         Super& StepExact (const Super& other, T d) requires Floating<T> { const auto [dir, s] = (other - super()).NormAndLen(); return AddAssign(dir * d); }

@@ -132,17 +132,6 @@ namespace Quasi::Math {
         return rotation.InvRotate(normal * scale).Norm();
     }
 
-    Transform3D Transform3D::Applied(const Transform3D& transformer) const {
-        return { transformer * position, transformer.scale * scale, transformer.rotation + rotation };
-    }
-
-    Transform3D& Transform3D::Apply(const Transform3D& transformer) {
-        position = transformer.Transform(position);
-        scale    *= transformer.scale;
-        rotation = transformer.rotation + rotation; // order matters
-        return *this;
-    }
-
     void Transform3D::Reset() {
         position = 0;
         scale = 1;
@@ -160,5 +149,9 @@ namespace Quasi::Math {
         rotmatrix.ScaleBy(scale);
         rotmatrix.unitVectors[3] = position.AddW(1);
         return rotmatrix;
+    }
+
+    Transform3D Transform3D::operator*(const Transform3D& t) const {
+        return { position + rotation.Rotate(t.position) * scale, scale * t.scale, rotation + t.rotation };
     }
 } // Quasi

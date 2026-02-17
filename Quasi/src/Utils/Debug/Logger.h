@@ -89,13 +89,13 @@ namespace Quasi::Debug {
 
         void WriteAllLogs(Text::StringWriter out, Severity filter = Severity::NONE);
 
-        template <class ...Ts> void LogFmt(Severity s, const FmtStr& fmt, Ts&&... args) {
-            this->Log(s, Text::Format(fmt.fmt, std::forward<Ts>(args)...), fmt.loc);
+        template <class ...Ts> void LogFmt(Severity s, const FmtStr& fmt, const Ts&... args) {
+            this->Log(s, Text::Format(fmt.fmt, args...), fmt.loc);
         }
 
-        template <class ...Ts> void Assert(bool assert, const FmtStr& fmt, Ts&&... args) {
+        template <class ...Ts> void Assert(bool assert, const FmtStr& fmt, const Ts&... args) {
             if (assert) return;
-            this->AssertMsg(false, Text::Format(fmt.fmt, std::forward<Ts>(args)...), fmt.loc);
+            this->AssertMsg(false, Text::Format(fmt.fmt, args...), fmt.loc);
         }
 
         template <class T>
@@ -136,12 +136,12 @@ namespace Quasi::Debug {
 
     inline void Write(Text::StringWriter out, Severity filter = Severity::NONE) { Logger::GetInternalLog().WriteAllLogs(out, filter); }
 
-    template <class ...Ts> void LogFmt(Severity s, const FmtStr& fmt, Ts&&... args) {
-        Logger::GetInternalLog().LogFmt(s, fmt, std::forward<Ts>(args)...);
+    template <class ...Ts> void LogFmt(Severity s, const FmtStr& fmt, const Ts&... args) {
+        Logger::GetInternalLog().LogFmt(s, fmt, args...);
     }
 
-    template <class ...Ts> void Assert(bool assert, const FmtStr& fmt, Ts&&... args) {
-        Logger::GetInternalLog().Assert(assert, fmt.fmt, std::forward<Ts>(args)...);
+    template <class ...Ts> void Assert(bool assert, const FmtStr& fmt, const Ts&... args) {
+        Logger::GetInternalLog().Assert(assert, fmt.fmt, args...);
     }
 
     template <class T>

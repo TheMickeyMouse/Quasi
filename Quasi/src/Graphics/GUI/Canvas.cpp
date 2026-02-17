@@ -1195,7 +1195,7 @@ namespace Quasi::Graphics {
         endNorm   = endNorm.Perpend();
 
         const bool rightwardCurving = v0.Cross(v1) < 0;
-        float w = rightwardCurving ? canvas.drawAttr.strokeWeight : -canvas.drawAttr.strokeWeight;
+        float w = f32s::Signed(rightwardCurving, canvas.drawAttr.strokeWeight);
         if (startNorm.Dot(endNorm) > -0.99f) {
             // we need arbitrary precision on this path; curves are smooth
             // and thickness limits the size of which bezier curves can be rendered
