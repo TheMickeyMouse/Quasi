@@ -77,6 +77,7 @@ namespace Quasi::Graphics {
         void DrawVarRoundedRect(const Math::fRect2D& rect, float tr, float br, float tl, float bl);
         void DrawCircle(const Math::fv2& position, float radius, bool center = true);
         void DrawEllipse(const Math::fRect2D& bounds);
+        void DrawEllipse(const Math::fv2& position, const Math::fv2& axis1, const Math::fv2& axis2);
         void DrawArc(const Math::fv2& center, float radius, const Math::Rotor2D& startAngle, const Math::Rotor2D& endAngle, ArcDirection direction = CCW, ArcMode mode = OPEN);
         void DrawArcCCW(const Math::fv2& center, float radius, const Math::Rotor2D& startAngle, const Math::Rotor2D& endAngle, ArcMode mode = OPEN);
         // void DrawEllArc(const Math::fv2& center, const Math::fv2& size, float startAngle, float stopAngle, ArcMode mode = OPEN);

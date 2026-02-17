@@ -3,7 +3,9 @@
 
 #include "IO.h"
 
+#ifndef Q_NO_IMGUI
 #include "imgui_impl_glfw.h"
+#endif
 
 namespace Quasi::IO {
     GLFWwindow* MouseType::inputWindow() { return io->gdevice->GetWindow(); }
@@ -54,12 +56,16 @@ namespace Quasi::IO {
     }
 
     void MouseType::OnGlfwMouseCallback(GLFWwindow* window, int mouse, int action, int mods) {
+#ifndef Q_NO_IMGUI
         ImGui_ImplGlfw_MouseButtonCallback(window, mouse, action, mods);
+#endif
         queuedMouseEvents.emplace(action == GLFW_PRESS ? mouse : ~mouse);
     }
 
     void MouseType::OnGlfwScrollCallback(GLFWwindow* window, double xOff, double yOff) {
+#ifndef Q_NO_IMGUI
         ImGui_ImplGlfw_ScrollCallback(window, xOff, yOff);
+#endif
         queuedScrolls.emplace(xOff, yOff);
     }
 
