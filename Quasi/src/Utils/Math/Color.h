@@ -93,7 +93,7 @@ namespace Quasi::Math {
             using U = decltype(C {}.r);
             return { RedAs<U>(), GreenAs<U>(), BlueAs<U>(), AlphaOrFull<U>() };
         }
-        template <class C> explicit operator C() const { return As<C>(); }
+        template <class C> operator C() const { return As<C>(); }
 
         bv3 AsRGBVec()   const;
         bv4 AsRGBAVec()  const;

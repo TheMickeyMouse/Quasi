@@ -12,12 +12,14 @@ namespace Quasi::Text {
     Option<String> ReadFile(CStr fname);
     Option<String> ReadFileBinary(CStr fname);
     bool WriteFile(CStr fname, Str contents);
+    bool WriteFileBinary(CStr fname, Str contents);
+    bool WriteFileBinary(CStr fname, Bytes contents);
     bool ExistsFile(CStr fname);
 
     Tuple<Str, Str> SplitDirectory(Str fname);
 
     String AutoIndent(Str text);
-    String Quote(Str txt);
+    String Quote(Str txt, char quote = '\"');
 
     // adapted from https://stackoverflow.com/a/59522794/19968422
     namespace _helper {

@@ -48,6 +48,18 @@ namespace Quasi::Text {
         return false;
     }
 
+    bool WriteFileBinary(CStr fname, Str contents) {
+        if (std::ofstream out { fname.Data(), std::ios_base::out | std::ios_base::binary }) {
+            out.write(contents.Data(), (isize)contents.Length());
+            return true;
+        }
+        return false;
+    }
+
+    bool WriteFileBinary(CStr fname, Bytes contents) {
+        return WriteFileBinary(fname, contents.Transmute<char>().AsStr());
+    }
+
     bool ExistsFile(CStr fname) {
         return std::ifstream { fname.Data() }.good();
     }
@@ -81,6 +93,14 @@ namespace Quasi::Text {
         }
         ss += text.Last();
         return ss;
+    }
+
+    String Quote(Str txt, char quote) {
+        String quoted = String::WithCap(txt.Length() + 2);
+        quoted.Append(quote);
+        quoted.AppendStr(txt);
+        quoted.Append(quote);
+        return quoted;
     }
 
     ColoredStr Dye(ConsoleColor col, Str txt) {
@@ -117,7 +137,4 @@ namespace Quasi::Text {
                output.Write("\x1B[0m"_str) +
                output.WriteRepeat(options.pad, right);
     }
-
-    template struct Formatter<ConsoleColor>;
-    template struct Formatter<ColoredStr>;
 }

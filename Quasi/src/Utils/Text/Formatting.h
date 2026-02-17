@@ -1,6 +1,7 @@
 #pragma once
 #include "Utils/String.h"
 #include "StringWriter.h"
+#include "IO/Keyboard.h"
 
 namespace Quasi {
     struct CStr;
@@ -20,6 +21,9 @@ namespace Quasi::Text {
             return Text::FormatObjectTo(output, object, Formatter<T>::ConfigureOptions(options));
         else return Formatter<T>::FormatTo(output, object, options);
     }
+
+    template <class T>
+    StringWriter& StringWriter::operator<<(const T& obj) { FormatObjectTo(*this, obj); return *this; }
 
     // should only be used internally
     template <class T>

@@ -118,6 +118,7 @@ set(HEADER_FILES
     src/Utils/Iter/EnumerateIter.h
     src/Utils/Iter/LinesIter.h
     src/Utils/Iter/SplitIter.h
+    src/Utils/IO/Archive.h
 
     src/vendor/imgui/imconfig.h
     src/vendor/imgui/imgui.h

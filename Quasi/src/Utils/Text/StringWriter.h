@@ -29,5 +29,11 @@ namespace Quasi::Text {
 
         usize operator()(Str str) { return Write(str); }
         usize operator()(char c)  { return Write(c); }
+
+        template <class T>
+        StringWriter& operator<<(const T& obj);
+        StringWriter& operator<<(Str s)          { Write(s); return *this; }
+        StringWriter& operator<<(char c)         { Write(c); return *this; }
+        StringWriter& operator<<(const char s[]) { Write(s); return *this; }
     };
 }

@@ -9,9 +9,12 @@
 
 #include "IO.h"
 
+#ifndef Q_NO_IMGUI
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#endif
+
 #include "GLs/Texture.h"
 #include "GLs/GLDebug.h"
 
@@ -30,9 +33,11 @@ namespace Quasi::Graphics {
     }
 
     void GraphicsDevice::Terminate() {
+#ifndef Q_NO_IMGUI
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
+#endif
 
         glfwDestroyWindow(mainWindow);
         glfwTerminate();
@@ -72,9 +77,12 @@ namespace Quasi::Graphics {
         GLDebugContainer::GpuProcessDuration = Debug::Timer::Instant();
 
         Render::Clear();
+
+#ifndef Q_NO_IMGUI
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+#endif
 
         RenderInMode(renderOptions.renderMode);
 
@@ -90,12 +98,16 @@ namespace Quasi::Graphics {
         frameDurationTime = end - frameBeginTime;
         frameBeginTime = end;
 
+#ifndef Q_NO_IMGUI
         ImGui::Render();
+#endif
         
         glfwPollEvents();
             
+#ifndef Q_NO_IMGUI
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-            
+#endif
+
         glfwSwapBuffers(mainWindow);
     }
     
@@ -169,6 +181,7 @@ namespace Quasi::Graphics {
     }
 
     void GraphicsDevice::DebugMenu() {
+#ifndef Q_NO_IMGUI
         if (ImGui::Button(ShowDebugMenu ? "Hide Debug Menu" : "Show Debug Menu")) {
             ShowDebugMenu = !ShowDebugMenu;
         }
@@ -177,9 +190,11 @@ namespace Quasi::Graphics {
 
         if (ImGui::Button("Quit Application"))
             Quit();
+#endif
     }
 
     void GraphicsDevice::ShowDebugWindow() {
+#ifndef Q_NO_IMGUI
         ImGui::Begin("Debug Menu", &ShowDebugMenu);
         const u32 totalUs = Debug::Timer::UnitConvert<Debug::Microsecond>(frameDurationTime),
                   gpuUs = Debug::Timer::UnitConvert<Debug::Microsecond>(GLDebugContainer::GpuProcessDuration),
@@ -284,6 +299,7 @@ namespace Quasi::Graphics {
         ImGui::EndTabBar();
 
         ImGui::End();
+#endif
     }
 
     GraphicsDevice GraphicsDevice::Initialize(Math::iv2 winSize, const WindowArgs& windowArgs) {
@@ -294,7 +310,7 @@ namespace Quasi::Graphics {
         }
 
         /* Create a windowed mode window and its OpenGL context */
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         // glfwWindowHint(GLFW_SAMPLES, 4);
 
@@ -328,7 +344,9 @@ namespace Quasi::Graphics {
 
         if (!window) {
             glfwTerminate();
-            GLLogger().QError$("Failed to create window");
+            const char* desc;
+            glfwGetError(&desc);
+            GLLogger().QError$("Failed to create window, error code = {}", desc);
         }
 
         /* Make the window's context current */
@@ -352,6 +370,7 @@ namespace Quasi::Graphics {
 
         // Render::EnableMultisample();
 
+#ifndef Q_NO_IMGUI
         // IMGUI INIT
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -361,6 +380,7 @@ namespace Quasi::Graphics {
 
         ImGui_ImplGlfw_InitForOpenGL(window, true);
         ImGui_ImplOpenGL3_Init((const char*)GL::GetString(GL::NUM_SHADING_LANGUAGE_VERSIONS));
+#endif
         
         return GraphicsDevice(window, winSize);
     }

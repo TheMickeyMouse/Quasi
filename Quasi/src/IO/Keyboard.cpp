@@ -2,9 +2,12 @@
 
 #include "Keyboard.h"
 
+#ifndef Q_NO_IMGUI
 #include "imgui_impl_glfw.h"
+#endif
+
 #include "IO.h"
-#include "../Graphics/GraphicsDevice.h"
+#include "Graphics/GraphicsDevice.h"
 
 namespace Quasi::IO {
     GLFWwindow* KeyboardType::inputWindow() { return io->gdevice->GetWindow(); }
@@ -28,10 +31,11 @@ namespace Quasi::IO {
     }
 
     void KeyboardType::OnGlfwKeyCallback(GLFWwindow* window, int key, int positionCode, int action, int modifierBits) {
+#ifndef Q_NO_IMGUI
         ImGui_ImplGlfw_KeyCallback(window, key, positionCode, action, modifierBits);
+#endif
         const bool isPress = action != GLFW_RELEASE;
         queuedKeys.push((uchar)((isPress << 7) | ToKeyIndex((Key)key)));
-
     }
 
     bool KeyboardType::KeyPressed(Key key)   const { return getCurrKeyStatus(key); }

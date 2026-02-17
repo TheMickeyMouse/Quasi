@@ -23,7 +23,7 @@ namespace Quasi::Graphics {
 
     void UIMesh::FillGradient(const Gradient& g) {
         for (UIVertex& v : vertices) {
-            v.Color = (Math::uColor)g.At(v.Position);
+            v.Color = g.At(v.Position);
         }
     }
 
@@ -136,6 +136,7 @@ namespace Quasi::Graphics {
     void Canvas::DrawQuad(const Math::fv2& p1, const Math::fv2& p2, const Math::fv2& p3, const Math::fv2& p4) {
         if (NeedDrawFill()) {
             Batch batch = NewBatch();
+            batch.SetFill();
             batch.Point(p1);
             batch.Point(p2);
             batch.Point(p3);
@@ -284,6 +285,19 @@ namespace Quasi::Graphics {
         //     batch.Tri(0, 1, 2);
         //     batch.Tri(2, 0, 3);
         // }
+    }
+
+    void Canvas::DrawEllipse(const Math::fv2& position, const Math::fv2& axis1, const Math::fv2& axis2) {
+        if (NeedDrawFill()) {
+            const Math::fv2 c1 = axis1 + axis2, c2 = axis1 - axis2;
+            Batch batch = NewBatch();
+            batch.SetFill();
+            batch.PointCirc(position + c1, -1, -1);
+            batch.PointCirc(position + c2, +1, -1);
+            batch.PointCirc(position - c1, +1, +1);
+            batch.PointCirc(position - c2, -1, +1);
+            batch.Quad(0, 1, 2, 3);
+        }
     }
 
     void Canvas::DrawArc(const Math::fv2& center, float radius, const Math::Rotor2D& startAngle, const Math::Rotor2D& endAngle, ArcDirection direction, ArcMode mode) {
