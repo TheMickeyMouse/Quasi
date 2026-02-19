@@ -1,12 +1,12 @@
 #pragma once
 #include "Box.h"
-#include "Iterator.h"
+#include "Continuous.h"
 
 namespace Quasi {
     template <class T>
-    struct ArrayBox : IResource<Span<T>, ArrayBox<T>>, IContinuousCollection<T, ArrayBox<T>> {
+    struct ArrayBox : IResource<Span<T>, ArrayBox<T>>, IContinuous<T, ArrayBox<T>> {
         friend IResource<Span<T>, ArrayBox>;
-        friend IContinuousCollection<T, ArrayBox>;
+        friend IContinuous<T, ArrayBox>;
     private:
         T* buf;
         usize size;

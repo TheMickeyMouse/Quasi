@@ -13,7 +13,7 @@ namespace Quasi::Graphics {
             TextureIFormat::DEPTH, screenDim
         );
         downsample = Texture2D::New(nullptr, screenDim, {
-            .format = TextureFormat::RGBA, .internalformat = TextureIFormat::RGBA_32F, .type = GLTypeID::FLOAT,
+            .format = TextureFormat::RGBA, .internalformat = TextureIFormat::RGBA_32F, .type = TID::FLOAT,
         });
         downsample.Bind();
         downsample.GenerateEmptyMipmaps(6);

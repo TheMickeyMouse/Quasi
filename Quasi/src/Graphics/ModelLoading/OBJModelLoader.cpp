@@ -44,10 +44,10 @@ namespace Quasi::Graphics {
         OBJProperty prop = { Empty {} };
 
         switch (Memory::ReadZeroExtU64Big(prefix.Data(), prefix.Length())) {
-            case "v"_u64:  prop.Set(Vertex       { Math::fv3::Parse(data, " ").UnwrapOr(Math::fv3 { Math::NaN }) }); break;
-            case "vt"_u64: prop.Set(VertexTex    { Math::fv2::Parse(data, " ").UnwrapOr(Math::fv2 { Math::NaN }) }); break;
-            case "vn"_u64: prop.Set(VertexNormal { Math::fv3::Parse(data, " ").UnwrapOr(Math::fv3 { Math::NaN }) }); break;
-            case "vp"_u64: prop.Set(VertexParam  { Math::fv3::Parse(data, " ").UnwrapOr(Math::fv3 { Math::NaN }) }); break;
+            case "v"_u64:  prop.Set(Vertex       { Math::fv3::Parse(data, " ").UnwrapOr(Math::fv3 { f32s::NAN }) }); break;
+            case "vt"_u64: prop.Set(VertexTex    { Math::fv2::Parse(data, " ").UnwrapOr(Math::fv2 { f32s::NAN }) }); break;
+            case "vn"_u64: prop.Set(VertexNormal { Math::fv3::Parse(data, " ").UnwrapOr(Math::fv3 { f32s::NAN }) }); break;
+            case "vp"_u64: prop.Set(VertexParam  { Math::fv3::Parse(data, " ").UnwrapOr(Math::fv3 { f32s::NAN }) }); break;
             case "f"_u64: {
                 Face face;
                 u32 i = 0;
@@ -149,7 +149,7 @@ namespace Quasi::Graphics {
             indices.Push({ f.indices[1][0], f.indices[1][1], f.indices[1][2] });
             indices.Push({ f.indices[2][0], f.indices[2][1], f.indices[2][2] });
         }
-        indices.SortBy(Cmp3 {});
+        indices.Sort(Cmp3 {});
         indices.RemoveDups();
         obj.mesh.vertices = indices.MapEach(
             [&] (const Math::iv3& triple) {
@@ -167,9 +167,9 @@ namespace Quasi::Graphics {
             Math::iv3 v1 { f.indices[0][0], f.indices[0][1], f.indices[0][2] };
             Math::iv3 v2 { f.indices[1][0], f.indices[1][1], f.indices[1][2] };
             Math::iv3 v3 { f.indices[2][0], f.indices[2][1], f.indices[2][2] };
-            const auto [_1, i1] = indices.BinarySearchWith([&] (const Math::iv3& x) { return Cmp3 {}(x, v1); });
-            const auto [_2, i2] = indices.BinarySearchWith([&] (const Math::iv3& x) { return Cmp3 {}(x, v2); });
-            const auto [_3, i3] = indices.BinarySearchWith([&] (const Math::iv3& x) { return Cmp3 {}(x, v3); });
+            const auto [_1, i1] = indices.AsSpan().BinarySearchWith([&] (const Math::iv3& x) { return Cmp3 {}(x, v1); });
+            const auto [_2, i2] = indices.AsSpan().BinarySearchWith([&] (const Math::iv3& x) { return Cmp3 {}(x, v2); });
+            const auto [_3, i3] = indices.AsSpan().BinarySearchWith([&] (const Math::iv3& x) { return Cmp3 {}(x, v3); });
             ind.Push({ (u32)i1, (u32)i2, (u32)i3 });
         }
 

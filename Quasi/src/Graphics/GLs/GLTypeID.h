@@ -1,30 +1,38 @@
 #pragma once
-#include "Utils/Enum.h"
-#include "Utils/Macros.h"
+#include "Utils/Numeric.h"
 
 namespace Quasi::Graphics {
-    struct GLTypeIDData {
-        u32 glID, typeSize;
-
-        QDefineEnum$(GLTypeID,
-            (FLOAT,  (0x1406, sizeof(float)))
-            (DOUBLE, (0x140A, sizeof(double)))
-            (INT,    (0x1404, sizeof(int)))
-            (UINT,   (0x1405, sizeof(uint)))
-            (SBYTE,  (0x1400, sizeof(sbyte)))
-            (BYTE,   (0x1401, sizeof(byte)))
-            (SHORT,  (0x1402, sizeof(short)))
-            (USHORT, (0x1403, sizeof(ushort))),
-        NULLABLE, (0, 0))
+    struct TID {
+        enum E {
+            SBYTE  = 0x1400,
+            BYTE   = 0x1401,
+            SHORT  = 0x1402,
+            USHORT = 0x1403,
+            INT    = 0x1404,
+            UINT   = 0x1405,
+            FLOAT  = 0x1406,
+            DOUBLE = 0x140A,
+            BEGIN  = 0x1400,
+        };
+        inline static u32 TSIZE[] = {
+            sizeof(sbyte),
+            sizeof(byte),
+            sizeof(short),
+            sizeof(ushort),
+            sizeof(int),
+            sizeof(uint),
+            sizeof(float),
+            0, 0, 0,
+            sizeof(double),
+        };
+        template <class T> static E Of() = delete;
     };
-
-    template <class T> GLTypeID GetTypeIDFor()  { return GLTypeID::NONE; }
-    template <> inline GLTypeID GetTypeIDFor<float>()  { return GLTypeID::FLOAT; }
-    template <> inline GLTypeID GetTypeIDFor<double>() { return GLTypeID::DOUBLE; }
-    template <> inline GLTypeID GetTypeIDFor<int>()    { return GLTypeID::INT; }
-    template <> inline GLTypeID GetTypeIDFor<uint>()   { return GLTypeID::UINT; }
-    template <> inline GLTypeID GetTypeIDFor<sbyte>()  { return GLTypeID::SBYTE; }
-    template <> inline GLTypeID GetTypeIDFor<byte>()   { return GLTypeID::BYTE; }
-    template <> inline GLTypeID GetTypeIDFor<short>()  { return GLTypeID::SHORT; }
-    template <> inline GLTypeID GetTypeIDFor<ushort>() { return GLTypeID::USHORT; }
+    template <> inline TID::E TID::Of<float>()  { return FLOAT; }
+    template <> inline TID::E TID::Of<double>() { return DOUBLE; }
+    template <> inline TID::E TID::Of<int>()    { return INT; }
+    template <> inline TID::E TID::Of<uint>()   { return UINT; }
+    template <> inline TID::E TID::Of<sbyte>()  { return SBYTE; }
+    template <> inline TID::E TID::Of<byte>()   { return BYTE; }
+    template <> inline TID::E TID::Of<short>()  { return SHORT; }
+    template <> inline TID::E TID::Of<ushort>() { return USHORT; }
 }

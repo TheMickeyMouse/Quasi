@@ -127,7 +127,7 @@ namespace Quasi::Graphics {
     template <class T>
     RenderObject<T> GraphicsDevice::CreateNewRender(usize vsize, usize isize) {
         renders.Push(Box<RenderData>::Build(*this, vsize, 3 * isize, sizeof(T), VertexLayoutOf<T>()));
-        BindRender(*renders.LastMut());
-        return *renders.LastMut();
+        BindRender(*renders.Last());
+        return *renders.Last();
     }
 }

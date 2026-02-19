@@ -4,10 +4,10 @@
 
 #define DEFINE_TEST_T(T, S) \
     using _Test_t = T; \
-    inline static const TestType _Test_Category_t = TestType::S; \
-    inline static const String _Test_Resource_Directory = Text::Format("{}res\\{}\\" #T "\\", PROJECT_DIRECTORY, _Test_Category_t->name); \
+    inline static const TestType::E CATEGORY = TestType::S; \
+    inline static const String RES_DIR = Text::Format("{}res\\{}\\" #T "\\", PROJECT_DIRECTORY, TestType::Name(CATEGORY)); \
 
-#define RES_STR(RES_NAME) (_Test_Resource_Directory + RES_NAME)
+#define RES_STR(RES_NAME) (RES_DIR + RES_NAME)
 #define RES(RES_NAME) RES_STR(RES_NAME).IntoCStr()
 
 namespace Test {
@@ -15,16 +15,26 @@ namespace Test {
 
     constexpr Str PROJECT_DIRECTORY = Str::Slice(__FILE__, sizeof(__FILE__) - sizeof("src\\Test.h"));
 
-    struct TestTypeData {
-        Str name;
-
-        QDefineEnum$(TestType,
-            (BASIC,       ("Basic"))
-            (ADVANCED,    ("Advanced"))
-            (SIM_PHYSICS, ("Physics"))
-            (DEMO,        ("Demos"))
-            (OTHER,       ("Other")),
-        NULLABLE, ("None"))
+    struct TestType {
+        enum E {
+            NONE = 0,
+            BASIC,
+            ADVANCED,
+            SIM_PHYSICS,
+            DEMO,
+            OTHER,
+            NUM_TYPES
+        };
+        static const char* Name(E type) {
+            switch (type) {
+                case BASIC:       return "Basic";
+                case ADVANCED:    return "Advanced";
+                case SIM_PHYSICS: return "Physics";
+                case DEMO:        return "Demos";
+                case OTHER:       return "Other";
+                default:          return "Unknown";
+            }
+        }
     };
 
     class Test {

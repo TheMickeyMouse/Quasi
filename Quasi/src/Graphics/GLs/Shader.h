@@ -2,7 +2,6 @@
 
 #include <Utils/Macros.h>
 
-#include "Utils/Enum.h"
 #include "Utils/Array.h"
 #include "Utils/String.h"
 #include "Utils/CStr.h"
@@ -16,19 +15,27 @@ namespace Quasi::Graphics {
     class TextureBase;
     template <TextureTarget> class TextureObject;
 
-    struct ShaderTypeData {
-        u32 glID;
-        Str shaderName;
-
-    QDefineEnum$(ShaderType,
-                     (VERTEX, (0x8B31, "Vertex"))
-                     (FRAGMENT, (0x8B30, "Fragment"))
-                     (GEOMETRY, (0x8DD9, "Geometry"))
-                     // all below requires OpenGL 4.3 above
-                     (COMPUTE, (0x91B9, "Compute"))
-                     (TESS_CONTROL, (0x8E88, "Tesselation Control"))
-                     (TESS_EVALUATION, (0x8E87, "Tesselation Eval")),
-                     NONE)
+    struct ShaderType {
+        enum E {
+            VERTEX       = 0x8B31,
+            FRAGMENT     = 0x8B30,
+            GEOMETRY     = 0x8DD9,
+            // all below requires OpenGL 4.3 above
+            COMPUTE      = 0x91B9,
+            TESS_CONTROL = 0x8E88,
+            TESS_EVAL    = 0x8E87,
+        };
+        static const char* Name(E type) {
+            switch (type) {
+                case VERTEX:       return "Vertex";
+                case FRAGMENT:     return "Fragment";
+                case GEOMETRY:     return "Geometry";
+                case COMPUTE:      return "Compute";
+                case TESS_CONTROL: return "Tess Control";
+                case TESS_EVAL:    return "Tess Eval";
+                default: return nullptr;
+            }
+        }
     };
 
     enum class ShaderUniformType {
@@ -74,7 +81,7 @@ namespace Quasi::Graphics {
         int GetUniformLocation(CStr name) const;
 
         static Tuple<Str, Str, Str> ParseShader  (Str program);
-        static GraphicsID CompileShader    (Str source, ShaderType type);
+        static GraphicsID CompileShader    (Str source, ShaderType::E type);
         static GraphicsID CompileShaderVert(Str source) { return CompileShader(source, ShaderType::VERTEX); }
         static GraphicsID CompileShaderFrag(Str source) { return CompileShader(source, ShaderType::FRAGMENT); }
         static GraphicsID CompileShaderGeom(Str source) { return CompileShader(source, ShaderType::GEOMETRY); }

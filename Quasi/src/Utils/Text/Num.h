@@ -65,20 +65,10 @@ namespace Quasi::Text {
     struct IntParser {
         struct ParseOptions {
             enum {
-                ADAPTIVE = 0,
-                BASE_N   = 0,
+                ADAPTIVE = 0,  BASE_N   = 0,
                 BASE_2   = 2,  BINARY   = 2,
-                BASE_3   = 3,  BASE_4   = 4,  BASE_5   = 5,  BASE_6   = 6,  BASE_7   = 7,
-                BASE_8   = 8,  OCTAL    = 8,
-                BASE_9   = 9,
                 BASE_10  = 10, DECIMAL  = 10,
-                BASE_11  = 11, BASE_12  = 12, BASE_13  = 13, BASE_14  = 14, BASE_15  = 15,
                 BASE_16  = 16, HEX      = 16,
-                BASE_17  = 17, BASE_18  = 18, BASE_19  = 19, BASE_20  = 20,
-                BASE_21  = 21, BASE_22  = 22, BASE_23  = 23, BASE_24  = 24,
-                BASE_25  = 25, BASE_26  = 26, BASE_27  = 27, BASE_28  = 28,
-                BASE_29  = 29, BASE_30  = 30, BASE_31  = 31, BASE_32  = 32,
-                BASE_33  = 33, BASE_34  = 34, BASE_35  = 35, BASE_36  = 36,
             } radix = DECIMAL;
         };
         template <class N> static OptionUsize ParseUntil(Str string, Out<N&> out, ParseOptions options);
@@ -114,64 +104,17 @@ namespace Quasi::Text {
 #pragma endregion
 
     namespace NumberConversion {
-        // different from plain addition, bytes do not overflow to other bytes
-        u32 Add4Bytes(u32 a, u32 b);
-
-        // checks if all 8 bytes in digits is a valid digit character (0-9)
-        bool AreAllInCharRange8(u64 digits, uchar min, uchar max);
-        bool AreAllInCharRange4(u32 digits, uchar min, uchar max);
-        bool AreAllDigits4(u32 digits);
-        bool AreAllDigitsRadix4(u32 digits, u32 radix);
-        bool AreAllDigits8(u64 digits);
         bool AreAllHexDigits4(u32 digits);
-        bool AreAllHexDigitsRadix4(u32 digits, u32 radix);
 
-        u32 ConvertDigits4(u32 chars);
-        u64 ConvertDigits8(u64 chars);
         u32 ConvertHexDigits4(u32 chars);
         u64 ParseDigits8(u64 digits);
         u32 ParseDigits4(u32 digits);
         u32 ParseHexDigits4(u32 xdigits);
 
-        // base 2-4, 4 digits can fit in 1 byte
-        u32 ParseDigitsTinyRadix4(u32 dig, u32 radix);
-        // base 5-16, 4 digits can fit in 2 bytes
-        u32 ParseDigitsSmallRadix4(u32 dig, u32 radix);
-        // base 17+, 4 digits can fit in a u32
-        u32 ParseDigitsLargeRadix4(u32 dig, u32 radix);
-
-        template <usize ByteParallelCount>
-        OptionUsize ParseIntBy(Str string, Out<u64&> out, const Fn<bool, u64&, const char*> auto& acc, u32 maxDigs, u32 radix) {
-            const usize originalSize = string.Length();
-            string = string.TrimStart('0');
-
-            usize i = 0;
-            u64 n = 0;
-            for (; i <= maxDigs; i += ByteParallelCount) {
-                if (!acc(n, &string[i])) { // cannot read chunks of digits
-                    const char* rest = &string[i];
-                    for (u32 j = 0; j < ByteParallelCount; ++j) {
-                        if (const auto d = Chr::TryToDigitRadix(rest[j], radix)) {
-                            if (i + j > maxDigs) return nullptr;
-                            n *= radix;
-                            n += *d;
-                        } else {
-                            out = n;
-                            return originalSize - string.Length() + i + j;
-                        }
-                    }
-                }
-            }
-            return nullptr;
-        }
-
-        OptionUsize ParseBinaryInt    (Str string, Out<u64&> out, u32 bits);
-        OptionUsize ParseDecimalInt   (Str string, Out<u64&> out, u32 bits);
-        OptionUsize ParseHexInt       (Str string, Out<u64&> out, u32 bits);
-        OptionUsize ParseTinyRadixInt (Str string, Out<u64&> out, u32 bits, u32 radix);
-        OptionUsize ParseSmallRadixInt(Str string, Out<u64&> out, u32 bits, u32 radix);
-        OptionUsize ParseAsciiRadixInt(Str string, Out<u64&> out, u32 bits, u32 radix);
-        OptionUsize ParseLargeRadixInt(Str string, Out<u64&> out, u32 bits, u32 radix);
+        OptionUsize ParseBinaryInt (Str string, Out<u64&> out, u32 bits);
+        OptionUsize ParseDecimalInt(Str string, Out<u64&> out, u32 bits);
+        OptionUsize ParseHexInt    (Str string, Out<u64&> out, u32 bits);
+        OptionUsize ParseRadixInt  (Str string, Out<u64&> out, u32 bits, u32 radix);
         template <Integer I>
         OptionUsize ParseInt(Str string, Out<I&> out, IntParser::ParseOptions options);
 
@@ -212,4 +155,17 @@ namespace Quasi::Text {
     template <class N> OptionUsize IntParser::ParseUntil(Str string, Out<N&> out, ParseOptions options) {
         return NumberConversion::ParseInt(string, out, options);
     }
+
+    template <>
+    struct Formatter<OptionUsize> : Formatter<usize> {
+        using Formatter<usize>::FormatOptions;
+        static usize FormatTo(StringWriter sw, OptionUsize n, const FormatOptions& options) {
+            if (n) {
+                sw.Write("Some("_str);
+                const usize i = Formatter<usize>::FormatTo(sw, *n, options);
+                sw.Write(')');
+                return i + 6;
+            } else { sw.Write("None"_str); return 4; }
+        }
+    };
 }

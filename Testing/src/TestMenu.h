@@ -13,7 +13,7 @@ namespace Test {
         };
 
         struct TestSection {
-            TestType type;
+            TestType::E type;
             zRange span;
             Str description;
         };
@@ -22,7 +22,7 @@ namespace Test {
         Ref<TestManager> manager;
         Vec<TestMenuItem> menuItems;
         Vec<TestSection> testTypeSegments;
-        TestType currentType = TestType::NONE;
+        TestType::E currentType = (TestType::E)0;
     public:
         TestMenu(Ref<TestManager> manager);
 
@@ -37,7 +37,7 @@ namespace Test {
             menuItems.Push({ name, "", TestFactory<T> });
         }
 
-        void DeclareTestType(TestType type);
+        void DeclareTestType(TestType::E type);
         void FinishDeclare();
         void AddSectionDescription(Str desc);
         void AddDescription(Str desc);

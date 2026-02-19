@@ -31,9 +31,9 @@ namespace Quasi::Graphics {
             const auto& elem = elements[i];
             QGLCall$(GL::EnableVertexAttribArray(i));
             if (elem.integer)
-                QGLCall$(GL::VertexAttribIPointer(i, elem.count, elem.type->glID, layout.GetStride(), (const void*)offset));
+                QGLCall$(GL::VertexAttribIPointer(i, elem.count, elem.type, layout.GetStride(), (const void*)offset));
             else
-                QGLCall$(GL::VertexAttribPointer(i, elem.count, elem.type->glID, elem.norm, layout.GetStride(), (const void*)offset));
+                QGLCall$(GL::VertexAttribPointer(i, elem.count, elem.type, elem.norm, layout.GetStride(), (const void*)offset));
             offset += elem.width;
         }
     }

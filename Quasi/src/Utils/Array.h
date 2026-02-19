@@ -1,6 +1,5 @@
 #pragma once
-#include "Iterator.h"
-#include "Type.h"
+#include "Continuous.h"
 
 namespace Quasi {
     template <class T, usize N> using CArray = T[N];
@@ -11,8 +10,8 @@ namespace Quasi {
     };
 
     template <class T, usize N>
-    struct Array : IContinuousCollection<T, Array<T, N>> {
-        friend IContinuousCollection<T, Array>;
+    struct Array : IContinuous<T, Array<T, N>> {
+        friend IContinuous<T, Array>;
     private:
         using InnerRawArray = IfElse<N == 0, ZeroArray<T>, T[N]>;
         InnerRawArray array {};

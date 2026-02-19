@@ -133,7 +133,7 @@ namespace Quasi::Graphics {
             const auto localTexture = STBIImage::Own(stbi_load(face.Data(), &sx, &sy, &bpx, 4));
             QGLCall$(GL::TexImage2D(
                 faceTarget, 0, (int)loadMode.internalformat, sx, sy, 0,
-                (int)loadMode.format, loadMode.type->glID, localTexture.Data()));
+                (int)loadMode.format, loadMode.type, localTexture.Data()));
             ++faceTarget;
         }
         cubemap.DefaultParams(loadMode.pixelated, loadMode.border);
@@ -156,27 +156,27 @@ namespace Quasi::Graphics {
     template <TextureTarget Target>
     void TextureObject<Target>::SetSubTexture(const byte* data, const Math::Rect<int, DIM>& rect, const TextureLoadParams& params, int level) {
         if constexpr (DIM == 1) {
-            QGLCall$(GL::TexSubImage1D((int)Target, level, rect.min.x, rect.Width(), (int)params.format, params.type->glID, data));
+            QGLCall$(GL::TexSubImage1D((int)Target, level, rect.min.x, rect.Width(), (int)params.format, params.type, data));
         } else if constexpr (DIM == 2) {
-            QGLCall$(GL::TexSubImage2D((int)Target, level, rect.min.x, rect.min.y, rect.Width(), rect.Height(), (int)params.format, params.type->glID, data));
+            QGLCall$(GL::TexSubImage2D((int)Target, level, rect.min.x, rect.min.y, rect.Width(), rect.Height(), (int)params.format, params.type, data));
         } else if constexpr (DIM == 3) {
-            QGLCall$(GL::TexSubImage3D((int)Target, level, rect.min.x, rect.min.y, rect.min.z, rect.Width(), rect.Height(), rect.Depth(), (int)params.format, params.type->glID, data));
+            QGLCall$(GL::TexSubImage3D((int)Target, level, rect.min.x, rect.min.y, rect.min.z, rect.Width(), rect.Height(), rect.Depth(), (int)params.format, params.type, data));
         }
     }
 
     template <TextureTarget Target>
     void TextureObject<Target>::SetSubTexture(ImageView image, const Math::iv2& pos, const TextureLoadParams& params, int level) requires (DIM == 2) {
-        SetSubTexture(image.Data(), { pos, pos + image.Size() }, params, level);
+        SetSubTexture((const byte*)image.Data(), { pos, pos + image.Size() }, params, level);
     }
 
     template <TextureTarget Target>
     void TextureObject<Target>::SetTexture(const byte* data, const Math::Vector<int, DIM>& dim, const TextureLoadParams& params, int level) {
         if constexpr (DIM == 1) {
-            QGLCall$(GL::TexImage1D((int)Target, level, (int)params.internalformat, dim.x, 0, (int)params.format, params.type->glID, data));
+            QGLCall$(GL::TexImage1D((int)Target, level, (int)params.internalformat, dim.x, 0, (int)params.format, params.type, data));
         } else if constexpr (DIM == 2) {
-            QGLCall$(GL::TexImage2D((int)Target, level, (int)params.internalformat, dim.x, dim.y, 0, (int)params.format, params.type->glID, data));
+            QGLCall$(GL::TexImage2D((int)Target, level, (int)params.internalformat, dim.x, dim.y, 0, (int)params.format, params.type, data));
         } else if constexpr (DIM == 3) {
-            QGLCall$(GL::TexImage3D((int)Target, level, (int)params.internalformat, dim.x, dim.y, dim.z, 0, (int)params.format, params.type->glID, data));
+            QGLCall$(GL::TexImage3D((int)Target, level, (int)params.internalformat, dim.x, dim.y, dim.z, 0, (int)params.format, params.type, data));
         }
     }
 
@@ -184,15 +184,15 @@ namespace Quasi::Graphics {
     void TextureObject<Target>::GenerateEmptyMipmaps(const Math::Vector<int, DIM>& dim, const TextureLoadParams& params, u32 levels) {
         if constexpr (DIM == 1) {
             for (u32 level = 1; level <= levels; ++level) {
-                QGLCall$(GL::TexImage1D((int)Target, level, (int)params.internalformat, dim.x >> level, 0, (int)params.format, params.type->glID, nullptr));
+                QGLCall$(GL::TexImage1D((int)Target, level, (int)params.internalformat, dim.x >> level, 0, (int)params.format, params.type, nullptr));
             }
         } else if constexpr (DIM == 2) {
             for (u32 level = 1; level <= levels; ++level) {
-                QGLCall$(GL::TexImage2D((int)Target, level, (int)params.internalformat, dim.x >> level, dim.y >> level, 0, (int)params.format, params.type->glID, nullptr));
+                QGLCall$(GL::TexImage2D((int)Target, level, (int)params.internalformat, dim.x >> level, dim.y >> level, 0, (int)params.format, params.type, nullptr));
             }
         } else if constexpr (DIM == 3) {
             for (u32 level = 1; level <= levels; ++level) {
-                QGLCall$(GL::TexImage3D((int)Target, level, (int)params.internalformat, dim.x >> level, dim.y >> level, dim.z >> level, 0, (int)params.format, params.type->glID, nullptr));
+                QGLCall$(GL::TexImage3D((int)Target, level, (int)params.internalformat, dim.x >> level, dim.y >> level, dim.z >> level, 0, (int)params.format, params.type, nullptr));
             }
         }
     }

@@ -159,7 +159,7 @@ namespace Quasi::Graphics {
             if (!line.StartsWith("// #shader")) continue;
 
             if (current) {
-                current->TakeAfter(current->Unaddress(line.Data()));
+                current->TakeAfter(current->AsSpan().Unaddress(line.Data()));
             }
 
             line.Advance(11);
@@ -205,8 +205,8 @@ namespace Quasi::Graphics {
         return s;
     }
 
-    GraphicsID ShaderProgram::CompileShader(Str source, ShaderType type) {
-        const GraphicsID id = GL::CreateShader(type->glID);
+    GraphicsID ShaderProgram::CompileShader(Str source, ShaderType::E type) {
+        const GraphicsID id = GL::CreateShader((u32)type);
         const char* src = source.Data();
         const int length = (int)source.Length();
         GL::ShaderSource(id, 1, &src, &length);
@@ -220,7 +220,7 @@ namespace Quasi::Graphics {
             GL::GetShaderiv(id, GL::INFO_LOG_LENGTH, &len);
             char* errbuf = Memory::QAlloca$(char, len);
             GL::GetShaderInfoLog(id, len, &len, errbuf);
-            GLLogger().QError$("Compiling {} shader yielded compiler errors:\n{}", type->shaderName, errbuf);
+            GLLogger().QError$("Compiling {} shader yielded compiler errors:\n{}", ShaderType::Name(type), errbuf);
 
             GL::DeleteShader(id);
             return 0;

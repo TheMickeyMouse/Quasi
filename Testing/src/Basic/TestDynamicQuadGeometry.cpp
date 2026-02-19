@@ -20,7 +20,7 @@ namespace Test {
     void TestDynamicQuadGeometry::OnImGuiRender(Graphics::GraphicsDevice& gdevice) {
         const usize quadCount = quads.Length();
 
-        auto& quad = quads.LastMut();
+        auto& quad = quads.Last();
         auto& verts = quad.vertices;
         ImGui::EditVector("Quad Vertex 1", verts[0].Position);
         ImGui::EditVector("Quad Vertex 2", verts[1].Position);

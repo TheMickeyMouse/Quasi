@@ -35,7 +35,7 @@ namespace Test {
             nullptr, gdevice.GetWindowSize(), {
                 .format = Graphics::TextureFormat::DEPTH,
                 .internalformat = Graphics::TextureIFormat::DEPTH_16,
-                .type = Graphics::GLTypeID::FLOAT
+                .type = Graphics::TID::FLOAT
             }
         );
         depthTex.Bind();

@@ -41,48 +41,28 @@ namespace Quasi {
             }
         }
 #pragma region Comparison Functors
-        struct LessThan      { bool operator()(const auto& left, const auto& right) const { return left <  right; } };
+        template <class T> struct LessThan { const T& obj; bool operator()(const auto& x) const { return x < obj; } };
+        template <> struct LessThan<void> { bool operator()(const auto& lhs, const auto& rhs) const { return lhs < rhs; } };
+
         struct LessEquals    { bool operator()(const auto& left, const auto& right) const { return left <= right; } };
         struct GreaterEquals { bool operator()(const auto& left, const auto& right) const { return left >= right; } };
         struct GreaterThan   { bool operator()(const auto& left, const auto& right) const { return left <  right; } };
 
-        template <class T>
-        struct LessThanWith  { const T& x; bool operator()(const auto& other) const { return other < x; } };
-        template <class F>
-        struct LessThanKeyed {
-            F& keyer;
-            bool operator()(const auto& lhs, const auto& rhs) { return keyer(lhs) < keyer(rhs); }
-        };
-        template <class F, class T>
-        struct LessThanWithKeyed {
-            F& keyer;
-            const T& target;
-            bool operator()(const auto& x) { return keyer(x) < target; }
-        };
+        template <class T> struct Equals { const T& obj; bool operator()(const auto& x) const { return x == obj; } };
+        template <> struct Equals<void> { bool operator()(const auto& lhs, const auto& rhs) const { return lhs == rhs; } };
 
-        struct Equality      { bool operator()(const auto& left, const auto& right) const { return left == right; } };
-        template <class T>
-        struct Equals        { const T& x; auto operator()(const auto& other) const { return x == other; } };
-        template <class F>
-        struct EqualityKeyed {
-            F& keyer;
-            bool operator()(const auto& lhs, const auto& rhs) { return keyer(lhs) == keyer(rhs); }
-        };
+        template <class T> struct Compare { const T& obj; Comparison operator()(const auto& x) const { return IntoComparison(x <=> obj); } };
+        template <> struct Compare<void> { Comparison operator()(const auto& lhs, const auto& rhs) const { return IntoComparison(lhs <=> rhs); } };
 
-        struct Compare       { Comparison operator()(const auto& left, const auto& right) const { return IntoComparison(left <=> right); } };
         template <class T>
-        struct ComparedTo    { const T& rhs; Comparison operator()(const auto& other) const { return IntoComparison(other <=> rhs); } };
-        template <class F>
-        struct CompareKeyed {
-            F& keyer;
-            Comparison operator()(const auto& lhs, const auto& rhs) { return IntoComparison(keyer(lhs) <=> keyer(rhs)); }
-        };
-        template <class F, class T>
-        struct ComparedToKeyed {
-            F& keyer;
-            T target;
-            Comparison operator()(const auto& x) { return IntoComparison(keyer(x) <=> target); }
-        };
+        LessThan(const T&) -> LessThan<T>;
+        LessThan() -> LessThan<void>;
+        template <class T>
+        Equals(const T&) -> Equals<T>;
+        Equals() -> Equals<void>;
+        template <class T>
+        Compare(const T&) -> Compare<T>;
+        Compare() -> Compare<void>;
 #pragma endregion
     }
 

@@ -10,7 +10,7 @@ namespace Quasi::Graphics {
 
     void VertexBufferLayout::Push(VertexBufferComponent comp) {
         components.Push(comp);
-        stride += comp.count * comp.type->typeSize;
+        stride += comp.count * TID::TSIZE[comp.type - TID::BEGIN];
     }
 
     void VertexBufferLayout::PushLayout(const VertexBufferLayout& layout) {

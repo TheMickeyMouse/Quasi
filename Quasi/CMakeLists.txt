@@ -84,11 +84,9 @@ set(HEADER_FILES
     src/Physics/PolygonShape2D.h
     src/Physics/RectShape2D.h
 
-    src/Utils/Enum.h
     src/Utils/Text.h
     src/Utils/Option.h
     src/Utils/Macros.h
-    src/Utils/RichString.h
     src/Utils/Type.h
     src/Utils/Match.h
     src/Utils/Memory.h
@@ -191,7 +189,6 @@ set(SOURCE_FILES
     src/Physics/PolygonShape2D.cpp
     src/Physics/RectShape2D.cpp
 
-    src/Utils/RichString.cpp
     src/Utils/Text.cpp
     src/Utils/Str.cpp
     src/Utils/String.cpp
@@ -217,6 +214,7 @@ set(ALL_FILES
         src/Graphics/Image.cpp
         src/Graphics/GUI/Interactable.cpp
         src/Graphics/GUI/Interactable.h
+        src/Utils/Continuous.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})
