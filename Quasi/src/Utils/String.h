@@ -6,7 +6,7 @@ namespace Quasi {
     struct CStr;
 
     struct String : StringHolder<char, String> {
-        friend IContinuousCollection;
+        friend IContinuous;
         friend StringHolder;
         using StringHolder::operator==;
         using StringHolder::operator<=>;
@@ -177,9 +177,6 @@ namespace Quasi {
         String  operator+ (Str rhs) const;
         String& operator+=(Str rhs);
     };
-
-    template <class T> Str    Span<T>::AsStr() const requires SameAs<const T, const char> { return Str::Slice(data, size); }
-    template <class T> StrMut Span<T>::AsStrMut()    requires SameAs<      T,       char> { return StrMut::Slice(data, size); }
 
     template <class Char, class Super>
     String StringHolder<Char, Super>::ReplaceIf(Fn<usize, Str> auto&& pred, Str to) const {

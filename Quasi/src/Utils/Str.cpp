@@ -283,8 +283,8 @@ namespace Quasi {
     strdef bool  strcls::EndsWith  (char suffix) const { return this->Length() >= 1 && Last()  == suffix; }
     strdef bool  strcls::StartsWith(Str prefix)  const { return this->Length() >= prefix.Length() && First(prefix.Length()) == prefix; }
     strdef bool  strcls::EndsWith  (Str suffix)  const { return this->Length() >= suffix.Length() && Last (suffix.Length()) == suffix; }
-    strdef OptionUsize strcls::StartsWithOneOf(Span<const char> anyprefix) const { return this->Length() >= 1 ? anyprefix.Find(First()) : -1; }
-    strdef OptionUsize strcls::EndsWithOneOf  (Span<const char> anysuffix) const { return this->Length() >= 1 ? anysuffix.Find(Last())  : -1; }
+    strdef OptionUsize strcls::StartsWithOneOf(Span<const char> anyprefix) const { return this->Length() >= 1 ? anyprefix.Find(this->First()) : -1; }
+    strdef OptionUsize strcls::EndsWithOneOf  (Span<const char> anysuffix) const { return this->Length() >= 1 ? anysuffix.Find(this->Last())  : -1; }
     strdef OptionUsize strcls::StartsWithOneOf(Span<const Str> anyprefix)  const { for (usize i = 0; i < anyprefix.Length(); ++i) if (StartsWith(anyprefix[i])) return i; return nullptr; }
     strdef OptionUsize strcls::EndsWithOneOf  (Span<const Str> anysuffix)  const { for (usize i = 0; i < anysuffix.Length(); ++i) if (StartsWith(anysuffix[i])) return i; return nullptr; }
 

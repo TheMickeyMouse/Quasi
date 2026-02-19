@@ -21,8 +21,7 @@ namespace Quasi {
         FuncRef(void* uptr, FuncPtr<Result, void*, Args...> fptr) : userPtr(uptr), functionPtr(fptr) {}
     public:
         static Result Empty(void*, Args...) { return Result {}; }
-        Result Invoke(Args... args) const { return functionPtr(userPtr, (Args&&)args...); }
-        Result operator()(Args... args) const { return Invoke((Args&&)args...); }
+        Result operator()(Args... args) const { return functionPtr(userPtr, (Args&&)args...); }
 
         FuncRef() = default;
         FuncRef(Nullptr) : FuncRef() {}
@@ -31,11 +30,6 @@ namespace Quasi {
         }) {}
 
         static FuncRef FromRaw(void* uptr, FuncPtr<Result, void*, Args...> fptr) { return { uptr, fptr }; }
-
-        FuncRef(const FuncRef& f) = default;
-        FuncRef(FuncRef&& f) noexcept = default;
-        FuncRef& operator=(const FuncRef& f) = default;
-        FuncRef& operator=(FuncRef&& f) noexcept = default;
 
         template <class Lamb> requires DistantTo<Lamb, FuncRef>
         FuncRef(Lamb&& lamb)
@@ -80,8 +74,7 @@ namespace Quasi {
         FuncBox(void* uptr, FuncPtr<void, void*> destructor, FuncPtr<Result, void*, Args...> fptr)
             : userPtr(uptr), destructor(destructor), functionPtr(fptr) {}
     public:
-        Result Invoke(Args... args) const { return functionPtr(userPtr, (Args&&)args...); }
-        Result operator()(Args... args) const { return Invoke((Args&&)args...); }
+        Result operator()(Args... args) const { return functionPtr(userPtr, (Args&&)args...); }
 
         FuncBox() = default;
         FuncBox(Nullptr) : FuncBox() {}
@@ -93,10 +86,10 @@ namespace Quasi {
                 destructor(userPtr);
         }
 
-        static FuncBox FromRaw(void* uptr, FuncPtr<Result, void*, Args...> fptr) { return { uptr, fptr }; }
-        static FuncBox FromRaw(void* uptr, FuncPtr<void, void*> destructor, FuncPtr<Result, void*, Args...> fptr) {
-            return { uptr, destructor, fptr };
-        }
+        static FuncBox FromRaw(
+            void* uptr,
+            FuncPtr<Result, void*, Args...> fptr,
+            FuncPtr<void, void*> dtor = &ZeroDestructor) { return { uptr, dtor, fptr }; }
 
         FuncBox(const FuncBox& f) = delete;
         FuncBox(FuncBox&& f) noexcept {
@@ -162,21 +155,11 @@ namespace Quasi {
             auto operator()(auto&&... args) { return func(*this, std::forward<decltype(args)>(args)...); }
         };
 
-        template <class F>
-        struct Negate { F func; bool operator()(auto&&... args) { return !func(std::forward<decltype(args)>(args)...); } };
-
         template <class T>
         struct Collect {
             Vec<T> elements;
             void operator()(const T& val) { elements.Push(val); }
             void operator()(T&& val) { elements.Push(std::move(val)); }
-        };
-
-        template <class T, class F>
-        struct Bind {
-            T first;
-            const F& func;
-            auto operator()(auto&&... rest) const { return func(first, (decltype(rest))rest...); }
         };
 
         template <class T>
@@ -190,6 +173,25 @@ namespace Quasi {
         };
         template <class... Fs>
         Overload(Fs&&...) -> Overload<Fs...>;
+
+
+        template <class...> struct Compose;
+
+        template <class F, class... Fs>
+        struct Compose<F, Fs...> {
+            F first;
+            Compose<Fs...> rest;
+            Compose(F first, Fs... rest) : first(std::move(first)), rest(std::move(rest)...) {}
+            auto operator()(auto&&... xs) {
+                return first(rest((decltype(xs))xs...));
+            }
+        };
+        template <class F>
+        struct Compose<F> : F {
+            using F::operator();
+        };
+        template <class... Fs>
+        Compose(Fs&&...) -> Compose<Fs...>;
     }
 
     namespace Operators {

@@ -583,7 +583,7 @@ namespace Quasi::Algorithm {
                     // [[assume(numLt < span.Length())]];
 
                     // Split the slice into `left`, `pivot`, and `right`.
-                    auto [left, right] = span.CutAtMut(numLt);
+                    auto [left, right] = span.CutAt(numLt);
                     const T& newPivot = right.TakeFirst();
 
                     // Recurse into the left side. We have a fixed recursion limit, testing shows no real
@@ -647,7 +647,7 @@ namespace Quasi::Algorithm {
 
                 // Place the pivot at the beginning of slice.
                 span.Swap(0, pivot);
-                const auto [p, spanRest] = span.SplitFirstMut();
+                const auto [p, spanRest] = span.SplitFirst();
 
                 // Assuming that Rust generates noalias LLVM IR we can be sure that a partition function
                 // signature of the form `(v: &mut [T], pivot: &T)` guarantees that pivot and v can't alias.
@@ -807,7 +807,7 @@ namespace Quasi::Algorithm {
 
                 for (usize i = len + len / 2; i --> 0; ) {
                     const usize siftIdx = i >= len ? i - len : (span.Swap(0, i), 0);
-                    HeapSortSiftDown(span.FirstMut(std::min(i, len)), siftIdx, cmp);
+                    HeapSortSiftDown(span.First(std::min(i, len)), siftIdx, cmp);
                 }
             }
 
@@ -1007,28 +1007,13 @@ namespace Quasi::Algorithm {
 
 namespace Quasi {
     template <class T>
-    bool Span<T>::EqualsByKey(Span other, FnArgs<const T&> auto&& keyf) const {
-        return EqualsBy(other, Cmp::EqualityKeyed { keyf });
-    }
-
-    template <class T>
-    Comparison Span<T>::CmpByKey(Span other, FnArgs<const T&> auto&& keyf) const {
-        return CmpBy(other, Cmp::CompareKeyed { keyf });
-    }
-
-    template <class T>
-    Comparison Span<T>::CmpSizedByKey(Span other, FnArgs<const T&> auto&& keyf) const {
-        return CmpSizedBy(other, Cmp::CompareKeyed { keyf });
-    }
-
-    template <class T>
     Tuple<bool, usize> Span<T>::BinarySearchWith(Fn<Comparison, const T&> auto&& cmp) const {
         return Algorithm::BinarySearchWith(*this, cmp);
     }
 
     template <class T>
-    Tuple<bool, usize> Span<T>::BinarySearchByKey(const T& target, FnArgs<const T&> auto&& keyf) const {
-        return BinarySearchWith(Cmp::ComparedToKeyed { keyf, keyf(target) });
+    Tuple<bool, usize> Span<T>::BinarySearchByKey(const auto& key, FnArgs<const T&> auto&& keyf) const {
+        return BinarySearchWith([&] (const auto& x) { return Cmp::Between(keyf(x), key); });
     }
 
     template <class T>
@@ -1037,56 +1022,28 @@ namespace Quasi {
     }
 
     template <class T>
-    usize Span<T>::BinaryPartitionPointByKey(const T& target, FnArgs<const T&> auto&& keyf) const {
-        return BinaryPartitionPointBy(Cmp::LessThanKeyed { keyf, keyf(target) });
-    }
-
-    template <class T>
-    usize Span<T>::LowerBoundByKey(const T& target, FnArgs<const T&> auto&& keyf) const {
-        return LowerBoundBy(Cmp::ComparedToKeyed { keyf, keyf(target) });
-    }
-
-    template <class T>
     usize Span<T>::UpperBoundBy(Fn<Comparison, const T&> auto&& cmp) const {
         return Algorithm::UpperBound(*this, cmp);
     }
 
-    template <class T>
-    usize Span<T>::UpperBoundByKey(const T& target, FnArgs<const T&> auto&& keyf) const {
-        return UpperBoundBy(Cmp::ComparedToKeyed { keyf, keyf(target) });
+    template <class T, class S>
+    void IContinuous<T, S>::Sort(Comparator<T> auto&& cmp) requires IsMut<T> {
+        return Algorithm::SortingDetails::Sort(AsSpan(), cmp);
+    }
+
+    template <class T, class S>
+    void IContinuous<T, S>::SortByKey(FnArgs<const T&> auto&& keyf) requires IsMut<T> {
+        return Sort([&] (const auto& lhs, const auto& rhs) { return Cmp::Between(keyf(lhs), keyf(rhs)); });
+    }
+
+    template <class T, class S>
+    bool IContinuous<T, S>::IsSorted(Comparator<T> auto&& cmp) const {
+        return Algorithm::SortingDetails::IsSorted(AsSpan(), cmp);
     }
 
     template <class T>
-    void Span<T>::SortBy(Comparator<T> auto&& cmp) requires IsMut<T> {
-        return Algorithm::SortingDetails::Sort(*this, cmp);
-    }
-
-    template <class T>
-    void Span<T>::SortByKey(FnArgs<const T&> auto&& keyf) requires IsMut<T> {
-        return SortBy(Cmp::CompareKeyed { keyf });
-    }
-
-    template <class T> bool Span<T>::IsSortedBy(Comparator<T> auto&& cmp) const {
-        return Algorithm::SortingDetails::IsSorted(*this, cmp);
-    }
-
-    template <class T> bool Span<T>::IsSortedByKey(FnArgs<const T&> auto&& keyf) const {
-        return IsSortedBy(Cmp::CompareKeyed { keyf });
-    }
-
-    template <class T>
-    usize Span<T>::SortedPartitionPointBy(usize idx, Comparator<T> auto&& cmp) requires IsMut<T> {
+    usize Span<T>::SortedPartitionPoint(usize idx, Comparator<T> auto&& cmp) requires IsMut<T> {
         return Algorithm::SortingDetails::IpnSort::Partition(*this, idx, cmp);
-    }
-
-    template <class T>
-    usize Span<T>::SortedPartitionPointByKey(usize idx, FnArgs<const T&> auto&& keyf) requires IsMut<T> {
-        return SortedPartitionPointBy(idx, Cmp::CompareKeyed { keyf });
-    }
-
-    template <class T>
-    Tuple<Span<T>, T&, Span<T>> Span<T>::SortedPartitionByKey(usize idx, FnArgs<const T&> auto&& keyf) requires IsMut<T> {
-        return SortedPartitionBy(idx, Cmp::CompareKeyed { keyf });
     }
 
     template <class T>
@@ -1101,14 +1058,14 @@ namespace Quasi {
         return slow + 1;
     }
 
-    template <class T>
-    void Span<T>::RotateLeft(usize num) requires IsMut<T> {
-        return Algorithm::RotatePtr(num, data + num, size - num);
+    template <class T, class S>
+    void IContinuous<T, S>::RotateLeft(usize num) requires IsMut<T> {
+        return Algorithm::RotatePtr(num, Data() + num, Length() - num);
     }
 
-    template <class T>
-    void Span<T>::RotateRight(usize num) requires IsMut<T> {
-        return Algorithm::RotatePtr(size - num, data + size - num, num);
+    template <class T, class S>
+    void IContinuous<T, S>::RotateRight(usize num) requires IsMut<T> {
+        return Algorithm::RotatePtr(Length() - num, DataEnd() - num, num);
     }
 
     template <class T>

@@ -26,14 +26,6 @@ namespace Quasi {
         return SliceUnchecked(s.Data(), s.Length());
     }
 
-    Hashing::Hash CStr::GetHashCode() const {
-        return Hashing::HashBytes(AsBytes());
-    }
-
-    BufferIterator<const char&> CStr::Iter() const {
-        return { data, data + size };
-    }
-
     Str CStr::AsStr()                        const { return Str::Slice(data, size); }
     Str CStr::AsStrWithNull()                const { return Str::Slice(data, size + 1); }
     Span<const char> CStr::AsSpan()          const { return Spans::Slice(data, size); }
@@ -49,7 +41,7 @@ namespace Quasi {
     Str CStr::Trunc(usize len) const { return Str::Slice(data, size - len); }
     Str CStr::Init() const { return Str::Slice(data, size - 1); }
 
-    Tuple<const char&, CStr> CStr::SplitFirst() const { return { First(), Tail() }; }
+    Tuple<const char&, CStr> CStr::SplitFirst() const { return { this->First(), Tail() }; }
     Tuple<Str, const char&> CStr::SplitLast() const { return { Init(), Last() }; }
     Tuple<Str, CStr> CStr::SplitAt(usize at) const { return { First(at), Skip(at) }; }
     Tuple<Str, const char&, CStr> CStr::PartitionAt(usize at) const { return { First(at), At(at), Skip(at + 1) }; }
@@ -67,7 +59,7 @@ namespace Quasi {
     }
 
     const char& CStr::TakeFirst() {
-        const char& first = First();
+        const char& first = this->First();
         ++data;
         return first;
     }

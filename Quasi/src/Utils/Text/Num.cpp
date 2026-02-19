@@ -1,64 +1,17 @@
 #include "Num.h"
 
+#include "Utils/Bitwise.h"
 #include "Utils/Debug/Logger.h"
 
 namespace Quasi::Text {
-    u32 NumberConversion::Add4Bytes(u32 a, u32 b) {
-        static constexpr u32 EVEN_BYTES = 0xFF00FF00, ODD_BYTES = 0x00FF00FF;
-        return (((a & EVEN_BYTES) + (b & EVEN_BYTES)) & EVEN_BYTES) |
-               (((a &  ODD_BYTES) + (b &  ODD_BYTES)) &  ODD_BYTES);
-    }
-
-    bool NumberConversion::AreAllInCharRange8(u64 digits, uchar min, uchar max) {
-        const u64 a = digits + 0x8080'8080'8080'8080 - max * 0x0101'0101'0101'0101;
-        const u64 b = digits                         - min * 0x0101'0101'0101'0101;
-        return ((a | b) & 0x8080'8080'8080'8080) == 0;
-    }
-
-    bool NumberConversion::AreAllInCharRange4(u32 digits, uchar min, uchar max) {
-        const u32 a = digits + 0x8080'8080 - max * 0x0101'0101;
-        const u32 b = digits               - min * 0x0101'0101;
-        return ((a | b) & 0x8080'8080) == 0;
-    }
-
-    bool NumberConversion::AreAllDigits4(u32 digits) {
-        return AreAllInCharRange4(digits, '0', '9' + 1);
-    }
-
-    bool NumberConversion::AreAllDigitsRadix4(u32 digits, u32 radix) {
-        return AreAllInCharRange4(digits, '0', '0' + radix);
-    }
-
-    bool NumberConversion::AreAllDigits8(u64 digits) {
-        return AreAllInCharRange8(digits, '0', '9' + 1);
-    }
-
     bool NumberConversion::AreAllHexDigits4(u32 digits) {
-        const u32 aLo = Add4Bytes(digits, 0x7F7F7F7F - "9999"_u32),
-                  aHi = Add4Bytes(digits,            - "0000"_u32),
-                  bLo = Add4Bytes(digits, 0x7F7F7F7F - "FFFF"_u32),
-                  bHi = Add4Bytes(digits,            - "AAAA"_u32),
-                  cLo = Add4Bytes(digits, 0x7F7F7F7F - "ffff"_u32),
-                  cHi = Add4Bytes(digits,            - "aaaa"_u32);
+        const u32 aLo = Bitwise::Add4Bytes(digits, 0x7F7F7F7F - "9999"_u32),
+                  aHi = Bitwise::Add4Bytes(digits,            - "0000"_u32),
+                  bLo = Bitwise::Add4Bytes(digits, 0x7F7F7F7F - "FFFF"_u32),
+                  bHi = Bitwise::Add4Bytes(digits,            - "AAAA"_u32),
+                  cLo = Bitwise::Add4Bytes(digits, 0x7F7F7F7F - "ffff"_u32),
+                  cHi = Bitwise::Add4Bytes(digits,            - "aaaa"_u32);
         return (((aLo | aHi) & (bLo | bHi) & (cLo | cHi)) & 0x8080'8080) == 0;
-    }
-
-    bool NumberConversion::AreAllHexDigitsRadix4(u32 digits, u32 radix) {
-        const u32 aLo = Add4Bytes(digits, 0x7F7F7F7F - "9999"_u32),
-                  aHi = Add4Bytes(digits,            - "0000"_u32),
-                  bLo = Add4Bytes(digits, 0x80808080 - "AAAA"_u32 - (radix - 10) * 0x0101'0101),
-                  bHi = Add4Bytes(digits,            - "AAAA"_u32),
-                  cLo = Add4Bytes(digits, 0x80808080 - "aaaa"_u32 - (radix - 10) * 0x0101'0101),
-                  cHi = Add4Bytes(digits,            - "aaaa"_u32);
-        return (((aLo | aHi) & (bLo | bHi) & (cLo | cHi)) & 0x8080'8080) == 0;
-    }
-
-    u32 NumberConversion::ConvertDigits4(u32 chars) {
-        return chars - "0000"_u32;
-    }
-
-    u64 NumberConversion::ConvertDigits8(u64 chars) {
-        return chars - "00000000"_u64;
     }
 
     u32 NumberConversion::ConvertHexDigits4(u32 chars) {
@@ -80,38 +33,36 @@ namespace Quasi::Text {
     // assumes digits are all in range of '0'-'9'
     u64 NumberConversion::ParseDigits8(u64 digits) {
         static constexpr u64 MASK = 0x0000'00FF'0000'00FF;
-        static constexpr u64 MUL1 = 0x000F'4240'0000'0064; // 1'00'00'00 << 32 + 1'00
-        static constexpr u64 MUL2 = 0x0000'2710'0000'0001; // 1'00'00    << 32 + 1
-        // digits is now an array of 8 digits (0-9) for each byte (ABCDEFGH)
-        digits = ConvertDigits8(digits);
-        // consecutive digits are concat-ed (A0 BA CB DC ED FE GF HG)
-        digits = digits * 10 + (digits >> 8);
+        static constexpr u64 MUL1 = 0x0000'0001'0000'2710; // 1'00'00 + 1 << 32
+        static constexpr u64 MUL2 = 0x0000'0064'000F'4240; // 1'00'00'00 + 100 << 32
+        // consecutive digits are concat-ed (0A AB BC CD DE EF FG GH)
+        digits += (digits >> 8) * 10;
         // retrives digits #4 and #8
         //   ________________[d4] ________________[d8] (each 32 bits)
-        //   ____________[100*d4] ____________[100*d8] -> (* 100)
-        //   ________[1000000*d8] ____________________ -> (<< 32 * 1000000)
+        //   __________[10000*d4] __________[10000*d8] -> (* 10000)
+        //   ________________[d8] ____________________ -> (* 1 << 32)
         // + +++++++++++++++++++++++++++++++++++++++++
-        //   _[1000000*d8+100*d4] ____________[100*d8]
-        // v1 = [HG00DC00] [0000HG00]
+        //   _____[10000*d4 + d8] __________[10000*d8]
+        // v1 = [00CD00GH] [00GH0000]
         const u64 v1 = (digits & MASK) * MUL1;
         // retrieves digits #2 and #6
         //   ________________[d2] ________________[d6] (each 32 bits)
-        //   __________[10000*d6] ____________________ -> (<< 32 * 10000)
+        //   ________[1000000*d2] ________[1000000*d6] -> (* 1000000)
+        //   ____________[100*d6] ____________________ -> (* 100 << 32)
         // + +++++++++++++++++++++++++++++++++++++++++
-        //        [10000*d6 + d2] ________________[d6]
-        // v2 = [00FE00BA] [000000FE]
+        //  [1000000*d2 + 100*d6] ________________[1000000*6]
+        // v2 = [AB00EF00] [EF000000]
         const u64 v2 = ((digits >> 16) & MASK) * MUL2;
-        // v1      = [HG00DC00] [0000HG00]
-        // v2      = [00FE00BA] [000000FE]
+        // v1      = [00CD00GH] [00GH0000]
+        // v2      = [AB00EF00] [EF000000]
         // +         +++++++++++++++++++++
-        // v1 + v2 = [HGFEDCBA] [0000HGFE] <- bottom 32 bits are discarded
+        // v1 + v2 = [ABCDEFGH] [EFGH0000] <- bottom 32 bits are discarded
         return (v1 + v2) >> 32;
     }
 
     u32 NumberConversion::ParseDigits4(u32 digits) {
-        digits = ConvertDigits4(digits);
-        digits = digits * 10 + (digits >> 8);
-        return ((digits & 0x00FF00FF) * ((100 << 16) + 1)) >> 16;
+        digits += (digits >> 8) * 10; // 0A AB BC CD
+        return ((digits & 0x00FF00FF) * (100 + (1 << 16))) >> 16;
     }
 
     u32 NumberConversion::ParseHexDigits4(u32 xdigits) {
@@ -120,99 +71,147 @@ namespace Quasi::Text {
         return ((xdigits & 0x00FF00FF) * ((256 << 16) + 1)) >> 16;
     }
 
-    u32 NumberConversion::ParseDigitsTinyRadix4(u32 dig, u32 radix) {
-        static constexpr u32 TINY_LOOKUP[5] = { 0, 0, 0x08'04'02'01, 0x1B'09'03'01, 0x40'20'04'01 };
-        return (dig * TINY_LOOKUP[radix]) >> 24;
-    }
-
-    u32 NumberConversion::ParseDigitsSmallRadix4(u32 dig, u32 radix) {
-        dig = dig * radix + (dig >> 8);
-        return ((dig & 0x00FF00FF) * ((radix * radix << 16) + 1)) >> 16;
-    }
-
-    u32 NumberConversion::ParseDigitsLargeRadix4(u32 dig, u32 radix) {
-        const u32 d = (dig >> 24) & 0xFF,
-                  c = (dig >> 16) & 0xFF,
-                  b = (dig >> 8)  & 0xFF,
-                  a = (dig >> 0)  & 0xFF;
-        return ((a * radix + b) * radix + c) * radix + d;
-    }
+    // const usize originalSize = string.Length();
+    // string = string.TrimStart('0');
+    //
+    // usize i = 0;
+    // u64 n = 0;
+    // for (; i <= maxDigs; i += ByteParallelCount) {
+    //     if (!acc(n, &string[i])) { // cannot read chunks of digits
+    //         const char* rest = &string[i];
+    //         for (u32 j = 0; j < ByteParallelCount; ++j) {
+    //             if (const auto d = Chr::TryToDigitRadix(rest[j], radix)) {
+    //                 if (i + j > maxDigs) return nullptr;
+    //                 n *= radix;
+    //                 n += *d;
+    //             } else {
+    //                 out = n;
+    //                 return originalSize - string.Length() + i + j;
+    //             }
+    //         }
+    //     }
+    // }
+    // return nullptr;
 
     OptionUsize NumberConversion::ParseBinaryInt(Str string, Out<u64&> out, u32 bits) {
-        return ParseIntBy<8>(string, out,  [] (u64& n, const char* str) {
-            u64 digs = Memory::ReadU64(str);
-            digs = ConvertDigits8(digs);
-            if (digs & 0x7E7E7E7E7E7E7E7E) return false;
+        const usize originalSize = string.Length();
+        string = string.TrimStart('0');
+        const u32 trimmedZeros = originalSize - string.Length();
+
+        // ---- full chunks ---- -- partial --
+        // [01010011] [11001101] [011 | .... ]
+        // --------- string length -----------
+
+        u32 i = 0;
+        u64 n = 0;
+        for (; i < bits; i += 8) { // read 8 bits at a time
+            u64 digs = Memory::ReadU64Big(&string[i]);
+            digs = Bitwise::Add8Bytes(digs, 0xD0D0D0D0'D0D0D0D0);
+            if (i + 8 >= string.Length() || digs & 0x7E7E7E7E7E7E7E7E) { // numbers are either not 1 or 0
+                // we can only read parts of the binary string
+                const u32 partialLen = std::min((u32)(string.Length() - i), u64s::CountLeftZeros(digs) / 8);
+                digs = (digs * 0x80'40'20'10'08'04'02'01) >> (64 - partialLen);
+                out = (n << partialLen) + digs;
+                return trimmedZeros + i + partialLen;
+            }
             // magic multiplication to make array of 8 bits into a u8
             digs = (digs * 0x80'40'20'10'08'04'02'01) >> 56;
             n = (n << 8) + digs;
-            return true;
-        }, bits, 2);
+        }
+        // overflow!
+        return (string[i] == '0' || string[i] == '1') ? OptionUsize::None() : trimmedZeros + bits;
     }
 
     OptionUsize NumberConversion::ParseDecimalInt(Str string, Out<u64&> out, u32 bits) {
-        return ParseIntBy<4>(string, out, [] (u64& n, const char* str) {
-            u32 digs = Memory::ReadU32(str);
-            if (!AreAllDigits4(digs)) return false;
-            digs = ParseDigits4(digs);
-            n = n * 10'000 + digs;
-            return true;
-        }, bits * Math::INV_LOG10_2_MUL >> 16, 10);
+        // convert bits to digits
+        bits = (bits * Math::INV_LOG10_2_MUL >> 16) & ~7;
+
+        const usize originalSize = string.Length();
+        string = string.TrimStart('0');
+        const u32 trimmedZeros = originalSize - string.Length();
+
+        u32 i = 0;
+        u64 n = 0;
+        for (; i < bits; i += 8) {
+            u64 digs = Memory::ReadU64Big(&string[i]);
+            digs ^= 0x30303030'30303030;
+            if (i + 8 >= string.Length() || !Bitwise::BytesAllWithinRange(digs, 0, 10)) {
+                const u32 remaining = std::min((u32)(string.Length() - i), 8_u32);
+                u32 j = 0;
+                for (; j < remaining; ++j) {
+                    if (((digs >> 56) & 0xFF) >= 10) {
+                        break;
+                    }
+                    n = n * 10 + (digs >> 56);
+                    digs <<= 8;
+                }
+                out = n;
+                return trimmedZeros + i + j;
+            }
+            digs = ParseDigits8(digs);
+            n = n * 100'000'000 + digs;
+        }
+
+        while (i < string.Length()) {
+            if (!Chr::IsDigit(string[i])) {
+                out = n;
+                return trimmedZeros + i;
+            }
+            if (u64s::MulOverflow(n, 10, n) || u64s::AddOverflow(n, Chr::ToDigit(string[i]), n)) { [[unlikely]]
+                return nullptr;
+            }
+            ++i;
+        }
+        out = n;
+        return trimmedZeros + i;
     }
 
     OptionUsize NumberConversion::ParseHexInt(Str string, Out<u64&> out, u32 bits) {
-        return ParseIntBy<4>(string, out, [] (u64& n, const char* str) {
-            u32 digs = Memory::ReadU32(str);
-            if (!AreAllHexDigits4(digs)) return false;
+        const usize originalSize = string.Length();
+        string = string.TrimStart('0');
+        const u32 trimmedZeros = originalSize - string.Length();
+
+        u32 i = 0;
+        u64 n = 0;
+        for (; i < bits; i += 4) {
+            u32 digs = Memory::ReadU32Big(&string[i]);
+            if (i + 4 >= string.Length() || !AreAllHexDigits4(digs)) {
+                const u32 partialLen = std::min((u32)(string.Length() - i), 4_u32);
+                u32 j = 0;
+                for (; j < partialLen; ++j) {
+                    if (!Chr::IsHexDigit(string[i])) {
+                        break;
+                    }
+                    n = n * 16 + Chr::ToHexDigit(string[i]);
+                }
+                out = n;
+                return trimmedZeros + i + j;
+            }
             digs = ParseHexDigits4(digs);
             n = (n << 16) + digs;
-            return true;
-        }, bits * 2, 16);
+        }
+        // overflow!
+        return Chr::IsHexDigit(string[i]) ? OptionUsize::None() : trimmedZeros + bits;
     }
 
-    OptionUsize NumberConversion::ParseTinyRadixInt(Str string, Out<u64&> out, u32 bits, u32 radix) {
-        const bool hasInexactDigit = radix & 1; // when radix is 3 instead of 2/4, the log is an irrational
-        return ParseIntBy<4>(string, out, [&, r4 = radix * radix * radix * radix] (u64& n, const char* str) {
-            u32 digs = Memory::ReadU32(str);
-            if (!AreAllDigitsRadix4(digs, radix)) return false;
-            digs = ConvertDigits4(digs);
-            digs = ParseDigitsTinyRadix4(digs, radix);
-            n = n * r4 + digs;
-            return true;
-        }, hasInexactDigit + (bits * Math::INV_LOG2_LOOKUP[radix] >> 16), radix);
-    }
+    OptionUsize NumberConversion::ParseRadixInt(Str string, Out<u64&> out, u32 bits, u32 radix) {
+        bits = 1 + (bits * Math::INV_LOG2_LOOKUP[radix] >> 16);
+        const usize originalSize = string.Length();
+        string = string.TrimStart('0');
+        const u32 trimmedZeros = originalSize - string.Length();
 
-    OptionUsize NumberConversion::ParseSmallRadixInt(Str string, Out<u64&> out, u32 bits, u32 radix) {
-        return ParseIntBy<4>(string, out, [&, r4 = radix * radix * radix * radix] (u64& n, const char* str) {
-            u32 digs = Memory::ReadU32(str);
-            if (!AreAllDigitsRadix4(digs, radix)) return false;
-            digs = ConvertDigits4(digs);
-            digs = ParseDigitsSmallRadix4(digs, radix);
-            n = n * r4 + digs;
-            return true;
-        }, 1 + (bits * Math::INV_LOG2_LOOKUP[radix] >> 16), radix);
-    }
-
-    OptionUsize NumberConversion::ParseAsciiRadixInt(Str string, Out<u64&> out, u32 bits, u32 radix) {
-        return ParseIntBy<4>(string, out, [&, r4 = radix * radix * radix * radix] (u64& n, const char* str) {
-            u32 digs = Memory::ReadU32(str);
-            if (!AreAllHexDigitsRadix4(digs, radix)) return false;
-            digs = ConvertHexDigits4(digs);
-            digs = ParseDigitsSmallRadix4(digs, radix);
-            n = n * r4 + digs;
-            return true;
-        }, 1 + (bits * Math::INV_LOG2_LOOKUP[radix] >> 16), radix);
-    }
-
-    OptionUsize NumberConversion::ParseLargeRadixInt(Str string, Out<u64&> out, u32 bits, u32 radix) {
-        return ParseIntBy<4>(string, out, [&, r4 = radix * radix * radix * radix] (u64& n, const char* str) {
-            u32 digs = Memory::ReadU32(str);
-            if (!AreAllHexDigitsRadix4(digs, radix)) return false;
-            digs = ConvertHexDigits4(digs);
-            digs = ParseDigitsLargeRadix4(digs, radix);
-            n = n * r4 + digs;
-            return true;
-        }, 1 + (bits * Math::INV_LOG2_LOOKUP[radix] >> 16), radix);
+        u64 n = 0;
+        const u32 len = std::min((u32)string.Length(), bits);
+        u32 i = 0;
+        for (; i < len; ++i) {
+            const auto digit = Chr::TryToDigitRadix(string[i], radix);
+            if (!digit) break;
+            if (u64s::MulOverflow(n, radix, n) || u64s::AddOverflow(n, *digit, n)) [[unlikely]] {
+                return nullptr;
+            }
+        }
+        out = n;
+        return trimmedZeros + i;
     }
 
     template <Integer I>
@@ -228,52 +227,38 @@ namespace Quasi::Text {
 
         if (string.IsEmpty()) return nullptr;
 
+        OptionUsize result;
+        u64 n;
         if (options.radix == IntParser::ParseOptions::ADAPTIVE) {
             if (string.StartsWith('0')) {
-                u64 n = 0;
-                OptionUsize result;
                 switch (string[2]) {
                     case 'b': result = ParseBinaryInt(string.Skip(2), n, BITS); break;
-                    case 'x': result = ParseHexInt   (string.Skip(2), n, BITS); break;
-                    default:  result = ParseSmallRadixInt(string, n, BITS, 8);  break;
+                    case 'x': result = ParseHexInt   (string.Skip(2), n, BITS / 4); break;
+                    default:  result = ParseRadixInt (string, n, BITS, 8);  break;
                 }
-                if (!result) return result;
-                if (negative ? (n < NumInfo<I>::MIN) : (n > NumInfo<I>::MAX)) return nullptr;
-
-                *result += negative;
-                out = negative ? (I)-n : (I)n;
-                return result;
             } else {
-                u64 n = 0;
-                OptionUsize result = ParseDecimalInt(string, n, BITS);
-                if (!result) return result;
-                if (negative ? (n < NumInfo<I>::MIN) : (n > NumInfo<I>::MAX)) return nullptr;
-
-                *result += negative;
-                out = negative ? (I)-n : (I)n;
-                return result;
+                result = ParseDecimalInt(string, n, BITS);
             }
+            if (!result) return result;
+            if (negative ? ((I)n < NumInfo<I>::MIN) : ((I)n > NumInfo<I>::MAX)) return nullptr;
+
+            *result += negative;
+            out = negative ? (I)-n : (I)n;
+            return result;
+        } else {
+            if (options.radix == 2)
+                result = ParseBinaryInt(string, n, BITS);
+            else if (options.radix == 10)
+                result = ParseDecimalInt(string, n, BITS);
+            else if (options.radix == 16)
+                result = ParseHexInt(string, n, BITS / 4);
+            else result = ParseRadixInt(string, n, BITS, options.radix);
         }
 
-        u64 n = 0;
-        OptionUsize result;
-        if (options.radix == 2)
-            result = ParseBinaryInt(string, n, BITS);
-        else if (options.radix == 10)
-            result = ParseDecimalInt(string, n, BITS);
-        else if (options.radix == 16)
-            result = ParseHexInt(string, n, BITS);
-        else if (options.radix <= 4)
-            result = ParseTinyRadixInt(string, n, BITS, options.radix);
-        else if (options.radix < 10)
-            result = ParseSmallRadixInt(string, n, BITS, options.radix);
-        else if (options.radix < 16)
-            result = ParseAsciiRadixInt(string, n, BITS, options.radix);
-        else
-            result = ParseLargeRadixInt(string, n, BITS, options.radix);
+        if constexpr (Signed<I>)
+            if (negative ? ((i64)n < NumInfo<I>::MIN) : ((i64)n > NumInfo<I>::MAX)) return nullptr;
 
-        if (negative ? (n < NumInfo<I>::MIN) : (n > NumInfo<I>::MAX)) return nullptr;
-
+        *result += negative;
         out = negative ? (I)-n : (I)n;
         return result;
     }
@@ -294,16 +279,16 @@ namespace Quasi::Text {
             u64 first3 = string[0] << 16 | string[1] << 8 | string[0];
             first3 &= CLEAR_CASE;
             if (first3 == "INF"_u64) {
-                out = Math::Infinity;
+                out = (F)f32s::INFINITY;
             } else if (first3 == "NAN"_u64) {
-                out = Math::NaN;
+                out = (F)f32s::NAN;
             } else return nullptr;
             return 3;
         } else {
             u64 first8 = Memory::ReadU64Big(string.Data());
             first8 &= CLEAR_CASE;
             if (first8 == "INFINITY"_u64) {
-                out = Math::Infinity;
+                out = (F)f32s::INFINITY;
                 return 8;
             }
         }
@@ -411,7 +396,7 @@ namespace Quasi::Text {
                 len = u32s::Log10(skip8) + 1;
                 skip8 = U64ToBCD8(skip8);
                 skip8 |= 0x3030303030303030;
-                Memory::MemCopyNoOverlap(out, ((const char*)&skip8) + 8 - len, len);
+                Memory::WriteU64Big(skip8 << (64 - 8 * len), out);
                 out += len;
             }
 
@@ -450,7 +435,7 @@ namespace Quasi::Text {
             default:;
         }
 
-        const u32 targetnLen = std::max(nlen, options.numLen) + (sign != '\0');
+        const u32 targetnLen = std::max(nlen, options.numLen);
         u32 padLen = options.width - std::min(options.width, targetnLen);
         const u32 right = padLen * (usize)options.alignment / 2;
 
@@ -579,13 +564,13 @@ namespace Quasi::Text {
                 f64 dig2;
                 f64s::SeparateDecimal(f * 100, dig2, f);
 
-                u32 i = (u32)f64s::FloorToIntUnsigned(f);
+                u32 i = (u32)std::floor(f);
                 i = U64ToBCD2(i);
                 Memory::WriteU16Big(i | 0x3030, out);
                 out += 2;
             }
             if (p < precision) {
-                *out++ = (char)(0x30 | f64s::FloorToIntUnsigned(f * 10));
+                *out++ = (char)(0x30 | (u32)std::floor(f * 10));
             }
         }
         return out;
@@ -615,7 +600,7 @@ namespace Quasi::Text {
         }
         f64s::SeparateDecimal(mant, mant, mantDec);
 
-        *out = (char)('0' | f64s::FastToIntUnsigned(mant));
+        *out = (char)('0' | (u32)std::floor(mant));
         out = WriteFltDecimal(mantDec, ++out, precision);
         // ...E+... or ...E-...
         Memory::WriteU16(e << 8 | (log10 < 0 ? '-' : '+'), out);
@@ -653,7 +638,7 @@ namespace Quasi::Text {
             out += w;
             *out++ = '0';
         } else {
-            log10 = (log10 == i32s::MIN ? (int)f64s::FloorToIntUnsigned(f64s::Log10(f)) : log10) + 1;
+            log10 = (log10 == i32s::MIN ? (int)std::floor(f64s::Log10(f)) : log10) + 1;
 
             if (log10 < width) {
                 Memory::MemSet(out, pad, width - log10);
@@ -662,7 +647,8 @@ namespace Quasi::Text {
 
             if (log10 > 4) {
                 f64 frac;
-                f *= f64s::Exp10(-f64s::FastToFloatUnsigned(log10 - 4));
+                const f64 div10 = f64s::Exp10(-f64s::FastToFloatUnsigned(log10 - 4));
+                f *= div10;
 
                 for (; log10 > 4; log10 -= 4) {
                     f64s::SeparateDecimal(f, f, frac);
@@ -675,8 +661,9 @@ namespace Quasi::Text {
 
                     f = frac * 10000;
                 }
+                f *= f64s::Exp10(-f64s::FastToFloatUnsigned(4 - log10));
             }
-            u32 d = f64s::FloorToIntUnsigned(f);
+            u32 d = std::floor(f);
             d = U64ToBCD4(d);
             d |= 0x30303030;
             d <<= (-8 * log10) & 31;
@@ -753,7 +740,7 @@ namespace Quasi::Text {
         static constexpr char NaNString[] = "NaN%",
                               InfString[] = "-Infinity%";
 
-        if (f == Math::NaN) {
+        if (f == f64s::NAN) {
             return Formatter<Str>::FormatTo(sw,
                 Str::Slice(NaNString, 3 + options.mode == PERCENTAGE),
                 { options.width, options.alignment, options.pad, false }
@@ -803,7 +790,9 @@ namespace Quasi::Text {
             BEGIN, ALIGN, SIGN, PREFIX, ZERO, WIDTH
         } state = BEGIN;
 
-#define ENTER(S) Debug::QAssert$(S > state, "bad format spec"); state = S
+        const auto ENTER = [&] (State newState) {
+            Debug::QAssert$(newState > state, "bad format spec"); state = newState;
+        };
 
         using Align = TextFormatOptions::Alignment;
 
@@ -882,8 +871,6 @@ namespace Quasi::Text {
             if (opt.IsEmpty()) return options;
             c = opt[0];
         }
-
-        return options;
     }
 
     template <class N>
@@ -908,7 +895,9 @@ namespace Quasi::Text {
             BEGIN, ALIGN, SIGN, ZERO, WIDTH, PRECISION
         } state = BEGIN;
 
-#define ENTER(S) Debug::QAssert$(S > state, "bad format spec"); state = S
+        const auto ENTER = [&] (State newState) {
+            Debug::QAssert$(newState > state, "bad format spec"); state = newState;
+        };
 
         using Align = TextFormatOptions::Alignment;
 
@@ -975,8 +964,6 @@ namespace Quasi::Text {
                 c = opt[0];
             }
         }
-
-        return options;
     }
 
     OptionUsize BoolParser::ParseUntil(Str string, Out<bool&> out, ParseOptions options) {
@@ -1010,8 +997,7 @@ namespace Quasi::Text {
         const usize integerPart = ParseInteger(string, num);
 
         if (string.Length() == integerPart) {
-            if (isSci)
-                return nullptr;
+            if (!isFixed) return nullptr;
             out = negative ? -num : num;
             return integerPart + hasSign;
         }
@@ -1019,11 +1005,11 @@ namespace Quasi::Text {
         usize decimalPart = 0;
         if (string[integerPart] == '.') {
             N decimal = 0;
-            decimalPart = ParseDecimal(string.Skip(integerPart + 1), decimal);
+            decimalPart = 1 + ParseDecimal(string.Skip(integerPart + 1), decimal);
             num += decimal;
         }
 
-        const usize fixedPart = integerPart + decimalPart + 1;
+        const usize fixedPart = integerPart + decimalPart;
 
         if (fixedPart == string.Length()) {
             out = negative ? -num : num;
@@ -1031,7 +1017,6 @@ namespace Quasi::Text {
         }
 
         if (Chr::ToUpper(string[fixedPart]) == 'E' && isSci) {
-            if (decimalPart == 0) return nullptr;
             const Str expStr = string.Skip(fixedPart + 1);
             const OptionUsize expPart = ParseExponent(expStr, num);
             if (!expPart) return nullptr;
@@ -1053,14 +1038,15 @@ namespace Quasi::Text {
         string = string.TrimStart('0');
 
         if (string.Length() > NumInfo<N>::MAX_EXP10) {
-            out = Math::Infinity;
+            out = (N)f32s::INFINITY;
             return totalLen;
         }
 
         N num = 0;
         usize i = 0;
         for (; i < (string.Length() & ~3); i += 4) {
-            u32 dig = Memory::ReadU32(string.Data() + i);
+            u32 dig = Memory::ReadU32Big(string.Data() + i);
+            dig ^= 0x30303030;
             dig = ParseDigits4(dig);
             num = num * N { 10'000 } + dig;
         }
@@ -1080,8 +1066,9 @@ namespace Quasi::Text {
         N decimal = 1.0f;
         usize i = 0;
         for (; i < (string.Length() & ~3); i += 4) {
-            u32 dig = Memory::ReadU32(string.Data() + i);
-            if (dig == "0000"_u32) continue;
+            u32 dig = Memory::ReadU32Big(string.Data() + i);
+            dig ^= 0x30303030;
+            if (!dig) continue;
             dig = ParseDigits4(dig);
             decimal *= N { 0.0001 };
             const N newOut = out + decimal * dig;

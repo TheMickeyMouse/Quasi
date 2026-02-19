@@ -20,13 +20,11 @@ namespace Quasi::Graphics {
 
         void SetDataBytes(Span<const byte> data);
         template <class T> void SetData(Span<const T> data) { SetDataBytes(data.AsBytes()); }
-        template <ContinuousCollectionAny T> void SetData(const T& data) { SetData(data.AsSpan()); }
 
         void ClearData();
 
         void AddDataBytes(Span<const byte> data);
         template <class T> void AddData(Span<const T> data) { AddDataBytes(data.AsBytes()); }
-        template <ContinuousCollectionAny T> void AddData(const T& data) { AddData(data.AsSpan()); }
 
         friend class GraphicsDevice;
     };

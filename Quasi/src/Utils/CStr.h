@@ -3,7 +3,7 @@
 
 namespace Quasi {
     struct CStr : StringHolder<const char, CStr> {
-        friend IContinuousCollection;
+        friend IContinuous;
         friend StringHolder;
     private:
         const char* data = nullptr;
@@ -31,12 +31,6 @@ namespace Quasi {
         bool IsEmpty()           const { return size == 0; }
         explicit operator bool() const { return size != 0; }
 
-        Hashing::Hash GetHashCode() const;
-
-        const char& At(usize i)             const { return Data()[i]; }
-        const char& AtWrap(WrappingIndex i) const { return At(i(Length())); }
-
-        BufferIterator<const char&> Iter() const;
         // CharsIter Chars() const;
         // Utf8CharsIter Utf8Chars() const;
         // SplitWhitespaceIter SplitWhitespace() const;
@@ -50,8 +44,8 @@ namespace Quasi {
         Span<const byte> AsBytesWithNull() const;
         operator Str() const;
 
-        const char& First() const { return At(0); }
-        const char& Last()  const { return At(Length() - 1); }
+        using StringHolder::First;
+        using StringHolder::Last;
         Str  First(usize num) const;
         CStr Skip(usize len)  const;
         CStr Tail()           const;

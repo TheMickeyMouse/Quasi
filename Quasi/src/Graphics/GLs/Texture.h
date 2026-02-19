@@ -24,7 +24,7 @@ namespace Quasi::Graphics {
         TextureIFormat internalformat = TextureIFormat::RGBA_8;
         bool pixelated = false;
         TextureBorder border = TextureBorder::CLAMP_TO_EDGE;
-        GLTypeID type = GLTypeID::BYTE;
+        TID::E type = TID::BYTE;
     };
 
     struct STBIImageHandler { void operator()(byte* dat) const; };

@@ -31,12 +31,12 @@ namespace Quasi::Debug {
         return FmtLog(output, log.log, log.severity, log.time, log.fileLoc);
     }
 
-    void Logger::FmtLog(Text::StringWriter output, Str log, Severity severity, DateTime time, const SourceLoc& fileLoc) const {
-        const Text::ConsoleColor scol = severity->color;
+    void Logger::FmtLog(Text::StringWriter output, Str log, Severity::E severity, DateTime time, const SourceLoc& fileLoc) const {
+        const auto [scol, sname] = Severity::NAMES[severity];
         Text::FormatTo(output,
             "{}[{:%y-%M-%d %H:%m:%s.%u}]{} {}> {}{:<8}",
             scol, time, Text::RESET, name,
-            scol, Text::Format("[{}]:", severity->name)
+            scol, Text::Format("[{}]:", sname)
         );
         FmtSourceLoc(output, fileLoc);
         output.Write(log);
@@ -55,16 +55,16 @@ namespace Quasi::Debug {
             FormatTo(output, "{}:{}:{}: ", FmtFile(loc.file_name()), loc.line(), loc.column());
     }
 
-    void Logger::LogNoOut(const Severity sv, const Str s, const SourceLoc& loc) {
+    void Logger::LogNoOut(const Severity::E sv, const Str s, const SourceLoc& loc) {
         if (recordLogs)
             logs.Push(LogEntry { String { s }, sv, Timer::Now(), loc });
     }
 
-    void Logger::ConsoleLog(const Severity sv, const Str s, const SourceLoc& loc) {
+    void Logger::ConsoleLog(const Severity::E sv, const Str s, const SourceLoc& loc) {
         FmtLog(logOut, s, sv, Timer::Now(), loc);
     }
 
-    void Logger::Log(const Severity sv, const Str s, const SourceLoc& loc) {
+    void Logger::Log(const Severity::E sv, const Str s, const SourceLoc& loc) {
         LogNoOut(sv, s, loc);
         ConsoleLog(sv, s, loc);
         if (Overrides(breakLevel, sv)) {
@@ -79,8 +79,7 @@ namespace Quasi::Debug {
         }
     }
 
-    void Logger::WriteAllLogs(Text::StringWriter out, Severity filter) {
-        filter = filter == Severity::NONE ? filterLevel : filter;
+    void Logger::WriteAllLogs(Text::StringWriter out, Severity::E filter) {
         for (const LogEntry& entry : logs) {
             if (Overrides(filter, entry.severity))
                 FmtLog(out, entry);

@@ -1,4 +1,5 @@
 #pragma once
+#include "Utils/Type.h"
 
 namespace Quasi::Graphics {
 	struct TriIndices {

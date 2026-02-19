@@ -141,14 +141,10 @@ namespace Quasi::Text {
         }
     }
 
-    template struct Formatter<Str>;
-
     usize Formatter<void*>::FormatTo(StringWriter sw, void* fres, Str) {
         sw.Write("(address at 0x");
         NumberConversion::WriteU64Hex(sw, reinterpret_cast<u64>(fres), u64s::HEX_DIGITS, true);
         sw.Write(')');
         return Q_STRLIT_LEN("(address at 0x)") + u64s::HEX_DIGITS;
     }
-
-    template struct Formatter<void*>;
 }

@@ -102,7 +102,7 @@ class QuasiOptionUsizePrinter:
         self.val = val
 
     def to_string(self):
-        return f'Some({self.val["value"]})' if self.val['value'] == -1 else 'None()'
+        return f'Some({self.val["value"]})' if self.val['value'] != 0xFFFF_FFFF_FFFF_FFFF else 'None()'
 
 
 class QuasiRefPrinter:

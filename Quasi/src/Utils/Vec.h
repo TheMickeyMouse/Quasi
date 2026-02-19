@@ -36,9 +36,9 @@ namespace Quasi {
     }
 
     template <class T>
-    struct Vec : IContinuousCollection<T, Vec<T>> {
+    struct Vec : IContinuous<T, Vec<T>> {
         friend ICollection<T, Vec>;
-        friend IContinuousCollection<T, Vec>;
+        friend IContinuous<T, Vec>;
     private:
         T* data = nullptr;
         usize size = 0, capacity = 0;
@@ -225,7 +225,7 @@ namespace Quasi {
             SetLengthUnsafe(slow + 1);
         }
         void Remove(const T& item) { OptionUsize i = this->Find(item); if (i) Pop(*i); }
-        void RemoveDups() { return RemoveDupIf(Cmp::Equality {}); }
+        void RemoveDups() { return RemoveDupIf(Cmp::Equals {}); }
         void RemoveDupKeys(FnArgs<const T&> auto&& keyf);
         void RemoveDupIf(EqualPred<T> auto&& eq) {
             if (size <= 1) return;
@@ -283,10 +283,10 @@ namespace Quasi {
         // } IntoIterImpl() { return { data, data + size }; }
     };
 
-    template <class T> Vec<RemConst<T>> Span<T>::CollectToVec() const { return Vec<RemConst<T>>::New(*this); }
-    template <class T> Vec<RemConst<T>> Span<T>::MoveToVec() requires IsMut<T> { return Vec<RemConst<T>>::MoveNew(*this); }
-    template <class T> Vec<RemConst<T>> Span<T>::Repeat(usize num) const {
-        Vec rep = Vec<RemConst<T>>::WithCap(size * num);
+    template <class T, class Super> Vec<RemConst<T>> IContinuous<T, Super>::CollectToVec() const { return Vec<RemConst<T>>::New(*this); }
+    template <class T, class Super> Vec<RemConst<T>> IContinuous<T, Super>::MoveToVec() requires IsMut<T> { return Vec<RemConst<T>>::MoveNew(*this); }
+    template <class T, class Super> Vec<RemConst<T>> IContinuous<T, Super>::Repeat(usize num) const {
+        Vec rep = Vec<RemConst<T>>::WithCap(Length() * num);
         for (usize i = 0; i < num; ++i) rep.Extend(*this);
         return rep;
     }

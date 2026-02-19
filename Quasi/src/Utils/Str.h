@@ -1,5 +1,5 @@
 #pragma once
-#include "Iterator.h"
+#include "Continuous.h"
 
 namespace Quasi {
     namespace Text {
@@ -52,8 +52,8 @@ namespace Quasi {
     }
 
     template <class Char, class Super>
-    struct StringHolder : IContinuousCollection<Char, Super> {
-        friend IContinuousCollection<Char, Super>;
+    struct StringHolder : IContinuous<Char, Super> {
+        friend IContinuous<Char, Super>;
     private:
         static constexpr bool mut = IsMut<Char>;
 
@@ -270,7 +270,7 @@ namespace Quasi {
     };
 
     struct Str : StringHolder<const char, Str> {
-        friend IContinuousCollection;
+        friend IContinuous;
         friend StringHolder;
         using StringHolder::operator==;
         using StringHolder::operator<=>;
@@ -305,7 +305,7 @@ namespace Quasi {
     };
 
     struct StrMut : StringHolder<char, StrMut> {
-        friend IContinuousCollection;
+        friend IContinuous;
         friend StringHolder;
         using StringHolder::operator==;
         using StringHolder::operator<=>;
@@ -396,7 +396,7 @@ namespace Quasi {
 #undef strcls
 
     template <class T, class Super>
-    Str    IContinuousCollection<T, Super>::AsStr() const requires SameAs<const char, const T> { return AsSpan().AsStr(); }
+    Str    IContinuous<T, Super>::AsStr() const requires (sizeof(T) == sizeof(char)) { return Str::Slice((const char*)Data(), Length()); }
     template <class T, class Super>
-    StrMut IContinuousCollection<T, Super>::AsStrMut() requires SameAs<char, T> { return AsSpan().AsStrMut(); }
+    StrMut IContinuous<T, Super>::AsStrMut() requires (sizeof(T) == sizeof(char)) && IsMut<T> { return StrMut::Slice((char*)Data(), Length()); }
 } // Quasi

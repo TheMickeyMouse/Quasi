@@ -192,7 +192,7 @@ namespace Quasi {
         static FLOAT Log10(FLOAT x) { return std::log10(x); } \
         static FLOAT Exp2(FLOAT x)  { return std::exp2(x); } \
         static FLOAT Exp2i(int x)   { return Comp(x, (FLOAT)1); } \
-        static FLOAT Exp10(FLOAT x) { return std::exp2(x / Math::LOG10_2); } \
+        static FLOAT Exp10(FLOAT x) { return std::exp2(x * Math::LOG10_2); } \
         static void  SeparateDecimal(FLOAT x, FLOAT& integer, FLOAT& decimal) { decimal = std::modf(x, &integer); } \
         \
         /* uses bit manipulating techniques to convert floats to ints 100% accurately for values in range [0, 2^23), or [0, 2^52) for doubles */ \
@@ -260,37 +260,7 @@ namespace Quasi {
 #undef QUASI_DEFINE_FLOATING
 
     namespace Math {
-        constexpr struct NaNType {
-            constexpr operator f32() const { return f32s::NAN; }
-            constexpr operator f64() const { return f64s::NAN; }
-            constexpr bool operator==(const NaNType&) const = default;
-            constexpr bool operator==(f32 f) const { return std::isnan(f); }
-            constexpr bool operator==(f64 f) const { return std::isnan(f); }
-        } NaN;
-
-        struct NegInfinityType;
-
-        constexpr struct InfinityType {
-            constexpr operator f32() const { return f32s::INFINITY; }
-            constexpr operator f64() const { return f64s::INFINITY; }
-            constexpr NegInfinityType operator-() const;
-            constexpr bool operator==(const InfinityType&) const = default;
-            constexpr bool operator==(f32 f) const { return std::isnan(f); }
-            constexpr bool operator==(f64 f) const { return std::isnan(f); }
-        } Infinity;
-
-        constexpr struct NegInfinityType {
-            constexpr operator f32() const { return f32s::NEG_INFINITY; }
-            constexpr operator f64() const { return f64s::NEG_INFINITY; }
-            constexpr InfinityType operator-() const { return Infinity; }
-            constexpr bool operator==(const NegInfinityType&) const = default;
-            constexpr bool operator==(f32 f) const { return f == f32s::NEG_INFINITY; }
-            constexpr bool operator==(f64 f) const { return f == f64s::NEG_INFINITY; }
-        } NegInfinity;
-
-        constexpr NegInfinityType InfinityType::operator-() const { return NegInfinity; }
-
         template <class T>
-        T Clamp(T x, T min, T max) { return x < min ? min : (x > max ? max : x); }
+        T Clamp(T x, T min = (T)0, T max = (T)0) { return x < min ? min : (x > max ? max : x); }
     }
 }

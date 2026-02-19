@@ -68,7 +68,7 @@ namespace Quasi::Graphics {
             lastMat = i;
             CreateMaterial(mat);
         }
-        CreateMaterial(properties.Skip(lastMat));
+        CreateMaterial(properties.AsSpan().Skip(lastMat));
     }
 
     // String MTLMaterialLoader::DebugStr() const {

@@ -50,9 +50,9 @@ namespace Quasi::Math {
         template <class T>
         T Choose(IList<T> ilist) { return Choose(Spans::FromIList(ilist)); }
 
-        template <ContinuousCollectionAny C>
+        template <ContinuousAny C>
         CollectionItem<C>&       Choose(C& arr)       { return arr[Get<usize>(0, arr.Length())]; }
-        template <ContinuousCollectionAny C>
+        template <ContinuousAny C>
         const CollectionItem<C>& Choose(const C& arr) { return arr[Get<usize>(0, arr.Length())]; }
 
         template <class T, template <typename> class C = Vec> C<T> Generate(T min, T max, usize size) {

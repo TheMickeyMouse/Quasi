@@ -132,7 +132,7 @@ namespace Quasi::Math {
                      - m[3] * (m[4] * m2x2[2] + m[5] * m2x2[4] + m[6] * m2x2[5]);
             } else {
                 static_assert(true, "not implemented yet. use gaussian elimination or smth");
-                return NaN;
+                return f32s::NAN;
             }
         }
 
@@ -190,7 +190,7 @@ namespace Quasi::Math {
                 }};
             } else {
                 static_assert(true, "not implemented yet. use gaussian elimination or smth");
-                return NaN;
+                return f32s::NAN;
             }
         }
         // assumes a linear rotation (linear vs affine doesnt matter). equivalent a transpose

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Utils/Type.h"
+#include "Utils/Numeric.h"
 
 namespace Quasi::Graphics {
     using GraphicsID = u32;

@@ -8,18 +8,18 @@
 
 namespace Quasi::Graphics {
     struct VertexBufferComponent {
-        GLTypeID type;
+        TID::E type;
         u32 count = 0, width = 0;
         bool norm = false, integer = false;
 
         template <class T> static VertexBufferComponent Type() {
-            if constexpr (Floating<T>) return { GetTypeIDFor<T>(), 1, sizeof(T) };
-            if constexpr (Integer<T>) return { GetTypeIDFor<T>(), 1, sizeof(T), false, true };
+            if constexpr (Floating<T>) return { TID::Of<T>(), 1, sizeof(T) };
+            if constexpr (Integer<T>)  return { TID::Of<T>(), 1, sizeof(T), false, true };
             if constexpr (requires (T x) { { Math::Vector { x } } -> SameAs<T>; })
-                return { GetTypeIDFor<typename T::Elm>(), T::Dim, sizeof(T) };
+                return { TID::Of<typename T::Elm>(), T::Dim, sizeof(T) };
             if constexpr (requires (T x) { { Math::IColor { x } } -> SameAs<T>; })
-                return { GetTypeIDFor<typename T::Elm>(), T::Dim, sizeof(T), true, false };
-            return { GLTypeID::NONE, 0 };
+                return { TID::Of<typename T::Elm>(), T::Dim, sizeof(T), true, false };
+            return {};
         }
     };
     
@@ -45,8 +45,8 @@ namespace Quasi::Graphics {
 
     template <class T>
     void VertexBufferLayout::Push(u32 count, bool normalized, bool integral) {
-        GLTypeID type = GetTypeIDFor<T>();
+        TID::E type = TID::Of<T>();
         components.Push({ type, count, normalized, integral });
-        stride += count * type->typeSize;
+        stride += count * TID::TSIZE[type - TID::BEGIN];
     }
 }

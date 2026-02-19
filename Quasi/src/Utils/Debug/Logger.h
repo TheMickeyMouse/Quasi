@@ -4,27 +4,37 @@
 
 #include "Utils/Text.h"
 #include "Utils/Text/Num.h"
-#include "Utils/Enum.h"
 #include "Timer.h"
 
 namespace Quasi::Debug {
     void DebugBreak();
+
+    struct Severity {
+        enum E {
+            OFF,
+            TRACE,
+            DEBUG,
+            INFO,
+            WARN,
+            ERROR,
+            CRITICAL,
+        };
+        inline static const Text::ColoredStr NAMES[] = {
+            { Text::RESET,           "OFF"      },
+            { FgColor(Text::GREEN),  "TRACE"    },
+            { FgColor(Text::CYAN),   "DEBUG"    },
+            { Text::RESET,           "INFO"     },
+            { FgColor(Text::YELLOW), "WARN"     },
+            { FgColor(Text::RED),    "ERROR"    },
+            { Bold(Text::FG_RED),    "CRITICAL" },
+        };
+    };
 
     struct SeverityData {
         Str name;
         Text::ConsoleColor color;
 
         Text::ColoredStr ColoredName() const { return { color, name }; }
-
-        QDefineEnum$(Severity,
-            (OFF,      ("OFF",      Text::RESET))
-            (TRACE,    ("TRACE",    FgColor(Text::GREEN)))
-            (DEBUG,    ("DEBUG",    FgColor(Text::CYAN)))
-            (INFO,     ("INFO",     Text::RESET))
-            (WARN,     ("WARN",     FgColor(Text::YELLOW)))
-            (ERROR,    ("ERROR",    FgColor(Text::RED)))
-            (CRITICAL, ("CRITICAL", Bold(Text::FG_RED))),
-        COMPARABLE, ("NEVER", Text::GRAY))
     };
 
     using SourceLoc = std::source_location;
@@ -40,7 +50,7 @@ namespace Quasi::Debug {
 
     struct LogEntry {
         String log;
-        Severity severity;
+        Severity::E severity;
         DateTime time;
         SourceLoc fileLoc;
     };
@@ -48,7 +58,7 @@ namespace Quasi::Debug {
     class Logger {
         Text::StringWriter logOut;
         Text::ColoredStr name = { Text::RESET, "LOG" };
-        Severity filterLevel = Severity::OFF, breakLevel = Severity::ERROR;
+        Severity::E filterLevel = Severity::OFF, breakLevel = Severity::ERROR;
         Vec<LogEntry> logs;
 
         bool shortenFileNames : 1 = true;
@@ -65,10 +75,10 @@ namespace Quasi::Debug {
 #endif
         explicit Logger(Text::StringWriter out = Text::StringWriter::WriteToConsole()) : logOut(out) {}
 
-        static bool Overrides(Severity filter, Severity log) { return log >= filter; }
-        bool Overrides(Severity s) const { return Overrides(filterLevel, s); }
-        void SetFilter(Severity s) { filterLevel = s; }
-        void SetBreakLevel(Severity s) { breakLevel = s; }
+        static bool Overrides(Severity::E filter, Severity::E log) { return log >= filter; }
+        bool Overrides(Severity::E s) const { return Overrides(filterLevel, s); }
+        void SetFilter(Severity::E s) { filterLevel = s; }
+        void SetBreakLevel(Severity::E s) { breakLevel = s; }
 
         void SetName(Str newName) { name.text = newName; }
         void SetNameColor(const Text::ConsoleColor col) { name.color = col; }
@@ -78,18 +88,18 @@ namespace Quasi::Debug {
         void SetLocPad(const u32 pad) { lPad = pad; }
 
         void FmtLog(Text::StringWriter output, const LogEntry& log) const;
-        void FmtLog(Text::StringWriter output, Str log, Severity severity, DateTime time, const SourceLoc& fileLoc) const;
+        void FmtLog(Text::StringWriter output, Str log, Severity::E severity, DateTime time, const SourceLoc& fileLoc) const;
         Str FmtFile(Str fullname) const;
         void FmtSourceLoc(Text::StringWriter output, const SourceLoc& loc) const;
-        void LogNoOut  (Severity sv, Str s, const SourceLoc& loc = SourceLoc::current());
-        void ConsoleLog(Severity sv, Str s, const SourceLoc& loc = SourceLoc::current());
-        void Log       (Severity sv, Str s, const SourceLoc& loc = SourceLoc::current());
+        void LogNoOut  (Severity::E sv, Str s, const SourceLoc& loc = SourceLoc::current());
+        void ConsoleLog(Severity::E sv, Str s, const SourceLoc& loc = SourceLoc::current());
+        void Log       (Severity::E sv, Str s, const SourceLoc& loc = SourceLoc::current());
 
         void AssertMsg(bool assert, Str msg, const SourceLoc& loc = SourceLoc::current());
 
-        void WriteAllLogs(Text::StringWriter out, Severity filter = Severity::NONE);
+        void WriteAllLogs(Text::StringWriter out, Severity::E filter = Severity::OFF);
 
-        template <class ...Ts> void LogFmt(Severity s, const FmtStr& fmt, const Ts&... args) {
+        template <class ...Ts> void LogFmt(Severity::E s, const FmtStr& fmt, const Ts&... args) {
             this->Log(s, Text::Format(fmt.fmt, args...), fmt.loc);
         }
 
@@ -121,8 +131,8 @@ namespace Quasi::Debug {
         static void WinEnableANSI();
     };
 
-    inline void SetFilter(Severity s) { Logger::GetInternalLog().SetFilter(s); }
-    inline void SetBreakLevel(Severity s) { Logger::GetInternalLog().SetBreakLevel(s); }
+    inline void SetFilter(Severity::E s) { Logger::GetInternalLog().SetFilter(s); }
+    inline void SetBreakLevel(Severity::E s) { Logger::GetInternalLog().SetBreakLevel(s); }
 
     inline void SetName(Str newName) { Logger::GetInternalLog().SetName(newName); }
     inline void SetNameColor(const Text::ConsoleColor col) { Logger::GetInternalLog().SetNameColor(col); }
@@ -130,13 +140,13 @@ namespace Quasi::Debug {
     inline void SetIncludeFunc(const bool flag) { Logger::GetInternalLog().SetIncludeFunc(flag); }
     inline void SetLocPad(const int pad) { Logger::GetInternalLog().SetLocPad(pad); }
 
-    inline void Log(Severity sv, Str s, const SourceLoc& loc = SourceLoc::current()) { Logger::GetInternalLog().Log(sv, s, loc); }
+    inline void Log(Severity::E sv, Str s, const SourceLoc& loc = SourceLoc::current()) { Logger::GetInternalLog().Log(sv, s, loc); }
 
     inline void AssertMsg(bool assert, Str msg, const SourceLoc& loc = SourceLoc::current()) { Logger::GetInternalLog().AssertMsg(assert, msg, loc); }
 
-    inline void Write(Text::StringWriter out, Severity filter = Severity::NONE) { Logger::GetInternalLog().WriteAllLogs(out, filter); }
+    inline void Write(Text::StringWriter out, Severity::E filter = Severity::OFF) { Logger::GetInternalLog().WriteAllLogs(out, filter); }
 
-    template <class ...Ts> void LogFmt(Severity s, const FmtStr& fmt, const Ts&... args) {
+    template <class ...Ts> void LogFmt(Severity::E s, const FmtStr& fmt, const Ts&... args) {
         Logger::GetInternalLog().LogFmt(s, fmt, args...);
     }
 
