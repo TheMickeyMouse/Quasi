@@ -76,7 +76,7 @@ namespace Quasi::Graphics {
             "    bool invert = (vRenderPrim & 8) == 8;"
             "    int samplerID = (vRenderPrim >> 4) - 1, prim = vRenderPrim & 7;"
             "    vec4 color = vColor;"
-            "    if (samplerID != -1 && prim != 6) color *= texture(u_textures[samplerID], vTexCoord);"
+            "    if (samplerID != -1) color *= texture(u_textures[samplerID], vTexCoord);"
             "    switch (prim) {"
             "        case 1: {"
             "            float dist = 1 - length(vSTUV.xy);"
@@ -88,25 +88,24 @@ namespace Quasi::Graphics {
             "            color.a = clamp(0.5 + dist / fwidth(dist), 0.0, 1.0);"
             "            break;"
             "        }"
-            "        case 3: {"
-            // https://iquilezles.org/articles/distfunctions2d - parabola with k=1
-            "            float p = (vSTUV.y - 0.5)/3.0;"
-            "            float q = 0.25 * vSTUV.x;"
-            "            float h = q * q - p * p * p;"
-            "            float r = sqrt(abs(h)); "
-            "            float x = (h > 0.0) ? "
-            "                pow(q+r,1.0/3.0) + pow(abs(q-r),1.0/3.0)*sign(p) :"
-            "                2.0*cos(atan(r,q)/3.0)*sqrt(p); "
-            "            float dist = length(vSTUV.xy-vec2(x,x*x)) * sign(vSTUV.x-x);"
-            // "            color.b = p;"
-            "            color.a = clamp(0.5 + (invert ? 1 : -1) * dist / fwidth(dist), 0.0, 1.0);"
-            "            break;"
-            "        }"
+            // "        case 3: {"
+            // // https://iquilezles.org/articles/distfunctions2d - parabola with k=1
+            // "            float p = (vSTUV.y - 0.5)/3.0;"
+            // "            float q = 0.25 * vSTUV.x;"
+            // "            float h = q * q - p * p * p;"
+            // "            float r = sqrt(abs(h)); "
+            // "            float x = (h > 0.0) ? "
+            // "                pow(q+r,1.0/3.0) + pow(abs(q-r),1.0/3.0)*sign(p) :"
+            // "                2.0*cos(atan(r,q)/3.0)*sqrt(p); "
+            // "            float dist = length(vSTUV.xy-vec2(x,x*x)) * sign(vSTUV.x-x);"
+            // // "            color.b = p;"
+            // "            color.a = clamp(0.5 + (invert ? 1 : -1) * dist / fwidth(dist), 0.0, 1.0);"
+            // "            break;"
+            // "        }"
             "        case 6: {"
-            "           float distance = texture(u_textures[samplerID], vTexCoord).r - 0.5;"
+            "           float distance = texture(u_textures[vRenderPrim >> 8], vSTUV.xy).r - 0.5;"
             "           float ds = fwidth(distance);"
             "           color.a = clamp(0.5 + distance / ds, 0.0, 1.0);"
-            // "           color = texture(u_textures[samplerID], vTexCoord);"
             "           break;"
             "        }"
             "    }"
@@ -534,23 +533,29 @@ namespace Quasi::Graphics {
 
     void Canvas::Batch::SetTexture(GraphicsID textureID) {
         storedPoint.RenderPrim &= ~UIRender::TEXTURE_ID_MASK;
+        storedPoint.RenderPrim |= UIRender::TEXTURE_ID * (RegTexture(textureID) + 1);
+    }
 
+    void Canvas::Batch::SetSDF(GraphicsID sdf) {
+        SetPrim(UIRender::SDF);
+        storedPoint.RenderPrim &= ~UIRender::TEXTURE_ID_MASK;
+        storedPoint.RenderPrim &= ~UIRender::SDF_ID_MASK;
+        storedPoint.RenderPrim |= UIRender::SDF_ID * RegTexture(sdf);
+    }
+
+    u32 Canvas::Batch::RegTexture(GraphicsID textureID) {
         OptionUsize samplerSlot = Spans::Slice(canvas.textures, canvas.usedTextures).Find(textureID);
 
-        if (samplerSlot) {
-            storedPoint.RenderPrim |= UIRender::TEXTURE_ID * (*samplerSlot + 1);
-            return;
-        }
+        if (samplerSlot) return (u32)*samplerSlot;
 
         if (canvas.usedTextures >= MAX_TEXTURE_SAMPLERS)
             canvas.ForceDrawCurrentBatch();
         canvas.textures[canvas.usedTextures] = textureID;
-        storedPoint.RenderPrim |= UIRender::TEXTURE_ID * (canvas.usedTextures + 1);
 
         GL::ActiveTexture(GL::TEXTURE0 + canvas.usedTextures);
         GL::BindTexture(GL::TEXTURE_2D, textureID);
 
-        ++canvas.usedTextures;
+        return canvas.usedTextures++;
     }
 
     void Canvas::Batch::SetNoTexture() {
@@ -715,14 +720,14 @@ namespace Quasi::Graphics {
         const Math::fv2 start = (Math::fv2)glyph.offset * scaling + position,
                         dim   = rsize * scaling;
 
-        SetPrim(UIRender::SDF);
-        SetTextureCoord(uv.min.x, uv.min.y);
+        SetSDF(canvas.defaultFont.GetTexture().rendererID);
+        SetUV(uv.min.x, uv.min.y);
         Push({ start.x,         start.y });
-        SetTextureCoord(uv.max.x, uv.min.y);
+        SetUV(uv.max.x, uv.min.y);
         Push({ start.x + dim.x, start.y });
-        SetTextureCoord(uv.max.x, uv.max.y);
+        SetUV(uv.max.x, uv.max.y);
         Push({ start.x + dim.x, start.y - dim.y });
-        SetTextureCoord(uv.min.x, uv.max.y);
+        SetUV(uv.min.x, uv.max.y);
         Push({ start.x,         start.y - dim.y });
         Quad(0, 1, 2, 3);
 

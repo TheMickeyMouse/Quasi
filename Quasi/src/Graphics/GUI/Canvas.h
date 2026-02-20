@@ -139,6 +139,8 @@ namespace Quasi::Graphics {
             void SetSTUV(float s, float t, float u, float v = 0);
             void SetTextureCoord(float u, float v);
             void SetTexture(GraphicsID textureID);
+            void SetSDF(GraphicsID sdf);
+            u32  RegTexture(GraphicsID textureID);
             void SetNoTexture();
             void Point(const Math::fv2& position);
             void PointCirc(const Math::fv2& position, float u, float v);

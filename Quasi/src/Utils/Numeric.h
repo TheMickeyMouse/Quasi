@@ -192,7 +192,7 @@ namespace Quasi {
         static FLOAT Log10(FLOAT x) { return std::log10(x); } \
         static FLOAT Exp2(FLOAT x)  { return std::exp2(x); } \
         static FLOAT Exp2i(int x)   { return Comp(x, (FLOAT)1); } \
-        static FLOAT Exp10(FLOAT x) { return std::exp2(x * Math::LOG10_2); } \
+        static FLOAT Exp10(FLOAT x) { return std::pow((FLOAT)10.0, x); } \
         static void  SeparateDecimal(FLOAT x, FLOAT& integer, FLOAT& decimal) { decimal = std::modf(x, &integer); } \
         \
         /* uses bit manipulating techniques to convert floats to ints 100% accurately for values in range [0, 2^23), or [0, 2^52) for doubles */ \

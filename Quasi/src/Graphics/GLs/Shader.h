@@ -158,57 +158,25 @@ namespace Quasi::Graphics {
 #pragma endregion
 
 #pragma region Shader Sources
-#define Q_GLSL_SHADER(VERSION, V, F) "// #shader vertex\n" "#version " #VERSION "\n" Q_TOSTR(Q_REMOVE_SCOPE(V)) "\n// #shader fragment\n" "#version " #VERSION "\n" Q_TOSTR(Q_REMOVE_SCOPE(F))
-
-        static constexpr Str StdColored =
-            Q_GLSL_SHADER(330 core,
-                (
-                    layout(location = 0) in vec4 position;
-                    layout(location = 1) in vec4 color;
-                    out vec4 vColor;
-                    uniform mat4 u_projection;
-                    uniform mat4 u_view;
-                    void main() {
-                        gl_Position = u_projection * u_view * position;
-                        vColor = color;
-                    }
-                ),
-                (
-                    layout(location = 0) out vec4 glColor;
-                    in vec4 vColor;
-                    void main() {
-                        glColor = vColor;
-                    }
-                )
-            );
-
-        static constexpr Str StdTextured =
-            Q_GLSL_SHADER(330 core,
-                (
-                    layout(location = 0) in vec4 position;
-                    layout(location = 1) in vec4 color;
-                    layout(location = 2) in vec2 texCoord;
-                    out vec2 vTexCoord;
-                    out vec4 vColor;
-                    uniform mat4 u_projection;
-                    uniform mat4 u_view;
-                    void main() {
-                        gl_Position = u_projection * u_view * position;
-                        vColor = color;
-                        vTexCoord = texCoord;
-                    }
-                ),
-                (
-                    layout(location = 0) out vec4 glColor;
-                    in vec2 vTexCoord;
-                    in vec4 vColor;
-                    uniform sampler2D uTexture;
-                    void main() {
-                        vec4 texColor = texture(uTexture, vTexCoord);
-                        color = vColor * texColor;
-                    }
-                )
-            );
+#define QShader$(VERSION, V, F) "// #shader vertex\n" "#version " #VERSION "\n" V "\n// #shader fragment\n" "#version " #VERSION "\n" F
+#define QShaderQuad$(VERSION) QShader$(VERSION, "out vec2 vPosition; void main() { gl_Position = vec4(vec2[3](vec2(-1,-1),vec2(3,-1),vec2(-1,3))[gl_VertexID], 0, 1); vPosition = gl_Position.xy * 0.5 + 0.5;}", )
+    static constexpr Str StdColored =
+        QShader$(330 core,
+            "layout(location = 0) in vec4 position;\n"
+            "layout(location = 1) in vec4 color;\n"
+            "out vec4 vColor;\n"
+            "uniform mat4 u_projection;\n"
+            "uniform mat4 u_view;\n"
+            "void main() {\n"
+            "   gl_Position = u_projection * u_view * position;\n"
+            "   vColor = color;\n"
+            "}\n",
+            "layout(location = 0) out vec4 glColor;\n"
+            "in vec4 vColor;\n"
+            "void main() {\n"
+            "    glColor = vColor;\n"
+            "}\n"
+        );
 #pragma endregion // Shader Source
     };
 

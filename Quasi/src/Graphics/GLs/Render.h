@@ -149,14 +149,14 @@ namespace Quasi::Graphics {
 }
 
 namespace Quasi::Graphics::Render {
-    void Draw(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader);
-    void DrawInstanced(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader, int instances);
-    void Draw(const RenderData& dat, const Shader& s);
+    void Draw(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const ShaderProgram& shader);
+    void DrawInstanced(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const ShaderProgram& shader, int instances);
+    void Draw(const RenderData& dat, const ShaderProgram& s);
     void Draw(const RenderData& dat);
-    void DrawInstanced(const RenderData& dat, const Shader& s, int instances);
+    void DrawInstanced(const RenderData& dat, const ShaderProgram& s, int instances);
     void DrawInstanced(const RenderData& dat, int instances);
 
-    void DrawScreenQuad(const Shader& s);
+    void DrawScreenQuad(const ShaderProgram& s);
 
 #pragma region GL Functions
 #define GL_SWITCH(F, NAME, E) inline void F##NAME() { F(E); }

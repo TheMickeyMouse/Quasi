@@ -6,21 +6,21 @@
 #include "../RenderData.h"
 
 namespace Quasi::Graphics::Render {
-    void Draw(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader) {
+    void Draw(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const ShaderProgram& shader) {
         vertexArr.Bind();
         indexBuff.Bind();
         shader.Bind();
         QGLCall$(GL::DrawElements(GL::TRIANGLES, (int)indexBuff.GetUsedLength(), GL::UNSIGNED_INT, nullptr));
     }
 
-    void DrawInstanced(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const Shader& shader, int instances) {
+    void DrawInstanced(const VertexArray& vertexArr, const IndexBuffer& indexBuff, const ShaderProgram& shader, int instances) {
         vertexArr.Bind();
         indexBuff.Bind();
         shader.Bind();
         QGLCall$(GL::DrawElementsInstanced(GL::TRIANGLES, (int)indexBuff.GetUsedLength(), GL::UNSIGNED_INT, nullptr, instances));
     }
 
-    void Draw(const RenderData& dat, const Shader& s) {
+    void Draw(const RenderData& dat, const ShaderProgram& s) {
         Draw(dat.varray, dat.ibo, s);
     }
 
@@ -28,7 +28,7 @@ namespace Quasi::Graphics::Render {
         Draw(dat, dat.shader);
     }
 
-    void DrawInstanced(const RenderData& dat, const Shader& s, int instances) {
+    void DrawInstanced(const RenderData& dat, const ShaderProgram& s, int instances) {
         DrawInstanced(dat.varray, dat.ibo, s, instances);
     }
 
@@ -36,7 +36,7 @@ namespace Quasi::Graphics::Render {
         DrawInstanced(dat, dat.shader, instances);
     }
 
-    void DrawScreenQuad(const Shader& s) {
+    void DrawScreenQuad(const ShaderProgram& s) {
         GL::BindVertexArray(GraphicsDevice::GetEmptyVAO().rendererID);
         s.Bind();
         QGLCall$(GL::DrawArrays(GL::TRIANGLES, 0, 3));
