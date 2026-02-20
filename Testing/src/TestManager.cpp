@@ -4,16 +4,9 @@
 
 #include "TestManager.h"
 
-#include "Basic/TestClearColor.h"
-#include "Basic/TestBatchedTextured.h"
-#include "Basic/TestDynamicVertexGeometry.h"
-#include "Basic/TestDynamicQuadGeometry.h"
-#include "Basic/TestCubeRender.h"
-
 // #include "Advanced/TestFontRender.h"
 #include "Advanced/TestPostProcessing.h"
 #include "Advanced/TestAdvancedLighting.h"
-#include "Advanced/TestBezierCurves.h"
 #include "Advanced/TestMaterialMaps.h"
 #include "Advanced/TestLightCasters.h"
 #include "Advanced/TestCubeMap.h"
@@ -38,26 +31,6 @@ namespace Test {
         menu = Box<TestMenu>::Build(*this);
         currentTest = *menu;
         {
-            menu->DeclareTestType(TestType::BASIC);
-            menu->AddSectionDescription("Simple OpenGL Tests to make sure the renderer is working. \nTests mostly involve: Texture Rendering and Vertex manipulation");
-
-            menu->RegisterTest<TestClearColor>("Clear Color");
-            menu->AddDescription("Clears the screen with a color.");
-
-            menu->RegisterTest<TestBatchedTextured>("Texture Batching");
-            menu->AddDescription("Draws 2 textured squares.");
-
-            menu->RegisterTest<TestDynamicVertexGeometry>("Dyn Vertex Geometry");
-            menu->AddDescription("Draws 2 Modifiable squares.");
-
-            menu->RegisterTest<TestDynamicQuadGeometry>("Dyn Quad Geometry");
-            menu->AddDescription("Draws up to 8 Unique Modifiable squares.");
-
-            menu->RegisterTest<TestCubeRender>("Cube 3D Rendering");
-            menu->AddDescription("Draws a 3D cube.");
-
-            // =========================================================================
-
             menu->DeclareTestType(TestType::ADVANCED);
             menu->AddSectionDescription("Advanced OpenGL Tests focused on more realistic rendering. \nIncluding: Text Rendering, Post Processing Effects and Lighting");
 
@@ -87,9 +60,6 @@ namespace Test {
 
             menu->RegisterTest<TestShadowMap>("Shadow Map");
             menu->AddDescription("Draws a scene with simple shadows.");
-
-            menu->RegisterTest<TestBezierCurves>("Bezier Curves");
-            menu->AddDescription("Draws resolution-independent bezier curves.");
             // =========================================================================
 
             menu->DeclareTestType(TestType::SIM_PHYSICS);

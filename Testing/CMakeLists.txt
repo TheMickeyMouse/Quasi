@@ -6,18 +6,12 @@ set(HEADER_FILES
     src/Advanced/TestLightCasters.h
     src/Advanced/TestMaterialMaps.h
     src/Advanced/TestPostProcessing.h
-    src/Basic/TestBatchedTextured.h
-    src/Basic/TestClearColor.h
-    src/Basic/TestCubeRender.h
-    src/Basic/TestDynamicQuadGeometry.h
-    src/Basic/TestDynamicVertexGeometry.h
     src/Demos/DemoFlappyBird.h
     src/Advanced/TestGeometryShader.h
     src/Advanced/TestDrawInstances.h
     src/Advanced/TestShadowMap.h
     src/Physics/TestCircleCollision2D.h
     src/Physics/TestPhysicsPlayground2D.h
-    src/Advanced/TestBezierCurves.h
     src/Demos/DemoUIPlayground.h
     src/Test.h
     src/TestManager.h
@@ -31,16 +25,10 @@ set(SOURCE_FILES
     src/Advanced/TestLightCasters.cpp
     src/Advanced/TestMaterialMaps.cpp
     src/Advanced/TestPostProcessing.cpp
-    src/Basic/TestBatchedTextured.cpp
-    src/Basic/TestClearColor.cpp
-    src/Basic/TestCubeRender.cpp
-    src/Basic/TestDynamicQuadGeometry.cpp
-    src/Basic/TestDynamicVertexGeometry.cpp
     src/Demos/DemoFlappyBird.cpp
     src/Advanced/TestGeometryShader.cpp
     src/Advanced/TestDrawInstances.cpp
     src/Advanced/TestShadowMap.cpp
-    src/Advanced/TestBezierCurves.cpp
     src/Physics/TestCircleCollision2D.cpp
     src/Physics/TestPhysicsPlayground2D.cpp
     src/Demos/DemoUIPlayground.cpp

@@ -18,7 +18,6 @@ namespace Test {
     struct TestType {
         enum E {
             NONE = 0,
-            BASIC,
             ADVANCED,
             SIM_PHYSICS,
             DEMO,
@@ -27,7 +26,6 @@ namespace Test {
         };
         static const char* Name(E type) {
             switch (type) {
-                case BASIC:       return "Basic";
                 case ADVANCED:    return "Advanced";
                 case SIM_PHYSICS: return "Physics";
                 case DEMO:        return "Demos";

@@ -27,7 +27,10 @@ namespace Quasi::Graphics {
             INVERT = 0x8,
 
             TEXTURE_ID_MASK = 0xF0,
-            TEXTURE_ID = 0x10
+            TEXTURE_ID = 0x10,
+
+            SDF_ID_MASK = 0xF00,
+            SDF_ID = 0x100,
         };
 
         enum RenderStyle {
