@@ -23,7 +23,7 @@ namespace Quasi::Graphics {
              focusOnShow   = true,
              passthru      = false,
              fullscreen    = false;
-        Math::iv2 beginPosition;
+        Math::iv2 beginPosition = { (int)0x80000000 }; // <-- this is GLFW's way of specifying any position
     };
 
     class GraphicsDevice {
