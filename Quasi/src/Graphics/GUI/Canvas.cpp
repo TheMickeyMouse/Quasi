@@ -1552,6 +1552,10 @@ namespace Quasi::Graphics {
         return transform * point;
     }
 
+    void Canvas::SetViewport(const Math::fRect2D& viewport) {
+        renderCanvas.SetProjection(Math::Matrix3D::OrthoProjection(viewport.AddZ({ 0, 1 })));
+    }
+
     void Canvas::Update(float dt) {
         (void)dt;
 

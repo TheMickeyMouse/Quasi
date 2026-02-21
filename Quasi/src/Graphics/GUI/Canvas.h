@@ -265,6 +265,7 @@ namespace Quasi::Graphics {
         PushStylesScope PushStyles();
 
         Math::fv2 TransformToWorldSpace(const Math::fv2& point) const;
+        void SetViewport(const Math::fRect2D& viewport);
 
         void Update(float dt);
         void AddInteractable(Ref<Interactable> inter);
