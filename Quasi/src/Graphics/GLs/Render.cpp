@@ -37,8 +37,9 @@ namespace Quasi::Graphics::Render {
     }
 
     void DrawScreenQuad(const ShaderProgram& s) {
-        GL::BindVertexArray(GraphicsDevice::GetEmptyVAO().rendererID);
+        GraphicsDevice::GetEmptyVAO().Bind();
         s.Bind();
+        IndexBuffer::UnbindObject();
         QGLCall$(GL::DrawArrays(GL::TRIANGLES, 0, 3));
     }
 
