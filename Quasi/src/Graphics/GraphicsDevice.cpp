@@ -201,7 +201,7 @@ namespace Quasi::Graphics {
                   cpuUs = totalUs - gpuUs;
         ImGui::Text("CPU   Time: %d.%03dms", cpuUs   / 1000, cpuUs   % 1000);
         ImGui::Text("GPU   Time: %d.%03dms", gpuUs   / 1000, gpuUs   % 1000);
-        ImGui::Text("Application Averages %.2fms/frame (%.1f FPS)", 1000.0 * ioDevice.Time.DeltaTime(), ioDevice.Time.Framerate());
+        ImGui::Text("Application Averages %.2fms/frame (%.1f FPS)", 1000.0 * ioDevice.DeltaTime(), ioDevice.Framerate());
         ImGui::Text("       Theoretically %.2fms/frame (%.1f FPS)", (float)totalUs / 1000.0f, 1'000'000.0f / (float)totalUs);
 
         ImGui::BeginTabBar("Debug Items");
@@ -234,46 +234,22 @@ namespace Quasi::Graphics {
         }
 
         if (ImGui::BeginTabItem("Inputs")) {
-            ImGui::BulletText("Mouse");
-            ImGui::Indent();
-            {
-                ImGui::Text("Mouse Position is at: (%f, %f),",
-                    ioDevice.Mouse.GetMousePosPx().x,
-                    ioDevice.Mouse.GetMousePosPx().y);
-                ImGui::Text("   relative at: (%f, %f),",
-                    ioDevice.Mouse.GetMousePos().x,
-                    ioDevice.Mouse.GetMousePos().y);
-                ImGui::Text("which is%s in the window", ioDevice.Mouse.IsInWindow() ? "" : " not");
-                ImGui::NewLine();
+            ImGui::Text("Mouse Position is at: (%f, %f),",
+                ioDevice.GetMousePos().x,
+                ioDevice.GetMousePos().y);
+            ImGui::Text("In window = %s", ioDevice.MouseInWindow() ? "true" : "false");
+            ImGui::NewLine();
 
-                ImGui::Text("Left Mouse Pressed: %s",   ioDevice.Mouse.LeftPressed()   ? "True" : "False");
-                ImGui::Text("Right Mouse Pressed: %s",  ioDevice.Mouse.RightPressed()  ? "True" : "False");
-                ImGui::Text("Middle Mouse Pressed: %s", ioDevice.Mouse.MiddlePressed() ? "True" : "False");
+            ImGui::Text("Left Mouse Pressed: %s",   ioDevice.LeftMouse()  .Pressed() ? "true" : "false");
+            ImGui::Text("Right Mouse Pressed: %s",  ioDevice.RightMouse() .Pressed() ? "true" : "false");
+            ImGui::Text("Middle Mouse Pressed: %s", ioDevice.MiddleMouse().Pressed() ? "true" : "false");
 
-                ImGui::Text("Mouse Scroll is: (%f, %f),",
-                    ioDevice.Mouse.GetMouseScroll().x,
-                    ioDevice.Mouse.GetMouseScroll().y);
-                ImGui::Text("       delta is: (%f, %f)",
-                    ioDevice.Mouse.GetMouseScrollDelta().x,
-                    ioDevice.Mouse.GetMouseScrollDelta().y);
-
-                ImGui::Text("Pressed: ");
-                for (int i = 0; i < IO::MouseType::LAST_MOUSE; ++i) {
-                    if (!ioDevice.Mouse.ButtonPressed(i)) continue;
-                    ImGui::Text("   %s", IO::MouseType::MouseButtonToStr(i).Data());
-                }
-            }
-            ImGui::Unindent();
-
-            ImGui::BulletText("Keyboard");
-            ImGui::Indent();
-            {
-                ImGui::Text("Keys Pressed Are:");
-                ioDevice.Keyboard.VisitKeysPressed([] (IO::Key k) {
-                    ImGui::Text("   %s", IO::KeyboardType::KeyToStr(k).Data());
-                });
-            }
-            ImGui::Unindent();
+            ImGui::Text("Mouse Scroll is: (%f, %f),",
+                ioDevice.GetMouseScrollX(),
+                ioDevice.GetMouseScroll());
+            ImGui::Text("       delta is: (%f, %f)",
+                ioDevice.GetMouseScrollDeltaX(),
+                ioDevice.GetMouseScrollDelta());
 
             ImGui::EndTabItem();
         }
@@ -363,7 +339,7 @@ namespace Quasi::Graphics {
 
         Render::EnableBlend();
         Render::UseBlendFunc(BlendFactor::SRC_ALPHA, BlendFactor::INVERT_SRC_ALPHA);
-        Render::UseBlendConstColor({ 1, 1, 1 });
+        // Render::UseBlendConstColor({ 1, 1, 1 });
 
         Render::EnableDepth();
         Render::UseDepthFunc(CmpOperation::LEQUAL);

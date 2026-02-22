@@ -1,6 +1,5 @@
 #pragma once
 #include "IShape2D.h"
-#include "IO/Keyboard.h"
 #include "Utils/Vec.h"
 
 namespace Quasi::Physics2D {

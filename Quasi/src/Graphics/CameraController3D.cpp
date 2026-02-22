@@ -8,9 +8,8 @@ namespace Quasi::Graphics {
     void CameraController3D::Update(GraphicsDevice& gd, const float dt) {
         using namespace Math;
         using namespace IO;
-        const auto& Keyboard = gd.GetIO().Keyboard;
-        auto& Mouse = gd.GetIO().Mouse;
-        if (Keyboard.KeyOnPress(ESCAPE)) Toggle(gd);
+        const auto& io = gd.GetIO();
+        if (io.GetKey(Key::ESCAPE).OnPress()) Toggle(gd);
 
         if (UsesSmoothZoom()) {
             viewFov = std::lerp(fov, viewFov, std::exp2f(-smoothZoom * dt));
@@ -21,37 +20,37 @@ namespace Quasi::Graphics {
         if (!enabled) { return; }
         const fv3 localRight = -(Right() * std::cos(yaw) + worldFront * std::sin(yaw));
         const fv3 localFront = worldUp.Cross(localRight);
-        if (Keyboard.KeyPressed(W))      position += localFront * speed * dt;
-        if (Keyboard.KeyPressed(S))      position -= localFront * speed * dt;
-        if (Keyboard.KeyPressed(D))      position += localRight * speed * dt;
-        if (Keyboard.KeyPressed(A))      position -= localRight * speed * dt;
-        if (Keyboard.KeyPressed(SPACE))  position += fv3::Up()   * speed * dt;
-        if (Keyboard.KeyPressed(LSHIFT)) position += fv3::Down() * speed * dt;
+        if (io['W'].Pressed())      position += localFront * speed * dt;
+        if (io['S'].Pressed())      position -= localFront * speed * dt;
+        if (io['D'].Pressed())      position += localRight * speed * dt;
+        if (io['A'].Pressed())      position -= localRight * speed * dt;
+        if (io["Space"].Pressed())  position += fv3::Up()   * speed * dt;
+        if (io["Shift"].Pressed()) position += fv3::Down() * speed * dt;
 
-        if (Keyboard.KeyOnPress(CAPS_LOCK)) fov = fovRange.max * zoomRatio;
-        if (Keyboard.KeyOnRelease(CAPS_LOCK)) fov = fovRange.max;
+        if (io[Key::CAPS_LOCK].OnPress()) fov = fovRange.max * zoomRatio;
+        if (io[Key::CAPS_LOCK].OnRelease()) fov = fovRange.max;
 
-        if (Keyboard.KeyOnPress(LCONTROL)) speed *= 2;
-        if (Keyboard.KeyOnRelease(LCONTROL)) speed /= 2;
+        if (io[Key::LCONTROL].OnPress()) speed *= 2;
+        if (io[Key::LCONTROL].OnRelease()) speed /= 2;
 
-        if (Keyboard.KeyPressed(CAPS_LOCK)) {
-            fov -= (float)Mouse.GetMouseScrollDelta().y;
+        if (io[Key::CAPS_LOCK].Pressed()) {
+            fov -= (float)io.GetMouseScrollDelta();
             fov = fovRange.Clamp(fov);
         }
 
-        const dv2 delta = Mouse.GetMousePosDeltaPx();
+        const fv2 delta = io.GetMousePosDelta();
 
-        yaw   += (float)delta.x * -(sensitivity * dt);
-        pitch += (float)delta.y *  (sensitivity * dt);
+        yaw   += delta.x * -(sensitivity * dt);
+        pitch += delta.y *  (sensitivity * dt);
         pitch = std::clamp(pitch, HALF_PI * -0.95f, HALF_PI * 0.95f);
     }
 
     void CameraController3D::Toggle(GraphicsDevice& gd) {
         enabled ^= true;
         if (enabled) {
-            gd.GetIO().Mouse.Lock();
+            gd.GetIO().CursorLock();
         } else {
-            gd.GetIO().Mouse.Show();
+            gd.GetIO().CursorShow();
         }
     }
 

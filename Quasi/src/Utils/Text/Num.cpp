@@ -1033,7 +1033,7 @@ namespace Quasi::Text {
 
     template <class N>
     usize NumberConversion::FloatConv<N>::ParseInteger(Str string, Out<N&> out) {
-        string = string.First(string.FindIf([] (Str x) { return !Chr::IsDigit(x[0]); }).UnwrapOr(string.Length()));
+        string = string.First(string.FindIf([] (char x) { return !Chr::IsDigit(x); }).UnwrapOr(string.Length()));
         const usize totalLen = string.Length();
         string = string.TrimStart('0');
 
@@ -1059,7 +1059,7 @@ namespace Quasi::Text {
 
     template <class N>
     usize NumberConversion::FloatConv<N>::ParseDecimal(Str string, InOut<N&> out) {
-        string = string.First(string.FindIf([] (Str x) { return !Chr::IsDigit(x[0]); }).UnwrapOr(string.Length()));
+        string = string.First(string.FindIf([] (char x) { return !Chr::IsDigit(x); }).UnwrapOr(string.Length()));
         const usize totalLen = string.Length();
         string = string.TrimEnd('0');
 

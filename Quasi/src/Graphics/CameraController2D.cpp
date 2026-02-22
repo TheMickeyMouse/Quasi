@@ -7,8 +7,7 @@ namespace Quasi::Graphics {
         using namespace Math;
         using namespace IO;
 
-        const auto& Keyboard = gd.GetIO().Keyboard;
-        const auto& Mouse = gd.GetIO().Mouse;
+        const auto& io = gd.GetIO();
 
         if (useSmoothZoom) {
             displayScale = std::lerp(scale, displayScale, std::exp2f(-80.0f * dt));
@@ -17,20 +16,23 @@ namespace Quasi::Graphics {
         }
 
         if (!enabled) { return; }
-        if (Keyboard.KeyPressed(W)) position.y += scale * speed * dt;
-        if (Keyboard.KeyPressed(S)) position.y -= scale * speed * dt;
-        if (Keyboard.KeyPressed(D)) position.x += scale * speed * dt;
-        if (Keyboard.KeyPressed(A)) position.x -= scale * speed * dt;
+        if (io['W'].Pressed()) position.y += scale * speed * dt;
+        if (io['S'].Pressed()) position.y -= scale * speed * dt;
+        if (io['D'].Pressed()) position.x += scale * speed * dt;
+        if (io['A'].Pressed()) position.x -= scale * speed * dt;
 
-        if (Keyboard.KeyOnPress(CAPS_LOCK))   scale = 3;
-        if (Keyboard.KeyOnRelease(CAPS_LOCK)) scale = 1;
+        if (io[Key::CAPS_LOCK].Pressed())   scale = 3;
+        if (io[Key::CAPS_LOCK].Pressed()) scale = 1;
 
-        if (Keyboard.KeyOnPress(LCONTROL)) speed *= 2;
-        if (Keyboard.KeyOnRelease(LCONTROL)) speed /= 2;
+        if (io[Key::LCONTROL].Pressed()) speed *= 2;
+        if (io[Key::LCONTROL].Pressed()) speed /= 2;
 
-        scale += (float)Mouse.GetMouseScrollDelta().y * scale * 0.06f;
-        if (Mouse.MiddlePressed())
-            position -= (fv2)Mouse.FlipMouseY(Mouse.GetMousePosDeltaPx()) * 2.0f / scale;
+        scale += (float)io.GetMouseScrollDelta() * scale * 0.06f;
+        if (io.MiddleMouse().Pressed()) {
+            fv2 delta = io.GetMousePosDelta();
+            delta.y = gd.GetWindowSize().y - delta.y;
+            position -= delta * (2.0f / scale);
+        }
     }
 
     void CameraController2D::Toggle() {

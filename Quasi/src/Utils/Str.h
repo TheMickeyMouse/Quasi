@@ -157,18 +157,18 @@ namespace Quasi {
 
         void Reverse() requires mut;
 
-        OptionUsize FindIf(Predicate<Str> auto&& pred) const {
+        OptionUsize FindIf(Predicate<char> auto&& pred) const {
             for (usize i = 0; i < super().LengthImpl(); ++i)
-                if (pred(Skip(i))) return i;
+                if (pred(At(i))) return i;
             return nullptr;
         }
-        OptionUsize RevFindIf(Predicate<Str> auto&& pred) const {
+        OptionUsize RevFindIf(Predicate<char> auto&& pred) const {
             for (usize i = super().LengthImpl(); i --> 0; )
-                if (pred(Skip(i))) return i;
+                if (pred(At(i))) return i;
             return nullptr;
         }
-        bool ContainsIf   (Predicate<Str> auto&& pred) const { return FindIf(pred); }
-        bool RevContainsIf(Predicate<Str> auto&& pred) const { return RevFindIf(pred); }
+        bool ContainsIf   (Predicate<char> auto&& pred) const { return FindIf(pred); }
+        bool RevContainsIf(Predicate<char> auto&& pred) const { return RevFindIf(pred); }
         OptionUsize Find       (char c) const;
         OptionUsize RevFind    (char c) const;
         bool        Contains   (char c) const;
