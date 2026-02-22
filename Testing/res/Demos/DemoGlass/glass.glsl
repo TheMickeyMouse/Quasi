@@ -19,8 +19,7 @@ uniform vec2 waveOrigin[6];
 
 float pow4(float x) {
    x *= x;
-   x *= x;
-   return x;
+   return x * x;
 }
 
 void main() {
@@ -39,10 +38,10 @@ void main() {
    vec3 xDir    = refract(rDir, n2, 1.5);
    vec2 surface = hit2.xy - xDir.xy * ((height + hit2.z) / xDir.z) + pos - p;
    vec3 result  = texture(glassFloor, surface / vec2(16, 9)).rgb;
-   result *= 1 + pow4((dot(normalize(lightSource - hit - vec3(pos - p, 0.0)), normal)));
+   result *= 0.85 + pow4((dot(normalize(lightSource - hit - vec3(pos - p, 0.0)), normal)));
    for (int i = 0; i < 6; ++i) {
       float lrel = length(surface - waveOrigin[i]);
-      result += 0.33 * max(0, 0.6 - lrel) * smoothstep(0.1, 0, abs(lrel - wave[i]));
+      result += 0.33 * max(0, 0.6 - lrel) * smoothstep(-0.1, 0, -abs(lrel - wave[i]));
    }
    glColor = vec4(result, 1.0);
 }

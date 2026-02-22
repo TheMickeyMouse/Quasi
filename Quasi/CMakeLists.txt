@@ -55,9 +55,6 @@ set(HEADER_FILES
     src/Graphics/GUI/ImGuiExt.h
 
     src/IO/IO.h
-    src/IO/Keyboard.h
-    src/IO/Mouse.h
-    src/IO/TimeType.h
 
     src/Utils/Math/Constants.h
     src/Utils/Math/Matrix.h
@@ -164,9 +161,6 @@ set(SOURCE_FILES
     src/Graphics/GUI/ImGuiExt.cpp
 
     src/IO/IO.cpp
-    src/IO/Keyboard.cpp
-    src/IO/Mouse.cpp
-    src/IO/TimeType.cpp
 
     src/Utils/Math/Vector.cpp
     src/Utils/Math/Matrix.cpp
@@ -215,6 +209,8 @@ set(ALL_FILES
         src/Graphics/GUI/Interactable.cpp
         src/Graphics/GUI/Interactable.h
         src/Utils/Continuous.h
+        src/IO/Key.h
+        src/IO/Key.cpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

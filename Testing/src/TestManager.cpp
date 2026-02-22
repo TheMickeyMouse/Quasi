@@ -112,7 +112,7 @@ namespace Test {
     }
 
     void TestManager::OnUpdate(float deltaTime) {
-        deltaTime = std::isnan(deltaTime) ? gdevice.GetIO().Time.DeltaTime() : deltaTime;
+        deltaTime = std::isnan(deltaTime) ? gdevice.GetIO().DeltaTime() : deltaTime;
         currentTest->OnUpdate(gdevice, deltaTime);
     }
 

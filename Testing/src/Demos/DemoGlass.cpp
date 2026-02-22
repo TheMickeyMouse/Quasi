@@ -8,7 +8,7 @@ namespace Test {
         const float cos = N.Dot(I);
         const float k = 1.0 - eta * eta * (1.0 - cos * cos);
         if (k < 0.0)
-            return { 0 };       // or genDType(0.0)
+            return { 0 };
         else
             return eta * I - (eta * cos + std::sqrt(k)) * N;
     }
@@ -29,12 +29,12 @@ namespace Test {
     }
 
     void DemoGlass::OnUpdate(Graphics::GraphicsDevice& gdevice, float deltaTime) {
-        auto& mouse = gdevice.GetIO().Mouse;
-        if (mouse.LeftPressed()) {
-            x = mouse.GetMousePos().x * 16.0 / 9.0;
+        auto& io = gdevice.GetIO();
+        if (io.LeftMouse().Pressed()) {
+            x = io.GetMousePos().x * 16.0 / 9.0;
         }
-        if (mouse.LeftOnPress()) {
-            Math::fv2 mPos = gdevice.GetIO().Mouse.GetMousePosPx().As<float>() / 100.0f;
+        if (io.LeftMouse().OnPress()) {
+            Math::fv2 mPos = io.GetMousePos().As<float>() / 100.0f;
             mPos.y = 9 - mPos.y;
 
             Span(wave).RotateRight(1);
@@ -44,7 +44,7 @@ namespace Test {
         }
 
         glowSize += dG * deltaTime;
-        dG       += 256.0f * ((mouse.LeftPressed() ? 0.7f : 0.3f) - glowSize) * deltaTime;
+        dG       += 256.0f * ((io.LeftMouse().Pressed() ? 0.7f : 0.3f) - glowSize) * deltaTime;
         dG       *= (1 - 12.0f * deltaTime);
 
         for (float& w : wave) {
@@ -58,7 +58,7 @@ namespace Test {
         canvas.DrawTexture(plain, 0, { 32.0 / 9.0, 2 }, true);
         canvas.EndFrame();
 
-        Math::fv2 mouse = gdevice.GetIO().Mouse.GetMousePosPx().As<float>() / 100.0f;
+        Math::fv2 mouse = gdevice.GetIO().GetMousePos().As<float>() / 100.0f;
         mouse.y = 9 - mouse.y;
         shader.Bind();
         shader.SetUniformFloat("radius", radius);

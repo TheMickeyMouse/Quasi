@@ -1560,11 +1560,11 @@ namespace Quasi::Graphics {
         (void)dt;
 
         IO::IO& io = GraphicsDevice::GetDeviceInstance().GetIO();
-        Math::fv2 mousePos = io.Mouse.currPos.As<float>();
+        Math::fv2 mousePos = io.GetMousePos();
         mousePos.y = (float)GraphicsDevice::GetDeviceInstance().GetWindowSize().y - mousePos.y;
 
-        const int mouseEventPress = (io.Mouse.AnyOnPress()   ? MouseEventType::CLICK : 0) |
-                                    (io.Mouse.AnyOnRelease() ? MouseEventType::RELEASE : 0);
+        const int mouseEventPress = (io.MouseAnyOnPress()   ? MouseEventType::CLICK : 0) |
+                                    (io.MouseAnyOnRelease() ? MouseEventType::RELEASE : 0);
 
         // this flags prevent other interactables from getting triggered when their
         // hitboxes overlap.
@@ -1591,7 +1591,7 @@ namespace Quasi::Graphics {
             // send events, also record cursor shape updates
             alreadyTriggered |= !i->CaptureEvent((MouseEventType::E)event, io);
         }
-        GraphicsDevice::GetDeviceInstance().GetIO().Mouse.SetShape(entered ? IO::CursorShape::HAND : IO::CursorShape::DEFAULT);
+        GraphicsDevice::GetDeviceInstance().GetIO().SetCursorShape(entered ? IO::CursorShape::HAND : IO::CursorShape::DEFAULT);
     }
 
     void Canvas::AddInteractable(Ref<Interactable> inter) {
