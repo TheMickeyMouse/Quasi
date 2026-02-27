@@ -237,7 +237,7 @@ namespace Quasi::Graphics {
             ImGui::Text("Mouse Position is at: (%f, %f),",
                 ioDevice.GetMousePos().x,
                 ioDevice.GetMousePos().y);
-            ImGui::Text("In window = %s", ioDevice.MouseInWindow() ? "true" : "false");
+            // ImGui::Text("In window = %s", ioDevice.MouseInWindow() ? "true" : "false");
             ImGui::NewLine();
 
             ImGui::Text("Left Mouse Pressed: %s",   ioDevice.LeftMouse()  .Pressed() ? "true" : "false");

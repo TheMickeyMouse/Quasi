@@ -24,6 +24,8 @@ namespace Quasi::IO {
 
         void Update();
         void UpdateMouse();
+        void UpdateCursorPos();
+        void UpdateKeyboard();
         void UpdateTime();
 
         static constexpr float DOUBLE_CLICK_INTERVAL = 0.5f;
@@ -48,10 +50,10 @@ namespace Quasi::IO {
         };
 
     private:
-        bool mouseAnyDown = false, mouseAnyOnPress = false, mouseAnyOnRelease = false;
-        Math::fv2 currMousePos, prevMousePos, mousePosDelta;
-        float mouseScroll,  mouseScrollDelta;
-        float mouseScrollX, mouseScrollDeltaX;
+        bool prevMouseAnyDown = false, mouseAnyDown = false, nextMouseAnyDown = false;
+        Math::fv2 currMousePos, prevMousePos, mousePosDelta; // prev is not meant to be accessed
+        float prevScroll,  mouseScroll,  mouseScrollDelta; // prev is not meant to be accessed
+        float prevScrollX, mouseScrollX, mouseScrollDeltaX; // prev is not meant to be accessed
         bool onScrollUp = false, onScrollDown = false;
         MouseBtnInfo mouseBtnInfo[(int)MouseBtn::NUM];
         CursorShape cursorShape = CursorShape::DEFAULT;
@@ -86,27 +88,29 @@ namespace Quasi::IO {
         const MouseBtnInfo& MiddleMouse() const { return MouseButton(MouseBtn::MIDDLE); }
         const MouseBtnInfo& MouseButton(MouseBtn btn) const { return mouseBtnInfo[(int)btn]; }
         bool MouseAnyPressed()   const { return mouseAnyDown; }
-        bool MouseAnyOnPress()   const { return mouseAnyOnPress; }
-        bool MouseAnyOnRelease() const { return mouseAnyOnRelease; }
+        bool MouseAnyOnPress()   const { return !prevMouseAnyDown && mouseAnyDown; }
+        bool MouseAnyOnRelease() const { return prevMouseAnyDown && !mouseAnyDown; }
 
         void SetCursorShape(CursorShape shape);
 
         struct KeyBtnInfo {
         private:
-            bool down = false, press = false, release = false;
+            bool down = false;
+            float downDuration = 0.0f;
             float clickTime = 0.0, releaseTime = 0.0f;
         public:
             void Press(IO& io, bool pressed = true);
+            void Update(float dt);
 
             bool Pressed()         const { return down; }
-            bool OnPress()         const { return press; }
-            bool OnRelease()       const { return release; }
+            bool OnPress()         const { return down  && downDuration == 0.0f; }
+            bool OnRelease()       const { return !down && downDuration == 0.0f; }
             float OnPressTime()    const { return clickTime; }
             float OnReleaseTime()  const { return releaseTime; }
         };
 
     private:
-        bool keyAnyDown = false, keyAnyOnPress = false, keyAnyOnRelease = false;
+        bool prevKeyAnyDown = false, keyAnyDown = false, nextKeyAnyDown = false;
         KeyBtnInfo keyInfo[(int)Key::NUM];
         ModKey::E modifiers = ModKey::E::NONE;
     public:
@@ -121,8 +125,8 @@ namespace Quasi::IO {
         bool KeyCombo(KeyCombo kcombo) const;
 
         bool KeyAnyPressed()   const { return keyAnyDown; }
-        bool KeyAnyOnPress()   const { return keyAnyOnPress; }
-        bool KeyAnyOnRelease() const { return keyAnyOnRelease; }
+        bool KeyAnyOnPress()   const { return !prevKeyAnyDown && keyAnyDown; }
+        bool KeyAnyOnRelease() const { return prevKeyAnyDown && !keyAnyDown; }
 
         bool Shift() const { return modifiers & ModKey::SHIFT; }
         bool Ctrl()  const { return modifiers & ModKey::CTRL; }
