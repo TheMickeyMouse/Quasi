@@ -301,7 +301,7 @@ namespace Quasi::IO {
         // idk why im doing this but its cool i guess
         // removes lowercase
         const int len = name.Length();
-        const u64 text = (Memory::ReadU64Big(name.Data()) & 0xDFDFDFDFDFDFDFDF) >> (64 - std::max(64, (int)(8 * len)));
+        const u64 text = (Memory::ReadU64Big(name.Data()) & 0xDFDFDFDFDFDFDFDF) >> (64 - std::min(64, (int)(8 * len)));
         if (text == "SPACE"_u64  && len == 5) return SPACE;
         if (text == "ESC"_u64    && len == 3) return ESCAPE;
         if (text == "ESCAPE"_u64 && len == 6) return ESCAPE;
@@ -348,7 +348,7 @@ namespace Quasi::IO {
             if (modKey.Length() > 8) return NONE;
 
             const int len = modKey.Length();
-            const u64 text = (Memory::ReadU64Big(modKey.Data()) & 0xDFDFDFDFDFDFDFDF) >> (64 - std::max(64, (int)(8 * len)));
+            const u64 text = (Memory::ReadU64Big(modKey.Data()) & 0xDFDFDFDFDFDFDFDF) >> (64 - std::min(64, (int)(8 * len)));
             if (text == "CTRL"_u64  && len == 4) { mods |= CTRL;  continue; }
             if (text == "SHIFT"_u64 && len == 5) { mods |= SHIFT; continue; }
             if (text == "ALT"_u64   && len == 3) { mods |= ALT;   continue; }

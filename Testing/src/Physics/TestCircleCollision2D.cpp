@@ -41,34 +41,36 @@ namespace Test {
         camera.Update(gdevice, deltaTime);
 
         const Math::fRect2D viewport = camera.GetViewport();
-        const auto& mouse = gdevice.GetIO().Mouse;
-        const Math::fv2 mousePos = ((mouse.FlipMouseY(mouse.GetMousePos()).As<float>() + 1) * 0.5f).MapFromUnit(viewport);
-        if (mouse.LeftOnPress() && !selected) {
+        const auto& io = gdevice.GetIO();
+        const Math::fv2 screen = (Math::fv2)gdevice.GetWindowSize();
+        const Math::fv2 mousePos = io.GetMousePos().MapCoords(Math::fRect2D { { 0, screen.y }, { screen.x, 0 } }, viewport);
+        const auto& left = io.LeftMouse(), &right = io.RightMouse();
+        if (left.OnPress() && !selected) {
             selected = FindBallAt(mousePos);
             if (selected)
                 selectOffset = mousePos - selected->position;
         }
 
-        if (mouse.LeftPressed() && selected) {
+        if (left.Pressed() && selected) {
             const Math::fv2 newPos = mousePos - selectOffset;
             selected->position = newPos;
             selected->velocity = 0;
         }
 
-        if (mouse.LeftOnRelease()) selected = nullptr;
+        if (left.OnRelease()) selected = nullptr;
 
-        if (mouse.RightOnPress() && !selected) {
+        if (right.OnPress() && !selected) {
             selected = FindBallAt(mousePos);
             selected = selected && selected->IsDynamic() ? selected : nullptr;
         }
 
-        if (mouse.RightPressed() && selected) {
+        if (right.Pressed() && selected) {
             totalLineMesh.vertices[8].Position = selected->position;
             totalLineMesh.vertices[9].Position = mousePos;
         }
 
-        if (mouse.RightOnRelease() && selected && selected->IsDynamic()) {
-            const bool scale = gdevice.GetIO().Keyboard.KeyPressed(IO::Key::LCONTROL);
+        if (right.OnRelease() && selected && selected->IsDynamic()) {
+            const bool scale = io[IO::Key::LCONTROL].Pressed();
             selected->velocity -= (scale ? 10.0f : 1.0f) * (mousePos - selected->position);
             totalLineMesh.vertices[8].Position = 0;
             totalLineMesh.vertices[9].Position = 0;

@@ -37,15 +37,41 @@ namespace Quasi::IO {
 
     void IO::Update() {
         UpdateTime();
+        UpdateCursorPos();
         UpdateMouse();
+        UpdateKeyboard();
     }
 
     void IO::UpdateMouse() {
+        prevMouseAnyDown = mouseAnyDown;
+        mouseAnyDown = nextMouseAnyDown;
+        nextMouseAnyDown = false;
+
         for (auto& mbtn : mouseBtnInfo) {
             mbtn.Update(DeltaTime());
         }
 
         glfwSetCursor(InputWindow(), cursorShape != CursorShape::DEFAULT ? DEFAULT_CURSOR_SHAPES[(int)cursorShape - 1] : nullptr);
+    }
+
+    void IO::UpdateCursorPos() {
+        mousePosDelta = currMousePos - prevMousePos;
+        prevMousePos = currMousePos;
+
+        mouseScrollDelta  = mouseScroll  - prevScroll;
+        mouseScrollDeltaX = mouseScrollX - prevScrollX;
+        prevScroll  = mouseScroll;
+        prevScrollX = mouseScrollX;
+    }
+
+    void IO::UpdateKeyboard() {
+        prevKeyAnyDown = keyAnyDown;
+        keyAnyDown = nextKeyAnyDown;
+        nextKeyAnyDown = false;
+        
+        for (KeyBtnInfo& kInfo : keyInfo) {
+            kInfo.Update(DeltaTime());
+        }
     }
 
     void IO::UpdateTime() {
@@ -84,18 +110,16 @@ namespace Quasi::IO {
 
     void IO::Click(MouseBtn mouseBtn, bool click) {
         mouseBtnInfo[(int)mouseBtn].Click(*this, click);
+        nextMouseAnyDown = true;
     }
 
     void IO::MoveCursor(const Math::fv2& positionPx) {
-        prevMousePos = currMousePos;
         currMousePos = positionPx;
-        mousePosDelta = currMousePos - prevMousePos;
     }
 
     void IO::Scroll(float deltaY, float deltaX) {
         onScrollUp   = deltaY > 0.0f && mouseScrollDelta == 0.0;
         onScrollDown = deltaY < 0.0f && mouseScrollDelta == 0.0;
-        mouseScrollDelta = deltaY; mouseScrollDeltaX = deltaX;
         mouseScroll += deltaY; mouseScrollX += deltaX;
     }
 
@@ -161,13 +185,25 @@ namespace Quasi::IO {
 
     void IO::KeyBtnInfo::Press(IO& io, bool pressed) {
         (pressed ? clickTime : releaseTime) = io.currentTime;
-        press   = !down && pressed;
-        release = down && !pressed;
-        down    = pressed;
+        down = pressed;
+    }
+
+    void IO::KeyBtnInfo::Update(float dt) {
+        if (down) {
+            if (downDuration < 0.0f) {
+                downDuration = 0.0f;
+            } else {
+                downDuration += dt;
+            }
+        } else {
+            if (downDuration > 0.0f) downDuration = 0.0f;
+            else downDuration -= dt;
+        }
     }
 
     void IO::PressKey(Key::E_ key, bool action) {
         keyInfo[(int)key].Press(*this, action);
+        nextKeyAnyDown |= action;
     }
 
     void IO::PressMods(ModKey::E mods) {
@@ -183,7 +219,7 @@ namespace Quasi::IO {
     }
 
     float IO::GetTime() const {
-        return (float)glfwGetTime();
+        return currentTime;
     }
 
     float IO::Framerate() const {

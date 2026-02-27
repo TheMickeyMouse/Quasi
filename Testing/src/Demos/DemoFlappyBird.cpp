@@ -25,7 +25,7 @@ namespace Test {
         Graphics::Meshes::Quad().Merge(blueprint, Transform2D { { 0, +240 }, { 320, 20 } }, mBg.NewBatch());
         Graphics::Meshes::Quad().Merge(blueprint, Transform2D { { 0, -240 }, { 320, 20 } }, mBg.NewBatch());
 
-        time = gdevice.GetIO().Time.currentTime;
+        time = gdevice.GetIO().GetTime();
         nextSpawnTime = 0;
         Graphics::Render::SetClearColor(fColor::Better::Black());
 
@@ -54,11 +54,11 @@ namespace Test {
             return;
         }
 
-        if (gdevice.GetIO().Keyboard.KeyOnPress(IO::Key::SPACE)) {
+        if (gdevice.GetIO()[IO::Key::SPACE].OnPress()) {
             playerBody->velocity.y = 250;
         }
 
-        score = (int)(gdevice.GetIO().Time.currentTime - time);
+        score = (int)(gdevice.GetIO().GetTime() - time);
 
         ManageSpikes(gdevice);
     }
@@ -122,7 +122,7 @@ namespace Test {
         using namespace Math;
 
         if (isEnd) return;
-        nextSpawnTime += gdevice.GetIO().Time.DeltaTime();
+        nextSpawnTime += gdevice.GetIO().DeltaTime();
         if (nextSpawnTime > 2) {
             nextSpawnTime -= 2;
             const float midY = gdevice.GetRand().Get(-100.0f, 100.0f);
@@ -135,7 +135,7 @@ namespace Test {
 
         for (auto& spike : world.bodies) {
             if (spike->shape.Is<Physics2D::StaticPolygonShape>())
-                spike->position.x -= 150 * gdevice.GetIO().Time.DeltaTime();
+                spike->position.x -= 150 * gdevice.GetIO().DeltaTime();
         }
         world.bodies.Keep([] (const Box<Physics2D::Body>& bod) { return bod->position.x > -370.0f; });
     }

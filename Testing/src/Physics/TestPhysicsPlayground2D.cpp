@@ -44,11 +44,12 @@ namespace Test {
         const auto& imguiio = ImGui::GetIO();
         if (!imguiio.WantCaptureMouse && !imguiio.WantCaptureKeyboard) {
             const Math::fRect2D viewport = camera.GetViewport();
-            const auto& mouse = gdevice.GetIO().Mouse;
 
-            const Math::fv2 mousePos = (((Math::fv2)mouse.FlipMouseY(mouse.GetMousePos()) + 1) * 0.5f).MapFromUnit(viewport);
-
-            if (mouse.LeftOnPress()) {
+            const auto& io = gdevice.GetIO();
+            const Math::fv2 screen = (Math::fv2)gdevice.GetWindowSize();
+            const Math::fv2 mousePos = io.GetMousePos().MapCoords(Math::fRect2D { { 0, screen.y }, { screen.x, 0 } }, viewport);
+            const auto& left = io.LeftMouse(), &right = io.RightMouse();
+            if (left.OnPress()) {
                 // Debug::QInfo$("mouse at ({})", mousePos);
                 SelectControl(mousePos);
                 if (controlIndex == ~0) {
@@ -58,7 +59,7 @@ namespace Test {
                     } else Unselect();
                 }
             }
-            if (mouse.LeftPressed()) {
+            if (left.Pressed()) {
                 if (controlIndex != ~0) {
                     EditControl(mousePos);
                 } else if (selectedIndex != ~0) {
@@ -66,11 +67,11 @@ namespace Test {
                 }
             }
 
-            if (mouse.LeftOnRelease()) {
+            if (left.OnRelease()) {
                 controlIndex = ~0;
             }
 
-            if (mouse.RightOnPress()) {
+            if (right.OnPress()) {
                 const u32 target = FindAt(mousePos);
                 if (target != ~0 && bodyData[target].body->IsDynamic()) {
                     Select(target);
@@ -78,12 +79,12 @@ namespace Test {
                 }
             }
 
-            if (mouse.RightPressed() && selectedIndex != ~0 && !selectedIsStatic) {
+            if (right.Pressed() && selectedIndex != ~0 && !selectedIsStatic) {
                 hasAddedForce = true;
             }
 
-            if (mouse.RightOnRelease() && selectedIndex != ~0 && !selectedIsStatic) {
-                const bool scale = gdevice.GetIO().Keyboard.KeyPressed(IO::Key::LCONTROL);
+            if (right.OnRelease() && selectedIndex != ~0 && !selectedIsStatic) {
+                const bool scale = io[IO::Key::LCONTROL].Pressed();
                 addedVelocity -= (scale ? 10.0f : 1.0f) * (mousePos - forceAddedPosition);
                 Unselect();
                 hasAddedForce = false;
@@ -158,9 +159,11 @@ namespace Test {
 
         const fRect2D viewport = camera.GetViewport();
         if (hasAddedForce) {
-            const auto& mouse = gdevice.GetIO().Mouse;
             const fColor blue = fColor::Blue();
-            const fv2 mousePos = (((fv2)mouse.FlipMouseY(mouse.GetMousePos()) + 1) * 0.5f).MapFromUnit(viewport),
+
+            const auto& io = gdevice.GetIO();
+            const fv2 screen = (fv2)gdevice.GetWindowSize();
+            const fv2 mousePos = io.GetMousePos().MapCoords(fRect2D { { 0, screen.y }, { screen.x, 0 } }, viewport),
                       direction = (forceAddedPosition - mousePos).Norm(0.2f);
             auto meshp = worldMesh.NewBatch();
             meshp.PushV({ forceAddedPosition + direction.Perpend(), blue });
