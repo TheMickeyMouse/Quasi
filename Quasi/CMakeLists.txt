@@ -73,7 +73,6 @@ set(HEADER_FILES
     src/Physics/Shape2D.h
     src/Physics/Body2D.h
     src/Physics/Collision2D.h
-    src/Physics/PhysicsTransform2D.h
     src/Physics/Manifold2D.h
     src/Physics/SeperatingAxisSolver.h
     src/Physics/CircleShape2D.h
@@ -175,7 +174,6 @@ set(SOURCE_FILES
     src/Physics/Shape2D.cpp
     src/Physics/Body2D.cpp
     src/Physics/Collision2D.cpp
-    src/Physics/PhysicsTransform2D.cpp
     src/Physics/Manifold2D.cpp
     src/Physics/SeperatingAxisSolver.cpp
     src/Physics/CircleShape2D.cpp
@@ -211,6 +209,12 @@ set(ALL_FILES
         src/Utils/Continuous.h
         src/IO/Key.h
         src/IO/Key.cpp
+        src/Graphics/Geometry.cpp
+        src/Graphics/Geometry.h
+        src/Utils/Math/Rotor2D.h
+        src/Utils/Math/Rotor2D.cpp
+        src/Utils/Math/Rotor3D.h
+        src/Utils/Math/Rotor3D.cpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

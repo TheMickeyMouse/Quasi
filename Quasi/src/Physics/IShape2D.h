@@ -1,10 +1,12 @@
 #pragma once
 #include "Utils/Math/Geometry.h"
 #include "Utils/Math/Rect.h"
-#include "PhysicsTransform2D.h"
 #include "Utils/Math/Vector.h"
+#include "Utils/Math/Transform2D.h"
 
 namespace Quasi::Physics2D {
+    using namespace Math;
+    
     class SeperatingAxisSolver;
     struct Manifold;
 
@@ -20,7 +22,7 @@ namespace Quasi::Physics2D {
         fRange ProjectOntoOwnAxis(u32 axisID, const fv2& axis) const = delete;
         bool AddSeperatingAxes(SeperatingAxisSolver& sat) const = delete;
 
-        void UpdateTransform(const PhysicsTransform& xf) = delete;
+        void UpdateTransform(const Pose2D& xf) = delete;
 
         enum ClipPrimitive { PRIM_CIRCLE, PRIM_LINE, PRIM_POLYGON };
         enum Type { CIRCLE, CAPSULE, RECT, POLY_SMALL, POLY };

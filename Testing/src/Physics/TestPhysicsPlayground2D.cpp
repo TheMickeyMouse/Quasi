@@ -110,12 +110,12 @@ namespace Test {
                     Graphics::Meshes::Circle(circ.radius, 3).Merge(
                         QGLCreateBlueprint$(Vertex, (
                             in (Position),
-                            out (Position) = Position + t.position;,
+                            out (Position) = Position + t.pos;,
                             out (Color)    = color;
                         )),
                         worldMesh.NewBatch()
                     );
-                    AddNewPoint(t.Transform({ circ.radius, 0 }), fColor::White());
+                    AddNewPoint(t.Mul({ circ.radius, 0 }), fColor::White());
                 },
                 instanceof (const Physics2D::CapsuleShape& cap) {
                     Graphics::Meshes::Stadium(-cap.forward, cap.forward, cap.radius, 3).Merge(
@@ -125,7 +125,7 @@ namespace Test {
                             out (Color)    = color;
                         )), worldMesh.NewBatch()
                     );
-                    AddNewPoint(t.Transform(cap.forward.Perpend() * (cap.invLength * cap.radius)), fColor::White());
+                    AddNewPoint(t.Mul(cap.forward.Perpend() * (cap.invLength * cap.radius)), fColor::White());
                 },
                 instanceof (const Physics2D::StaticPolygonShape& poly) {
                     for (u32 k = 2; k < poly.size; ++k) {
@@ -285,7 +285,7 @@ namespace Test {
         const Physics2D::Shape mouseCollider = Physics2D::CircleShape { 0.0f };
         for (u32 i = 0; i < bodyData.Length(); ++i) {
             const auto& b = bodyData[i];
-            if (b.body->OverlapsWith(mouseCollider, mousePos)) {
+            if (b.body->OverlapsWith(mouseCollider, Math::Pose2D(mousePos))) {
                 return i;
             }
         }
@@ -328,8 +328,8 @@ namespace Test {
     }
 
     void TestPhysicsPlayground2D::SelectControlPoint(const Math::fv2& mouse, const Math::fv2& control, u32 i) {
-        if (OverlapShapes(Physics2D::CircleShape { 0.0f }, mouse,
-                          Physics2D::CircleShape { 2.0f }, control)) {
+        if (OverlapShapes(Physics2D::CircleShape { 0.0f }, Math::Pose2D(mouse),
+                          Physics2D::CircleShape { 2.0f }, Math::Pose2D(control))) {
             controlIndex = i;
             controlOffset = control - mouse;
         }

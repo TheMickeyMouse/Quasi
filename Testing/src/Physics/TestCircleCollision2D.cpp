@@ -176,7 +176,7 @@ namespace Test {
     OptRef<Physics2D::Body> TestCircleCollision2D::FindBallAt(const Math::fv2& mousePos) {
         const Physics2D::Shape mouse = Physics2D::CircleShape { 0.0f };
         for (auto& circ : world.bodies) {
-            if (circ->OverlapsWith(mouse, mousePos)) {
+            if (circ->OverlapsWith(mouse, Math::Pose2D(mousePos))) {
                 return *circ;
             }
         }

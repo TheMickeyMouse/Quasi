@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Mesh.h"
-#include "Utils/Math/Transform2D.h"
 
 namespace Quasi::Graphics::Meshes {
     template <class Super>
@@ -15,7 +14,7 @@ namespace Quasi::Graphics::Meshes {
         }
 
         template <FnArgs<Vertex2D> F>
-        void Merge(F&& f, const Math::ITransformation2D auto& transform, IMeshBatch<FuncResult<F, Vertex2D>> auto&& out) {
+        void Merge(F&& f, const Math::MatrixTransform2D& transform, IMeshBatch<FuncResult<F, Vertex2D>> auto&& out) {
             return super().MergeImpl([&] (const Vertex2D& data) { return f(data).Mul(transform); }, out);
         }
 
@@ -27,7 +26,7 @@ namespace Quasi::Graphics::Meshes {
         }
 
         template <FnArgs<Vertex2D> F>
-        Mesh<FuncResult<F, Vertex2D>> Create(F&& f, const Math::ITransformation2D auto& transform) {
+        Mesh<FuncResult<F, Vertex2D>> Create(F&& f, const Math::MatrixTransform2D& transform) {
             Mesh<FuncResult<F, Vertex2D>> out;
             this->Merge(f, transform, out.NewBatch());
             return out;
@@ -45,7 +44,7 @@ namespace Quasi::Graphics::Meshes {
         }
 
         template <FnArgs<VertexNormal3D> F>
-        void Merge(F&& f, const Math::ITransformation3D auto& transform, IMeshBatch<FuncResult<F, VertexNormal3D>> auto&& out) {
+        void Merge(F&& f, const Math::MatrixTransform3D& transform, IMeshBatch<FuncResult<F, VertexNormal3D>> auto&& out) {
             return super().MergeImpl([&] (const VertexNormal3D& data) { return f(data).Mul(transform); }, out);
         }
 
@@ -57,7 +56,7 @@ namespace Quasi::Graphics::Meshes {
         }
 
         template <FnArgs<VertexNormal3D> F>
-        Mesh<FuncResult<F, VertexNormal3D>> Create(F&& f, const Math::ITransformation3D auto& transform) {
+        Mesh<FuncResult<F, VertexNormal3D>> Create(F&& f, const Math::MatrixTransform3D& transform) {
             Mesh<FuncResult<F, VertexNormal3D>> out;
             this->Merge(f, transform, out.NewBatch());
             return out;

@@ -110,7 +110,7 @@ namespace Quasi::IO {
 
     void IO::Click(MouseBtn mouseBtn, bool click) {
         mouseBtnInfo[(int)mouseBtn].Click(*this, click);
-        nextMouseAnyDown = true;
+        nextMouseAnyDown |= click;
     }
 
     void IO::MoveCursor(const Math::fv2& positionPx) {

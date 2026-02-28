@@ -1,7 +1,6 @@
 #include "Body2D.h"
 
 #include "Collision2D.h"
-#include "World2D.h"
 
 namespace Quasi::Physics2D {
     void Body::AddMomentum(const fv2& newtonSeconds) {
@@ -40,7 +39,7 @@ namespace Quasi::Physics2D {
         return CollideWith(target.shape, target.GetTransform());
     }
 
-    Manifold Body::CollideWith(const Shape& target, const PhysicsTransform& xf) const {
+    Manifold Body::CollideWith(const Shape& target, const Pose2D& xf) const {
         return CollideShapes(shape, GetTransform(), target, xf);
     }
 
@@ -48,11 +47,11 @@ namespace Quasi::Physics2D {
         return OverlapsWith(target.shape, target.GetTransform());
     }
 
-    bool Body::OverlapsWith(const Shape& target, const PhysicsTransform& xf) const {
+    bool Body::OverlapsWith(const Shape& target, const Pose2D& xf) const {
         return OverlapShapes(shape, GetTransform(), target, xf);
     }
 
-    PhysicsTransform Body::GetTransform() const {
+    Pose2D Body::GetTransform() const {
         return { position, rotation };
     }
 
@@ -69,15 +68,21 @@ namespace Quasi::Physics2D {
             invInertia = inertia > 0 ? 1 / inertia : 0;
             shapeHasChanged = false;
         }
-        boundingBox = GetTransform().TransformRect(baseBoundingBox);
+        const auto& t = GetTransform();
+        fv2 c = t.MulD(baseBoundingBox.Center());
+        const fv2 p1 = t.MulD(baseBoundingBox.Corner({ false, false })), p2 = t.MulD(baseBoundingBox.Corner({ true, false }));
+        const fv2 diff = { std::max(std::abs(p1.x - c.x), std::abs(p2.x - c.x)),
+                           std::max(std::abs(p1.y - c.y), std::abs(p2.y - c.y)) };
+        c += t.pos;
+        boundingBox = { c - diff, c + diff };
     }
 
     void Body::SetShapeHasChanged() {
         shapeHasChanged = true;
     }
 
-    void Body::SetTrigger(TriggerFn trigger) {
-        this->trigger = trigger;
+    void Body::SetTrigger(TriggerFn t) {
+        this->trigger = t;
     }
 
     void Body::TryCallTrigger(const Body& other, EventType event) {

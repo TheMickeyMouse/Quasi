@@ -11,12 +11,16 @@ namespace Quasi::Physics2D {
     }
 
     Manifold Manifold::From(const SeperatingAxisSolver& sat) {
-        const Shape&            base = sat.base, & target = sat.target;
-        const PhysicsTransform& bXf  = sat.baseXf, tXf    = sat.targetXf;
+        const Shape&  base = sat.base, & target = sat.target;
+        const Pose2D& bXf  = sat.baseXf, tXf    = sat.targetXf;
         const fv2& n = sat.seperatingAxis;
 
-        const fLine2D baseClips   = bXf.TransformLine(base  .BestEdgeFor(bXf.TransformInverseDir(n))),
-                      targetClips = tXf.TransformLine(target.BestEdgeFor(tXf.TransformInverseDir(-n)));
+        static constexpr auto MulLine = [] (const Pose2D& xf, const fLine2D& l) {
+            return fLine2D::FromDirection(xf.Mul(l.start), xf.MulD(l.forward));
+        };
+
+        const fLine2D baseClips   = MulLine(bXf, base  .BestEdgeFor(bXf.MulInvD(n))),
+                      targetClips = MulLine(tXf, target.BestEdgeFor(tXf.MulInvD(-n)));
 
         const bool flip = std::abs(baseClips.forward.Dot(n)) > std::abs(targetClips.forward.Dot(n));
         const fLine2D& ref = flip ? targetClips : baseClips, &inc = flip ? baseClips : targetClips;

@@ -3,6 +3,8 @@
 #include "Utils/Math/Vector.h"
 
 namespace Quasi::Physics2D {
+    using namespace Math;
+
     class SeperatingAxisSolver;
 
     struct Manifold {

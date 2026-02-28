@@ -1,14 +1,16 @@
 #pragma once
-#include "PhysicsTransform2D.h"
 #include "Utils/Ref.h"
 #include "Utils/Math/Vector.h"
+#include "Utils/Math/Transform2D.h"
 
 namespace Quasi::Physics2D {
+    using namespace Math;
+
     class Shape;
     
     class SeperatingAxisSolver {
         Ref<const Shape> base, target;
-        Ref<const PhysicsTransform> baseXf, targetXf;
+        Ref<const Pose2D> baseXf, targetXf;
     public:
         enum class Subject   { BASE = 0, TARGET = 1, NEITHER };
         enum class CheckMode { OVERLAP, COLLISION };
@@ -24,17 +26,17 @@ namespace Quasi::Physics2D {
         u32 axisIndex = 0;
 
 
-        SeperatingAxisSolver(const Shape& s1, const PhysicsTransform& xf1,
-                             const Shape& s2, const PhysicsTransform& xf2, CheckMode mode) :
+        SeperatingAxisSolver(const Shape& s1, const Pose2D& xf1,
+                             const Shape& s2, const Pose2D& xf2, CheckMode mode) :
             base(s1), target(s2), baseXf(xf1), targetXf(xf2), checkMode(mode) {}
     public:
-        static SeperatingAxisSolver CheckOverlapFor  (const Shape& s1, const PhysicsTransform& xf1,
-                                                      const Shape& s2, const PhysicsTransform& xf2);
-        static SeperatingAxisSolver CheckCollisionFor(const Shape& s1, const PhysicsTransform& xf1,
-                                                      const Shape& s2, const PhysicsTransform& xf2);
+        static SeperatingAxisSolver CheckOverlapFor  (const Shape& s1, const Pose2D& xf1,
+                                                      const Shape& s2, const Pose2D& xf2);
+        static SeperatingAxisSolver CheckCollisionFor(const Shape& s1, const Pose2D& xf1,
+                                                      const Shape& s2, const Pose2D& xf2);
 
-        OptRef<const Shape>            CurrentlyCheckedShape() const;
-        OptRef<const PhysicsTransform> CurrentlyCheckedTransform() const;
+        OptRef<const Shape>  CurrentlyCheckedShape() const;
+        OptRef<const Pose2D> CurrentlyCheckedTransform() const;
 
         void SetCheckFor(Subject s);
         bool CheckAxisFor(Subject s);

@@ -55,7 +55,7 @@ namespace Quasi::Graphics {
     }
 
     Math::Matrix3D CameraController3D::GetViewMat() const {
-        return GetViewTransform().TransformMatrix().InvTransRot();
+        return GetViewTransform().IntoMatrix().InvTransRot();
     }
 
     Math::Transform3D CameraController3D::GetViewTransform() const {

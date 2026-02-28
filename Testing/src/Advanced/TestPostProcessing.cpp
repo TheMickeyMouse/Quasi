@@ -21,16 +21,16 @@ namespace Test {
                 in (Position),
                 out (Position) = Position;,
                 out (Color) = fColor::Better::Colors[i];
-            )), Transform3D::Scale(s)));
+            )), Transform3D(0, s, {})));
 
-            cubes[i].SetTransform(Transform3D::Translate(fv3::FromCorner({ (bool)(i & 1), (bool)(i & 2), (bool)(i & 4) }, 1)));
+            cubes[i].SetTransform(Transform3D(fv3::FromCorner({ (bool)(i & 1), (bool)(i & 2), (bool)(i & 4) }, 1)));
         }
         cubes.Push(
         Graphics::Meshes::Cube().Create(QGLCreateBlueprint$(Graphics::VertexColor3D, (
                 in (Position),
                 out (Position) = Position;,
                 out (Color) = fColor::Better::Gray();
-        )), Transform3D::Scale(s)));
+        )), Transform3D(0, s, {})));
 
         scene.UseShader(Graphics::Shader::StdColored);
         scene.SetProjection(Matrix3D::PerspectiveFov(90.0_deg, gdevice.GetAspectRatio(), 0.01f, 100.0f));
@@ -75,11 +75,11 @@ namespace Test {
     }
 
     void TestPostProcessing::OnUpdate(Graphics::GraphicsDevice& gdevice, float deltaTime) {
-        transform.rotation += turnSpeed * deltaTime;
+        transform.rot += turnSpeed * deltaTime;
     }
 
     void TestPostProcessing::OnRender(Graphics::GraphicsDevice& gdevice) {
-        scene.SetCamera(transform.TransformMatrix());
+        scene.SetCamera(transform.IntoMatrix());
 
         if (currShader != &shaderOutline) {
             Graphics::Render::EnableDepth();

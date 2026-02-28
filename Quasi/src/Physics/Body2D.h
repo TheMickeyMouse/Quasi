@@ -1,11 +1,13 @@
 #pragma once
 #include "Collision2D.h"
 
-#include "PhysicsTransform2D.h"
 #include "Shape2D.h"
 #include "Utils/Math/Vector.h"
+#include "Utils/Math/Transform2D.h"
 
 namespace Quasi::Physics2D {
+    using namespace Math;
+    
     enum class BodyType {
         STATIC,
         DYNAMIC,
@@ -56,16 +58,16 @@ namespace Quasi::Physics2D {
         void Stop() { velocity = 0; angularVelocity = 0; }
 
         Manifold CollideWith(const Body& target) const;
-        Manifold CollideWith(const Shape& target, const PhysicsTransform& xf) const;
+        Manifold CollideWith(const Shape& target, const Pose2D& xf) const;
         bool OverlapsWith(const Body& target) const;
-        bool OverlapsWith(const Shape& target, const PhysicsTransform& xf) const;
-        PhysicsTransform GetTransform() const;
+        bool OverlapsWith(const Shape& target, const Pose2D& xf) const;
+        Pose2D GetTransform() const;
 
         void Update(float dt);
         void TryUpdateTransforms();
         void SetShapeHasChanged();
 
-        void SetTrigger(TriggerFn trigger);
+        void SetTrigger(TriggerFn t);
         void TryCallTrigger(const Body& other, EventType event);
 
         bool IsStatic()  const { return type == BodyType::STATIC; }

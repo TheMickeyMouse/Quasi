@@ -119,10 +119,10 @@ namespace Test {
 
             for (u32 i = 0; i < lights.Length(); ++i) {
                 ImGui::EditLight(Text::Format("Light {}", i + 1), lights[i]);
-                const Math::fColor lightColor = (lights[i].color * 2).AddAlpha(1);
+                const Math::fColor lightColor = (lights[i].color * 2.0f).AddAlpha(1);
                 for (auto& v : lightMeshes[i].vertices)
                     v.Color = lightColor;
-                lightMeshes[i].SetTransform(Math::Transform3D::Translate(lights[i].Position()));
+                lightMeshes[i].SetTransform(Math::Transform3D(lights[i].Position()));
             }
             ImGui::TreePop();
         }
@@ -181,6 +181,6 @@ namespace Test {
                 out (Color) = (color * 2).AddAlpha(1);
             )))
         );
-        lightMeshes.Last().SetTransform(Math::Transform3D::Translate(point.position));
+        lightMeshes.Last().SetTransform(Math::Transform3D(point.position));
     }
 }

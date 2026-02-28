@@ -1,9 +1,8 @@
 #pragma once
-#include <ranges>
 
 namespace Quasi::Graphics {
     template <IVertex Vtx> Mesh<Vtx>& Mesh<Vtx>::EmbedTransform() {
-        const auto transform = modelTransform.TransformMatrix().AsTransform();
+        const MTransform transform = modelTransform;
         for (auto& v : vertices) {
             v = v.Mul(transform);
         }
@@ -16,7 +15,7 @@ namespace Quasi::Graphics {
     void Mesh<Vtx>::AddTo(RenderData& rd) const {
         rd.PushIndicesOffseted(indices, sizeof(Vtx));
 
-        const auto transform = modelTransform.TransformMatrix().AsTransform();
+        const MTransform transform = modelTransform;
         for (const Vtx& v : vertices) {
             rd.PushVertex(v.Mul(transform));
         }
@@ -25,9 +24,9 @@ namespace Quasi::Graphics {
     template <IVertex Vtx>
     Mesh<Vtx>& Mesh<Vtx>::Add(const Mesh& m) {
         auto batch = NewBatch();
-        const auto mLocal = m.modelTransform.TransformMatrix(),
-                   modelInverse = modelTransform.TransformMatrix().InvTRS();
-        const auto composition = (modelInverse * mLocal).AsTransform();
+        const MTransform mLocal = m.modelTransform,
+                         modelInverse = modelTransform,
+                         composition = modelInverse * mLocal;
         batch.PushSpan(m.vertices.Iter().Map([&] (const Vtx& v) {
             return v.Mul(composition);
         }), m.indices);

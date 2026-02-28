@@ -25,7 +25,7 @@ namespace Test {
         for (u32 i = 0; i < INSTANCE_NUM; ++i) {
             const u32 x = i % 3, y = i / 3 % 3, z = i / 9;
             const fv3 pos = { (f32)x, (f32)y, (f32)z };
-            transforms[i].position = (pos - 1) * 3;
+            transforms[i].pos = (pos - 1) * 3;
             transforms[i].scale = 0.75f;
             colors[i] = fColor3 { (fv3)(colorTransformer * (pos * pos / 4)) };
         }
@@ -56,12 +56,13 @@ namespace Test {
         scene.SetProjection(camera.GetProjMat());
         scene.SetCamera(camera.GetViewMat());
 
-        Vec<Math::Matrix3D> modelMats, normMats;
+        Vec<Math::Matrix3D> modelMats;
+        Vec<Math::Matrix3x3> normMats;
         modelMats.Reserve(INSTANCE_NUM);
         normMats.Reserve(INSTANCE_NUM);
         for (const auto& t : transforms) {
-            modelMats.Push(t.TransformMatrix());
-            normMats.Push(t.NormalTransform().TransformMatrix());
+            modelMats.Push(t.IntoMatrix());
+            normMats.Push(t.IntoMatrixN());
         }
 
         scene.DrawInstanced(cube, INSTANCE_NUM, Graphics::UseArgs({
@@ -97,7 +98,7 @@ namespace Test {
 
     void TestDrawInstances::RandomizeRotations(Graphics::GraphicsDevice& gdevice) {
         for (u32 i = 0; i < INSTANCE_NUM; ++i) {
-            transforms[i].rotation = Math::Rotor3D::Random(gdevice.GetRand());
+            transforms[i].rot = Math::Rotor3D::Random(gdevice.GetRand());
         }
     }
 } // Test

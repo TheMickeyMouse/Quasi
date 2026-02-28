@@ -55,7 +55,7 @@ namespace Test {
 
         for (auto& v : lightSource.vertices)
             v.Color = (Math::fColor)lightColor;
-        lightSource.SetTransform(Math::Transform3D::Translate(lightPos));
+        lightSource.SetTransform(Math::Transform3D(lightPos));
         lightScene.Draw(lightSource);
 
         scene.SetProjection(camera.GetProjMat());

@@ -85,15 +85,20 @@ namespace Quasi::Math {
         return Rotor3D::FromQuat(q);
     }
 
+    Matrix<2> Matrix<3, 3>::As2x2() const {
+        const auto& m = *this;
+        return Matrix2x2::FromColumnMatrix({ m[0][0], m[0][1], m[1][0], m[1][1] });
+    }
+
     MatrixTransform2D Matrix<3, 3>::AsTransform() const {
-        const Matrix2x2 sub = Matrix2x2::FromColumns({ unitVectors[0].As2D(), unitVectors[1].As2D() });
+        const Matrix2x2 sub = As2x2();
         return { *this, sub.Inverse() };
     }
 
     Matrix<3> Matrix<3>::Transform(const fv2& translate, const fv2& scale, const Rotor2D& rotate) {
         Matrix m = rotate.AsMatrix();
-        m[0].x *= scale.x; m[1].x *= scale.x;
-        m[0].y *= scale.y; m[1].y *= scale.y;
+        m[0] *= scale.x;
+        m[1] *= scale.y;
         m[2] = translate.AddZ(1);
         return m;
     }
@@ -151,8 +156,13 @@ namespace Quasi::Math {
         return Rotor3D::FromQuat(q);
     }
 
+    Matrix<3> Matrix<4, 4>::As3x3() const {
+        const auto& m = *this;
+        return Matrix3x3::FromColumnMatrix({ m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1], m[2][2] });
+    }
+
     MatrixTransform3D Matrix<4, 4>::AsTransform() const {
-        const Matrix3x3 sub = Matrix3x3::FromColumns({ unitVectors[0].As3D(), unitVectors[1].As3D(), unitVectors[2].As3D() });
+        const Matrix3x3 sub = As3x3();
         return { *this, sub.Inverse() };
     }
 
@@ -209,9 +219,9 @@ namespace Quasi::Math {
 
     Matrix<4> Matrix<4>::Transform(const fv3& translate, const fv3& scale, const Rotor3D& rotate) {
         Matrix m = rotate.AsMatrix();
-        m[0].x *= scale.x; m[1].x *= scale.x; m[2].x *= scale.x;
-        m[0].y *= scale.y; m[1].y *= scale.y; m[2].y *= scale.y;
-        m[0].z *= scale.z; m[1].z *= scale.z; m[2].z *= scale.z;
+        m[0] *= scale.x;
+        m[1] *= scale.y;
+        m[2] *= scale.z;
         m[3] = translate.AddW(1);
         return m;
     }
@@ -230,8 +240,4 @@ namespace Quasi::Math {
              0,            0,            0,            1,
         }};
     }
-
-    template struct Matrix<2>;
-    template struct Matrix<3>;
-    template struct Matrix<4>;
 }
