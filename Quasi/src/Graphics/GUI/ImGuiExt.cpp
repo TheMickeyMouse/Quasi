@@ -264,18 +264,18 @@ namespace ImGui {
     Q_IMGUI_EDITOR(EditTransform, Q Math::Transform2D& transform, float speed) {
         (void)width;
         if (!TreeNode(title.Data())) return;
-        EditVector    ("Position", transform.position, speed);
+        EditVector    ("Position", transform.pos, speed);
         EditVector    ("Scale",    transform.scale, speed);
-        EditRotation2D("Rotation", transform.rotation);
+        EditRotation2D("Rotation", transform.rot);
         TreePop();
     }
 
     Q_IMGUI_EDITOR(EditTransform, Q Math::Transform3D& transform, float speed) {
         (void)width;
         if (!TreeNode(title.Data())) return;
-        EditVector    ("Position", transform.position, speed);
+        EditVector    ("Position", transform.pos, speed);
         EditVector    ("Scale",    transform.scale, speed);
-        EditRotation3D("Rotation", transform.rotation);
+        EditRotation3D("Rotation", transform.rot);
         TreePop();
     }
 

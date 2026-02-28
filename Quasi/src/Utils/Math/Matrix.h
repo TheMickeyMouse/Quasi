@@ -198,11 +198,13 @@ namespace Quasi::Math {
         // assumes the matrix has only rotation and scaling elements (linear vs affine doesnt matter)
         // and calculates the inverse (much faster than the naive method)
         Super InvRotScale() const requires SquareMatrix {
+            return InvRotScaleTranspose().Transpose();
+        }
+        Super InvRotScaleTranspose() const requires SquareMatrix {
             Column scaleSq = GetScaleLinearSq();
-            Super inv = *this;
+            Super inv = super();
             for (usize i = 0; i < M; ++i)
                 inv.unitVectors[i] *= 1 / scaleSq[i];
-            Transpose();
             return inv;
         }
         // assumes the matrix has only rotation and translation elements
@@ -354,6 +356,7 @@ namespace Quasi::Math {
         Matrix& RotateByLin(const Rotor3D& rotation);
         Rotor3D GetRotationLin() const;
 
+        Matrix<2> As2x2() const;
         MatrixTransform2D AsTransform() const;
         static Matrix Transform(const fv2& translate, const fv2& scale, const Rotor2D& rotate);
     };
@@ -366,6 +369,7 @@ namespace Quasi::Math {
         Matrix& RotateBy(const Rotor3D& rotation);
         Rotor3D GetRotation() const;
 
+        Matrix<3> As3x3() const;
         MatrixTransform3D AsTransform() const;
         static Matrix OrthoProjection(const fRect3D& box);
         static Matrix PerspectiveProjection(const fRect3D& box);

@@ -12,6 +12,7 @@ namespace Quasi::Graphics {
         using VersionOf = IfElse<Vtx::DIMENSION == 2, T2D,
                           IfElse<Vtx::DIMENSION == 3, T3D, void>>;
         using Transform = VersionOf<Math::Transform2D, Math::Transform3D>;
+        using MTransform = VersionOf<Math::MatrixTransform2D, Math::MatrixTransform3D>;
     public:
         Vec<Vtx> vertices;
         Vec<TriIndices> indices;

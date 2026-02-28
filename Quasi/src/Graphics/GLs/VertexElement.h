@@ -12,7 +12,7 @@
         Q_INVOKE(Q_ARGS_SKIP, Q_ITERATE_SEQUENCE(Q_GL_VERTLAYOUT_IT, MEMBS)) \
     >(); \
     \
-    T Mul(const Math::ITransformation##DIM auto& _tr) const { \
+    T Mul(const Math::MatrixTransform##DIM& _tr) const { \
         Q_IF_ARGS_ELSE((__VA_ARGS__), (return __VA_ARGS__(_tr);), ( \
             return T { Q_INVOKE(Q_ARGS_SKIP, Q_ITERATE_SEQUENCE(Q_GL_VERTTRANS_IT, MEMBS)) }; \
         ))\
@@ -28,9 +28,9 @@ namespace Quasi::Graphics {
     template <class T> concept IVertex = requires { T::IS_GL_VERTEX; };
 
     template <class T>
-    T TransformPosition(const T& p, const auto& transform) { return transform.Transform(p); }
+    T TransformPosition(const T& p, const auto& transform) { return transform.Mul(p); }
     template <class T>
-    T TransformNormal(const T& n, const auto& transform) { return transform.TransformNormal(n); }
+    T TransformNormal(const T& n, const auto& transform) { return transform.MulN(n); }
     template <class T> T&& TransfromCustom(T&& custom) { return (T&&)custom; }
 
     struct Vertex2D {

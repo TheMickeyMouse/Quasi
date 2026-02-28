@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#include <Utils/Macros.h>
-
 #include "Utils/Array.h"
 #include "Utils/String.h"
 #include "Utils/CStr.h"

@@ -512,6 +512,7 @@ namespace Quasi::Math {
     public:
         Vector(T s = 0, T w = 0) : x(s), y(s), z(s), w(w) {}
         Vector(T x, T y, T z, T w = 1) : x(x), y(y), z(z), w(w) {}
+        Vector(const Vector<T, 3>& xyz, T w = 1) : x(xyz.x), y(xyz.y), z(xyz.z), w(w) {}
 
         static Vector XAxis() { return { 1, 0, 0, 0 }; }
         static Vector YAxis() { return { 0, 1, 0, 0 }; }

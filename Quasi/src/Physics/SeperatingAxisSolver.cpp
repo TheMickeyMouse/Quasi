@@ -4,14 +4,14 @@
 
 namespace Quasi::Physics2D {
     SeperatingAxisSolver SeperatingAxisSolver::CheckOverlapFor(
-        const Shape& s1, const PhysicsTransform& xf1,
-        const Shape& s2, const PhysicsTransform& xf2) {
+        const Shape& s1, const Pose2D& xf1,
+        const Shape& s2, const Pose2D& xf2) {
         return { s1, xf1, s2, xf2, OVERLAP };
     }
 
     SeperatingAxisSolver SeperatingAxisSolver::CheckCollisionFor(
-        const Shape& s1, const PhysicsTransform& xf1,
-        const Shape& s2, const PhysicsTransform& xf2) {
+        const Shape& s1, const Pose2D& xf1,
+        const Shape& s2, const Pose2D& xf2) {
         return { s1, xf1, s2, xf2, COLLISION };
     }
 
@@ -21,7 +21,7 @@ namespace Quasi::Physics2D {
                nullptr;
     }
 
-    OptRef<const PhysicsTransform> SeperatingAxisSolver::CurrentlyCheckedTransform() const {
+    OptRef<const Pose2D> SeperatingAxisSolver::CurrentlyCheckedTransform() const {
         return currentChecked == BASE   ? OptRefs::Some(baseXf)   :
                currentChecked == TARGET ? OptRefs::Some(targetXf) :
                nullptr;
@@ -41,18 +41,18 @@ namespace Quasi::Physics2D {
         ++axisIndex;
         if (!collides) return false;
 
-        const fv2 worldAxis = IsChecking(BASE)   ? baseXf  ->TransformDir(axis) :
-                              IsChecking(TARGET) ? targetXf->TransformDir(axis) :
+        const fv2 worldAxis = IsChecking(BASE)   ? baseXf  ->MulD(axis) :
+                              IsChecking(TARGET) ? targetXf->MulD(axis) :
                               axis;
 
         const fRange bproj = (IsChecking(BASE) ?
                              base->ProjectOntoOwnAxis(axisIndex - 1, axis) :
-                             base->ProjectOntoAxis(baseXf->TransformInverseDir(worldAxis)))
-                           + baseXf->position.Dot(worldAxis),
+                             base->ProjectOntoAxis(baseXf->MulInvD(worldAxis)))
+                           + baseXf->pos.Dot(worldAxis),
                      tproj = (IsChecking(TARGET) ?
                              target->ProjectOntoOwnAxis(axisIndex - 1, axis) :
-                             target->ProjectOntoAxis(targetXf->TransformInverseDir(worldAxis)))
-                           + targetXf->position.Dot(worldAxis);
+                             target->ProjectOntoAxis(targetXf->MulInvD(worldAxis)))
+                           + targetXf->pos.Dot(worldAxis);
 
         const float d1 = bproj.max - tproj.min, d2 = tproj.max - bproj.min,
                     depth = std::min(d1, d2);

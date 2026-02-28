@@ -65,7 +65,7 @@ namespace Quasi::Physics2D {
         return c1->DistSq(*c2);
     }
 
-    Manifold CollideShapes(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
+    Manifold CollideShapes(const Shape& s1, const Pose2D& xf1, const Shape& s2, const Pose2D& xf2) {
         const Shape::ClipPrimitive prim1 = s1.PreferedPrimitive(),
                                    prim2 = s2.PreferedPrimitive();
 
@@ -97,27 +97,27 @@ namespace Quasi::Physics2D {
         }
     }
 
-    Manifold CollideCircles(const CircleShape& s1, const PhysicsTransform& xf1, const CircleShape& s2, const PhysicsTransform& xf2) {
-        float distsq = xf1.position.DistSq(xf2.position);
+    Manifold CollideCircles(const CircleShape& s1, const Pose2D& xf1, const CircleShape& s2, const Pose2D& xf2) {
+        float distsq = xf1.pos.DistSq(xf2.pos);
         if (distsq >= (s1.radius + s2.radius) * (s1.radius + s2.radius))
             return Manifold::None();
 
         distsq = std::sqrt(distsq);
-        const fv2 n = (xf2.position - xf1.position) / distsq;
+        const fv2 n = (xf2.pos - xf1.pos) / distsq;
         return Manifold {
             .seperatingNormal = n,
-            .contactPoint = { xf1.position - n * s2.radius },
+            .contactPoint = { xf1.pos - n * s2.radius },
             .contactDepth = { s1.radius + s2.radius - distsq },
             .contactCount = 1,
         };
     }
 
-    Manifold CollideCircleShape(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
+    Manifold CollideCircleShape(const Shape& s1, const Pose2D& xf1, const Shape& s2, const Pose2D& xf2) {
         SeperatingAxisSolver sat = SeperatingAxisSolver::CheckCollisionFor(s1, xf1, s2, xf2);
         const auto& circle = *s1.As<CircleShape>();
 
         sat.SetCheckFor(SeperatingAxisSolver::NEITHER);
-        sat.CheckAxis(xf2.Transform(s2.NearestPointTo(xf2.TransformInverse(xf1.position))).Tangent(xf1.position));
+        sat.CheckAxis(xf2.Mul(s2.NearestPointTo(xf2.MulInv(xf1.pos))).Tangent(xf1.pos));
 
         sat.CheckAxisFor(SeperatingAxisSolver::TARGET);
 
@@ -126,13 +126,13 @@ namespace Quasi::Physics2D {
 
         return Manifold {
             .seperatingNormal = sat.GetSepAxis(),
-            .contactPoint = { xf1.position + sat.GetSepAxis() * circle.radius },
+            .contactPoint = { xf1.pos + sat.GetSepAxis() * circle.radius },
             .contactDepth = { sat.GetDepth() },
             .contactCount = 1,
         };
     }
 
-    Manifold CollidePolygons(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
+    Manifold CollidePolygons(const Shape& s1, const Pose2D& xf1, const Shape& s2, const Pose2D& xf2) {
         SeperatingAxisSolver sat = SeperatingAxisSolver::CheckCollisionFor(s1, xf1, s2, xf2);
         sat.CheckAxisFor(SeperatingAxisSolver::BASE);
         sat.CheckAxisFor(SeperatingAxisSolver::TARGET);
@@ -143,15 +143,15 @@ namespace Quasi::Physics2D {
         return Manifold::From(sat);
     }
 
-    Manifold CollideCapsules(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
+    Manifold CollideCapsules(const Shape& s1, const Pose2D& xf1, const Shape& s2, const Pose2D& xf2) {
         const CapsuleShape& cap1 = s1.As<CapsuleShape>(),
                           & cap2 = s2.As<CapsuleShape>();
         SeperatingAxisSolver sat = SeperatingAxisSolver::CheckCollisionFor(s1, xf1, s2, xf2);
 
-        const fv2 f1 = xf1.TransformDir(cap1.forward),
-                  f2 = xf2.TransformDir(cap2.forward);
+        const fv2 f1 = xf1.MulD(cap1.forward),
+                  f2 = xf2.MulD(cap2.forward);
 
-        const fv2 off = xf1.position - xf2.position;
+        const fv2 off = xf1.pos - xf2.pos;
         const fv2 tip1 =  off + f1, end1 =  off - f1,
                   tip2 = -off + f2, end2 = -off - f2;
         const fv2 axis1 = tip1 - f2 * std::clamp(tip1.Dot(f2) * cap2.invLenSq, -1.0f, 1.0f),
@@ -175,37 +175,37 @@ namespace Quasi::Physics2D {
             .seperatingNormal = sat.GetSepAxis(),
             .contactPoint = {
                 useSecondCapsule ?
-                xf2.Transform(cap2.FurthestAlong(xf2.TransformInverseDir(-sat.GetSepAxis()))) :
-                xf1.Transform(cap1.FurthestAlong(xf1.TransformInverseDir( sat.GetSepAxis())))
+                xf2.Mul(cap2.FurthestAlong(xf2.MulInvD(-sat.GetSepAxis()))) :
+                xf1.Mul(cap1.FurthestAlong(xf1.MulInvD( sat.GetSepAxis())))
             },
             .contactDepth = { sat.GetDepth() },
             .contactCount = 1,
         };
     }
 
-    Manifold CollidePolygonCapsule(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
+    Manifold CollidePolygonCapsule(const Shape& s1, const Pose2D& xf1, const Shape& s2, const Pose2D& xf2) {
         SeperatingAxisSolver sat = SeperatingAxisSolver::CheckCollisionFor(s1, xf1, s2, xf2);
         sat.CheckAxisFor(SeperatingAxisSolver::BASE);
         sat.CheckAxisFor(SeperatingAxisSolver::TARGET);
 
         const auto& cap = *s2.As<CapsuleShape>();
         sat.SetCheckFor(SeperatingAxisSolver::NEITHER);
-        const fv2 tip = xf2.Transform(cap.forward), end = 2 * xf2.position - tip;
-        sat.CheckAxis(xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(tip))).Tangent(tip));
-        sat.CheckAxis(xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(end))).Tangent(end));
+        const fv2 tip = xf2.Mul(cap.forward), end = 2 * xf2.pos - tip;
+        sat.CheckAxis(xf1.Mul(s1.NearestPointTo(xf1.MulInv(tip))).Tangent(tip));
+        sat.CheckAxis(xf1.Mul(s1.NearestPointTo(xf1.MulInv(end))).Tangent(end));
 
         if (!sat.Collides())
             return Manifold::None();
 
         return Manifold {
             .seperatingNormal = sat.GetSepAxis(),
-            .contactPoint = { xf2.Transform(cap.FurthestAlong(xf2.TransformInverseDir(-sat.GetSepAxis()))) },
+            .contactPoint = { xf2.Mul(cap.FurthestAlong(xf2.MulInvD(-sat.GetSepAxis()))) },
             .contactDepth = { sat.GetDepth() },
             .contactCount = 1,
         };
     }
 
-    bool OverlapShapes(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
+    bool OverlapShapes(const Shape& s1, const Pose2D& xf1, const Shape& s2, const Pose2D& xf2) {
         const Shape::ClipPrimitive prim1 = s1.PreferedPrimitive(),
                                    prim2 = s2.PreferedPrimitive();
 
@@ -236,19 +236,19 @@ namespace Quasi::Physics2D {
         }
     }
 
-    bool OverlapCircles(const CircleShape& s1, const PhysicsTransform& xf1, const CircleShape& s2, const PhysicsTransform& xf2) {
-        return xf1.position.InRange(xf2.position, s1.radius + s2.radius);
+    bool OverlapCircles(const CircleShape& s1, const Pose2D& xf1, const CircleShape& s2, const Pose2D& xf2) {
+        return xf1.pos.InRange(xf2.pos, s1.radius + s2.radius);
     }
 
-    bool OverlapCircleShape(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
+    bool OverlapCircleShape(const Shape& s1, const Pose2D& xf1, const Shape& s2, const Pose2D& xf2) {
         SeperatingAxisSolver sat = SeperatingAxisSolver::CheckOverlapFor(s1, xf1, s2, xf2);
         sat.CheckAxisFor(SeperatingAxisSolver::TARGET);
         sat.SetCheckFor(SeperatingAxisSolver::NEITHER);
-        sat.CheckAxis(xf2.Transform(s2.NearestPointTo(xf2.TransformInverse(xf1.position))).Tangent(xf1.position));
+        sat.CheckAxis(xf2.Mul(s2.NearestPointTo(xf2.MulInv(xf1.pos))).Tangent(xf1.pos));
         return sat.Collides();
     }
 
-    bool OverlapPolygons(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
+    bool OverlapPolygons(const Shape& s1, const Pose2D& xf1, const Shape& s2, const Pose2D& xf2) {
         SeperatingAxisSolver sat = SeperatingAxisSolver::CheckCollisionFor(s1, xf1, s2, xf2);
         sat.CheckAxisFor(SeperatingAxisSolver::BASE);
         sat.CheckAxisFor(SeperatingAxisSolver::TARGET);
@@ -256,24 +256,24 @@ namespace Quasi::Physics2D {
         return sat.Collides();
     }
 
-    bool OverlapCapsules(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
+    bool OverlapCapsules(const Shape& s1, const Pose2D& xf1, const Shape& s2, const Pose2D& xf2) {
         const CapsuleShape& cap1 = s1.As<CapsuleShape>(),
                           & cap2 = s2.As<CapsuleShape>();
-        const auto [p1, p2] = fLine2D        { xf1.position - cap1.forward, xf1.position + cap1.forward }
-                             .NearestBetween({ xf2.position - cap2.forward, xf2.position + cap2.forward });
+        const auto [p1, p2] = fLine2D        { xf1.pos - cap1.forward, xf1.pos + cap1.forward }
+                             .NearestBetween({ xf2.pos - cap2.forward, xf2.pos + cap2.forward });
         return p1.InRange(p2, cap1.radius + cap2.radius);
     }
 
-    bool OverlapPolygonCapsule(const Shape& s1, const PhysicsTransform& xf1, const Shape& s2, const PhysicsTransform& xf2) {
+    bool OverlapPolygonCapsule(const Shape& s1, const Pose2D& xf1, const Shape& s2, const Pose2D& xf2) {
         SeperatingAxisSolver sat = SeperatingAxisSolver::CheckCollisionFor(s1, xf1, s2, xf2);
         sat.CheckAxisFor(SeperatingAxisSolver::BASE);
         sat.CheckAxisFor(SeperatingAxisSolver::TARGET);
 
         const auto& cap = *s2.As<CapsuleShape>();
         sat.SetCheckFor(SeperatingAxisSolver::NEITHER);
-        const fv2 tip = xf2.Transform(cap.forward), end = 2 * xf2.position - tip;
-        sat.CheckAxis(xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(tip))).Tangent(tip));
-        sat.CheckAxis(xf1.Transform(s1.NearestPointTo(xf1.TransformInverse(end))).Tangent(end));
+        const fv2 tip = xf2.Mul(cap.forward), end = 2 * xf2.pos - tip;
+        sat.CheckAxis(xf1.Mul(s1.NearestPointTo(xf1.MulInv(tip))).Tangent(tip));
+        sat.CheckAxis(xf1.Mul(s1.NearestPointTo(xf1.MulInv(end))).Tangent(end));
 
         return sat.Collides();
     }
