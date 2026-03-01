@@ -21,14 +21,14 @@ namespace Test {
     private:
         Graphics::RenderObject<Vertex> scene;
         Vec<Graphics::MTLMaterial> materials;
-        Vec<Graphics::Mesh<Vertex>> meshes;
+        Graphics::Mesh<Vertex> worldMesh;
         Vec<Graphics::Light> lights;
         static constexpr int MAX_LIGHTS = 8;
         Graphics::CameraController3D camera;
         Graphics::Bloom bloom {{ 1920, 1080 }};
 
-        Graphics::RenderObject<Graphics::VertexColor3D> lightScene;
-        Vec<Graphics::Mesh<Graphics::VertexColor3D>> lightMeshes;
+        Graphics::RenderObject<Graphics::Vertex3D> lightScene;
+        Graphics::Mesh<Graphics::Vertex3D> lightBox;
 
         float ambientStrength = 0.03f, specularStrength = 1.2f;
 

@@ -23,6 +23,8 @@ namespace Quasi {
         constexpr Array(const InnerRawArray& r) { Memory::RangeCopyNoOverlap(array, r, N); }
         constexpr Array(InnerRawArray&& r)      { Memory::RangeMoveNoOverlap(array, r, N); }
         constexpr Array(SimilarTo<T> auto&&... args) : array { args... } {}
+        InnerRawArray& CArr() { return array; }
+        const InnerRawArray& CArr() const { return array; }
     };
 
     template <class T, SimilarTo<T>... U>
@@ -31,6 +33,9 @@ namespace Quasi {
     Array(T(&&)[N]) -> Array<RemQual<T>, N>;
 
     namespace Arrays {
+        template <class T, usize N>
+        Array<T, N> Of(const T (&x)[N]) { return Array<T, N> { x }; }
+
         template <class A>
         Array<ArrayElement<A>, ArrayLength<A>> FromCArray(A&& array) {
             return { array };

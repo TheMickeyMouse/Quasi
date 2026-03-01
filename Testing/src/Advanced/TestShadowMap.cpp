@@ -4,8 +4,6 @@
 
 #include "GLs/VertexBlueprint.h"
 #include "GUI/ImGuiExt.h"
-#include "Meshes/Cube.h"
-#include "Meshes/Quad.h"
 #include "ModelLoading/OBJModelLoader.h"
 
 namespace Test {
@@ -18,7 +16,7 @@ namespace Test {
 
         for (int i = 0; i < model.objects.Length(); ++i) {
             meshes.Push(
-                std::move(model.objects[i].mesh).GeometryConvert(QGLCreateBlueprint$(Vertex, (
+                model.objects[i].mesh.GeometryConvert(QGLCreateBlueprint$(Vertex, (
                     in (Position, Normal),
                     out (Position) = Position;,
                     out (Color) = Math::fColor::Better::Colors[i];,
@@ -46,14 +44,7 @@ namespace Test {
         depthMap.Complete();
         depthMap.Unbind();
 
-        shadowMapDisplay = gdevice.CreateNewRender<Graphics::VertexTexture2D>(4, 2);
-        shadowMapDisplay.UseShaderFromFile(RES("display.vert"), RES("display.frag"));
-
-        screenQuad = Graphics::Meshes::Quad().Create(QGLCreateBlueprint$(Graphics::VertexTexture2D, (
-            in (Position),
-            out (Position) = Position;,
-            out (TextureCoordinate) = (Position + 1) * 0.5f;
-        )));
+        drawDepthBuffer = Graphics::Shader::New(String(QShaderQuad$(330)) + Text::ReadFile(RES("display.frag")).Unwrap());
 
         Graphics::Render::EnableCullFace();
         Graphics::Render::SetFrontFacing(Graphics::OrientationMode::CLOCKWISE);
@@ -90,11 +81,11 @@ namespace Test {
         Graphics::Render::ClearColorBit();
         Graphics::Render::ClearDepthBit();
         if (showDepthMap) {
-            shadowMapDisplay.Draw(screenQuad, Graphics::UseArgs({
-                { "displayTex", depthTex, 1 },
-                { "near", clipDistance.min },
-                { "far", clipDistance.max }
-            }, false));
+            drawDepthBuffer.Bind();
+            drawDepthBuffer.SetUniformTex("displayTex", depthTex, 1);
+            drawDepthBuffer.SetUniformFloat("near", clipDistance.min);
+            drawDepthBuffer.SetUniformFloat("far",  clipDistance.max);
+            Graphics::Render::DrawScreenQuad(drawDepthBuffer);
         } else {
             scene.SetProjection(camera.GetProjMat());
             scene.SetCamera(camera.GetViewMat());
@@ -122,7 +113,6 @@ namespace Test {
 
     void TestShadowMap::OnDestroy(Graphics::GraphicsDevice& gdevice) {
         scene.Destroy();
-        shadowMapDisplay.Destroy();
         Graphics::Render::DisableCullFace();
     }
 } // Test

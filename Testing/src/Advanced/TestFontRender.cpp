@@ -31,7 +31,7 @@ namespace Test {
             { { -100.0f * aspect, +100.0f }, 1, { 0.0f, 0.0f }, 1 },
         });
         
-        Vec<Graphics::TriIndices> atlIndices = Vec<Graphics::TriIndices>::New({
+        Vec<Graphics::Triplet> atlIndices = Vec<Graphics::Triplet>::New({
             { 0, 1, 2 },
             { 2, 3, 0 }
         });
@@ -46,7 +46,7 @@ namespace Test {
             { { -200.0f, +200.0f }, bgColor, { 0.0f, 0.0f }, 0 },
         });
         
-        Vec<Graphics::TriIndices> bgIndices = Vec<Graphics::TriIndices>::New({
+        Vec<Graphics::Triplet> bgIndices = Vec<Graphics::Triplet>::New({
             { 0, 1, 2 },
             { 2, 3, 0 }
         });

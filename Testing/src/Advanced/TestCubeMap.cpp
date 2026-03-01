@@ -4,19 +4,18 @@
 
 #include "GLs/VertexBlueprint.h"
 #include "GUI/ImGuiExt.h"
-#include "Meshes/Cube.h"
+#include "Meshes/MeshBuilder.h"
 
 namespace Test {
     void TestCubeMap::OnInit(Graphics::GraphicsDevice& gdevice) {
         using Math::fv2;
 
         scene = gdevice.CreateNewRender<Vertex>();
-        Graphics::Meshes::Cube().Merge(QGLCreateBlueprint$(Vertex, (
-            in (Position, Normal),
-            out (Position)          = Position;,
-            out (TextureCoordinate) = Position;,
-            out (Normal)            = Normal;
-        )), skybox.NewBatch());
+        skybox = Graphics::Meshes::Cube().Create().IntoMesh(
+            [] (const Math::fv3& p, const Math::fv3& n) {
+                return Vertex { p, p, n };
+            }
+        );
 
         cubemap = Graphics::TextureCubemap::LoadCubemapPNG(
             { RES("right.jpg"), RES("left.jpg"),
@@ -25,14 +24,13 @@ namespace Test {
 
         boxTex = Graphics::Texture2D::LoadPNG(RES("box.png"));
 
-        u32 i = 0;
-        Graphics::Meshes::Cube().Merge(QGLCreateBlueprint$(Vertex, (
-            in (Position, Normal),
-            out (Position)          = Position;,
-            out (TextureCoordinate) = (0.5f + fv2::FromCorner({ (bool)(i & 1), (bool)(i & 2) }) * 0.5f).AddZ(0);,
-            out (Normal)            = Normal;,
-            i++;
-        )), box.NewBatch());
+        u32 i = -1;
+        box = Graphics::Meshes::Cube().Create().IntoMesh(
+            [&] (const Math::fv3& p, const Math::fv3& n) {
+                i++;
+                return Vertex { p, (0.5f + fv2::FromCorner({ (bool)(i & 1), (bool)(i & 2) }) * 0.5f).AddZ(0), n };
+            }
+        );
 
         cubemapShader = Graphics::Shader::FromFile(RES("cubemap.vert"), RES("cubemap.frag"));
         boxShader     = Graphics::Shader::FromFile(RES("box.vert"),     RES("box.frag"));
@@ -59,25 +57,25 @@ namespace Test {
         scene.SetProjection(camera.GetProjMat());
         scene.SetCamera(camera.GetViewMat());
 
-        scene.Draw(skybox, UseShaderWithArgs(cubemapShader, {{ "cubemap", cubemap, 1 }}));
+        scene.Draw(Spans::Only(skybox), UseShaderWithArgs(cubemapShader, {{ "cubemap", cubemap, 1 }}));
 
         switch (shaderID) {
             case DIFFUSE_SHADER_ID:
-                scene.Draw(box, UseShaderWithArgs(boxShader, {
+                scene.Draw(Spans::Only(box), UseShaderWithArgs(boxShader, {
                     { "boxTex", boxTex, 2 },
                     { "lightPosition", Math::fv3::FromSpheric(10.0f, lightYaw, lightPitch) },
                     { "ambientStrength", ambStrength }
                 }));
             break;
             case REFLECTION_SHADER_ID:
-                scene.Draw(box, UseShaderWithArgs(reflectShader, {
+                scene.Draw(Spans::Only(box), UseShaderWithArgs(reflectShader, {
                     { "skybox", cubemap, 1 },
                     { "viewPosition", camera.position },
                     { "ambStrength", ambStrength }
                 }));
             break;
             case REFRACTION_SHADER_ID:
-                scene.Draw(box, UseShaderWithArgs(refractShader, {
+                scene.Draw(Spans::Only(box), UseShaderWithArgs(refractShader, {
                     { "skybox", cubemap, 1 },
                     { "viewPosition", camera.position },
                     { "ambStrength", ambStrength },

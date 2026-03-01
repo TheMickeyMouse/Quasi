@@ -161,7 +161,7 @@ namespace Quasi::Graphics {
             }
         );
 
-        Vec<TriIndices>& ind = obj.mesh.indices;
+        Vec<Triplet>& ind = obj.mesh.indices;
         ind.Reserve(faces.Length());
         for (const Face& f : faces) {
             Math::iv3 v1 { f.indices[0][0], f.indices[0][1], f.indices[0][2] };

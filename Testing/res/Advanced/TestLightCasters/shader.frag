@@ -17,25 +17,20 @@ struct Material {
     float shininess;
 };
 
-#define SUNLIGHT_ID 1
-#define POINTLIGHT_ID 2
-#define FLASHLIGHT_ID 3
-struct Light {
-    int lightId;
-    // union like part
-    // data memory: (000 1111 222) (333 4444 555) 6666
-    // sunlight:    [ .direction ] -------------------
-    // pointlight:  [ .position  ] [.c] [.l] [.q] ----
-    // flashlight:  [ .position  ] [.y] [.p] [.i] [.o]
-    vec3 d1, d2; float d3;
-
-    vec4 color;
-};
-
 #define MATERIAL_NUM 8
 uniform Material materials[MATERIAL_NUM];
 #define LIGHT_NUM 8
-uniform Light lights[LIGHT_NUM];
+uniform vec3 lightLoc[LIGHT_NUM];
+// data memory: (000 1111 2222 333)
+// sunlight:    -------------------
+// pointlight:  [.c] [.l] [.q] ----
+// flashlight:  [.y] [.p] [.i] [.o]
+uniform vec4 lightInfo[LIGHT_NUM];
+uniform vec4 lightColor[LIGHT_NUM];
+#define SUNLIGHT_ID 1
+#define POINTLIGHT_ID 2
+#define FLASHLIGHT_ID 3
+uniform int  lightId[LIGHT_NUM];
 
 vec3 Diffuse(vec3 color, vec3 norm, vec3 lightDir) {
     float diffuseStrength = max(dot(norm, lightDir), 0.0);
@@ -59,24 +54,26 @@ vec3 Phong(Material m, vec4 color, vec3 lightDir) {
     return (ambient + diffuse + specular) * color.rgb * color.a;
 }
 
-vec3 PointLight(Material m, Light l) {
+vec3 SunLight(Material m, int l) {
+    return Phong(m, lightColor[l], normalize(-lightLoc[l]));
+}
+
+vec3 PointLight(Material m, int l) {
     // light attenuation
-    float dist = length(l.d1 - vPosition);
-    float att = 1.0 / (l.d2.x + l.d2.y * dist + l.d2.z * dist * dist);
+    float dist = length(lightLoc[l] - vPosition);
+    vec3  info = lightInfo[l].xyz;
+    float att = 1.0 / (info.x + info.y * dist + info.z * dist * dist);
 
-    return Phong(m, l.color, normalize(l.d1 - vPosition)) * att;
+    return Phong(m, lightColor[l], normalize(lightLoc[l] - vPosition)) * att;
 }
 
-vec3 SunLight(Material m, Light l) {
-    return Phong(m, l.color, normalize(-l.d1));
-}
-
-vec3 FlashLight(Material m, Light l) {
-    vec3 lightDir = normalize(l.d1 - vPosition);
-    vec3 dir = vec3(sin(l.d2.x) * cos(l.d2.y), sin(l.d2.y), cos(l.d2.x) * cos(l.d2.y));
+vec3 FlashLight(Material m, int l) {
+    vec3 lightDir = normalize(lightLoc[l] - vPosition);
+    vec4 info = lightInfo[l];
+    vec3 dir = vec3(sin(info.x) * cos(info.y), sin(info.y), cos(info.x) * cos(info.y));
     float angle = dot(lightDir, dir);
-    vec3 amb = ambientStrength * m.ambient * l.color.rgb * l.color.a;
-    return smoothstep(cos(l.d3), cos(l.d2.z), angle) * (Phong(m, l.color, lightDir) - amb) + amb;
+    vec3 amb = ambientStrength * m.ambient * lightColor[l].rgb * lightColor[l].a;
+    return smoothstep(cos(info.w), cos(info.z), angle) * (Phong(m, lightColor[l], lightDir) - amb) + amb;
 }
 
 void main() {
@@ -84,18 +81,17 @@ void main() {
 
     vec3 lighting = vec3(0.0);
     for (int i = 0; i < LIGHT_NUM; ++i) {
-        Light l = lights[i];
-        switch (l.lightId) {
+        switch (lightId[i]) {
             case 0:
                 break;
             case SUNLIGHT_ID:
-                lighting += SunLight(m, l);
+                lighting += SunLight(m, i);
                 break;
             case POINTLIGHT_ID:
-                lighting += PointLight(m, l);
+                lighting += PointLight(m, i);
                 break;
             case FLASHLIGHT_ID:
-                lighting += FlashLight(m, l);
+                lighting += FlashLight(m, i);
                 break;
             default:
                 break;

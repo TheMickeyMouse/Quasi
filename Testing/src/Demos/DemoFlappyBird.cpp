@@ -1,8 +1,6 @@
 #include "DemoFlappyBird.h"
 
-#include "GLs/VertexBlueprint.h"
-#include "Meshes/Circle.h"
-#include "Meshes/Quad.h"
+#include "Meshes/MeshBuilder.h"
 #include "Utils/Iter/MapIter.h"
 
 namespace Test {
@@ -16,14 +14,11 @@ namespace Test {
         scene->shader.SetUniformTex("u_font", font.GetTexture(), 1);
 
         using namespace Math;
-        const auto blueprint = QGLCreateBlueprint$(Vertex, (
-            in (Position),
-            out (Position) = Position;,
-            out (Color)    = fColor::Better::Green();
-        ));
 
-        Graphics::Meshes::Quad().Merge(blueprint, Transform2D { { 0, +240 }, { 320, 20 } }, mBg.NewBatch());
-        Graphics::Meshes::Quad().Merge(blueprint, Transform2D { { 0, -240 }, { 320, 20 } }, mBg.NewBatch());
+        Graphics::Geometry2D g;
+        g->Add(Graphics::Meshes::Quad().Create().ApplyTransform(Transform2D { { 0, +240 }, { 320, 20 } }));
+        g->Add(Graphics::Meshes::Quad().Create().ApplyTransform(Transform2D { { 0, -240 }, { 320, 20 } }));
+        mBg = g.IntoMesh([] (const fv2& p) { return Vertex { p, fColor::Better::Green() }; });
 
         time = gdevice.GetIO().GetTime();
         nextSpawnTime = 0;
@@ -88,10 +83,12 @@ namespace Test {
                 spikeMesh.vertices[2].Position = tri->points[2] + body->position;
                 scene.AddMesh(spikeMesh);
             } else if (const auto p = body->shape.As<Physics2D::CircleShape>()) {
-                scene.AddMeshB(Meshes::Circle(p->radius),
-                    [&] (const Vertex2D& v) {
-                        return Vertex { v.Position + body->position, playerColor, 0, 0 };
-                    });
+                scene.AddMesh(
+                    Meshes::Circle(p->radius).Create().IntoMesh(
+                        [&] (const Math::fv2& v) {
+                            return Vertex { v + body->position, playerColor, 0, 0 };
+                    })
+                );
             }
         }
         scene.EndContext();

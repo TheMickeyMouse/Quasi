@@ -74,9 +74,9 @@ namespace Test {
 
             menu->DeclareTestType(TestType::DEMO);
             menu->AddSectionDescription("Simple OpenGL 'Games' created to explore the limitations of the engine. \nJust to see what's possible without over-development.");
-            //
-            // menu->RegisterTest<DemoFlappyBird>("Flappy Bird");
-            // menu->AddDescription("A dumb-down version of Flappy Bird.");
+
+            menu->RegisterTest<DemoFlappyBird>("Flappy Bird");
+            menu->AddDescription("A dumb-down version of Flappy Bird.");
 
             menu->RegisterTest<DemoUIPlayground>("UI Playground");
             menu->AddDescription("A Simple UI Renderer.");

@@ -14,8 +14,7 @@ namespace Test {
         materials = std::move(model.materials);
         meshes.Reserve(model.objects.Length());
         for (Graphics::OBJObject& obj : model.objects) {
-            meshes.Push(
-                std::move(obj.mesh).GeometryConvert([&] (const Graphics::OBJVertex& v) {
+            meshes.Push(std::move(obj.mesh).GeometryConvert([&] (const Graphics::OBJVertex& v) {
                     return Vertex { v.Position, v.Normal, obj.materialIndex };
                 }
             ));

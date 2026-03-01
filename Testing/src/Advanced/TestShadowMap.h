@@ -12,10 +12,7 @@ namespace Test {
         Vec<Graphics::Mesh<Vertex>> meshes;
         Graphics::FrameBuffer depthMap;
         Graphics::Texture2D depthTex;
-        Graphics::Shader depthShader;
-
-        Graphics::RenderObject<Graphics::VertexTexture2D> shadowMapDisplay;
-        Graphics::Mesh<Graphics::VertexTexture2D> screenQuad;
+        Graphics::Shader depthShader, drawDepthBuffer;
 
         Math::fv3 lightPosition { -8.2f, 11.2f, 6.6f };
         float ambStrength = 0.2f;

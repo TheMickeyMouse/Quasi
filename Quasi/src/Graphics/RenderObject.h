@@ -44,38 +44,17 @@ namespace Quasi::Graphics {
         const RenderData* operator->() const { return &GetRenderData(); }
     	RenderData* operator->() { return &GetRenderData(); }
 
-		void Draw(IList<const Mesh<T>*> meshes, const DrawOptions& options = {});
-		void Draw(const Mesh<T>& mesh, const DrawOptions& options = {}) { Draw({ &mesh }, options); }
-		void Draw(const CollectionAny auto& meshes, const DrawOptions& options = {});
-		void DrawInstanced(IList<const Mesh<T>*> meshes, int instances, const DrawOptions& options = {});
-    	void DrawInstanced(const Mesh<T>& mesh, int instances, const DrawOptions& options = {}) { DrawInstanced({ &mesh }, instances, options); }
-    	void DrawInstanced(const CollectionAny auto& meshes, int instances, const DrawOptions& options = {});
+		void Draw(Span<const Mesh<T>* const> meshes, const DrawOptions& options = {});
+		void Draw(Span<const Mesh<T>> meshes, const DrawOptions& options = {});
+    	void DrawInstanced(Span<const Mesh<T>* const> meshes, int instances, const DrawOptions& options = {});
+		void DrawInstanced(Span<const Mesh<T>> meshes, int instances, const DrawOptions& options = {});
 
     	void BeginContext() { rd->BufferUnload(); rd->Clear(); }
-    	void AddMesh(const Mesh<T>& mesh) { rd->Add(mesh); }
-    	void AddMeshes(const CollectionAny auto& meshes) { for (const Mesh<T>& m : meshes) rd->Add(m); }
-    	void AddMeshes(IList<const Mesh<T>*> meshes) { for (auto* m : meshes) rd->Add(*m); }
-
-		struct RawBatch {
-    		u32 iOffset;
-    		Ref<RenderData> rd;
-
-    		void PushV(const T& v) { rd->PushVertex(v); }
-    		void ResizeV(u32) const {}
-    		void ReserveV(u32) const {}
-    		T& VertAt(u32 i) { return rd->vertexData->Transmute<T>()[i]; }
-    		const T& VertAt(u32 i) const { return rd->vertexData->Transmute<T>()[i]; }
-    		u32 VertCount() const { return rd->vertexOffset / sizeof(T) - iOffset; }
-
-    		void ResizeI(u32) const {}
-    		void ReserveI(u32) const {}
-    		void PushI(u32 i, u32 j, u32 k) { rd->PushIndex({ i + iOffset, j + iOffset, k + iOffset }); }
-    		TriIndices* IndexData() { return Memory::TransmutePtr<TriIndices>(rd->indexData.Data()) + iOffset; }
-    	};
-
-		RawBatch NewBatch() { return RawBatch { (u32)(rd->vertexOffset / sizeof(T)), *rd }; }
-		void AddMeshB(auto&& meshBuilder, auto&& gpass) {
-    		meshBuilder.Merge((decltype(gpass))gpass, NewBatch());
+    	void AddMesh(const Mesh<T>& mesh) {
+    		rd->Add(mesh);
+    	}
+    	void AddMeshes(Span<const Mesh<T>*> meshes) {
+    		for (const Mesh<T>* m : meshes) rd->Add(*m);
     	}
 
     	void EndContext() { rd->BufferLoad(); }
@@ -99,33 +78,30 @@ namespace Quasi::Graphics {
     };
 
     template <class T>
-	void RenderObject<T>::Draw(IList<const Mesh<T>*> meshes, const DrawOptions& options) {
+	void RenderObject<T>::Draw(Span<const Mesh<T>* const> meshes, const DrawOptions& options) {
 	    BeginContext();
     	for (auto* m : meshes) rd->Add(*m);
     	EndContext();
     	DrawContext(options);
     }
-
-    template <class T>
-	void RenderObject<T>::Draw(const CollectionAny auto& meshes, const DrawOptions& options) {
-	    BeginContext();
-    	AddMeshes(meshes);
+	template <class T>
+	void RenderObject<T>::Draw(Span<const Mesh<T>> meshes, const DrawOptions& options) {
+    	BeginContext();
+    	for (auto& m : meshes) rd->Add(m);
     	EndContext();
     	DrawContext(options);
     }
-
     template <class T>
-	void RenderObject<T>::DrawInstanced(IList<const Mesh<T>*> meshes, int instances, const DrawOptions& options) {
+	void RenderObject<T>::DrawInstanced(Span<const Mesh<T>* const> meshes, int instances, const DrawOptions& options) {
     	BeginContext();
     	for (auto* m : meshes) rd->Add(*m);
     	EndContext();
     	DrawContextInstanced(instances, options);
     }
-
 	template <class T>
-	void RenderObject<T>::DrawInstanced(const CollectionAny auto& meshes, int instances, const DrawOptions& options) {
+	void RenderObject<T>::DrawInstanced(Span<const Mesh<T>> meshes, int instances, const DrawOptions& options) {
     	BeginContext();
-    	AddMeshes(meshes);
+    	for (auto& m : meshes) rd->Add(m);
     	EndContext();
     	DrawContextInstanced(instances, options);
     }

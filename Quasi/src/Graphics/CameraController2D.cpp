@@ -29,9 +29,8 @@ namespace Quasi::Graphics {
 
         scale += (float)io.GetMouseScrollDelta() * scale * 0.06f;
         if (io.MiddleMouse().Pressed()) {
-            fv2 delta = io.GetMousePosDelta();
-            delta.y = gd.GetWindowSize().y - delta.y;
-            position -= delta * (2.0f / scale);
+            fv2 delta = io.GetMousePosDelta().FlipY();
+            position -= delta / scale;
         }
     }
 

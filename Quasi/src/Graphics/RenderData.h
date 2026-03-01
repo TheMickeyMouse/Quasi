@@ -55,8 +55,8 @@ namespace Quasi::Graphics {
 		~RenderData();
 
 		template <class T> void PushVertex(const T& vertex);
-		void PushIndex(TriIndices index);
-		void PushIndicesOffseted(Span<const TriIndices> indices, usize objectSize);
+		void PushIndex(Triplet index);
+		void PushIndicesOffseted(Span<const Triplet> indices, usize objectSize);
 
 		void Bind() const;
 		void Unbind() const;
@@ -65,7 +65,17 @@ namespace Quasi::Graphics {
 		void BufferLoad();
 
 		void Clear();
-		template <class T> void Add(const Mesh<T>& mesh) { mesh.AddTo(*this); }
+		template <class T>
+		void Add(const Mesh<T>& mesh) {
+			Memory::MemCopy(vertexData.Data() + vertexOffset, mesh.vertices.Data(), mesh.vertices.ByteSize());
+			Memory::MemCopy(indexData.Data()  + indexOffset,  mesh.indices.Data(),  mesh.indices.ByteSize());
+			// increment indices
+			for (usize i = 0; i < mesh.indices.Length() * 3; ++i) {
+				indexData[indexOffset + i] += vertexOffset / sizeof(T);
+			}
+			vertexOffset += mesh.vertices.ByteSize();
+			indexOffset  += mesh.indices.Length() * 3;
+		}
 
 		void Destroy();
 

@@ -4,7 +4,7 @@
 
 #include "GLs/VertexBlueprint.h"
 #include "GUI/ImGuiExt.h"
-#include "Meshes/Circle.h"
+#include "Meshes/Circle.cpp"
 
 #include "Utils/Iter/MapIter.h"
 
@@ -12,10 +12,9 @@ namespace Test {
     void TestCircleCollision2D::OnInit(Graphics::GraphicsDevice& gdevice) {
         scene = gdevice.CreateNewRender<Vertex>();
 
-        circleMesh = Graphics::Meshes::Circle().Create(QGLCreateBlueprint$(Vertex, (
-            in (Position),
-            out (Position) = Position;
-        )));
+        circleMesh = Graphics::Meshes::Circle().Create().IntoMesh(
+            [] (const Math::fv2& x) { return Vertex(x); }
+        );
 
         scene.UseShaderFromFile(RES("circle.vert"), RES("circle.frag"));
         lineShader = Graphics::Shader::FromFile(RES("line.vert"), RES("line.frag"), RES("line.geom"));
@@ -26,11 +25,11 @@ namespace Test {
         auto meshp = totalLineMesh.NewBatch();
         for (int i = 0; i < 10; ++i)
             meshp.PushV({ 0.0f });
-        meshp.PushI(0, 1, 1);
-        meshp.PushI(2, 3, 3);
-        meshp.PushI(4, 5, 5);
-        meshp.PushI(6, 7, 7);
-        meshp.PushI(8, 9, 9);
+        meshp.Tri(0, 1, 1);
+        meshp.Tri(2, 3, 3);
+        meshp.Tri(4, 5, 5);
+        meshp.Tri(6, 7, 7);
+        meshp.Tri(8, 9, 9);
 
         camera.position = { 40.0f, 30.0f };
         camera.speed = 7.0f;
@@ -112,7 +111,7 @@ namespace Test {
         }
 
         scene.SetProjection(Math::Matrix3D::OrthoProjection(camera.GetViewport().AddZ({ -1, 1 })));
-        scene.DrawInstanced(circleMesh, TOTAL_BALL_COUNT, Graphics::UseArgs({
+        scene.DrawInstanced(Spans::Only(circleMesh), TOTAL_BALL_COUNT, Graphics::UseArgs({
             { "u_projection", scene->projection },
             { "selected",     selectedIndex },
             { "offsets",      offsets },
@@ -120,7 +119,7 @@ namespace Test {
             { "colors",       colors }
         }, false));
 
-        scene.Draw(totalLineMesh, UseShaderWithArgs(lineShader, {
+        scene.Draw(Spans::Only(totalLineMesh), UseShaderWithArgs(lineShader, {
             { "u_projection", scene->projection }
         }, false));
     }

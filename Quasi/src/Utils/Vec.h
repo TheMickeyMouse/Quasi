@@ -197,7 +197,6 @@ namespace Quasi {
             Memory::RangeMove(&data[idx], vals.Data(), vals.Length());
         }
 
-        void Attach(Vec& v) { ExtendMove(v.AsSpan()); v.PretendClear(); }
         void Extend(Collection<T> auto&& items) {
             // if constexpr (ArrayLike<decltype(items)>) {
             //     TryGrow(items.Length());

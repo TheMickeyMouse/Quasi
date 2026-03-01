@@ -9,24 +9,25 @@ namespace Test {
     // all from https://learnopengl.com/Advanced-OpenGL/Framebuffers & https://learnopengl.com/Guest-Articles/2022/Phys.-Based-Bloom
     class TestPostProcessing : public Test {
     private:
-        Graphics::RenderObject<Graphics::VertexColor3D> scene;
-        Graphics::RenderObject<Graphics::VertexTexture2D> postProcessingQuad;
+        Graphics::RenderObject<Graphics::VertexNormal3D> scene;
 
         Graphics::FrameBuffer fbo;
         Graphics::Texture2D renderResult;
         Graphics::RenderBuffer depthStencilAttachment;
 
-        Vec<Graphics::Mesh<Graphics::VertexColor3D>> cubes;
-        Graphics::Mesh<Graphics::VertexTexture2D> screenQuad;
+        Graphics::Mesh<Graphics::VertexNormal3D> cube;
 
         Math::Transform3D transform { { 0, 0, -5 } };
         Math::Rotor3D turnSpeed {};
+
+        Math::fv3 locations[9];
+        Math::fColor colors[9];
 
         Math::fv2 effectOff = 3;
         float hueShift = 0, satMul = 0, valShift = 0;
         float outlineSize = 1.1f;
 
-        Graphics::Shader shaderInv, shaderHsv, shaderBlur, shaderEdgeDetect, shaderOutline, *currShader;
+        Graphics::Shader defaultShader, shaderInv, shaderHsv, shaderBlur, shaderEdgeDetect, *currShader;
 
         bool usePostProcessing = true;
 

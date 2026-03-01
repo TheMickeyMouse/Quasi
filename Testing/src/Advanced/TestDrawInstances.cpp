@@ -2,10 +2,8 @@
 
 #include <imgui.h>
 
-#include "GLs/VertexBlueprint.h"
 #include "GUI/ImGuiExt.h"
-#include "Meshes/Circle.h"
-#include "Meshes/Cube.h"
+#include "Meshes/MeshBuilder.h"
 
 namespace Test {
     void TestDrawInstances::OnInit(Graphics::GraphicsDevice& gdevice) {
@@ -30,11 +28,9 @@ namespace Test {
             colors[i] = fColor3 { (fv3)(colorTransformer * (pos * pos / 4)) };
         }
 
-        cube = Graphics::Meshes::Cube().Create(QGLCreateBlueprint$(Vertex, (
-            in (Position, Normal),
-            out (Position) = Position;,
-            out (Normal) = Normal;
-        )));
+        cube = Graphics::Meshes::Cube().Create().IntoMesh(
+            [&] (const fv3& p, const fv3& n) { return Graphics::VertexNormal3D { p, n }; }
+        );
 
         scene.UseShaderFromFile(RES("instanced.vert"), RES("instanced.frag"));
 
@@ -65,7 +61,7 @@ namespace Test {
             normMats.Push(t.IntoMatrixN());
         }
 
-        scene.DrawInstanced(cube, INSTANCE_NUM, Graphics::UseArgs({
+        scene.DrawInstanced(Spans::Only(cube), INSTANCE_NUM, Graphics::UseArgs({
             { "models",         modelMats },
             { "normMat",        normMats },
             { "colors",         colors },

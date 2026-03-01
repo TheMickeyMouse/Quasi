@@ -1,14 +1,13 @@
 #include "TestMaterialMaps.h"
 
-#include "GLs/VertexBlueprint.h"
 #include "GUI/ImGuiExt.h"
+#include "Meshes/MeshBuilder.h"
 #include "ModelLoading/OBJModelLoader.h"
-#include "Meshes/Cube.h"
 
 namespace Test {
     void TestMaterialMaps::OnInit(Graphics::GraphicsDevice& gdevice) {
         scene = gdevice.CreateNewRender<Graphics::VertexTextureNormal3D>();
-        lightScene = gdevice.CreateNewRender<Graphics::VertexColor3D>(8, 12);
+        lightScene = gdevice.CreateNewRender<Graphics::VertexColor3D>(24, 24);
 
         Graphics::OBJModelLoader mloader;
         mloader.LoadFile(RES("boxes.obj"));
@@ -28,12 +27,10 @@ namespace Test {
         scene->shader.Unbind();
 
         using namespace Math;
-        Graphics::Meshes::Cube().Merge(QGLCreateBlueprint$(Graphics::VertexColor3D, (
-            in (Position),
-            out (Position) = Position;,
-            out (Color)    = fColor::Better::Aqua();,
-        )), lightSource.NewBatch());
-        lightScene.UseShader(Graphics::Shader::StdColored);
+        lightSource = Graphics::Meshes::Cube().Create().IntoMesh(
+            [] (const fv3& p, const fv3& _n) { return Graphics::VertexColor3D { p, fColor::Better::Aqua() }; }
+        );
+        lightScene.UseShaderFromFile(RES("light.glsl"));
 
         camera.position = { 6.3579054, 11.043502, 0.9266781 };
         camera.yaw = -11.125194; camera.pitch = 0.94481784;
@@ -55,8 +52,7 @@ namespace Test {
 
         for (auto& v : lightSource.vertices)
             v.Color = (Math::fColor)lightColor;
-        lightSource.SetTransform(Math::Transform3D(lightPos));
-        lightScene.Draw(lightSource);
+        lightScene.Draw(Spans::Only(lightSource), { .arguments = {{ "lightPos", lightPos }} });
 
         scene.SetProjection(camera.GetProjMat());
         scene.SetCamera(camera.GetViewMat());

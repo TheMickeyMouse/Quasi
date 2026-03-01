@@ -3,26 +3,28 @@
 #include "imgui.h"
 #include "GLs/VertexBlueprint.h"
 #include "GUI/ImGuiExt.h"
+#include "Meshes/MeshBuilder.h"
 #include "ModelLoading/OBJModelLoader.h"
-#include "Meshes/Cube.h"
 
 namespace Test {
     void TestLightCasters::OnInit(Graphics::GraphicsDevice& gdevice) {
         scene = gdevice.CreateNewRender<Vertex>();
-        lightScene = gdevice.CreateNewRender<Graphics::VertexColor3D>();
+        lightScene = gdevice.CreateNewRender<Graphics::Vertex3D>();
 
         Graphics::OBJModelLoader mloader;
         mloader.LoadFile(RES("lights.obj"));
         Graphics::OBJModel model = mloader.RetrieveModel();
 
         materials = std::move(model.materials);
-        meshes.Reserve(model.objects.Length());
         for (Graphics::OBJObject& obj : model.objects) {
-            meshes.Push(
-                std::move(obj.mesh).GeometryConvert(
-                    [&] (const Graphics::OBJVertex& v) { return Vertex { v.Position, v.Normal, obj.materialIndex }; }
+            worldMesh->Add(std::move(obj.mesh).GeometryConvert(
+                [&] (const Graphics::OBJVertex& v) { return Vertex { v.Position, v.Normal, obj.materialIndex }; }
             ));
         }
+
+        lightBox = Graphics::Meshes::Cube().Create().IntoMesh(
+            [] (const Math::fv3& p, const Math::fv3& _n) { return Graphics::Vertex3D { p }; }
+        );
 
         scene.UseShaderFromFile(RES("shader.vert"), RES("shader.frag"));
         scene.SetProjection(Math::Matrix3D::PerspectiveFov(90.0_deg, gdevice.GetAspectRatio(), 0.01f, 100.0f));
@@ -65,7 +67,7 @@ namespace Test {
             .quadratic = 0.001f,
          }, { 0.4f, 1, 0.2f });
 
-        lightScene.UseShader(Graphics::Shader::StdColored);
+        lightScene.UseShaderFromFile(RES("light.glsl"));
     }
 
     void TestLightCasters::OnUpdate(Graphics::GraphicsDevice& gdevice, float deltaTime) {
@@ -78,23 +80,48 @@ namespace Test {
 
         lightScene.SetProjection(camera.GetProjMat());
         lightScene.SetCamera(camera.GetViewMat());
-        lightScene.Draw(lightMeshes);
+
+        Math::fv3 locations[8];
+        Math::fColor colors[8];
+        Math::fv4 infos[8];
+        int tags[8];
+        for (u32 i = 0; i < lights.Length(); i++) {
+            locations[i] = lights[i].Position();
+            colors[i] = lights[i].color;
+            infos[i] = lights[i].Visit<Math::fv4>(
+                [&] (const Graphics::SunLight& sun) { return 0; },
+                [&] (const Graphics::PointLight& point) {
+                    return Math::fv4 { point.constant, point.linear, point.quadratic };
+                },
+                [&] (const Graphics::FlashLight& flash) {
+                    return Math::fv4 { *flash.yaw, *flash.pitch, *flash.innerCut, *flash.outerCut };
+                }
+            );
+            tags[i] = lights[i].GetTag() + 1;
+        }
+
+        lightScene.DrawInstanced(Spans::Only(lightBox), lights.Length(), {
+            .arguments = {
+                { "lightPos", locations },
+                { "colors",   colors }
+            }
+        });
 
         scene->shader.Bind();
         for (u32 i = 0; i < materials.Length(); ++i) {
             UniformMaterial(Text::Format("materials[{}]", i), materials[i]);
         }
 
-        for (u32 i = 0; i < lights.Length(); ++i) {
-            UniformLight(Text::Format("lights[{}]", i), lights[i]);
-        }
-
         scene.SetProjection(camera.GetProjMat());
         scene.SetCamera(camera.GetViewMat());
-        scene.Draw(meshes, Graphics::UseArgs({
+        scene.Draw(Spans::Only(worldMesh), Graphics::UseArgs({
             { "ambientStrength",   ambientStrength },
             { "viewPosition",      camera.position },
             { "specularIntensity", specularStrength },
+            { "lightLoc",          locations },
+            { "lightColor",        colors },
+            { "lightInfo",         infos },
+            { "lightId",           tags }
         }));
         bloom.ApplyEffect();
     }
@@ -119,10 +146,6 @@ namespace Test {
 
             for (u32 i = 0; i < lights.Length(); ++i) {
                 ImGui::EditLight(Text::Format("Light {}", i + 1), lights[i]);
-                const Math::fColor lightColor = (lights[i].color * 2.0f).AddAlpha(1);
-                for (auto& v : lightMeshes[i].vertices)
-                    v.Color = lightColor;
-                lightMeshes[i].SetTransform(Math::Transform3D(lights[i].Position()));
             }
             ImGui::TreePop();
         }
@@ -150,17 +173,7 @@ namespace Test {
     void TestLightCasters::UniformLight(const String& name, const Graphics::Light& light) {
         Graphics::Shader& shader = scene->shader;
         Math::fv3 top, bottom;
-        light.Visit(
-            [&] (const Graphics::SunLight& sun) { top = sun.direction; },
-            [&] (const Graphics::PointLight& point) {
-                top = point.position;
-                bottom = { point.constant, point.linear, point.quadratic };
-            },
-            [&] (const Graphics::FlashLight& flash) {
-                top = flash.position;
-                bottom = { *flash.yaw, *flash.pitch, *flash.innerCut };
-            }
-        );
+
         shader.SetUniformArgs({
             { name + ".lightId", (int)light.GetTag() + 1 },
             { name + ".d1", top },
@@ -171,16 +184,8 @@ namespace Test {
     }
 
     void TestLightCasters::AddPointLight(const Graphics::PointLight& point, const Math::fColor& color) {
-        lights.Push({ Graphics::PointLight { point } });
-        lights.Last().color = color;
-
-        lightMeshes.Push(
-            Graphics::Meshes::Cube().Create(QGLCreateBlueprint$(Graphics::VertexColor3D, (
-                in (Position),
-                out (Position) = Position;,
-                out (Color) = (color * 2).AddAlpha(1);
-            )))
-        );
-        lightMeshes.Last().SetTransform(Math::Transform3D(point.position));
+        auto& L = lights.Push({ Graphics::PointLight { point } });
+        L.color = color;
+        L.Position() = point.position;
     }
 }

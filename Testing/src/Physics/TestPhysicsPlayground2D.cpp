@@ -4,9 +4,8 @@
 
 #include "GLs/VertexBlueprint.h"
 #include "GUI/ImGuiExt.h"
+#include "Meshes/MeshBuilder.h"
 #include "Utils/Iter/MapIter.h"
-#include "Meshes/Circle.h"
-#include "Meshes/Stadium.h"
 
 namespace Test {
     void TestPhysicsPlayground2D::OnInit(Graphics::GraphicsDevice& gdevice) {
@@ -91,7 +90,6 @@ namespace Test {
             }
         }
 
-        worldUpdate:
         if (onPause & 1) return;
         world.Update(std::min(deltaTime, 1 / 60.0f), 32);
         onPause = onPause == 2 ? 1 : 0;
@@ -107,51 +105,48 @@ namespace Test {
             const auto& t = body->GetTransform();
             Qmatch$(body->shape, (
                 instanceof (const Physics2D::CircleShape& circ) {
-                    Graphics::Meshes::Circle(circ.radius, 3).Merge(
-                        QGLCreateBlueprint$(Vertex, (
-                            in (Position),
-                            out (Position) = Position + t.pos;,
-                            out (Color)    = color;
-                        )),
-                        worldMesh.NewBatch()
-                    );
+                    worldMesh->Add(Graphics::Meshes::Circle(circ.radius, 3).Create().IntoMesh(
+                        [&] (const Math::fv2& x) { return Vertex(x, color); }
+                    ));
                     AddNewPoint(t.Mul({ circ.radius, 0 }), fColor::White());
                 },
                 instanceof (const Physics2D::CapsuleShape& cap) {
-                    Graphics::Meshes::Stadium(-cap.forward, cap.forward, cap.radius, 3).Merge(
-                        QGLCreateBlueprint$(Vertex, (
-                            in (Position),
-                            out (Position) = t * Position;,
-                            out (Color)    = color;
-                        )), worldMesh.NewBatch()
-                    );
+                    worldMesh->Add(Graphics::Meshes::Stadium(-cap.forward, cap.forward, cap.radius, 3).Create().IntoMesh(
+                        [&] (const Math::fv2& x) { return Vertex(t * x, color); }
+                    ));
                     AddNewPoint(t.Mul(cap.forward.Perpend() * (cap.invLength * cap.radius)), fColor::White());
                 },
                 instanceof (const Physics2D::StaticPolygonShape& poly) {
                     for (u32 k = 2; k < poly.size; ++k) {
-                        worldMesh.NewBatch().PushTri(
+                        auto b = worldMesh.NewBatch();
+                        b.PushVs(Span<const Vertex>::FromArray({
                             { t * poly.points[0], color },
                             { t * poly.points[k - 1], color },
                             { t * poly.points[k], color }
-                        );
+                        }));
+                        b.Tri(0, 1, 2);
                     }
                 },
                 instanceof (const Physics2D::RectShape& rect) {
-                    worldMesh.NewBatch().PushPolygon({
+                    auto b = worldMesh.NewBatch();
+                    b.PushVs(Span<const Vertex>::FromArray({
                         { t * rect.Corner(false, false), color },
                         { t * rect.Corner(true,  false), color },
                         { t * rect.Corner(true,  true ), color },
                         { t * rect.Corner(false, true ), color },
-                    });
+                    }));
+                    b.Quad(0, 1, 2, 3);
                 },
                 instanceof (const Physics2D::DynPolygonShape& poly) {
-                    worldMesh.NewBatch().PushPolygon(
-                        poly.data.Iter()
-                                 .Map(Operators::Member<&Physics2D::DynPolygonShape::PPoint::pos> {})
-                                 .Map([&] (const Math::fv2& p) {
-                                        return Vertex { body->rotation.Rotate(p) + body->position, color };
-                        })
-                    );
+                    for (u32 k = 2; k < poly.data.Length(); ++k) {
+                        auto b = worldMesh.NewBatch();
+                        b.PushVs(Span<const Vertex>::FromArray({
+                            { t * poly.data[0].pos, color },
+                            { t * poly.data[k - 1].pos, color },
+                            { t * poly.data[k].pos, color }
+                        }));
+                        b.Tri(0, 1, 2);
+                    }
                 }
             ))
             ++i;
@@ -169,7 +164,7 @@ namespace Test {
             meshp.PushV({ forceAddedPosition + direction.Perpend(), blue });
             meshp.PushV({ forceAddedPosition - direction.Perpend(), blue });
             meshp.PushV({ mousePos, blue });
-            meshp.PushI(0, 1, 2);
+            meshp.Tri(0, 1, 2);
         }
 
         if (selectedIndex != ~0) {
@@ -178,7 +173,7 @@ namespace Test {
 
         DrawControlPoints();
 
-        scene.Draw(worldMesh, Graphics::UseArgs({{ "u_projection", Matrix3D::OrthoProjection(viewport.AddZ({ -1, 1 })) }}, false));
+        scene.Draw(Spans::Only(worldMesh), Graphics::UseArgs({{ "u_projection", Matrix3D::OrthoProjection(viewport.AddZ({ -1, 1 })) }}, false));
     }
 
     void TestPhysicsPlayground2D::OnImGuiRender(Graphics::GraphicsDevice& gdevice) {
@@ -203,10 +198,11 @@ namespace Test {
         }
 
         if (ImGui::Button("Add 10 Random Shapes")) {
+            using T = TestPhysicsPlayground2D;
             for (i32 i = 0; i < 10; ++i)
                 (this->*(rand.Choose({
-                    &AddRandomCircle, &AddRandomCapsule, &AddRandomTri,
-                    &AddRandomRect,   &AddRandomQuad,    &AddRandomPolygon })))(rand);
+                    &T::AddRandomCircle, &T::AddRandomCapsule, &T::AddRandomTri,
+                    &T::AddRandomRect,   &T::AddRandomQuad,    &T::AddRandomPolygon })))(rand);
         }
 
         if (selectedIndex != ~0 && ImGui::TreeNode("Edit Body")) {
@@ -277,8 +273,8 @@ namespace Test {
         meshp.PushV({ point + Math::fv2 { -0.5f, +0.5f }, color });
         meshp.PushV({ point + Math::fv2 { +0.5f, -0.5f }, color });
         meshp.PushV({ point + Math::fv2 { +0.5f, +0.5f }, color });
-        meshp.PushI(0, 1, 2);
-        meshp.PushI(1, 2, 3);
+        meshp.Tri(0, 1, 2);
+        meshp.Tri(1, 2, 3);
     }
 
     u32 TestPhysicsPlayground2D::FindAt(const Math::fv2& mousePos) const {

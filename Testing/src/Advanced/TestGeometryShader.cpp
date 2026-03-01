@@ -2,13 +2,8 @@
 
 #include <imgui.h>
 
-#include "GLs/VertexBlueprint.h"
 #include "GUI/ImGuiExt.h"
-#include "Meshes/Arrow3D.h"
-#include "Meshes/Capsule.h"
-#include "Meshes/Cube.h"
-#include "Meshes/Icosphere.h"
-#include "Meshes/Sphere.h"
+#include "Meshes/MeshBuilder.h"
 
 namespace Test {
     void TestGeometryShader::OnInit(Graphics::GraphicsDevice& gdevice) {
@@ -21,31 +16,30 @@ namespace Test {
         using namespace Math;
 
         fColor objectColor;
-        const auto blueprint = QGLCreateBlueprint$(Vertex, (
-            in (Position, Normal),
-            out (Position) = Position;,
-            out (Color)    = objectColor;,
-            out (Normal)   = Normal;,
-        ));
+        fv3 location = 0;
+        const auto blueprint = [&] (const fv3& p, const fv3& n) {
+            return Graphics::VertexColorNormal3D { p + location, objectColor, n };
+        };
 
+        location = { 30, 0, 0 };
         objectColor = fColor::Better::Aqua();
-        Graphics::Meshes::Sphere(10.0f, 20, 20).Merge(blueprint,
-            Matrix3D::Translation({ 30, 0, 0 }).AsTransform(), meshes.NewBatch());
+        meshes->Add(Graphics::Meshes::Sphere(10.0f, 20, 20).Create().IntoMesh(blueprint));
 
+        location = { 15, 0, 26 };
         objectColor = fColor::Better::Red();
-        Graphics::Meshes::Icosphere(10.0f, 2).Merge(blueprint,
-            Matrix3D::Translation({ 15, 0, 26 }).AsTransform(), meshes.NewBatch());
+        meshes->Add(Graphics::Meshes::Icosphere(10.0f, 2).Create().IntoMesh(blueprint));
 
+        location = { -15, 0, 26 };
         objectColor = fColor::Better::Lime();
-        Graphics::Meshes::Capsule({ 0, -7, 0 }, { 0, 7, 0 }, 7.0f, 20, 10).Merge(blueprint,
-            Matrix3D::Translation({ -15, 0, 26 }).AsTransform(), meshes.NewBatch());
+        meshes->Add(Graphics::Meshes::Capsule({ 0, -7, 0 }, { 0, 7, 0 }, 7.0f).Create().IntoMesh(blueprint));
 
+        location = { -30, 0, 0 };
         objectColor = fColor::Better::Magenta();
-        Graphics::Meshes::Cube().Merge(blueprint,
-            Matrix3D::Transform({ -30, 0, 0 }, { 8.0f }, {}).AsTransform(), meshes.NewBatch());
+        meshes->Add(Graphics::Meshes::Cube(8.0f).Create().IntoMesh(blueprint));
 
+        location = { -15, 0, -26 };
         objectColor = fColor::Better::Orange();
-        Graphics::Meshes::Arrow3D({ -18, -10, -29 }, { -12, 10, -23 }, 2).Merge(blueprint, meshes.NewBatch());
+        meshes->Add(Graphics::Meshes::Arrow3D({ -3, -10, -3 }, { 3, 10, 3 }, 2).Create().IntoMesh(blueprint));
 
         scene.UseShaderFromFile(RES("shader.vert"), RES("shader.frag"));
         scene.SetProjection(Matrix3D::PerspectiveFov(90.0_deg, gdevice.GetAspectRatio(), 0.01f, 100.0f));
