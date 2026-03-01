@@ -122,7 +122,7 @@ namespace Quasi::Graphics {
             batch.Point(p1);
             batch.Point(p2);
             batch.Point(p3);
-            batch.Tri(0, 1, 2);
+            batch.PushI({ 0, 1, 2 });
         }
         if (NeedDrawStroke()) {
             Path p = NewPath(CLOSED_CURVE);
@@ -387,7 +387,7 @@ namespace Quasi::Graphics {
     }
 
     void Canvas::DrawMesh(const UIMesh& mesh) {
-        DestinationMesh().Add(mesh);
+        DestinationMesh()->Add(mesh);
     }
 
     void Canvas::DrawTexture(const Texture2D& texture, const Math::fv2& pos, const Math::fv2& size, bool center, const SpriteOptions& options) {
@@ -508,16 +508,6 @@ namespace Quasi::Graphics {
         return drawMesh.UnwrapOr(worldMesh);
     }
 
-    void Canvas::Batch::PushV(UIVertex v) {
-        v.Position = canvas.TransformToWorldSpace(v.Position);
-        canvas.renderCanvas->PushVertex(v);
-    }
-    UIVertex& Canvas::Batch::VertAt(u32 i)             { return mesh.vertices[i]; }
-    const UIVertex& Canvas::Batch::VertAt(u32 i) const { return mesh.vertices[i]; }
-    u32 Canvas::Batch::VertCount() const { return mesh.vertices.Length(); }
-    void Canvas::Batch::PushI(u32 i, u32 j, u32 k) { return Tri(i, j, k); }
-    TriIndices* Canvas::Batch::IndexData() { return mesh.indices.Data(); }
-
     void Canvas::Batch::SetColor(const Math::fColor& color) { storedPoint.Color = (Math::uColor)color; }
     void Canvas::Batch::SetFill()   { storedPoint.Color = (Math::uColor)canvas.drawAttr.fillColor; }
     void Canvas::Batch::SetStroke() { storedPoint.Color = (Math::uColor)canvas.drawAttr.strokeColor; }
@@ -628,7 +618,7 @@ namespace Quasi::Graphics {
     void Canvas::Batch::PointsQBez(Span<const Math::fv2> bezpoints, bool innerSide) {
         SetPosition(bezpoints[0]);
         storedPoint.RenderPrim = UIRender::QBEZ | (innerSide << 3);
-        iOffset = mesh.vertices.Length();
+        offset = mesh.vertices.Length();
         for (usize i = 0; i < bezpoints.Length() / 2; ++i) {
             storedPoint.STUV = { 0, 0, 0, 0 };
             Push();
@@ -640,7 +630,7 @@ namespace Quasi::Graphics {
             Push();
             Tri(3 * i, 3 * i + 1, 3 * i + 2);
         }
-        iOffset = mesh.vertices.Length();
+        offset = mesh.vertices.Length();
     }
 
     void Canvas::Batch::PointsQBezClosed(Span<const Math::fv2> outer, Span<const Math::fv2> inner) {
@@ -651,7 +641,7 @@ namespace Quasi::Graphics {
         const UIVertex* innerVerts = mesh.vertices.DataEnd();
         PointsQBez(inner, true);
 
-        iOffset = mesh.vertices.Length();
+        offset = mesh.vertices.Length();
         storedPoint.RenderPrim = UIRender::PLAIN;
         for (usize i = 0; i < (outer.Length() / 2); ++i) {
             //         B
@@ -673,40 +663,13 @@ namespace Quasi::Graphics {
         }
         storedPoint.Position = innerVerts[-1].Position; Push();
         storedPoint.Position = (innerVerts + (innerVerts - outerVerts))[-1].Position; Push();
-        iOffset = mesh.vertices.Length();
+        offset = mesh.vertices.Length();
     }
 
-    void Canvas::Batch::Tri(u32 i, u32 j, u32 k) {
-        mesh.PushIndex({ iOffset + i, iOffset + j, iOffset + k });
-    }
-    void Canvas::Batch::Quad(u32 i, u32 j, u32 k, u32 l) {
-        mesh.PushIndex({ iOffset + i, iOffset + j, iOffset + l });
-        mesh.PushIndex({ iOffset + j, iOffset + k, iOffset + l });
-    }
-
-    void Canvas::Batch::TriStrip(Span<const u32> strip) {
-        u32 tri[3] = { iOffset + strip[0], 0, iOffset + strip[1] };
-        for (u32 i = 2; i < strip.Length(); ++i) {
-            tri[1 ^ (i & 1)] = tri[2];
-            tri[2] = iOffset + strip[i];
-            mesh.PushIndex({ tri[0], tri[1], tri[2] });
-        }
-    }
-
-    void Canvas::Batch::TriFan(Span<const u32> fan) {
-        const u32 center = iOffset + fan[0];
-        u32 a = iOffset + fan[1];
-        for (u32 i = 2; i < fan.Length(); ++i) {
-            const u32 b = iOffset + fan[i];
-            mesh.PushIndex({ center, a, b });
-            a = b;
-        }
-    }
-
-    void Canvas::Batch::Push() { mesh.PushVertex(storedPoint); }
+    void Canvas::Batch::Push() { PushV(storedPoint); }
     void Canvas::Batch::Push(const Math::fv2& point) {
         SetPosition(point);
-        mesh.PushVertex(storedPoint);
+        PushV(storedPoint);
     }
 
     void Canvas::Batch::PushAsPlain() {
@@ -731,16 +694,14 @@ namespace Quasi::Graphics {
         Push({ start.x,         start.y - dim.y });
         Quad(0, 1, 2, 3);
 
-        Refresh();
+        Reload();
 
         return (float)glyph.advance.x * scaling;
     }
 
-    void Canvas::Batch::Refresh() { iOffset = mesh.vertices.Length(); }
-
     Canvas::Batch Canvas::NewBatch() {
         UIMesh& dest = DestinationMesh();
-        return { *this, dest, (u32)dest.vertices.Length() };
+        return { dest.NewBatch(), *this };
     }
 
     void Canvas::DrawSimpleLine(const Math::fv2& start, const Math::fv2& end, const Math::fv2& tangent) {
@@ -1050,7 +1011,7 @@ namespace Quasi::Graphics {
                 DrawQuarterChord({ rect.max.x, rect.min.y }, { 0, -drawAttr.strokeWeight }, drawAttr.strokeColor);
                 DrawQuarterChord({ rect.min.x, rect.max.y }, { 0, +drawAttr.strokeWeight }, drawAttr.strokeColor);
                 DrawQuarterChord(rect.max,                   { +drawAttr.strokeWeight, 0 }, drawAttr.strokeColor);
-                batch.Refresh();
+                batch.Reload();
                 [[fallthrough]];
             case UIRender::BEVEL_JOIN: {
                 /*
@@ -1609,7 +1570,7 @@ namespace Quasi::Graphics {
     }
 
     void Canvas::EndFrame() {
-        worldMesh.CopyTo(renderCanvas.GetRenderData());
+        renderCanvas->Add(worldMesh);
         renderCanvas.EndContext();
 
         // GL::ActiveTexture(GL::TEXTURE0);

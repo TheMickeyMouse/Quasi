@@ -111,23 +111,9 @@ namespace Quasi::Graphics {
         void ForceDrawCurrentBatch();
 
         UIMesh& DestinationMesh();
-        struct Batch {
+        struct Batch : UIMesh::Batch {
             Canvas& canvas;
-            UIMesh& mesh;
-            u32 iOffset;
             UIVertex storedPoint;
-
-            void PushV(UIVertex v);
-            void ResizeV(u32) const {}
-            void ReserveV(u32) const {}
-            UIVertex& VertAt(u32 i);
-            const UIVertex& VertAt(u32 i) const;
-            u32 VertCount() const;
-
-            void ResizeI(u32) const {}
-            void ReserveI(u32) const {}
-            void PushI(u32 i, u32 j, u32 k);
-            TriIndices* IndexData();
 
             void SetColor(const Math::fColor& color);
             void SetFill();
@@ -155,18 +141,12 @@ namespace Quasi::Graphics {
             void PointQDoubleC(const Math::fv2& position, bool innerSide); // flat + control
             void PointsQBez(Span<const Math::fv2> bezpoints, bool innerSide);
             void PointsQBezClosed(Span<const Math::fv2> outer, Span<const Math::fv2> inner);
-            void Tri(u32 i, u32 j, u32 k);
-            void Quad(u32 i, u32 j, u32 k, u32 l);
-            void TriStrip(Span<const u32> strip);
-            void TriFan(Span<const u32> fan);
             void Push();
             void Push(const Math::fv2& point);
             void PushAsPlain();
 
             // returns advance
             float PushGlyph(const Glyph& glyph, float scaling, const Math::fv2& position, const Texture2D& atlas);
-
-            void Refresh();
         };
         Batch NewBatch();
 

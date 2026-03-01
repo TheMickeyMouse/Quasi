@@ -25,14 +25,14 @@ namespace Quasi::Graphics {
 		Destroy();
 	}
 
-	void RenderData::PushIndex(TriIndices index) {
+	void RenderData::PushIndex(Triplet index) {
 		indexData[indexOffset + 0] = index.i;
 		indexData[indexOffset + 1] = index.j;
 		indexData[indexOffset + 2] = index.k;
 		indexOffset += 3;
 	}
 
-	void RenderData::PushIndicesOffseted(Span<const TriIndices> indices, usize objectSize) {
+	void RenderData::PushIndicesOffseted(Span<const Triplet> indices, usize objectSize) {
 		const u32 iOff = vertexOffset / objectSize;
 		for (const auto& i : indices)
 			PushIndex(i + iOff);

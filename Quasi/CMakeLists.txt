@@ -23,15 +23,15 @@ set(HEADER_FILES
 
     src/Graphics/GraphicsDevice.h
     src/Graphics/Mesh.h
-    src/Graphics/Mesh.tpp
     src/Graphics/RenderData.h
     src/Graphics/RenderObject.h
-    src/Graphics/TriIndices.h
+    src/Graphics/Triplet.h
     src/Graphics/CameraController2D.h
     src/Graphics/CameraController3D.h
     src/Graphics/Light.h
-        src/Graphics/GUI/Canvas.h
-        src/Graphics/GUI/UIVertex.h
+
+    src/Graphics/GUI/Canvas.h
+    src/Graphics/GUI/UIVertex.h
 
     src/Graphics/Effects/Bloom.h
 
@@ -41,17 +41,7 @@ set(HEADER_FILES
     src/Graphics/Fonts/Font.h
     src/Graphics/Fonts/FontDevice.h
     src/Graphics/Fonts/TextAlign.h
-    src/Graphics/Meshes/Circle.h
     src/Graphics/Meshes/MeshBuilder.h
-    src/Graphics/Meshes/Cube.h
-    src/Graphics/Meshes/Sphere.h
-    src/Graphics/Meshes/Icosphere.h
-    src/Graphics/Meshes/Quad.h
-    src/Graphics/Meshes/Plane.h
-    src/Graphics/Meshes/Capsule.h
-    src/Graphics/Meshes/Stadium.h
-    src/Graphics/Meshes/Arrow2D.h
-    src/Graphics/Meshes/Arrow3D.h
     src/Graphics/GUI/ImGuiExt.h
 
     src/IO/IO.h
@@ -148,9 +138,20 @@ set(SOURCE_FILES
     src/Graphics/Light.cpp
     src/Graphics/GraphicsDevice.cpp
     src/Graphics/RenderData.cpp
-        src/Graphics/GUI/Canvas.cpp
+    src/Graphics/GUI/Canvas.cpp
 
     src/Graphics/Effects/Bloom.cpp
+
+    src/Graphics/Meshes/Circle.cpp
+    src/Graphics/Meshes/Cube.cpp
+    src/Graphics/Meshes/Sphere.cpp
+    src/Graphics/Meshes/Icosphere.cpp
+    src/Graphics/Meshes/Quad.cpp
+    src/Graphics/Meshes/Plane.cpp
+    src/Graphics/Meshes/Capsule.cpp
+    src/Graphics/Meshes/Stadium.cpp
+    src/Graphics/Meshes/Arrow2D.cpp
+    src/Graphics/Meshes/Arrow3D.cpp
 
     src/Graphics/ModelLoading/MTLMaterialLoader.cpp
     src/Graphics/ModelLoading/OBJModelLoader.cpp

@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "GLObject.h"
-#include "../TriIndices.h"
+#include "../Triplet.h"
 #include "Utils/Span.h"
 
 namespace Quasi::Graphics {
@@ -19,12 +19,12 @@ namespace Quasi::Graphics {
         static void UnbindObject();
 
         void SetData(Span<const u32> data, u32 dOffset = 0);
-        void SetData(Span<const TriIndices> data, u32 dOffset = 0) { SetData(data.Transmute<u32>(), dOffset); }
+        void SetData(Span<const Triplet> data, u32 dOffset = 0) { SetData(data.Transmute<u32>(), dOffset); }
 
         void ClearData(); // this doesnt actually clear the dataz, just makes it not
 
         void AddData(Span<const u32> data);
-        void AddData(Span<const TriIndices> data) { AddData(data.Transmute<u32>()); }
+        void AddData(Span<const Triplet> data) { AddData(data.Transmute<u32>()); }
 
         u32 GetLength() const { return bufferSize; }
         u32 GetUsedLength() const { return dataOffset; }

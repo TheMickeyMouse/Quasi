@@ -6,6 +6,7 @@
 #define Q_GL_DEFINE_VERTEX(T, DIM, MEMBS, ... /* may use 'custom transform' */) \
     static constexpr bool IS_GL_VERTEX = true; \
     using Self = T; \
+    using Transformation = Quasi::Math::MatrixTransform##DIM; \
     static constexpr u32 DIMENSION = 0x##DIM >> 4; /* hacking ND into N */ \
     public: \
     inline static const auto VERTEX_LAYOUT = Quasi::Graphics::VertexBufferLayout::FromTypes< \
