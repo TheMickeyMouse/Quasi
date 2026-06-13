@@ -225,11 +225,11 @@ target_include_directories(${PROJECT_NAME}
     ${PROJECT_SOURCE_DIR}/Dependencies/GLFW/include/
     # /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/System/Library/Frameworks/
         PUBLIC
-    src/
-    src/Graphics/
-    src/vendor/
-    src/vendor/imgui/
-    src/vendor/freetype/
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/imgui/
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/freetype/
     ${PROJECT_SOURCE_DIR}/OpenGLPort/
 )
 
@@ -266,7 +266,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME} PUBLIC
     OpenGLPort
     # opengl32.dll
-    ${CMAKE_SOURCE_DIR}/Dependencies/GLFW/lib-mingw-w64/libglfw3.a
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies/GLFW/lib-mingw-w64/libglfw3.a
     ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/freetype/libfreetype.a
     ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/imgui/lib/libimgui.a
     ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/stb_image/lib/libstbimage.a

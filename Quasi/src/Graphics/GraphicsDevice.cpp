@@ -312,9 +312,9 @@ namespace Quasi::Graphics {
             glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
             glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
 
-            window = glfwCreateWindow(winSize.x, winSize.y, "Hello World", monitor, nullptr);
+            window = glfwCreateWindow(winSize.x, winSize.y, windowArgs.windowTitle, monitor, nullptr);
         } else {
-            window = glfwCreateWindow(winSize.x, winSize.y, "Hello World", nullptr, nullptr);
+            window = glfwCreateWindow(winSize.x, winSize.y, windowArgs.windowTitle, nullptr, nullptr);
         }
 
 
