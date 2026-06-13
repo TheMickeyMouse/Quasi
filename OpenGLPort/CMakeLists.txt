@@ -17,7 +17,7 @@ endif()
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
     ${OPENGL_FRAMEWORK_SET}
-    ${CMAKE_SOURCE_DIR}/Dependencies/GLEW/lib/libglew32.a
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies/GLEW/lib/libglew32.a
 )
 
 target_compile_options(${PROJECT_NAME} PUBLIC -DGLEW_STATIC)

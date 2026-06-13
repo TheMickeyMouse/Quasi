@@ -24,6 +24,7 @@ namespace Quasi::Graphics {
              passthru      = false,
              fullscreen    = false;
         Math::iv2 beginPosition = { (int)0x80000000 }; // <-- this is GLFW's way of specifying any position
+        const char* windowTitle = "Hello, World!";
     };
 
     class GraphicsDevice {

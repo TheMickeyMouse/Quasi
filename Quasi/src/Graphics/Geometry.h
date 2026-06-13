@@ -40,7 +40,7 @@ namespace Quasi::Graphics {
             for (u32 i = 2; i < strip.Length(); ++i) {
                 tri[1 ^ (i & 1)] = tri[2];
                 tri[2] = offset + strip[i];
-                PushI({ tri[0], tri[1], tri[2] });
+                super().Indices().Push({ tri[0], tri[1], tri[2] });
             }
         }
         void TriFan  (Span<const u32> fan) {
@@ -48,7 +48,7 @@ namespace Quasi::Graphics {
             u32 a = offset + fan[1];
             for (u32 i = 2; i < fan.Length(); ++i) {
                 const u32 b = offset + fan[i];
-                PushI({ center, a, b });
+                super().Indices().Push({ center, a, b });
                 a = b;
             }
         }
