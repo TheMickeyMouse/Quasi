@@ -270,7 +270,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME} PUBLIC
     OpenGLPort
     # opengl32.dll
-    ${CMAKE_SOURCE_DIR}/Dependencies/GLFW/lib-mingw-w64/libglfw3.a
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Dependencies/GLFW/lib-mingw-w64/libglfw3.a
     ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/freetype/libfreetype.a
     ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/imgui/lib/libimgui.a
     ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/stb_image/lib/libstbimage.a
