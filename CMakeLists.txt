@@ -26,4 +26,3 @@ endif()
 
 add_subdirectory(OpenGLPort)
 add_subdirectory(Quasi)
-add_subdirectory(Testing)
