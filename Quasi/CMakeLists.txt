@@ -115,7 +115,7 @@ set(HEADER_FILES
     src/vendor/imgui/imgui_stdlib.h
 
     src/vendor/stb_image/stb_image.h
-        src/Utils/PolyVec.h
+    src/Utils/PolyVec.h
 )
 source_group("Header Files" FILES ${HEADER_FILES})
 
