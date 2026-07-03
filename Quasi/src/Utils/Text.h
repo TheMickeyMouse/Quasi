@@ -9,6 +9,17 @@ namespace Quasi {
 }
 
 namespace Quasi::Text {
+    template <class... Ts>
+    void Print(Str fmt, const Ts&... args) {
+        Text::FormatTo(StringWriter::WriteToConsole(), fmt, args...);
+    }
+    template <class... Ts>
+    void PrintLn(Str fmt, const Ts&... args) {
+        auto console = StringWriter::WriteToConsole();
+        Text::FormatTo(console, fmt, args...);
+        console.Write('\n');
+    }
+
     Option<String> ReadFile(CStr fname);
     Option<String> ReadFileBinary(CStr fname);
     bool WriteFile(CStr fname, Str contents);
@@ -65,7 +76,7 @@ namespace Quasi::Text {
         BLUE    = 4, H_BLUE    = 64,
         MAGENTA = 5, H_MAGENTA = 65,
         CYAN    = 6, H_CYAN    = 66,
-        GRAY    = 7, H_GRAY    = 67,
+        WHITE   = 7, H_WHITE   = 67,
 
         FG_BLACK    = 30, BG_BLACK    = 40,
         FG_RED      = 31, BG_RED      = 41,
@@ -82,7 +93,7 @@ namespace Quasi::Text {
         HFG_BLUE    = 94, HBG_BLUE    = 104,
         HFG_MAGENTA = 95, HBG_MAGENTA = 105,
         HFG_CYAN    = 96, HBG_CYAN    = 106,
-        HFG_GRAY    = 97, HBG_GRAY    = 107,
+        HFG_WHITE   = 97, HBG_WHITE   = 107,
 
         HIGHLIGHT = 60,
         BACKGROUND = 40,

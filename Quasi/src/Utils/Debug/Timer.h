@@ -24,7 +24,7 @@ namespace Quasi::Debug {
         Str name;
         OptRef<Logger> outputLog;
 
-        Timer(Str name, OptRef<Logger> log = nullptr) : begin(Now()), total(0), name(name), outputLog(log) {}
+        Timer(Str name = {}, OptRef<Logger> log = nullptr) : begin(Now()), total(0), name(name), outputLog(log) {}
         ~Timer();
 
         static DateTime Now();
@@ -43,6 +43,9 @@ namespace Quasi::Debug {
         template <class Unit> u64 TotalElapsedUnits() const {
             return UnitConvert<Unit>(TotalElapsed());
         }
+        u64 ElapsedMillis() const { return TotalElapsedUnits<Millisecond>(); }
+        u64 ElapsedMicros() const { return TotalElapsedUnits<Microsecond>(); }
+        u64 ElapsedNanos()  const { return TotalElapsedUnits<Nanosecond>(); }
 
         void Log();
     };

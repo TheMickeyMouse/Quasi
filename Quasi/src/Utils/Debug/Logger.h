@@ -162,17 +162,13 @@ namespace Quasi::Debug {
 
     inline void NoOp() {}
 
-#ifdef NDEBUG
+#if defined(NDEBUG) && defined(Q_NO_LOG)
     #define QTrace$     NoOp() Q_EAT
     #define QDebug$     NoOp() Q_EAT
     #define QInfo$      NoOp() Q_EAT
     #define QWarn$      NoOp() Q_EAT
     #define QError$     NoOp() Q_EAT
     #define QCritical$  NoOp() Q_EAT
-    #define QAssert$    NoOp() Q_EAT
-    #define QAssertEq$  NoOp() Q_EAT
-    #define QAssertNeq$ NoOp() Q_EAT
-    #define QAssertMsg$ NoOp() Q_EAT
 #else
     #define QTrace$(...)    LogFmt(Quasi::Debug::Severity::TRACE,    __VA_ARGS__)
     #define QDebug$(...)    LogFmt(Quasi::Debug::Severity::DEBUG,    __VA_ARGS__)
@@ -180,29 +176,38 @@ namespace Quasi::Debug {
     #define QWarn$(...)     LogFmt(Quasi::Debug::Severity::WARN,     __VA_ARGS__)
     #define QError$(...)    LogFmt(Quasi::Debug::Severity::ERROR,    __VA_ARGS__)
     #define QCritical$(...) LogFmt(Quasi::Debug::Severity::CRITICAL, __VA_ARGS__)
-    #define QAssert$        Assert
-    #define QAssertEq$      AssertEq
-    #define QAssertNeq$     AssertNeq
-    #define QAssertMsg$     AssertMsg
+#endif
+#if defined(NDEBUG) && defined(Q_NO_ASSERT)
+#define QAssert$    NoOp() Q_EAT
+#define QAssertEq$  NoOp() Q_EAT
+#define QAssertNeq$ NoOp() Q_EAT
+#define QAssertMsg$ NoOp() Q_EAT
+#define Q_SHOULD_ASSERT 0
+#else
+#define QAssert$        Assert
+#define QAssertEq$      AssertEq
+#define QAssertNeq$     AssertNeq
+#define QAssertMsg$     AssertMsg
+#define Q_SHOULD_ASSERT 1
 #endif
 }
 
 namespace Quasi {
     template <class T, class Super> T& INullable<T, Super>::Assert() { return QGetterMut$(Assert); }
     template <class T, class Super> const T& INullable<T, Super>::Assert() const {
-        Debug::Assert(HasValue(), "{} doesn't have a value", Text::TypeName<Super>());
+        Debug::QAssert$(HasValue(), "{} doesn't have a value", Text::TypeName<Super>());
         return Unwrap();
     }
 
     template <class T, class Super> T& INullable<T, Super>::Assert(Str msg) { return QGetterMut$(Assert, msg); }
     template <class T, class Super> const T& INullable<T, Super>::Assert(Str msg) const {
-        Debug::Assert(HasValue(), msg);
+        Debug::QAssert$(HasValue(), msg);
         return Unwrap();
     }
 
     template <class T, class Super> T& INullable<T, Super>::Assert(auto&& assertfn) { return QGetterMut$(Assert, assertfn); }
     template <class T, class Super> const T& INullable<T, Super>::Assert(auto&& assertfn) const {
-        if (IsNull()) assertfn();
+        if (Q_SHOULD_ASSERT && IsNull()) assertfn();
         return Unwrap();
     }
 }
