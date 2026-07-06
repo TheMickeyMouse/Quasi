@@ -88,20 +88,20 @@ namespace Quasi::Text {
 
         if (options.escape) {
             const String esc = input.Escape();
-            return FormatNoEscape(sw, esc, options);
+            return FormatNoEscape(sw, esc, esc.Length(), options);
         } else {
-            return FormatNoEscape(sw, input, options);
+            return FormatNoEscape(sw, input, input.Length(), options);
         }
     }
 
-    usize Formatter<Str>::FormatNoEscape(StringWriter sw, Str input, const FormatOptions& options) {
-        usize padLen = options.targetLength - input.Length();
+    usize Formatter<Str>::FormatNoEscape(StringWriter sw, Str input, usize strlen, const FormatOptions& options) {
+        usize padLen = options.targetLength - strlen;
         padLen &= -(padLen <= options.targetLength); // fun bithacks that turn negative numbers into 0
-        const usize right = padLen * (usize)options.alignment / 2;
+        const usize left = padLen * (usize)options.alignment / 2;
 
-        return sw.WriteRepeat(options.pad, padLen - right) +
+        return sw.WriteRepeat(options.pad, left) +
                sw.Write(input) +
-               sw.WriteRepeat(options.pad, right);
+               sw.WriteRepeat(options.pad, padLen - left);
     }
 
     usize Formatter<char>::FormatTo(StringWriter sw, char c, const FormatOptions& options) {

@@ -115,10 +115,10 @@ namespace Quasi {
 
         T& Assert();
         T& Assert(Str msg);
-        T& Assert(auto&& assertfn);
+        T& Assert(Fn<void> auto&& assertfn);
         const T& Assert() const;
         const T& Assert(Str msg) const;
-        const T& Assert(auto&& assertfn) const;
+        const T& Assert(Fn<void> auto&& assertfn) const;
 
         static Super None() { return Super::NoneImpl(); }
         static Super Some(const T& t) { return Super::SomeImpl(t); }

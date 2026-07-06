@@ -129,6 +129,14 @@ namespace Quasi {
         return zeroCount;
     }
 
+    strdef usize strcls::Utf8Length() const {
+        // from https://stackoverflow.com/questions/4063146/getting-the-actual-length-of-a-utf-8-encoded-stdstring
+        usize len = 0;
+        const char* s = this->Data();
+        while (*s) len += (*s++ & 0xC0) != 0x80;
+        return len;
+    }
+
     strdef Str              strcls::AsStr()      const        { return Str   ::Slice(this->Data(), this->Length()); }
     strdef StrMut           strcls::AsStrMut()   requires mut { return StrMut::Slice(this->Data(), this->Length()); }
     strdef Span<const char> strcls::AsSpan()     const        { return Span<const char>::Slice(this->Data(), this->Length()); }

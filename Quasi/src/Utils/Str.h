@@ -78,6 +78,8 @@ namespace Quasi {
         Iter::LinesIter Lines() const;
         usize CountLines() const;
         usize CountChars(char c) const;
+        // counts the number of code points
+        usize Utf8Length() const;
 
         Str              AsStr()      const;
         StrMut           AsStrMut()   requires mut;

@@ -19,6 +19,9 @@ namespace Quasi::Text {
         Text::FormatTo(console, fmt, args...);
         console.Write('\n');
     }
+    inline void NewLn() {
+        putchar('\n');
+    }
 
     Option<String> ReadFile(CStr fname);
     Option<String> ReadFileBinary(CStr fname);

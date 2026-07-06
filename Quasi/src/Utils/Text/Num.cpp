@@ -564,7 +564,7 @@ namespace Quasi::Text {
                 f64 dig2;
                 f64s::SeparateDecimal(f * 100, dig2, f);
 
-                u32 i = (u32)std::floor(f);
+                u32 i = (u32)std::floor(dig2);
                 i = U64ToBCD2(i);
                 Memory::WriteU16Big(i | 0x3030, out);
                 out += 2;
@@ -960,9 +960,9 @@ namespace Quasi::Text {
                     options.alignment = align == '<' ? Align::LEFT : align == '^' ? Align::CENTER : Align::RIGHT;
                     opt.Advance(2);
                 }
-                if (opt.IsEmpty()) return options;
-                c = opt[0];
             }
+            if (opt.IsEmpty()) return options;
+            c = opt[0];
         }
     }
 

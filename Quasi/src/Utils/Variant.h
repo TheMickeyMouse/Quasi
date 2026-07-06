@@ -143,6 +143,10 @@ namespace Quasi {
 
         ~Variant() { VisitMutImpl(Operators::Destructor {}); }
 
+        bool operator==(const Variant& v) const {
+            return tag == v.tag && VisitImpl<bool>([&] <class X> (const X& x) { return x == v.inner.template As<X>(); });
+        }
+
         template <class T> void Set(T t) { *this = std::move(t); }
     };
 }

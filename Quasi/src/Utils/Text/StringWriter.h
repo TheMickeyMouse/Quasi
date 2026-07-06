@@ -6,7 +6,6 @@
 
 namespace Quasi::Text {
     enum ConsoleColor : u32;
-    template <class... Ts> struct FormatResult;
 
     struct StringWriter {
     private:
@@ -29,6 +28,9 @@ namespace Quasi::Text {
 
         usize operator()(Str str) { return Write(str); }
         usize operator()(char c)  { return Write(c); }
+
+        template <class... Ts>
+        usize Write(Str fmt, const Ts& ...args);
 
         template <class T>
         StringWriter& operator<<(const T& obj);

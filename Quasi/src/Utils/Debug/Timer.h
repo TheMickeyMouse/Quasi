@@ -9,12 +9,11 @@ namespace Quasi::Debug {
 
     using DateTime = std::chrono::time_point<std::chrono::system_clock>;
     using TimeDuration = std::chrono::duration<u64, std::ratio<1, 1'000'000'000>>;
-    template <class Unit> using TimeUnit = std::chrono::duration<u64, Unit>;
 
-    using Second      = std::ratio<1, 1>;
-    using Millisecond = std::ratio<1, 1'000>;
-    using Microsecond = std::ratio<1, 1'000'000>;
-    using Nanosecond  = std::ratio<1, 1'000'000'000>;
+    using Second      = std::chrono::duration<u64>;
+    using Millisecond = std::chrono::duration<u64, std::ratio<1, 1'000>>;
+    using Microsecond = std::chrono::duration<u64, std::ratio<1, 1'000'000>>;
+    using Nanosecond  = std::chrono::duration<u64, std::ratio<1, 1'000'000'000>>;
 
     class Timer {
     public:
@@ -31,7 +30,7 @@ namespace Quasi::Debug {
         static TimeDuration Instant();
 
         template <class Unit> static u64 UnitConvert(TimeDuration d) {
-            return std::chrono::duration_cast<TimeUnit<Unit>>(d).count();
+            return std::chrono::duration_cast<Unit>(d).count();
         }
 
         void Start();
