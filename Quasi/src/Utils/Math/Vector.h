@@ -63,15 +63,15 @@ namespace Quasi::Math {
         const T& operator[](usize i) const { return Data()[i]; }
 
         template <usize M>
-        Vector<T, M> Swizzle(const char (&swizzle)[M + 1]) const {
-            Vector<T, M> swizzled;
-            for (usize i = 0; i < M; ++i) {
+        Vector<T, M - 1> Swizzle(const char (&swizzle)[M]) const {
+            Vector<T, M - 1> swizzled;
+            for (usize i = 0; i < M - 1; ++i) {
                 const usize comp = CompFromName(swizzle[i]);
                 swizzled[i] = comp == -1 ? 0 : At(comp);
             }
             return swizzled;
         }
-        template <usize M> Vector<T, M> operator[](const char (&swizzle)[M + 1]) { return Swizzle(swizzle); }
+        template <usize M> Vector<T, M - 1> operator[](const char (&swizzle)[M]) { return Swizzle(swizzle); }
 
         usize Dimensions() const { return N; }
 
@@ -115,7 +115,7 @@ namespace Quasi::Math {
 
         template <class U, usize M> explicit operator Vector<U, M>() const { return As<U, M>(); }
 
-        bool IsZero() const { return All([] (T x) { return x == 0; }); }
+        bool IsZero() const { return super() == 0; }
         bool NearZero() const { return LenSq() < (T)(f32s::DELTA * f32s::DELTA); }
         Comparison Cmp(const Super& other) const { return AsSpan().Cmp(other.AsSpan()); }
 
@@ -142,7 +142,7 @@ namespace Quasi::Math {
         Super& MulCompsAssign(const Super& other)     { return BinaryAssign(other, Operators::MulAssign {}); }
         Super& DivCompsAssign(const Super& other)     { return BinaryAssign(other, Operators::DivAssign {}); }
 
-        Super operator+() const { return *this; }
+        Super operator+() const { return super(); }
         Super operator-() const { return Neg(); }
 
         Super operator+(const Super& other) const { return Add(other); }
@@ -274,7 +274,7 @@ namespace Quasi::Math {
             for (usize i = 0; i < N; ++i) if (At(i) > other[i]) return false;
             return true;
         }
-        bool IsIn(const Super& min, const Super& max) const { return ALlGreater(min) && AllLess(max); }
+        bool IsIn(const Super& min, const Super& max) const { return AllGreater(min) && AllLess(max); }
         bool IsIn(const Rect<T, N>& rect) const;
 
         static Super Random(RandomGenerator& rand);

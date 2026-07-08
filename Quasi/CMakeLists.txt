@@ -115,6 +115,7 @@ set(HEADER_FILES
     src/vendor/imgui/imgui_stdlib.h
 
     src/vendor/stb_image/stb_image.h
+    src/Utils/PolyVec.h
 )
 source_group("Header Files" FILES ${HEADER_FILES})
 
@@ -216,8 +217,8 @@ set(ALL_FILES
         src/Utils/Math/Rotor2D.cpp
         src/Utils/Math/Rotor3D.h
         src/Utils/Math/Rotor3D.cpp
-        src/Utils/Text/Table.cpp
-        src/Utils/Text/Table.h
+        src/Utils/Math/Packed.h
+        src/Utils/PolyVec.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})
@@ -227,11 +228,11 @@ target_include_directories(${PROJECT_NAME}
     ${PROJECT_SOURCE_DIR}/Dependencies/GLFW/include/
     # /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/System/Library/Frameworks/
         PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/imgui/
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/vendor/freetype/
+    src/
+    src/Graphics/
+    src/vendor/
+    src/vendor/imgui/
+    src/vendor/freetype/
     ${PROJECT_SOURCE_DIR}/OpenGLPort/
 )
 
@@ -263,6 +264,7 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     -Wno-missing-field-initializers # allows not initializing certain fields
     -Wno-dangling-reference # too many false-positives, especially for my Ref<T> class.
     -Wno-unused-parameter # it's simply too annoying.
+    -Wimplicit-fallthrough # surprisingly common in switch statements
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC

@@ -79,7 +79,7 @@ namespace Quasi::Graphics::Render {
         QGLCall$(GL::StencilMask(mask));
     }
 
-    void UseStencilWriteOp(StencilOperation stencilFail, StencilOperation depthFail, StencilOperation pass) {
+    void UseStencilWriteOp(StencilOperation pass, StencilOperation stencilFail, StencilOperation depthFail) {
         QGLCall$(GL::StencilOp((int)stencilFail, (int)depthFail, (int)pass));
     }
 
@@ -99,6 +99,13 @@ namespace Quasi::Graphics::Render {
         QGLCall$(GL::BlendFuncSeparate((int)src, (int)dest, (int)srcAlpha, (int)destAlpha));
     }
 
+    void UseBlendEq(BlendOp eq) {
+        QGLCall$(GL::BlendEquation((int)eq));
+    }
+
+    void UseBlendEqSeparate(BlendOp eq, BlendOp eqAlpha) {
+        QGLCall$(GL::BlendEquationSeparate((int)eq, (int)eqAlpha));
+    }
     void SetCullFace(FacingMode facing) {
         QGLCall$(GL::CullFace((int)facing));
     }
@@ -109,6 +116,10 @@ namespace Quasi::Graphics::Render {
 
     void SetColorWrite(BufferMode mode) {
         QGLCall$(GL::DrawBuffer((int)mode));
+    }
+
+    void SetViewport(const Math::iRect2D& viewport) {
+        GL::Viewport(viewport.min.x, viewport.min.y, viewport.Size().x, viewport.Size().y);
     }
 
     void MemoryBarrier(int barrierBits) {

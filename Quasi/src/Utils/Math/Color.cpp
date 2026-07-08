@@ -312,8 +312,8 @@ namespace Quasi::Math {
                 u64 aabbggrr = Memory::ReadU64(hex.Data());
                 if (!Text::NumberConversion::AreAllHexDigits4((u32)aabbggrr) ||
                     !Text::NumberConversion::AreAllHexDigits4(aabbggrr >> 32)) return nullptr;
-                aabbggrr &= 0x4F4F4F4F;
-                const u64 isLetterChar = aabbggrr & 0x40404040;
+                aabbggrr &= 0x4F4F4F4F'4F4F4F4F;
+                const u64 isLetterChar = aabbggrr & 0x40404040'40404040;
                 aabbggrr = (isLetterChar >> 6) * 9 + (aabbggrr ^ isLetterChar);
 
                 aabbggrr += aabbggrr << 12;

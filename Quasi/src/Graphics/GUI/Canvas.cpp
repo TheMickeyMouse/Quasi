@@ -34,12 +34,19 @@ namespace Quasi::Graphics {
     }
 
     Canvas::Canvas() {}
-    Canvas::Canvas(GraphicsDevice& gd) : renderCanvas(gd.CreateNewRender<UIVertex>(16384, 16384)) {
-        const Math::fv2 screenSize = gd.GetWindowSize().As<float>();
-        renderCanvas.SetProjection(Math::Matrix3D::OrthoProjection({ 0, screenSize.AddZ(1) }));
+    Canvas::Canvas(GraphicsDevice& gd) {
+        const Math::iv2 screenSize = gd.GetWindowSize();
 
-        renderCanvas.UseShader(
-            "// #shader vertex\n"
+        vbo = VertexBuffer::New(16384 * sizeof(UIVertex));
+        ibo = IndexBuffer::New(16384 * 3);
+        varray = VertexArray::New();
+        varray.Bind();
+        varray.AddBuffer(vbo, UIVertex::VERTEX_LAYOUT);
+
+        screenTexture = Texture2D::New(nullptr, screenSize);
+        screenBuffer = FrameBuffer::With(screenTexture);
+
+        shaderStd = Shader::New(
             "#version 450 core\n"
             "layout (location = 0) in vec2 position;"
             "layout (location = 1) in vec2 texCoord;"
@@ -52,16 +59,15 @@ namespace Quasi::Graphics {
             "out vec4 vSTUV;"
             "flat out int vRenderPrim;"
             ""
-            "uniform mat4 u_projection, u_view;"
+            "uniform mat4 u_projection;"
             ""
             "void main() {"
-            "    gl_Position = u_projection * u_view * vec4(position, 1.0, 1.0);"
+            "    gl_Position = u_projection * vec4(position, 0.0, 1.0);"
             "    vColor = color;"
             "    vTexCoord = texCoord;"
             "    vSTUV = stuv;"
             "    vRenderPrim = renderPrim;"
-            "}\n"
-            "// #shader fragment\n"
+            "}\n",
             "#version 450 core\n"
             ""
             "layout (location = 0) out vec4 FragColor;"
@@ -80,12 +86,12 @@ namespace Quasi::Graphics {
             "    switch (prim) {"
             "        case 1: {"
             "            float dist = 1 - length(vSTUV.xy);"
-            "            color.a = clamp(0.5 + dist / fwidth(dist), 0.0, 1.0);"
+            "            color.a *= clamp(0.5 + dist / fwidth(dist), 0.0, 1.0);"
             "            break;"
             "        }"
             "        case 2: {"
             "            float dist = (1 - vSTUV.z) * 0.5f - abs(length(vSTUV.xy) - (vSTUV.z + 1) * 0.5);"
-            "            color.a = clamp(0.5 + dist / fwidth(dist), 0.0, 1.0);"
+            "            color.a *= clamp(0.5 + dist / fwidth(dist), 0.0, 1.0);"
             "            break;"
             "        }"
             // "        case 3: {"
@@ -105,14 +111,69 @@ namespace Quasi::Graphics {
             "        case 6: {"
             "           float distance = texture(u_textures[vRenderPrim >> 8], vSTUV.xy).r - 0.5;"
             "           float ds = fwidth(distance);"
-            "           color.a = clamp(0.5 + distance / ds, 0.0, 1.0);"
+            "           color.a *= clamp(0.5 + distance / ds, 0.0, 1.0);"
             "           break;"
             "        }"
             "    }"
             "    FragColor = vec4(color.rgb * color.a, color.a);"
             "}"
         );
-        // renderCanvas->shader.SetUniformIntArr("u_textures", CArray<int, 8> { 0, 1, 2, 3, 4, 5, 6, 7 });
+
+        shaderShadowBlur = Shader::New(
+            "#version 450 core\n"
+            "layout (location = 0) in vec2 position;"
+            "layout (location = 1) in vec2 texCoord;"
+            "layout (location = 2) in vec4 color;"
+            "layout (location = 3) in vec4 stuv;"
+            "layout (location = 4) in int renderPrim;"
+            ""
+            "out vec4 vColor;"
+            "out vec2 vTexCoord;"
+            "out float vRadius;"
+            "flat out int vRenderPrim;"
+            ""
+            "uniform mat4 u_projection;"
+            ""
+            "void main() {"
+            "    gl_Position = u_projection * vec4(position, 0.0, 1.0);"
+            "    vColor = color;"
+            "    vTexCoord = texCoord;"
+            "    vRadius = stuv.x;"
+            "    vRenderPrim = renderPrim;"
+            "}\n",
+            "#version 450 core\n"
+            "\n"
+            "layout (location = 0) out vec4 FragColor;\n"
+            "\n"
+            "in vec4 vColor;\n"
+            "in vec2 vTexCoord;\n"
+            "in float vRadius;\n"
+            "flat in int vRenderPrim;\n"
+            "uniform sampler2D sourceTex;\n"
+            "void main() {\n"
+            "    vec4 color = vColor;\n"
+            "    if (vRenderPrim == 1) {\n"
+            "       vec2 s = 0.4 * vRadius / vec2(textureSize(sourceTex, 0));\n"
+            "       float A = texture(sourceTex, vTexCoord + s * vec2(-1.0, -1.0)).a, \n"
+            "             B = texture(sourceTex, vTexCoord + s * vec2( 0.0, -1.0)).a, \n"
+            "             C = texture(sourceTex, vTexCoord + s * vec2( 1.0, -1.0)).a, \n"
+            "             D = texture(sourceTex, vTexCoord + s * vec2(-0.5, -0.5)).a, \n"
+            "             E = texture(sourceTex, vTexCoord + s * vec2( 0.5, -0.5)).a, \n"
+            "             F = texture(sourceTex, vTexCoord + s * vec2(-1.0,  0.0)).a, \n"
+            "             G = texture(sourceTex, vTexCoord).a, \n"
+            "             H = texture(sourceTex, vTexCoord + s * vec2( 1.0,  0.0)).a, \n"
+            "             I = texture(sourceTex, vTexCoord + s * vec2(-0.5,  0.5)).a, \n"
+            "             J = texture(sourceTex, vTexCoord + s * vec2( 0.5,  0.5)).a, \n"
+            "             K = texture(sourceTex, vTexCoord + s * vec2(-1.0,  1.0)).a, \n"
+            "             L = texture(sourceTex, vTexCoord + s * vec2( 0.0,  1.0)).a, \n"
+            "             M = texture(sourceTex, vTexCoord + s * vec2( 1.0,  1.0)).a;\n"
+            "       color *= (D + E + G + I + J) * 0.125 + (B + F + H + L) * 0.0625 + (A + C + K + M) * 0.03125;\n"
+            "    } else { color *= texture(sourceTex, vTexCoord); }\n"
+            "    FragColor = vec4(color.rgb * color.a, color.a);\n"
+            "}\n"
+        );
+
+        SetViewport({ 0, (Math::fv2)screenSize });
     }
 
     void Canvas::DrawTriangle(const Math::fv2& p1, const Math::fv2& p2, const Math::fv2& p3) {
@@ -160,7 +221,9 @@ namespace Quasi::Graphics {
 
     void Canvas::DrawRect(const Math::fRect2D& rect) {
         if (NeedDrawFill()) {
-            DrawSimpleRect(rect, drawAttr.fillColor);
+            Batch b = NewBatch();
+            b.SetFill();
+            DrawSimpleRect(b, rect);
         }
         if (NeedDrawStroke()) {
             DrawRectStroke(rect);
@@ -270,20 +333,6 @@ namespace Quasi::Graphics {
         //       use cubic beziers next time
         if (NeedDrawFill())
             DrawSimpleEllipse(bounds, drawAttr.fillColor);
-        // if (NeedDrawStroke()) {
-        //     const Math::fRect2D rect = bounds.Extrude(drawAttr.strokeWeight);
-        //     Batch batch = NewBatch();
-        //     static constexpr float R2 = Math::ROOT_2;
-        //     const float diagonal = R2 * (radius + thickness);
-        //     float inner = (radius - thickness) / (radius + thickness);
-        //     inner *= inner;
-        //     batch.PushV(UIVertex { bounds.min,                     0, drawAttr.strokeColor, { -1, -1, inner, 0 }, UIRender::CIRCLE });
-        //     batch.PushV(UIVertex { { bounds.max.x, bounds.min.y }, 0, drawAttr.strokeColor, { +1, -1, inner, 0 }, UIRender::CIRCLE });
-        //     batch.PushV(UIVertex { { bounds.min.x, bounds.max.y }, 0, drawAttr.strokeColor, { -1, +1, inner, 0 }, UIRender::CIRCLE });
-        //     batch.PushV(UIVertex { bounds.max,                     0, drawAttr.strokeColor, { +1, +1, inner, 0 }, UIRender::CIRCLE });
-        //     batch.Tri(0, 1, 2);
-        //     batch.Tri(2, 0, 3);
-        // }
     }
 
     void Canvas::DrawEllipse(const Math::fv2& position, const Math::fv2& axis1, const Math::fv2& axis2) {
@@ -431,17 +480,7 @@ namespace Quasi::Graphics {
         Batch batch = NewBatch();
         batch.SetColor(tint);
         batch.SetTexture(subtex.tex->rendererID);
-
-        batch.SetTextureCoord(subtex.rect.min.x, subtex.rect.min.y);
-        batch.Point(rect.min);
-        batch.SetTextureCoord(subtex.rect.min.x, subtex.rect.max.y);
-        batch.Point({ rect.min.x, rect.max.y });
-        batch.SetTextureCoord(subtex.rect.max.x, subtex.rect.max.y);
-        batch.Point(rect.max);
-        batch.SetTextureCoord(subtex.rect.max.x, subtex.rect.min.y);
-        batch.Point({ rect.max.x, rect.min.y });
-
-        batch.Quad(0, 1, 2, 3);
+        DrawSimpleTexRect(batch, rect, subtex.rect);
     }
 
     void Canvas::DrawText(Str text, float fontSize, const Math::fv2& pos, const TextAlign& align) {
@@ -458,44 +497,120 @@ namespace Quasi::Graphics {
 
         Math::fv2 pen = pos;
 
-        // i actually have no idea why this is needed. but somehow by some miracle it works.
-        // pray to god next time you have to refactor this.
-        pen.y -= (float)font.GetMetric().descend * pointScale;
-        const float totalHeight = (float)font.GetMetric().fontHeight * pointScale * ((float)((int)text.CountLines() - 1) * align.lineSpacing + 1);
-        switch (align.alignment & TextAlign::VMASK) {
-            case TextAlign::VTOP: break;
-            case TextAlign::VCENTER: pen.y -= 0.5f * (align.rect.y - totalHeight); break;
-            case TextAlign::VBOTTOM: pen.y -= align.rect.y - totalHeight; break;
-            default:;
+        // ----------- ascender line             --> pen.y is here (when flipText=true)   +Y (Y up when flipText=false)
+        //                                                                                /\  ||
+        // ----------- baseline                  --> want to be here                      ||  ||
+        // ----------- descender line (negative) --> pen.y is here (when flipText=false)  ||  \/ (Y down when flipText=true)
+
+        if (!flipText) {
+            pen.y -= (float)font.GetMetric().descend * pointScale;
+        } else {
+            pen.y += (float)font.GetMetric().ascend * pointScale;
+        }
+
+        struct Line {
+            Str line;
+            float width;
+        };
+        Vec<Line> lineBreaks;
+        // words should include the whitespace before it, i.e.
+        // The, quick brown-fox  jumped! over the   lazy "dog".
+        // [--][----][--------][-------][---][--][-----][-----]
+        // the edges of these words will be tested for wrapping.
+        float lineWidth = 0.0f, wordWidth = 0.0f;
+        usize lineBeg = 0, wordBeg = 0;
+        for (usize i = 0; i < text.Length(); i++) {
+            const char c = text[i];
+            if (c == '\n') {
+                const Str line = text.Substr(lineBeg, i - lineBeg);
+                lineBreaks.Push({ line, font.CalcTextWidth(line) * relativeFontSize });
+                lineBeg = i + 1;
+                wordWidth = 0.0f;
+                continue;
+            }
+            if (!(align.alignment & TextAlign::WORD_WRAP)) continue;
+            // the following only detects word wraps
+
+            if (Chr::IsWhitespace(c)) { // end of the word
+                if (lineWidth + wordWidth > align.rect.x) {
+                    lineBreaks.Push({ text.Substr(lineBeg, wordBeg - lineBeg), lineWidth });
+                    i = wordBeg;
+                    lineWidth = 0.0;
+
+                    // make sure the beginning of a line ISN'T whitespace
+                    while (Chr::IsWhitespace(text[++i])) {}
+                    lineBeg = wordBeg = i;
+                    wordWidth = font.CalcCharWidth(text[i]) * relativeFontSize;
+                    --i;
+                    continue;
+                } else {
+                    lineWidth += wordWidth;
+                    wordWidth = 0.0f;
+                    wordBeg = i;
+                    // dont make consecutive spaces count as separate words
+                    while (Chr::IsWhitespace(text[++i])) {}
+                    --i;
+                }
+            }
+            wordWidth += font.CalcCharWidth(c) * relativeFontSize;
+        }
+        {
+            const Str lastLine = text.Substr(lineBeg);
+            lineBreaks.Push({ lastLine, font.CalcTextWidth(lastLine) * relativeFontSize });
+        }
+
+        const float totalHeight = (float)font.GetMetric().fontHeight * pointScale * ((float)(lineBreaks.Length() - 1) * align.lineSpacing + 1);
+
+        if (!flipText) {
+            switch (align.alignment & TextAlign::VMASK) {
+                case TextAlign::VTOP:    pen.y += align.rect.y - totalHeight; break;
+                case TextAlign::VCENTER: pen.y += 0.5f * (align.rect.y - totalHeight); break;
+                case TextAlign::VBOTTOM: break;
+                default:;
+            }
+        } else {
+            switch (align.alignment & TextAlign::VMASK) {
+                case TextAlign::VTOP:    break;
+                case TextAlign::VCENTER: pen.y += 0.5f * (align.rect.y - totalHeight); break;
+                case TextAlign::VBOTTOM: pen.y += align.rect.y - totalHeight; break;
+                default:;
+            }
         }
 
         const u32 horizontalAlignment = align.alignment & TextAlign::ALIGN_MASK;
-        for (const Str line : text.Split("\n")) {
-            pen.y -= lineHeight;
 
+        usize i = 0;
+        for (const auto [line, width] : lineBreaks) {
             float beginOffset = 0;
             switch (horizontalAlignment) {
                 case TextAlign::RIGHT: case TextAlign::CENTER: {
-                    const float lineWidth = font.CalcTextWidth(line) * relativeFontSize;
-                    beginOffset = (align.rect.x - lineWidth) * (horizontalAlignment == TextAlign::CENTER ? 0.5f : 1.0f);
+                    beginOffset = (align.rect.x - width) * (horizontalAlignment == TextAlign::CENTER ? 0.5f : 1.0f);
                     [[fallthrough]];
                 }
                 case TextAlign::LEFT: {
-                    DrawTextLine(line, relativeFontSize, { pen.x + beginOffset, pen.y }, align.letterSpacing, font);
+                    DrawTextLine(batch, line, relativeFontSize, { pen.x + beginOffset, pen.y }, align.letterSpacing, font);
                     break;
                 }
                 case TextAlign::JUSTIFY: {
-                    DrawTextJustify(line, relativeFontSize, pen, align.letterSpacing, align.rect.x, font);
+                    if (i == lineBreaks.Length() - 1) {
+                        DrawTextLine(batch, line, relativeFontSize, pen, align.letterSpacing, font);
+                    } else {
+                        DrawTextJustify(batch, line, relativeFontSize, pen, align.letterSpacing, align.rect.x, font);
+                    }
                     break;
                 }
                 default:;
             }
+            pen.y += flipText ? lineHeight : -lineHeight;
+            ++i;
         }
     }
 
     void Canvas::ShowHitboxes() {
+        Batch b = NewBatch();
+        b.SetColor({ 1, 0.1f });
         for (Ref i : interactables) {
-            DrawSimpleRect(i->hitbox, { 1, 0.1f });
+            DrawSimpleRect(b, i->hitbox);
         }
     }
 
@@ -680,18 +795,26 @@ namespace Quasi::Graphics {
     float Canvas::Batch::PushGlyph(const Glyph& glyph, float scaling, const Math::fv2& position, const Texture2D& atlas) {
         const Math::fv2 rsize = glyph.rect.Size() * (Math::fv2)atlas.Size(); // real-scale size of the quad
         const Math::fRect2D uv = glyph.rect;
-        const Math::fv2 start = (Math::fv2)glyph.offset * scaling + position,
-                        dim   = rsize * scaling;
+        Math::fv2 start = (Math::fv2)glyph.offset * scaling + position,
+                  dim   = rsize * scaling;
+        const bool flip = canvas.flipText;
 
-        SetSDF(canvas.defaultFont.GetTexture().rendererID);
+        float yBtm = start.y, yTop = start.y - dim.y;
+        if (flip) {
+            // std::swap(uvTop, uvBottom);
+            yBtm = 2 * position.y - start.y;
+            yTop = yBtm + dim.y;
+        }
+
+        SetSDF(atlas.rendererID);
         SetUV(uv.min.x, uv.min.y);
-        Push({ start.x,         start.y });
+        Push({ start.x,         yBtm });
         SetUV(uv.max.x, uv.min.y);
-        Push({ start.x + dim.x, start.y });
+        Push({ start.x + dim.x, yBtm });
         SetUV(uv.max.x, uv.max.y);
-        Push({ start.x + dim.x, start.y - dim.y });
+        Push({ start.x + dim.x, yTop });
         SetUV(uv.min.x, uv.max.y);
-        Push({ start.x,         start.y - dim.y });
+        Push({ start.x,         yTop });
         Quad(0, 1, 2, 3);
 
         Reload();
@@ -932,14 +1055,22 @@ namespace Quasi::Graphics {
         batch.Quad(1, 0, 4, 5);
     }
 
-    void Canvas::DrawSimpleRect(const Math::fRect2D& rect, const Math::fColor& color) {
-        Batch batch = NewBatch();
-        batch.SetColor(color);
-        batch.Point(rect.TopRight());
-        batch.Point(rect.TopLeft());
-        batch.Point(rect.BottomLeft());
-        batch.Point(rect.BottomRight());
-        batch.Quad(0, 1, 2, 3);
+    void Canvas::DrawSimpleRect(Batch& b, const Math::fRect2D& rect) {
+        b.Push(rect.TopRight());
+        b.Push(rect.TopLeft());
+        b.Push(rect.BottomLeft());
+        b.Push(rect.BottomRight());
+        b.Quad(0, 1, 2, 3);
+        b.offset += 4;
+    }
+
+    void Canvas::DrawSimpleTexRect(Batch& b, const Math::fRect2D& rect, const Math::fRect2D& uvRect) {
+        b.SetTextureCoord(uvRect.max.x, uvRect.max.y); b.Push(rect.TopRight());
+        b.SetTextureCoord(uvRect.min.x, uvRect.max.y); b.Push(rect.TopLeft());
+        b.SetTextureCoord(uvRect.min.x, uvRect.min.y); b.Push(rect.BottomLeft());
+        b.SetTextureCoord(uvRect.max.x, uvRect.min.y); b.Push(rect.BottomRight());
+        b.Quad(0, 1, 2, 3);
+        b.offset += 4;
     }
 
     void Canvas::DrawSimpleRoundedRect(const Math::fRect2D& outer, float radius, const Math::fColor& color) {
@@ -1057,12 +1188,8 @@ namespace Quasi::Graphics {
         }
     }
 
-    void Canvas::DrawTextLine(Str line, float relSize, const Math::fv2& pos, float letterSpacing, const Font& font) {
+    void Canvas::DrawTextLine(Batch& batch, Str line, float relSize, const Math::fv2& pos, float letterSpacing, const Font& font) {
         const Texture2D& fontAtlas = font.GetTexture();
-        Batch batch = NewBatch();
-        batch.SetStroke();
-        batch.SetTexture(fontAtlas.rendererID);
-
         Math::fv2 pen = pos;
         for (const char c : line) {
             if (Chr::IsWhitespace(c)) {
@@ -1073,7 +1200,7 @@ namespace Quasi::Graphics {
         }
     }
 
-    void Canvas::DrawTextJustify(Str line, float relSize, const Math::fv2& pos, float letterSpacing, float width, const Font& font) {
+    void Canvas::DrawTextJustify(Batch& batch, Str line, float relSize, const Math::fv2& pos, float letterSpacing, float width, const Font& font) {
         float usedWidth = 0;
         int gaps = 0;
         // first pass to calculate widths and spacings
@@ -1089,9 +1216,6 @@ namespace Quasi::Graphics {
         const float wordSpacing = (width - usedWidth) / (float)gaps;
 
         const Texture2D& fontAtlas = font.GetTexture();
-        Batch batch = NewBatch();
-        batch.SetStroke();
-        batch.SetTexture(fontAtlas.rendererID);
 
         Math::fv2 pen = pos;
         for (int i = 0; i < line.Length(); i++) {
@@ -1454,6 +1578,10 @@ namespace Quasi::Graphics {
         return drawAttr.currentFont.UnwrapOr(defaultFont);
     }
 
+    void Canvas::SetFont(const Font& font) {
+        drawAttr.currentFont = font;
+    }
+
     void Canvas::StrokeWeight(float weight) {
         drawAttr.strokeWeight = weight;
         drawAttr.drawStyle &= ~UIRender::NO_STROKE;
@@ -1470,11 +1598,17 @@ namespace Quasi::Graphics {
     }
 
     void Canvas::Fill(const Math::fColor& fillColor) {
+        if (fillColor == Math::fColor::Clear()) {
+            return NoFill();
+        }
         drawAttr.fillColor = fillColor;
         drawAttr.drawStyle &= ~UIRender::NO_FILL;
     }
 
     void Canvas::Stroke(const Math::fColor& strokeColor) {
+        if (strokeColor == Math::fColor::Clear()) {
+            return NoStroke();
+        }
         drawAttr.strokeColor = strokeColor;
         drawAttr.drawStyle &= ~UIRender::NO_STROKE;
     }
@@ -1509,12 +1643,69 @@ namespace Quasi::Graphics {
         return { *this };
     }
 
+    Canvas::DropShadowScope::DropShadowScope(Canvas& canvas, const Math::fv2& off, float r, const Math::fColor& color)
+        : canvas(canvas), offset(off), blurRadius(r), shadowColor(color) {
+        canvas.ForceDrawCurrentBatch(); // remove previous meshes
+    }
+
+    Canvas::DropShadowScope::~DropShadowScope() {
+        GL::Int prevFramebuff = 0;
+        GL::GetIntegerv(GL::DRAW_FRAMEBUFFER_BINDING, &prevFramebuff);
+
+        canvas.screenBuffer.BindDrawDest();
+        Render::Clear();
+        canvas.EndFrame();
+        GL::BindFramebuffer(GL::DRAW_FRAMEBUFFER, prevFramebuff);
+
+        // figure out mesh bounding box
+        Math::fRect2D bbox = Math::fRect2D::AntiDomain();
+        for (const auto& v : canvas.worldMesh.vertices) {
+            bbox.ExpandToFit(v.Position);
+        }
+        // just in case; without this the results look 'cropped'/'cut off' for some reason
+        static constexpr float PADDING = 2;
+        bbox.min -= PADDING;
+        bbox.max += PADDING;
+        const Math::fRect2D sbox = bbox.Extrude(blurRadius);
+
+        canvas.BeginFrame();
+        Batch batch = canvas.NewBatch();
+        batch.SetPrim(1);
+        batch.SetColor(shadowColor);
+        batch.SetUV(blurRadius, 0);
+        canvas.DrawSimpleTexRect(batch, sbox + offset, sbox.RelativeTo(canvas.viewport));
+
+        batch.SetPrim(0);
+        batch.SetColor(1);
+        canvas.DrawSimpleTexRect(batch, bbox, bbox.RelativeTo(canvas.viewport));
+
+        canvas.shaderShadowBlur.Bind();
+        canvas.shaderShadowBlur.SetUniformTex("sourceTex", canvas.screenTexture, 0);
+        canvas.EndFrame(canvas.shaderShadowBlur);
+
+        canvas.BeginFrame();
+    }
+
+    Canvas::DropShadowScope Canvas::BeginShadow(const Math::fv2& offset, float blurRadius, const Math::fColor& shadowColor) {
+        return { *this, offset, blurRadius, shadowColor };
+    }
+
     Math::fv2 Canvas::TransformToWorldSpace(const Math::fv2& point) const {
         return transform * point;
     }
 
-    void Canvas::SetViewport(const Math::fRect2D& viewport) {
-        renderCanvas.SetProjection(Math::Matrix3D::OrthoProjection(viewport.AddZ({ 0, 1 })));
+    void Canvas::SetViewport(const Math::fRect2D& vp) {
+        viewport = vp;
+        const Math::Matrix3D ortho = Math::Matrix3D::OrthoProjection(vp.AddZ({ 0, 1 }));
+        shaderStd.Bind();
+        shaderStd.SetUniformMat4x4("u_projection", ortho);
+        shaderShadowBlur.Bind();
+        shaderShadowBlur.SetUniformMat4x4("u_projection", ortho);
+    }
+
+    void Canvas::FlipYDirection() {
+        SetViewport({ { viewport.min.x, viewport.max.y }, { viewport.max.x, viewport.min.y } });
+        flipText ^= true;
     }
 
     void Canvas::Update(float dt) {
@@ -1564,19 +1755,21 @@ namespace Quasi::Graphics {
     }
 
     void Canvas::BeginFrame() {
-        renderCanvas.BeginContext();
+        vbo.ClearData();
+        ibo.ClearData();
         worldMesh.Clear();
         usedTextures = 0;
     }
 
     void Canvas::EndFrame() {
-        renderCanvas->Add(worldMesh);
-        renderCanvas.EndContext();
+        EndFrame(shaderStd);
+    }
 
-        // GL::ActiveTexture(GL::TEXTURE0);
-        // TextureBase::BindObject(TextureTarget::_2D, textures[0]);
-        // GL::ActiveTexture(GL::TEXTURE1);
-        // TextureBase::BindObject(TextureTarget::_2D, textures[1]);
-        renderCanvas.DrawContext();
+    void Canvas::EndFrame(const Shader& alternateShader) {
+        if (worldMesh.indices.IsEmpty()) return;
+
+        vbo.AddData(worldMesh.vertices.AsSpan().AsConst());
+        ibo.AddData(worldMesh.indices.AsSpan());
+        Render::Draw(varray, ibo, alternateShader);
     }
 }

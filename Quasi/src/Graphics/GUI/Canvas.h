@@ -5,6 +5,7 @@
 #include "RenderObject.h"
 #include "TextureAtlas.h"
 #include "Fonts/TextAlign.h"
+#include "GLs/FrameBuffer.h"
 
 namespace Quasi::Graphics {
     class Font;
@@ -42,7 +43,18 @@ namespace Quasi::Graphics {
     }
 
     class Canvas {
-        RenderObject<UIVertex> renderCanvas;
+        VertexArray varray;
+        VertexBuffer vbo;
+        IndexBuffer ibo;
+        Math::fRect2D viewport;
+
+        // used for optional post effects
+        FrameBuffer screenBuffer;
+        Texture2D screenTexture;
+
+        Shader shaderStd;
+        Shader shaderShadowBlur;
+
         UIMesh worldMesh;
         OptRef<UIMesh> drawMesh = nullptr; // can be set to any mesh. by default it draws to the world mesh
         DrawAttributes drawAttr;
@@ -56,6 +68,7 @@ namespace Quasi::Graphics {
         u32 usedTextures = 0;
     public:
         Math::Transform2D transform;
+        bool flipText = false;
 
         Canvas();
         Canvas(GraphicsDevice& gd);
@@ -99,6 +112,7 @@ namespace Quasi::Graphics {
         void DrawSTextureH (const SubTexture& subtex, const Math::fv2& pos, float h, bool center = true, const Math::fColor& tint = 1);
         void DrawSTextureEx(const SubTexture& subtex, const Math::fRect2D& rect, const Math::fColor& tint = 1);
 
+        // pos = bottom left corner of text, align.rect = box extending to the top-right corner
         void DrawText(Str text, float fontSize, const Math::fv2& pos, const TextAlign& align = {});
 
         void ShowHitboxes();
@@ -173,13 +187,14 @@ namespace Quasi::Graphics {
         void DrawQuarterArc(const Math::fv2& center, const Math::Rotor2D& start, float radius, float thickness, const Math::fColor& color);
         void DrawCircularArcCCW(const Math::fv2& center, const Math::Rotor2D& mid, Math::Rotor2D step, float radius, float thickness, const Math::fColor& color);
 
-        void DrawSimpleRect(const Math::fRect2D& rect, const Math::fColor& color);
+        void DrawSimpleRect(Batch& b, const Math::fRect2D& rect);
+        void DrawSimpleTexRect(Batch& b, const Math::fRect2D& rect, const Math::fRect2D& uvRect);
         void DrawSimpleRoundedRect(const Math::fRect2D& outer, float radius, const Math::fColor& color);
         void DrawSimpleVarRoundRect(const Math::fRect2D& outer, float tr, float br, float tl, float bl, const Math::fColor& color);
         void DrawRectStroke(const Math::fRect2D& rect);
 
-        void DrawTextLine(Str line, float relSize, const Math::fv2& pos, float letterSpacing, const Font& font);
-        void DrawTextJustify(Str line, float relSize, const Math::fv2& pos, float letterSpacing, float width, const Font& font);
+        void DrawTextLine(Batch& batch, Str line, float relSize, const Math::fv2& pos, float letterSpacing, const Font& font);
+        void DrawTextJustify(Batch& batch, Str line, float relSize, const Math::fv2& pos, float letterSpacing, float width, const Font& font);
     public:
 
         enum CurveMode {
@@ -218,6 +233,7 @@ namespace Quasi::Graphics {
         const DrawAttributes& DrawAttr() const { return drawAttr; }
 
         const Font& GetCurrentFont() const;
+        void SetFont(const Font& font);
 
         void StrokeWeight(float weight);
         void StrokeCap(UIRender::RenderStyle cap);
@@ -244,8 +260,19 @@ namespace Quasi::Graphics {
         };
         PushStylesScope PushStyles();
 
+        struct DropShadowScope {
+            Canvas& canvas;
+            Math::fv2 offset;
+            float blurRadius;
+            Math::fColor shadowColor;
+            DropShadowScope(Canvas& canvas, const Math::fv2& off, float r, const Math::fColor& color);
+            ~DropShadowScope();
+        };
+        DropShadowScope BeginShadow(const Math::fv2& offset, float blurRadius, const Math::fColor& shadowColor);
+
         Math::fv2 TransformToWorldSpace(const Math::fv2& point) const;
-        void SetViewport(const Math::fRect2D& viewport);
+        void SetViewport(const Math::fRect2D& vp);
+        void FlipYDirection();
 
         void Update(float dt);
         void AddInteractable(Ref<Interactable> inter);
@@ -253,5 +280,6 @@ namespace Quasi::Graphics {
 
         void BeginFrame();
         void EndFrame();
+        void EndFrame(const Shader& alternateShader);
     };
 }

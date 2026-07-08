@@ -76,6 +76,14 @@ namespace Quasi::Graphics {
         INVERT_CONST_ALPHA = 0x8004
     };
 
+    enum class BlendOp {
+        ADD = 0x8006,
+        SUBTRACT = 0x800A,
+        REV_SUBTRACT = 0x800B,
+        MIN = 0x8007,
+        MAX = 0x8008,
+    };
+
     enum class RenderMode {
         POINTS = 0x1B00, LINES = 0x1B01, FILL = 0x1B02
     };
@@ -191,13 +199,15 @@ namespace Quasi::Graphics::Render {
     void UseStencilWriteMask(int mask);
     inline void EnableStencilWrite()  { UseStencilWriteMask(0xFF); }
     inline void DisableStencilWrite() { UseStencilWriteMask(0x00); }
-    void UseStencilWriteOp(StencilOperation stencilFail, StencilOperation depthFail, StencilOperation pass);
+    void UseStencilWriteOp(StencilOperation pass, StencilOperation stencilFail = StencilOperation::KEEP, StencilOperation depthFail = StencilOperation::KEEP);
 
     void UseAlphaFunc(CmpOperation op, float ref);
 
     void UseBlendConstColor(const Math::fColor& ref);
     void UseBlendFunc(BlendFactor src, BlendFactor dest);
     void UseBlendFuncSeparate(BlendFactor src, BlendFactor dest, BlendFactor srcAlpha, BlendFactor destAlpha);
+    void UseBlendEq(BlendOp eq);
+    void UseBlendEqSeparate(BlendOp eq, BlendOp eqAlpha);
 
     void SetCullFace(FacingMode facing);
     void SetFrontFacing(OrientationMode orientation);
