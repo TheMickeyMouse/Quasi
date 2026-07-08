@@ -24,6 +24,9 @@ namespace Quasi::Text {
     template <class T>
     StringWriter& StringWriter::operator<<(const T& obj) { FormatObjectTo(*this, obj); return *this; }
 
+    template <class... Ts>
+    usize StringWriter::Write(Str fmt, const Ts& ...args) { return FormatTo(*this, fmt, args...); }
+
     // should only be used internally
     template <class T>
     usize FormatWriterPtr(StringWriter out, const void* anyOfT, Str opt) {
@@ -44,13 +47,18 @@ namespace Quasi::Text {
 
     template <class... Ts>
     usize FormatTo(StringWriter output, Str fmt, const Ts&... args) {
-        const void* argParams[] = { (const void*)&args..., nullptr };
-        return Text::FormatDynamicTypesTo<Ts...>(output, fmt, argParams);
+        if constexpr (sizeof...(args) == 0) {
+            output.Write(fmt);
+            return fmt.Length();
+        } else {
+            const void* argParams[] = { (const void*)&args..., nullptr };
+            return Text::FormatDynamicTypesTo<Ts...>(output, fmt, argParams);
+        }
     }
 
     template <class T> struct WithFormatOptions {
-        T subject;
-        typename Formatter<T>::FormatOptions options;
+        const T& subject;
+        Formatter<T>::FormatOptions options;
     };
 
     template <class T>
@@ -68,7 +76,7 @@ namespace Quasi::Text {
     // (?'char'.)?(?'align'[<^>])(?'len'[0-9]+)
     struct TextFormatOptions {
         usize targetLength = 0;
-        enum Alignment { LEFT, CENTER, RIGHT } alignment = LEFT;
+        enum Alignment : u8 { LEFT, CENTER, RIGHT } alignment = LEFT;
         char pad = ' ';
         bool escape = false;
 
@@ -81,7 +89,7 @@ namespace Quasi::Text {
 
         static FormatOptions ConfigureOptions(Str opt) { return TextFormatOptions::Configure(opt); }
         static usize FormatTo(StringWriter sw, Str input, const FormatOptions& options);
-        static usize FormatNoEscape(StringWriter sw, Str input, const FormatOptions& options);
+        static usize FormatNoEscape(StringWriter sw, Str input, usize strlen, const FormatOptions& options);
     };
 
     template <>
@@ -102,8 +110,19 @@ namespace Quasi::Text {
 
     template <class T>
     struct Formatter<WithFormatOptions<T>> {
-        static usize FormatTo(StringWriter sw, const WithFormatOptions<T>& fres, Str) {
+        using FormatOptions = Empty;
+        static usize FormatTo(StringWriter sw, const WithFormatOptions<T>& fres, Empty) {
             return Text::FormatObjectTo(sw, fres.subject, fres.options);
+        }
+    };
+
+    // aligning uses utf8-length instead
+    struct Utf8Str : Str {};
+
+    template <>
+    struct Formatter<Utf8Str> : Formatter<Str> {
+        static usize FormatTo(StringWriter sw, Utf8Str str, const TextFormatOptions& options) {
+            return FormatNoEscape(sw, str, str.Utf8Length(), options);
         }
     };
 }
