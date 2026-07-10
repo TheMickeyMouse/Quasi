@@ -219,6 +219,8 @@ set(ALL_FILES
         src/Utils/Math/Rotor3D.cpp
         src/Utils/Math/Packed.h
         src/Utils/PolyVec.h
+        src/Utils/Text/Table.h
+        src/Utils/Text/Table.cpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})
