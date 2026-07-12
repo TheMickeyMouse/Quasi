@@ -119,6 +119,18 @@ namespace Quasi {
         static N CopySign(N x, N sign) { return ((x < 0) == (sign < 0)) ? x : -x; } // used to generalize floats
         static N AsSign(bool sign) { return sign - !sign; }
         static N Signed(bool sign, N val) { return sign ? val : -val; }
+
+        static N SatAdd(N a, N b) requires Unsigned<N> {
+            // https://stackoverflow.com/a/166393
+            N c = a + b;
+            if (c < a) c = (N)-1; // can only happen due to overflow
+            return c;
+        }
+        static N SatSub(N a, N b) requires Unsigned<N> {
+            N c = a - b;
+            if (c > a) c = 0; // can only happen due to underflow
+            return c;
+        }
     };
 
     using i8s    = NumInfo<i8>;

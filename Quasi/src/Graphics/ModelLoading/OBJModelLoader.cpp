@@ -65,7 +65,7 @@ namespace Quasi::Graphics {
                 for (const Str idx : data.Split(" ")) {
                     indices.Push(Text::Parse<int>(idx).UnwrapOr(-1));
                 }
-                prop.Set<Line>({ indices });
+                prop.Set<Line>({ std::move(indices) });
             } break;
             case "o"_u64:      prop.Set(Object { data }); break;
             case "g"_u64:      prop.Set(Group  { data }); break;

@@ -1,8 +1,13 @@
 #include "Table.h"
 
 namespace Quasi::Text {
-    Table::Table(u32 cols) : alignments(Vec<Alignment>::WithSize(cols)), cols(cols) {
-        alignments.Fill(Alignment::LEFT);
+    Table::Table(u32 cols) {
+        SetCols(cols);
+    }
+
+    void Table::SetCols(u32 c) {
+        cols = c;
+        alignments.Resize(cols, Alignment::LEFT);
     }
 
     void Table::SetAlign(u32 col, Alignment align) {

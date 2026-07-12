@@ -9,8 +9,9 @@ namespace Quasi::Text {
         Vec<Alignment> alignments;
         u32 cols;
 
-        Table(u32 cols);
+        Table(u32 cols = 0);
 
+        void SetCols(u32 c);
         void SetAlign(u32 col, Alignment align);
         void SetLeft(u32 col)   { SetAlign(col, Alignment::LEFT);   }
         void SetCenter(u32 col) { SetAlign(col, Alignment::CENTER); }

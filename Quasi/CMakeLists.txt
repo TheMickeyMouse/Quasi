@@ -221,6 +221,8 @@ set(ALL_FILES
         src/Utils/PolyVec.h
         src/Utils/Text/Table.h
         src/Utils/Text/Table.cpp
+        src/Utils/GridArray.cpp
+        src/Utils/GridArray.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})

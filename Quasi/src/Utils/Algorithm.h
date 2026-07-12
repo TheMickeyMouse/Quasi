@@ -1080,6 +1080,6 @@ namespace Quasi {
             }
             data[i].~T();
         }
-        SetLengthUnsafe(slow + 1);
+        size = slow + 1;
     }
 }

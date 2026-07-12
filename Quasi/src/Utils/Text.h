@@ -9,6 +9,8 @@ namespace Quasi {
 }
 
 namespace Quasi::Text {
+    inline void Print(Str s) { std::fwrite(s.Data(), 1, s.Length(), stdout); }
+    inline void Print(char c) { putchar(c); }
     template <class... Ts>
     void Print(Str fmt, const Ts&... args) {
         Text::FormatTo(StringWriter::WriteToConsole(), fmt, args...);
@@ -88,7 +90,7 @@ namespace Quasi::Text {
         FG_BLUE     = 34, BG_BLUE     = 44,
         FG_MAGENTA  = 35, BG_MAGENTA  = 45,
         FG_CYAN     = 36, BG_CYAN     = 46,
-        FG_GRAY     = 37, BG_GRAY     = 47,
+        FG_WHITE    = 37, BG_WHITE    = 47,
         HFG_BLACK   = 90, HBG_BLACK   = 100,
         HFG_RED     = 91, HBG_RED     = 101,
         HFG_GREEN   = 92, HBG_GREEN   = 102,

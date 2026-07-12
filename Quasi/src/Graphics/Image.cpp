@@ -172,7 +172,7 @@ namespace Quasi::Graphics {
         }
     }
 
-    void Image::ExportPNG(Str fdest) {
+    void Image::ExportPNG(CStr fdest) {
         stbi_write_png(fdest.Data(), (int)width, (int)height, 4, imageData.Data(), 0);
     }
 

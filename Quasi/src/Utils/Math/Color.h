@@ -14,12 +14,13 @@ namespace Quasi::Math {
         using Elm = T;
         enum { Dim = 3 + HasAlpha };
         static constexpr bool NoAlpha = !HasAlpha;
+        static constexpr T MAX = Floating<T> ? (T)1.0 : NumInfo<T>::MAX;
     public:
         IColor() = default;
-        IColor(T s, T a = 1) requires HasAlpha : r(s), g(s), b(s), a(a) {}
+        IColor(T s, T a = MAX) requires HasAlpha : r(s), g(s), b(s), a(a) {}
         IColor(T s)          requires NoAlpha  : r(s), g(s), b(s) {}
-        IColor(T r, T g, T b, T a = 1) requires HasAlpha : r(r), g(g), b(b), a(a) {}
-        IColor(T r, T g, T b, T   = 1) requires NoAlpha : r(r), g(g), b(b) {}
+        IColor(T r, T g, T b, T a = MAX) requires HasAlpha : r(r), g(g), b(b), a(a) {}
+        IColor(T r, T g, T b, T   = MAX) requires NoAlpha : r(r), g(g), b(b) {}
         IColor(const Vec4<T>& rgba)     requires HasAlpha : r(rgba.x), g(rgba.y), b(rgba.z), a(rgba.w) {}
         IColor(const Vec3<T>& rgb, T a) requires HasAlpha : r(rgb.x),  g(rgb.y),  b(rgb.z),  a(a) {}
         IColor(const Vec3<T>& rgb)                        : r(rgb.x),  g(rgb.y),  b(rgb.z) {}
@@ -50,8 +51,7 @@ namespace Quasi::Math {
         template <class U> U AlphaAs() const requires HasAlpha { return ChannelAs<U>(3); }
         template <class U = T> U AlphaOrFull() const {
             if constexpr (HasAlpha) return AlphaAs<U>();
-            else if constexpr (Floating<U>) return 1.0f;
-            else return (U)255;
+            else return MAX;
         }
 
         template <usize M>

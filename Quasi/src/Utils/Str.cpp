@@ -131,10 +131,10 @@ namespace Quasi {
 
     strdef usize strcls::Utf8Length() const {
         // from https://stackoverflow.com/questions/4063146/getting-the-actual-length-of-a-utf-8-encoded-stdstring
-        usize len = 0;
+        usize utf8len = 0;
         const char* s = this->Data();
-        while (*s) len += (*s++ & 0xC0) != 0x80;
-        return len;
+        for (usize i = 0; i < this->Length(); ++i) utf8len += (s[i] & 0xC0) != 0x80;
+        return utf8len;
     }
 
     strdef Str              strcls::AsStr()      const        { return Str   ::Slice(this->Data(), this->Length()); }

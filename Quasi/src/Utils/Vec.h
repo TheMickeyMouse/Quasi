@@ -46,26 +46,22 @@ namespace Quasi {
         Vec(T* dat, usize s, usize cap) : data(dat), size(s), capacity(cap) {}
     public:
         Vec() = default;
-        ~Vec() { Memory::RangeDestruct(data, size); /* dont destruct after size, capacity is uninit'ed */ }
+        ~Vec() { Memory::RangeDestruct(data, size); Memory::FreeRaw(data); /* dont destruct after size, capacity is uninit'ed */ }
         Vec(Vec&& v) noexcept : data(v.data), size(v.size), capacity(v.capacity) { v.PretendClear(); }
         Vec& operator=(Vec&& v) noexcept { this->~Vec(); data = v.data; size = v.size; capacity = v.capacity; v.PretendClear(); return *this; }
-        Vec(const Vec& x) : Vec(x.Clone()) {}
-        Vec& operator=(const Vec& x) { if (this == &x) return *this; *this = x.Clone(); return *this; }
     public:
         static Vec Empty() { return {}; }
         template <usize N> static Vec New(T (&&arr)[N]) { return MoveNew(Span<T>::FromArray(arr)); }
         template <usize N> static Vec New(const T (&arr)[N]) { return New(Span<const T>::FromArray(arr)); }
         static Vec New(Span<const T> elms) {
-            Vec v = WithCap(elms.Length());
+            Vec v = WithSize(elms.Length());
             Memory::RangeCopyNoOverlap(v.Data(), elms.Data(), elms.Length());
-            v.SetLengthUnsafe(elms.Length());
             return v;
         }
         static Vec FromIList(IList<T> elms) { return New(Spans::FromIList(elms)); }
         static Vec MoveNew(Span<T> movElms) {
-            Vec v = WithCap(movElms.Length());
+            Vec v = WithSize(movElms.Length());
             Memory::RangeConstructMove(v.Data(), movElms.Data(), movElms.Length());
-            v.SetLengthUnsafe(movElms.Length());
             return v;
         }
 
@@ -155,7 +151,6 @@ namespace Quasi {
         Span<T> EntireAsSpan() { return { data, capacity }; }
         Span<const T> EntireAsSpan() const { return { data, capacity }; }
 
-        void SetLengthUnsafe(usize len) { size = len; }
         void Truncate(usize len) { if (len < size) { Memory::RangeDestruct(&data[len], size - len); size = len; } }
         void Shorten(usize amount) { amount = std::min(amount, size); Memory::RangeDestruct(data, size - amount); size -= amount; }
 
@@ -223,7 +218,7 @@ namespace Quasi {
                 }
                 data[i].~T();
             }
-            SetLengthUnsafe(slow + 1);
+            size = slow + 1;
         }
         void Remove(const T& item) { OptionUsize i = this->Find(item); if (i) Pop(*i); }
         void RemoveDups() { return RemoveDupIf(Cmp::Equals {}); }
@@ -238,7 +233,7 @@ namespace Quasi {
                 }
                 data[i].~T();
             }
-            SetLengthUnsafe(slow + 1);
+            size = slow + 1;
         }
 
         void Erase(usize begin) { return Erase(begin, size - begin); }
@@ -251,7 +246,7 @@ namespace Quasi {
         // void Replace(IntegerRange, Span) // replaced values with span values
         // ExtractIfIter ExtractIf() // see https://doc.rust-lang.org/nightly/std/vec/struct.Vec.html#method.extract_if. probably not needed
 
-        Vec SplitOff(usize index) { Vec tail = Vec::MoveNew(this->SubspanMut(index)); SetLengthUnsafe(index); return tail; }
+        Vec SplitOff(usize index) { Vec tail = Vec::MoveNew(this->SubspanMut(index)); size = index; return tail; }
 
         /* Vec<CollectionItem<T>> */ auto Flattened() const requires CollectionAny<T> {
             Vec<CollectionItem<T>> flattened;
@@ -276,12 +271,6 @@ namespace Quasi {
             for (const T* beg = data; beg != data + size; ++beg) result.Push(mapper(*beg));
             return result;
         }
-
-        // + see span iterators
-    protected:
-        // struct IntoIter : IIterator<T, IntoIter> {
-        //
-        // } IntoIterImpl() { return { data, data + size }; }
     };
 
     template <class T, class Super> Vec<RemConst<T>> IContinuous<T, Super>::CollectToVec() const { return Vec<RemConst<T>>::New(*this); }
