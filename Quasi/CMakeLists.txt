@@ -244,7 +244,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     Q_EXT_MATCH_SYNTAX # for cool syntax features for pattern matching
 )
 
-target_compile_options(${PROJECT_NAME} PRIVATE
+target_compile_options(${PROJECT_NAME} PUBLIC
     -pedantic -Wall -Wextra
     -Wcast-align
     -Wctor-dtor-privacy
