@@ -11,6 +11,8 @@ namespace Quasi {
     template <class I>             concept IteratorAny    = Extends<I, IIterator<CollectionItem<I>, I>>;
     template <class I, class Item> concept Iterator       = IteratorAny<I> && ConvTo<CollectionItem<I>, Item>;
 
+    template <class T, usize N> struct Array;
+
     inline struct IteratorEndMarker {} IteratorEnd;
 
 #pragma region Iter Declarations
@@ -97,8 +99,8 @@ namespace Quasi {
             return n;
         }
 
-        Option<Item> Last() {
-            Option<Item> last = nullptr;
+        OptStrong<T> Last() {
+            OptStrong<T> last = nullptr;
             while (CanNext()) {
                 last = Current();
                 Advance();
@@ -106,7 +108,7 @@ namespace Quasi {
             return last;
         }
 
-        Option<Item> Nth(usize n) {
+        OptStrong<T> Nth(usize n) {
             if (AdvanceBy(n) < n || !CanNext()) return nullptr;
             return Current();
         }
@@ -116,26 +118,36 @@ namespace Quasi {
                 fn(i);
         }
 
-        Option<Item> Reduce(Fn<Item, Item, const Item&> auto&& reducer) {
+        template <class R> Option<R> Reduce(Fn<R, R, const Item&> auto&& reducer) {
             if (!CanNext()) return nullptr;
-            Item acc = Current();
-            Advance();
-            for (; CanNext(); Advance()) {
-                acc = reducer(std::move(acc), Current());
-            }
-            return acc;
+            R starting = R(Current()); Advance();
+            return Reduce((decltype(reducer))reducer, (R&&)starting);
         }
-
-        template <class R> R Reduce(Fn<R, R, const Item&> auto&& reducer, R starting) {
+        template <class R> R Reduce(Fn<R, R, const Item&> auto&& reducer, R&& starting) {
             for (; CanNext(); Advance()) {
-                starting = reducer(std::move(starting), Current());
+                starting = reducer((R&&)starting, Current());
             }
             return starting;
         }
-        Option<Item> Sum() { return Reduce(Operators::Add {}); }
-        Item         Sum(Item begin) { return Reduce(Operators::Add {}, begin); }
-        Option<Item> Min() { return Reduce(Qfn$(std::min)); }
-        Option<Item> Max() { return Reduce(Qfn$(std::max)); }
+
+        OptStrong<T> Min(const Fn<bool, const T&, const T&> auto& cmp = Cmp::LessThan {}, OptStrong<T> min = nullptr) {
+            for (; CanNext(); Advance()) {
+                Item curr = Current();
+                if (!min || cmp(curr, *min)) min = (Item&&)curr;
+            }
+            return min;
+        }
+        OptStrong<T> Max() { return Min(Cmp::GreaterThan {}); }
+        Option<Tuple<Strong<T>, Strong<T>>> MinMax() {
+            if (!CanNext()) return nullptr;
+            Strong<T> min = Current(), max = min;
+            for (; CanNext(); Advance()) {
+                Item curr = Current();
+                if (curr < min) min = (Item&&)curr;
+                if (curr > max) max = (Item&&)curr;
+            }
+            return Tuple<Strong<T>, Strong<T>> { min, max };
+        }
 
         bool All(Predicate<Item> auto&& pred = Combinate::Identity {}) {
             for (; CanNext(); Advance())
@@ -158,10 +170,18 @@ namespace Quasi {
 
         template <Collection<RemQual<T>> C> C Collect() {
             C collection;
-            for (auto&& x : *this) {
-                collection.Push(x);
+            for (; CanNext(); Advance()) {
+                collection.Push(Current());
             }
             return collection;
+        }
+
+        template <usize N> Array<RemQual<T>, N> CollectFirstN() {
+            Array<RemQual<T>, N> firstN;
+            for (usize i = 0; i < N && CanNext(); ++i, Advance()) {
+                firstN[i] = Current();
+            }
+            return firstN;
         }
 
         Iter::EnumerateIter<Super> Enumerate() const&;
@@ -171,7 +191,6 @@ namespace Quasi {
         // TODO:
         // StepBy
         // Chain
-        // Zip
         // ForEach
         // Filter
         // FilterMap

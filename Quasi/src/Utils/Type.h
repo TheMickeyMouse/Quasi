@@ -1,10 +1,13 @@
 #pragma once
-
-#include <map>
-
+#include <initializer_list>
 #include "Numeric.h"
 
 namespace Quasi {
+	template <class T> struct Ref;
+	template <class T> struct OptRef;
+	template <class T, usize N> struct Array;
+	template <class T> struct Option;
+
     template <class T>
     using IList = std::initializer_list<T>;
 
@@ -84,6 +87,22 @@ namespace Quasi {
 
 	template <class T> concept TrivialCopy     = std::is_trivially_copyable_v<T>;
 	template <class T> concept TrivialDestruct = std::is_trivially_destructible_v<T>;
+
+	// defers evaluation
+	namespace details {
+		template <class T> struct StrongArray { using Result = T; };
+		template <class T, usize N> struct StrongArray<T[N]> { using Result = Array<T, N>; };
+	}
+	// converts types into their 'strong' version, more managable form:
+	// ex: Strong<T&> -> Ref<T>, Strong<T[N]> -> Array<T, N>
+	template <class T>
+	using Strong = IfElse<IsRef<T>,	Ref<T>, typename details::StrongArray<T>::Result>;
+	// almost equivalent to Option<Strong<T>>;
+	// ex: OptStrong<T&> -> OptRef<T>
+	template <class T>
+	using OptStrong = IfElse<IsRef<T>, OptRef<T>, T>;
+
+	// constexpr tools:
 
 	template <usize...> struct IntSeq {};
 

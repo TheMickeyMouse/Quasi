@@ -12,7 +12,7 @@ namespace Quasi::Iter {
     struct EnumerateIter : IIterator<const EnumeratePair<CollectionItem<It>>, EnumerateIter<It>> {
         using OriginalItem = CollectionItem<It>;
         using Item = const EnumeratePair<OriginalItem>;
-        friend IIterator<const Item, EnumerateIter>;
+        friend IIterator<Item, EnumerateIter>;
     private:
         usize i = 0;
         It iter;

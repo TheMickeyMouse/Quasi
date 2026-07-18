@@ -4,9 +4,6 @@
 
 #include "GraphicsDevice.h"
 
-#include <algorithm>
-#include <ranges>
-
 #include "IO.h"
 
 #ifndef Q_NO_IMGUI

@@ -1,7 +1,5 @@
 #include "Collision2D.h"
 
-#include <bits/stl_algo.h>
-
 #include "Body2D.h"
 #include "SeperatingAxisSolver.h"
 #include "Utils/Debug/Logger.h"
@@ -302,8 +300,9 @@ namespace Quasi::Physics2D {
                     body.position -= sep;
                 if (targetDyn)
                     target.position += sep;
+                break;
             }
-            default: return;
+            default:;
         }
     }
 

@@ -1,5 +1,6 @@
 #pragma once
 #include "Func.h"
+#include "Hash.h"
 
 namespace Quasi {
     template <class T> struct OptRef;

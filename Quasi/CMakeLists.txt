@@ -223,6 +223,8 @@ set(ALL_FILES
         src/Utils/Text/Table.cpp
         src/Utils/GridArray.cpp
         src/Utils/GridArray.h
+        src/Utils/Iter/Zip.h
+        src/Utils/Iter/ChunksIter.h
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})
@@ -255,7 +257,6 @@ target_compile_options(${PROJECT_NAME} PUBLIC
     -Woverloaded-virtual
     -Wstrict-null-sentinel
     -Wstrict-overflow=5
-    -Wswitch-default
     -Wundef
     -Werror
 

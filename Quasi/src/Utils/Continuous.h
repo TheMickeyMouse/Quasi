@@ -123,15 +123,15 @@ namespace Quasi {
         Tuple<SpanCn, const T&, SpanCn> PartitionAt(usize at) const { return { First(at), Get(at), Skip(at + 1) }; }
         Tuple<SpanCn, SpanCn> SplitOnceOn(Predicate<T> auto&& pred) const {
             const OptionUsize i = FindIf(pred);
-            return i ? SplitAt(i) : Tuple { *this, Empty() };
+            return i ? SplitAt(*i) : Tuple { AsSpan(), SpanCn::Empty() };
         }
         Tuple<SpanCn, SpanCn> RevSplitOnceOn(Predicate<T> auto&& pred) const {
             const OptionUsize i = RevFindIf(pred);
-            return i ? SplitAt(i) : Tuple { Empty(), *this };
+            return i ? SplitAt(*i) : Tuple { SpanCn::Empty(), AsSpan() };
         }
         Tuple<SpanCn, SpanCn> SplitOnce(const T& sep) const {
             const OptionUsize i = Find(sep);
-            return i ? SplitAt(i) : Tuple { *this, Empty() };
+            return i ? SplitAt(*i) : Tuple { AsSpan(), SpanCn::Empty() };
         }
         SpanMt First(usize num)                { return SpanMt::Slice(Data(), num); }
         SpanMt Skip(usize len)                 { return SpanMt::Slice(Data() + len, Length() - len); }
@@ -146,15 +146,15 @@ namespace Quasi {
         Tuple<SpanMt, T&, SpanMt> PartitionAt(usize at) { return { First(at), Get(at), Skip(at + 1) }; }
         Tuple<SpanMt, SpanMt> SplitOnceOn(Predicate<T> auto&& pred) {
             const OptionUsize i = FindIf(pred);
-            return i ? SplitAt(i) : Tuple { *this, Empty() };
+            return i ? SplitAt(*i) : Tuple { AsSpan(), SpanMt::Empty() };
         }
         Tuple<SpanMt, SpanMt> RevSplitOnceOn(Predicate<T> auto&& pred) {
             const OptionUsize i = RevFindIf(pred);
-            return i ? SplitAt(i) : Tuple { Empty(), *this };
+            return i ? SplitAt(*i) : Tuple { SpanMt::Empty(), AsSpan() };
         }
         Tuple<SpanMt, SpanMt> SplitOnce(const T& sep) {
             const OptionUsize i = Find(sep);
-            return i ? SplitAt(i) : Tuple { *this, Empty() };
+            return i ? SplitAt(*i) : Tuple { AsSpan(), SpanMt::Empty() };
         }
         SpanCn Subspan(usize start)              const { return SpanCn::Slice(Data() + start, Length() - start); }
         SpanCn Subspan(usize start, usize count) const { return SpanCn::Slice(Data() + start, count); }

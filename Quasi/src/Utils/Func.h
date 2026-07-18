@@ -3,7 +3,6 @@
 
 #include "Memory.h"
 #include "Macros.h"
-#include "Tuple.h"
 
 namespace Quasi {
     template <class Res, class... Args>
@@ -253,10 +252,6 @@ namespace Quasi {
     };
 
     template <class Fn, class... Ts> using FuncResult = decltype(std::declval<Fn>()(std::declval<Ts>()...));
-
-    template <class Fn> struct ArgTypes {};
-    template <class Res, class... Args> struct ArgTypes<Res(*)(Args...)> { using Result = Tuple<Args...>; };
-    template <class Fn> using ArgumentsOf = typename ArgTypes<Fn>::Result;
 
     template <class F, class T>
     concept Predicate = Fn<F, bool, const T&>;

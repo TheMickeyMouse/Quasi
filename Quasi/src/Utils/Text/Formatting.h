@@ -184,15 +184,10 @@ namespace Quasi::Text {
         static usize FormatTo(StringWriter sw, const Tuple<Ts...>& tuple, Str fspec) {
             sw.Write('(');
             usize len = 2;
-            [&]<usize... Is>(IntSeq<Is...>) {
-                ((Is ? (len += sw.Write(", ")) : 0,
-                  len += FormatObjectTo(sw, tuple.template Get<Is>(),
-                        Formatter<Ts>::ConfigureOptions(fspec.TakeFirst(
-                            fspec.Find(',').UnwrapOr(fspec.Length())
-                        ))
-                    )
-                ), ...);
-            } (IntRangeSeq<sizeof...(Ts)> {});
+            tuple.Apply([&] (const auto& first, const auto&... args) {
+                len += sw.Write(first);
+                ([&] (const auto& x) { len += sw.Write(", ") + sw.Write(x); } (args), ...);
+            });
             sw.Write(')');
             return len;
         }

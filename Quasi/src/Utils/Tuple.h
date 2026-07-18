@@ -1,13 +1,14 @@
 #pragma once
+#include "Func.h"
 #include "Hash.h"
 
 namespace Quasi {
 #pragma region Indexing
     template <usize N> struct GetTupleElement {
-        template <class T, class U, class V, class W, class... Rest>
-        using Result = typename GetTupleElement<N - 4>::template DeferResult<Rest...>;
-        template <class T, class U, class V, class W, class... Rest>
-        static Result<T, U, V, W, Rest...> GetDeferResult;
+        template <class T, class... Rest>
+        using Result = GetTupleElement<N - 1>::template DeferResult<Rest...>;
+        template <class T, class... Rest>
+        static Result<T, Rest...> GetDeferResult;
         template <class... Ts> using DeferResult = decltype(GetDeferResult<Ts...>);
     };
 
@@ -16,24 +17,9 @@ namespace Quasi {
         template <class T, class... Ts> static T GetDeferResult;
         template <class... Ts> using DeferResult = decltype(GetDeferResult<Ts...>);
     };
-    template <> struct GetTupleElement<1> {
-        template <class T, class U, class...> using Result = U;
-        template <class T, class U, class... Ts> static U GetDeferResult;
-        template <class... Ts> using DeferResult = decltype(GetDeferResult<Ts...>);
-    };
-    template <> struct GetTupleElement<2> {
-        template <class T, class U, class V, class...> using Result = V;
-        template <class T, class U, class V, class... Ts> static V GetDeferResult;
-        template <class... Ts> using DeferResult = decltype(GetDeferResult<Ts...>);
-    };
-    template <> struct GetTupleElement<3> {
-        template <class T, class U, class V, class W, class...> using Result = W;
-        template <class T, class U, class V, class W, class... Ts> static W GetDeferResult;
-        template <class... Ts> using DeferResult = decltype(GetDeferResult<Ts...>);
-    };
 
     template <usize N, class... Types>
-    using TupleElement = typename GetTupleElement<N>::template Result<Types...>;
+    using TupleElement = GetTupleElement<N>::template Result<Types...>;
 
     namespace ComptimeInt {
         struct DigitAccum {
@@ -51,29 +37,22 @@ namespace Quasi {
     template <usize N> struct StaticIndex { static constexpr usize Index = N; };
     template <char... Digits> using ParseStaticIndex = StaticIndex<ComptimeInt::_ReadNum<Digits...> - 1>;
 
-    template <char... Digits> ParseStaticIndex<Digits...> operator ""_th() {
-        return ParseStaticIndex<Digits...> {};
-    }
+    template <char... Digits> ParseStaticIndex<Digits...> operator ""_th() { return {}; }
     // for 1_st
-    template <char... Digits> ParseStaticIndex<Digits...> operator ""_st() {
-        return ParseStaticIndex<Digits...> {};
-    }
+    template <char... Digits> ParseStaticIndex<Digits...> operator ""_st() { return {}; }
     // for 2_nd
-    template <char... Digits> ParseStaticIndex<Digits...> operator ""_nd() {
-        return ParseStaticIndex<Digits...> {};
-    }
+    template <char... Digits> ParseStaticIndex<Digits...> operator ""_nd() { return {}; }
     // for 3_rd
-    template <char... Digits> ParseStaticIndex<Digits...> operator ""_rd() {
-        return ParseStaticIndex<Digits...> {};
-    }
+    template <char... Digits> ParseStaticIndex<Digits...> operator ""_rd() { return {}; }
 #pragma endregion
 
     template <class...> struct Tuple;
 
     template <class T, class... Ts> struct Tuple<T, Ts...> {
         T first;
+        [[no_unique_address]]
         Tuple<Ts...> rest;
-
+    public:
         Tuple() = default;
         Tuple(T first, Ts... rest) : first((T&&)first), rest((Ts&&)rest...) {}
 
@@ -105,11 +84,39 @@ namespace Quasi {
             rest.TieMoveTo(outs...);
         }
 
+        template <FnArgs<const T&, const Ts&...> M>
+        FuncResult<M, const T&, const Ts&...> Apply(M&& map) const {
+            return rest.Apply([&] (const Ts&... args) { return map(first, args...); });
+        }
+        template <FnArgs<T&, Ts&...> M>
+        FuncResult<M, T&, Ts&...> ApplyMut(M&& map) {
+            return rest.ApplyMut([&] (Ts&... args) { return map(first, args...); });
+        }
+
+        template <class... Us>
+        Tuple<T, Ts..., Us...> Join(Tuple<Us...> tup) const& {
+            return Apply([&] (const T& arg, const Ts&... args) {
+                return tup.ApplyMut([&] (Us&... args2) {
+                    return Tuple<T, Ts..., Us...> { arg, args..., std::move(args2)... };
+                });
+            });
+        }
+        template <class... Us>
+        Tuple<T, Ts..., Us...> Join(Tuple<Us...> tup) && {
+            return Apply([&] (T& arg, Ts&... args) {
+                return tup.ApplyMut([&] (Us&... args2) {
+                    return Tuple<T, Ts..., Us...> { std::move(arg), std::move(args)..., std::move(args2)... };
+                });
+            });
+        }
+
         Hashing::Hash GetHashCode() const {
             Hashing::Hash h = Hashing::HashObject(first);
             h = Hashing::HashCombine(h, rest.GetHashCode());
             return h;
         }
+
+        template <class... Us> friend struct Tuple;
     };
 
     template <> struct Tuple<> {
@@ -120,6 +127,11 @@ namespace Quasi {
         void operator[](auto) const = delete;
         void TieTo() const {}
         void TieMoveTo() const {}
+
+        template <FnArgs<> M> FuncResult<M> Apply(M&& map) const { return map(); }
+        template <FnArgs<> M> FuncResult<M> ApplyMut(M&& map)    { return map(); }
+        template <class Tup> Tup Join(Tup tup) const { return std::move(tup); }
+
         Hashing::Hash GetHashCode() const { return Hashing::EmptyHash(); }
     };
 

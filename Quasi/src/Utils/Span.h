@@ -6,6 +6,9 @@
 namespace Quasi {
     namespace Algorithm {};
     template <class T> struct BufferIterator;
+    namespace Iter {
+        template <class T> struct ChunksIter;
+    }
     template <class T, usize N> struct Array;
 
     template <class T>
@@ -68,6 +71,8 @@ namespace Quasi {
 
         // WindowIter                               Windows(usize len)
         // FixedWindowIter                          WindowsFixed(usize len)
+        Iter::ChunksIter<T> Chunks(usize chunkSize);
+        Iter::ChunksIter<const T> Chunks(usize chunkSize) const;
         // ChunkIter                                Chunks(usize chunk)
         // RevChunkIter                             RevChunks(usize chunk)
         // ChunkExactIter                           ChunksExact(usize chunk)
