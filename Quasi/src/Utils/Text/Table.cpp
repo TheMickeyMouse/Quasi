@@ -24,8 +24,8 @@ namespace Quasi::Text {
 
     void Table::Write(StringWriter sw) {
         // we *have* to do this pass before we start fmtting.
-        Vec<u32> maxLengthOfCols = Vec<u32>::WithSize(cols);
-        maxLengthOfCols.Fill(0);
+        Vec<u32> maxLengthOfCols = Vec<u32>::WithCap(cols);
+        maxLengthOfCols.Resize(cols, 0);
         for (usize i = 0; i < cells.Length(); ++i) {
             const usize x = i % cols;
             maxLengthOfCols[x] = std::max(maxLengthOfCols[x], (u32)cells[i].Length());

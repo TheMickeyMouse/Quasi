@@ -86,12 +86,12 @@ namespace Quasi::Graphics {
             "    switch (prim) {"
             "        case 1: {"
             "            float dist = 1 - length(vSTUV.xy);"
-            "            color.a *= clamp(0.5 + dist / fwidth(dist), 0.0, 1.0);"
+            "            color.a *= clamp(dist / fwidth(dist), 0.0, 1.0);"
             "            break;"
             "        }"
             "        case 2: {"
             "            float dist = (1 - vSTUV.z) * 0.5f - abs(length(vSTUV.xy) - (vSTUV.z + 1) * 0.5);"
-            "            color.a *= clamp(0.5 + dist / fwidth(dist), 0.0, 1.0);"
+            "            color.a *= clamp(dist / fwidth(dist), 0.0, 1.0);"
             "            break;"
             "        }"
             // "        case 3: {"
@@ -217,6 +217,23 @@ namespace Quasi::Graphics {
             Math::fRect2D::FromCenter(position, size) :
             Math::fRect2D::FromSize  (position, size);
         DrawRect(rect);
+    }
+
+    void Canvas::DrawPolygon(Span<const Math::fv2> points) {
+        if (NeedDrawFill()) {
+            Batch batch = NewBatch();
+            batch.SetFill();
+            for (const auto& p : points) {
+                batch.Point(p);
+            }
+            batch.TriFan(points.Length());
+        }
+        if (NeedDrawStroke()) {
+            Path path = NewPath(CLOSED_CURVE);
+            for (const auto& p : points) {
+                path.AddPoint(p);
+            }
+        }
     }
 
     void Canvas::DrawRect(const Math::fRect2D& rect) {
@@ -563,9 +580,9 @@ namespace Quasi::Graphics {
 
         if (!flipText) {
             switch (align.alignment & TextAlign::VMASK) {
-                case TextAlign::VTOP:    pen.y += align.rect.y - totalHeight; break;
-                case TextAlign::VCENTER: pen.y += 0.5f * (align.rect.y - totalHeight); break;
-                case TextAlign::VBOTTOM: break;
+                case TextAlign::VTOP:    break;
+                case TextAlign::VCENTER: pen.y -= 0.5f * (align.rect.y - totalHeight); break;
+                case TextAlign::VBOTTOM: pen.y -= align.rect.y - totalHeight; break;
                 default:;
             }
         } else {
@@ -582,6 +599,7 @@ namespace Quasi::Graphics {
         usize i = 0;
         for (const auto [line, width] : lineBreaks) {
             float beginOffset = 0;
+            if (!flipText) pen.y -= lineHeight;
             switch (horizontalAlignment) {
                 case TextAlign::RIGHT: case TextAlign::CENTER: {
                     beginOffset = (align.rect.x - width) * (horizontalAlignment == TextAlign::CENTER ? 0.5f : 1.0f);
@@ -601,7 +619,7 @@ namespace Quasi::Graphics {
                 }
                 default:;
             }
-            pen.y += flipText ? lineHeight : -lineHeight;
+            if (flipText) pen.y += lineHeight;
             ++i;
         }
     }

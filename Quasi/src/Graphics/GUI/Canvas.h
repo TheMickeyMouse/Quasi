@@ -83,6 +83,7 @@ namespace Quasi::Graphics {
         void DrawTriangle(const Math::fv2& p1, const Math::fv2& p2, const Math::fv2& p3);
         void DrawQuad(const Math::fv2& p1, const Math::fv2& p2, const Math::fv2& p3, const Math::fv2& p4);
         void DrawSquare(const Math::fv2& position, float size, bool center = true);
+        void DrawPolygon(Span<const Math::fv2> points);
         void DrawRect(const Math::fRect2D& rect);
         void DrawRoundedSquare(const Math::fv2& position, float size, float radius, bool center = true);
         void DrawVarRoundedSquare(const Math::fv2& position, float size, float tr, float br, float tl, float bl, bool center = true);

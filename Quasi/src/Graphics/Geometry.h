@@ -52,6 +52,19 @@ namespace Quasi::Graphics {
                 a = b;
             }
         }
+        void TriStrip(u32 count) {
+            u32 tri[3] = { offset, 0, offset + 1 };
+            for (u32 i = 2; i < count; ++i) {
+                tri[1 ^ (i & 1)] = tri[2];
+                tri[2] = offset + i;
+                super().Indices().Push({ tri[0], tri[1], tri[2] });
+            }
+        }
+        void TriFan(u32 count) {
+            for (u32 i = 2; i < count; ++i) {
+                super().Indices().Push({ offset, offset + i - 1, offset + i });
+            }
+        }
 
         Super* operator->() { return &super(); }
     };

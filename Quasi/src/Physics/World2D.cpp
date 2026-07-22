@@ -89,8 +89,9 @@ namespace Quasi::Physics2D {
                         }
                     }
                     ++j;
-                } else {
-                    active.PopUnordered(j);
+                } else { // swap and pop
+                    std::swap(active[j], active.Last());
+                    active.Pop();
                 }
             }
             active.Push(*b);

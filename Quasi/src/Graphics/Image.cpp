@@ -139,7 +139,7 @@ namespace Quasi::Graphics {
 
     void Image::FlipVertical() {
         for (int y = 0; y < height / 2; y++) {
-            Memory::MemSwap(&imageData.Data()[4 * y * width], &imageData.Data()[4 * (height - y) * width], width * 4);
+            Memory::MemSwap(&imageData.Data()[4 * y * width], &imageData.Data()[4 * (height - y - 1) * width], width * 4);
         }
     }
 

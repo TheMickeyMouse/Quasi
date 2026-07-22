@@ -371,7 +371,7 @@ namespace Quasi::Math {
     template struct IColor<f32, true>;
 
     uColor3 operator ""_rgb  (usize x) { return uColor3::FromIntCode((u32)x); }
-    uColor  operator ""_rgba (usize x) { return uColor ::FromIntCode((u32)x); }
+    uColor  operator ""_rgba (usize x) { return uColor ::FromIntWithAlpha((u32)x); }
     fColor3 operator ""_rgbf (usize x) { return fColor3::FromIntCode((u32)x); }
-    fColor  operator ""_rgbaf(usize x) { return fColor ::FromIntCode((u32)x); }
+    fColor  operator ""_rgbaf(usize x) { return fColor ::FromIntWithAlpha((u32)x); }
 }
