@@ -49,7 +49,7 @@ namespace Quasi::Hashing {
                 h ^= (usize)lastData[1] << 8;  [[fallthrough]];
             case 1:
                 h ^= (usize)lastData[0];
-                h *= M_FACTOR;
+                h *= M_FACTOR; [[fallthrough]];
             default:
                 break;
         }

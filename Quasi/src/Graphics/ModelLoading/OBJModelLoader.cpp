@@ -116,7 +116,7 @@ namespace Quasi::Graphics {
         for (const OBJProperty& prop : objprop.Skip(1)) {
             prop.Visit(
                 [&] (const UseMaterial& usemat) {
-                    const OptionUsize i = model.materials.FindIf(
+                    const OptionUsize i = model.materials.FindIndexIf(
                         [&](const MTLMaterial& m) { return m.name == usemat.name; }
                     );
                     if (!i) return;

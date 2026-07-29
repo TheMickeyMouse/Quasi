@@ -208,7 +208,7 @@ namespace Quasi {
         /// @param value the value to fill empty values with (if necessary)
         void Resize(usize len, const T& value = {}) {
             if (len <= size) Truncate(len);
-            else { Reserve(len); Memory::RangeSet(&data[size], value, len - size); size = len; }
+            else { Reserve(len); Memory::RangeConstruct(&data[size], value, len - size); size = len; }
         }
 
         /// @brief Resizes the vector, shrinking/constructing new values with @p factory if necessary.

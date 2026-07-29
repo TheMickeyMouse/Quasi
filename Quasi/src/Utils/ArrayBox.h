@@ -31,7 +31,7 @@ namespace Quasi {
         static ArrayBox Own(Span<T> data) { return { data.Data(), data.Length() }; }
         static ArrayBox Copy(Span<const T> data) { return data.CollectArrayBox(); }
     protected:
-        void CloseImpl() { Memory::Free(buf); buf = nullptr; size = 0; }
+        void CloseImpl() { Memory::FreeArray(buf); buf = nullptr; size = 0; }
 
         RemRef<T>* DataImpl() { return buf; }
         const RemRef<T>* DataImpl() const { return buf; }

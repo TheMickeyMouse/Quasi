@@ -83,6 +83,19 @@ namespace Quasi {
         // Tuple<Span, Span<Array<RemConst<T>, N>>> AsRevChunks<usize N>()
         // ChunkByIter           ChunkBy(Fn<bool, T&, T&> pred)
 
+        Tuple<T&, Span> SplitFirst() const { return { *data, Slice(data + 1, size - 1) }; }
+        Tuple<Span, Span> CutAt(usize i)   const { return { Slice(data, i), Slice(data + i, size - i) }; }
+        Tuple<Span, Span> SplitAt(usize i) const { return { Slice(data, i), Slice(data + i + 1, size - i - 1) }; }
+        Tuple<Span, const T&, Span> PartitionAt(usize i) const { return { Slice(data, i), data[i], Slice(data + i + 1, size - i - 1) }; }
+        Tuple<Span, Span> SplitOnce(const T& sep) const {
+            const OptionUsize i = Find(sep);
+            return i ? SplitAt(*i) : Tuple { *this, Empty() };
+        }
+        Tuple<SpanCn, SpanCn> SplitOnceOn(Predicate<T> auto&& pred) const {
+            const OptionUsize i = FindIf(pred);
+            return i ? SplitAt(*i) : Tuple { *this, Empty() };
+        }
+
         Iter::SplitIter<Span> Split(const T& sep) const {
             return Iter::SplitIter<Span>::New(*this, Only(sep));
         }

@@ -23,7 +23,7 @@ namespace Quasi::Math {
         IColor(T r, T g, T b, T   = MAX) requires NoAlpha : r(r), g(g), b(b) {}
         IColor(const Vec4<T>& rgba)     requires HasAlpha : r(rgba.x), g(rgba.y), b(rgba.z), a(rgba.w) {}
         IColor(const Vec3<T>& rgb, T a) requires HasAlpha : r(rgb.x),  g(rgb.y),  b(rgb.z),  a(a) {}
-        IColor(const Vec3<T>& rgb)                        : r(rgb.x),  g(rgb.y),  b(rgb.z) {}
+        IColor(const Vec3<T>& rgb)                        : r(rgb.x),  g(rgb.y),  b(rgb.z),  a(MAX) {}
 
         static usize CompFromName(char c) { return Vector<T, Dim>::CompFromName(c); }
         T*       Data()          { return &r; }

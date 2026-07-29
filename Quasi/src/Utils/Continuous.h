@@ -110,55 +110,18 @@ namespace Quasi {
         const T& operator[](WrappingIndex i) const { return GetWrap(i); }
         SpanCn   operator[](zRange range)    const { return Subspan(range); }
 
-        SpanCn First(usize num)               const { return SpanCn::Slice(Data(), num); }
-        SpanCn Skip(usize len)                const { return SpanCn::Slice(Data() + len, Length() - len); }
-        SpanCn Tail()                         const { return SpanCn::Slice(Data() + 1, Length() - 1); }
-        SpanCn Last(usize num)                const { return SpanCn::Slice(Data() + Length() - num, num); }
-        SpanCn Trunc(usize len)               const { return SpanCn::Slice(Data(), Length() - len); }
-        SpanCn Init()                         const { return SpanCn::Slice(Data(), Length() - 1); }
-        Tuple<const T&,  SpanCn> SplitFirst() const { return { First(), Tail() }; }
-        Tuple<SpanCn, const T&>  SplitLast()  const { return { Init(),  Last() }; }
-        Tuple<SpanCn, SpanCn> CutAt(usize at)   const { return { First(at), Skip(at) }; }
-        Tuple<SpanCn, SpanCn> SplitAt(usize at) const { return { First(at), Skip(at + 1) }; }
-        Tuple<SpanCn, const T&, SpanCn> PartitionAt(usize at) const { return { First(at), Get(at), Skip(at + 1) }; }
-        Tuple<SpanCn, SpanCn> SplitOnceOn(Predicate<T> auto&& pred) const {
-            const OptionUsize i = FindIf(pred);
-            return i ? SplitAt(*i) : Tuple { AsSpan(), SpanCn::Empty() };
-        }
-        Tuple<SpanCn, SpanCn> RevSplitOnceOn(Predicate<T> auto&& pred) const {
-            const OptionUsize i = RevFindIf(pred);
-            return i ? SplitAt(*i) : Tuple { SpanCn::Empty(), AsSpan() };
-        }
-        Tuple<SpanCn, SpanCn> SplitOnce(const T& sep) const {
-            const OptionUsize i = Find(sep);
-            return i ? SplitAt(*i) : Tuple { AsSpan(), SpanCn::Empty() };
-        }
-        SpanMt First(usize num)                { return SpanMt::Slice(Data(), num); }
-        SpanMt Skip(usize len)                 { return SpanMt::Slice(Data() + len, Length() - len); }
-        SpanMt Tail()                          { return SpanMt::Slice(Data() + 1, Length() - 1); }
-        SpanMt Last(usize num)                 { return SpanMt::Slice(Data() + Length() - num, num); }
-        SpanMt Trunc(usize len)                { return SpanMt::Slice(Data(), Length() - len); }
-        SpanMt Init()                          { return SpanMt::Slice(Data(), Length() - 1); }
-        Tuple<T&,  SpanMt>  SplitFirst()       { return { First(), Tail() }; }
-        Tuple<SpanMt, T&>   SplitLast()        { return { Init(),  Last() }; }
-        Tuple<SpanMt, SpanMt> CutAt(usize at)   { return { First(at), Skip(at) }; }
-        Tuple<SpanMt, SpanMt> SplitAt(usize at) { return { First(at), Skip(at + 1) }; }
-        Tuple<SpanMt, T&, SpanMt> PartitionAt(usize at) { return { First(at), Get(at), Skip(at + 1) }; }
-        Tuple<SpanMt, SpanMt> SplitOnceOn(Predicate<T> auto&& pred) {
-            const OptionUsize i = FindIf(pred);
-            return i ? SplitAt(*i) : Tuple { AsSpan(), SpanMt::Empty() };
-        }
-        Tuple<SpanMt, SpanMt> RevSplitOnceOn(Predicate<T> auto&& pred) {
-            const OptionUsize i = RevFindIf(pred);
-            return i ? SplitAt(*i) : Tuple { SpanMt::Empty(), AsSpan() };
-        }
-        Tuple<SpanMt, SpanMt> SplitOnce(const T& sep) {
-            const OptionUsize i = Find(sep);
-            return i ? SplitAt(*i) : Tuple { AsSpan(), SpanMt::Empty() };
-        }
+        SpanCn First(usize num) const { return SpanCn::Slice(Data(), num); }
+        SpanCn Skip(usize len)  const { return SpanCn::Slice(Data() + len, Length() - len); }
+        SpanCn Tail()           const { return SpanCn::Slice(Data() + 1, Length() - 1); }
+        SpanCn Last(usize num)  const { return SpanCn::Slice(Data() + Length() - num, num); }
         SpanCn Subspan(usize start)              const { return SpanCn::Slice(Data() + start, Length() - start); }
         SpanCn Subspan(usize start, usize count) const { return SpanCn::Slice(Data() + start, count); }
         SpanCn Subspan(zRange range)             const { return SpanCn::Slice(Data() + range.min, range.max - range.min); }
+
+        SpanMt First(usize num) { return SpanMt::Slice(Data(), num); }
+        SpanMt Skip(usize len)  { return SpanMt::Slice(Data() + len, Length() - len); }
+        SpanMt Tail()           { return SpanMt::Slice(Data() + 1, Length() - 1); }
+        SpanMt Last(usize num)  { return SpanMt::Slice(Data() + Length() - num, num); }
         SpanMt Subspan(usize start)              { return SpanMt::Slice(Data() + start, Length() - start); }
         SpanMt Subspan(usize start, usize count) { return SpanMt::Slice(Data() + start, count); }
         SpanMt Subspan(zRange range)             { return SpanMt::Slice(Data() + range.min, range.max - range.min); }
@@ -198,31 +161,42 @@ namespace Quasi {
         Comparison CmpSized(Span<const T> other, Cmpr&& cmp = Cmpr {}) const { return CmpSizedBy(other, cmp); }
         Comparison operator<=>(Span<const T> other) const { return Cmp(other); }
 
-        OptionUsize Find   (const T& target) const { return FindIf   (Cmp::Equals { target }); }
-        OptionUsize RevFind(const T& target) const { return RevFindIf(Cmp::Equals { target }); }
-        OptionUsize FindIf(Predicate<T> auto&& pred) const {
-            for (usize i = 0; i < Length(); ++i) if (pred(Get(i))) return i; return nullptr;
+        OptionUsize FindIndex(const T& target) const { return FindIndexIf   (Cmp::Equals { target }); }
+        OptionUsize RevFindIndex(const T& target) const { return RevFindIndexIf(Cmp::Equals { target }); }
+        OptionUsize FindIndexIf(Predicate<T> auto&& pred) const {
+            for (usize i = 0; i < Length(); ++i) if (pred(Get(i))) return i;
+            return nullptr;
         }
-        OptionUsize RevFindIf(Predicate<T> auto&& pred) const {
+        OptionUsize RevFindIndexIf(Predicate<T> auto&& pred) const {
             for (usize i = Length(); i --> 0; )  if (pred(Get(i))) return i; return nullptr;
         }
-        bool Contains     (const T& target) const { return Find(target).HasValue(); }
-        bool RevContains  (const T& target) const { return RevFind(target).HasValue(); }
-        bool ContainsIf   (Predicate<T> auto&& pred) const { return FindIf(pred).HasValue(); }
-        bool RevContainsIf(Predicate<T> auto&& pred) const { return RevFindIf(pred).HasValue(); }
+        bool Contains(const T& target) const { return FindIndex(target).HasValue(); }
+        bool ContainsIf(Predicate<T> auto&& pred) const { return FindIndexIf(pred).HasValue(); }
 
-        OptionUsize Find   (Span<const T> target) const {
+        OptRef<const T> FindIf(Predicate<T> auto&& pred) const {
+            for (usize i = 0; i < Length(); ++i) if (pred(Get(i))) return Get(i); return nullptr;
+        }
+        OptRef<T> FindIf(Predicate<T> auto&& pred) {
+            for (usize i = 0; i < Length(); ++i) if (pred(Get(i))) return Get(i); return nullptr;
+        }
+        OptRef<const T> RevFindIf(Predicate<T> auto&& pred) const {
+            for (usize i = Length(); i --> 0; ) if (pred(Get(i))) return Get(i); return nullptr;
+        }
+        OptRef<T> RevFindIf(Predicate<T> auto&& pred) {
+            for (usize i = Length(); i --> 0; ) if (pred(Get(i))) return Get(i); return nullptr;
+        }
+
+        OptionUsize Search(Span<const T> target) const {
             for (usize i = 0; i <= Length() - target.Length(); ++i)
                 if (Subspan(i, target.Length()) == target) return i;
             return nullptr;
         }
-        OptionUsize RevFind(Span<const T> target) const {
+        OptionUsize RevSerach(Span<const T> target) const {
             for (usize i = Length() - target.Length(); i --> 0; )
                 if (Subspan(i, target.Length()) == target) return i;
             return nullptr;
         }
-        bool  Contains   (Span<const T> target) const { return Find   (target).HasValue(); }
-        bool  RevContains(Span<const T> target) const { return RevFind(target).HasValue(); }
+        bool  ContainsSpan(Span<const T> target) const { return Search(target).HasValue(); }
 
         template <Comparator<T> Cmpr>
         void Sort(Cmpr&& cmp = Cmpr {}) requires IsMut<T>;

@@ -667,7 +667,7 @@ namespace Quasi::Graphics {
     }
 
     u32 Canvas::Batch::RegTexture(GraphicsID textureID) {
-        OptionUsize samplerSlot = Spans::Slice(canvas.textures, canvas.usedTextures).Find(textureID);
+        OptionUsize samplerSlot = Spans::Slice(canvas.textures, canvas.usedTextures).FindIndex(textureID);
 
         if (samplerSlot) return (u32)*samplerSlot;
 

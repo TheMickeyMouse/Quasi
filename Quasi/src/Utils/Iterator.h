@@ -207,7 +207,7 @@ namespace Quasi {
     };
 
 
-    inline struct WrapMarker {} Wrap;
+    static constexpr enum WrapMarker {} Wrap = {};
     struct WrappingIndex { isize index; usize operator()(usize len) const { return (index % (isize)len + (isize)len) % (isize)len; } };
 
     WrappingIndex operator%(Integer auto i, WrapMarker) { return { (isize)i }; }

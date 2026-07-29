@@ -49,7 +49,7 @@ namespace Quasi::Physics2D {
     }
 
     void World::DeleteBody(Ref<Body> body) {
-        const OptionUsize i = bodies.FindIf([=] (const Box<Body>& b) { return b.RefEquals(body); });
+        const OptionUsize i = bodies.FindIndexIf([=] (const Box<Body>& b) { return b.RefEquals(body); });
         if (!i) return;
         bodies.Pop(*i);
     }

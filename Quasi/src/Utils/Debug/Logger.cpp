@@ -36,7 +36,7 @@ namespace Quasi::Debug {
     void Logger::FmtLog(Text::StringWriter output, Str log, Severity::E severity, DateTime time, const SourceLoc& fileLoc) const {
         const auto [scol, sname] = Severity::NAMES[severity];
         Text::FormatTo(output,
-            "{}[{:%y-%M-%d %H:%m:%s.%u}]{} {}> {}{:<8}",
+            "{}[{:%y-%M-%d %H:%m:%s.%u}]{} {}> {}{:<9}",
             scol, time, Text::RESET, name,
             scol, Text::Format("[{}]:", sname)
         );
