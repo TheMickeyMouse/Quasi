@@ -225,6 +225,8 @@ set(ALL_FILES
         src/Utils/GridArray.h
         src/Utils/Iter/Zip.h
         src/Utils/Iter/ChunksIter.h
+        src/Utils/Text/UTF.h
+        src/Utils/Text/UTF.cpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${ALL_FILES})
