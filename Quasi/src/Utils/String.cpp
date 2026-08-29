@@ -1,8 +1,5 @@
 #include "String.h"
 
-#include <codecvt>
-#include <locale>
-
 #include "CStr.h"
 #include "Text/StringWriter.h"
 

@@ -85,7 +85,7 @@ namespace Quasi::Graphics {
         return sum;
     }
 
-    void Geometry3D::Deform(FuncRef<void(Face3D& f)> gpass) {
+    void Geometry3D::Deform(FnRef<void(Face3D& f)> gpass) {
         for (const auto [i, j, k] : indices) {
             Face3D f = { { vertices[i], vertices[j], vertices[k] },
                        { normals[i],  normals[j],  normals[k]  } };
@@ -95,7 +95,7 @@ namespace Quasi::Graphics {
         }
     }
 
-    Geometry3D Geometry3D::Pass(FuncRef<void(const Face3D& f, Batch b)> gpass) {
+    Geometry3D Geometry3D::Pass(FnRef<void(const Face3D& f, Batch b)> gpass) {
         Geometry3D g;
         for (const auto [i, j, k] : indices) {
             Face3D f = { { vertices[i], vertices[j], vertices[k] },

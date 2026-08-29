@@ -7,11 +7,11 @@
 
 namespace Quasi::Text {
     StringWriter StringWriter::WriteTo(String& string) {
-        return { FuncRefs::FromRaw(&string, StringWriteCallback) };
+        return { FnRefs::FromRaw(&string, StringWriteCallback) };
     }
 
     StringWriter StringWriter::WriteToFile(std::FILE* file) {
-        return { FuncRefs::FromRaw(file, FileWriteCallback) };
+        return { FnRefs::FromRaw(file, FileWriteCallback) };
     }
 
     StringWriter StringWriter::WriteToConsole() {
@@ -23,7 +23,7 @@ namespace Quasi::Text {
     }
 
     StringWriter StringWriter::NoWrite() {
-        return { FuncRefs::FromRaw(nullptr, +[] (void*, Str) {}) };
+        return { FnRefs::FromRaw(nullptr, +[] (void*, Str) {}) };
     }
 
     void StringWriter::StringWriteCallback(void* s, Str str) {

@@ -168,17 +168,17 @@ namespace Quasi::Math {
         Super& operator%=(T m)                { return super() = Mod(m); }
 
         auto Map(const FnArgs<T> auto& mapping) const {
-            Vector<FuncResult<decltype(mapping), T>, N> v;
+            Vector<FnResult<decltype(mapping), T>, N> v;
             for (usize i = 0; i < N; ++i) { v[i] = mapping(At(i)); }
             return v;
         }
         auto Map(T other, const FnArgs<T, T> auto& mapping) const {
-            Vector<FuncResult<decltype(mapping), T, T>, N> v;
+            Vector<FnResult<decltype(mapping), T, T>, N> v;
             for (usize i = 0; i < N; ++i) { v[i] = mapping(At(i), other); }
             return v;
         }
         auto BinaryMap(const Super& other, const FnArgs<T, T> auto& mapping) const {
-            Vector<FuncResult<decltype(mapping), T, T>, N> v;
+            Vector<FnResult<decltype(mapping), T, T>, N> v;
             for (usize i = 0; i < N; ++i) { v[i] = mapping(At(i), other[i]); }
             return v;
         }

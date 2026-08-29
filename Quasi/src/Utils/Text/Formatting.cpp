@@ -5,7 +5,7 @@
 
 namespace Quasi::Text {
     usize FormatToDynamic(StringWriter output, Str fmt, const void* const argParams[],
-        const FuncPtr<usize, StringWriter, const void*, Str> writerParams[], usize n) {
+        const FnPtr<usize, StringWriter, const void*, Str> writerParams[], usize n) {
         const auto WriteNth = [&] (usize i, Str opt) {
             Debug::QAssert$(i < n, "tried formatting argument number #{} when there are only {} arguments", i + 1, n);
             return writerParams[i](output, argParams[i], opt);

@@ -35,10 +35,10 @@ namespace Quasi {
 
     class Clickable : public Interactable {
     public:
-        FuncBox<void(MouseEventType::E e, IO::IO& io)> onClick = nullptr;
+        FnBox<void(MouseEventType::E e, IO::IO& io)> onClick = nullptr;
 
         Clickable() = default;
-        Clickable(const Interactable& i, FuncBox<void(MouseEventType::E e, IO::IO& io)> onClick) : Interactable(i), onClick(std::move(onClick)) {}
+        Clickable(const Interactable& i, FnBox<void(MouseEventType::E e, IO::IO& io)> onClick) : Interactable(i), onClick(std::move(onClick)) {}
         ~Clickable() override = default;
 
         Clickable(Clickable&&) = default;

@@ -224,7 +224,7 @@ namespace Quasi {
         }
         /// @brief Resizes the vector, shrinking/filling empty values with the default @p T value if necessary.
         /// @param len the new size of the vector
-        void ResizeDefault(usize len) { return ResizeWith(len, Combinate::Constructor<T> {}); }
+        void ResizeDefault(usize len) { return ResizeWith(len, Fns::Constructor<T> {}); }
         /// @brief Resizes the vector to include @p extra more elements, filling those extra elements with @p value.
         /// @param extra the additional number of elements to add to the vector
         /// @param value the value to fill new elements with
@@ -235,7 +235,7 @@ namespace Quasi {
         void ResizeExtraWith(usize extra, Fn<T> auto&& factory) { return ResizeWith(size + extra, factory); }
         /// @brief Resizes the vector to include @p extra more elements, filling those extra elements with the default @p T value.
         /// @param extra the additional number of elements to add to the vector
-        void ResizeExtraDefault(usize extra) { return ResizeExtraWith(extra, Combinate::Constructor<T> {}); }
+        void ResizeExtraDefault(usize extra) { return ResizeExtraWith(extra, Fns::Constructor<T> {}); }
 
         /// @brief Shrinks the vector's capacity as much as possible by allocating to a new memory chunk of size @p this->Length().
         void ShrinkToFit() { AllocToNew(size); }
@@ -634,8 +634,8 @@ namespace Quasi {
         /// @param mapper the mapping function
         /// @return a new vector with each element getting applied by @p mapper
         template <FnArgs<const T&> F>
-        Vec<FuncResult<F, const T&>> MapEach(const F& mapper) const {
-            using R = FuncResult<F, const T&>;
+        Vec<FnResult<F, const T&>> MapEach(const F& mapper) const {
+            using R = FnResult<F, const T&>;
             Vec<R> result = Vec<R>::WithCap(size);
             for (const T* beg = data; beg != data + size; ++beg) result.Push(mapper(*beg));
             return result;

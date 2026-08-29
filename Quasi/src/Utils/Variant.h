@@ -35,13 +35,13 @@ namespace Quasi {
             return super().template VisitImpl<R>((decltype(visitor))visitor);
         }
         template <class R = void> R Visit(auto&&... visitors) const {
-            return Visit<R>(Combinate::Overload { (decltype(visitors))visitors... });
+            return Visit<R>(Fns::Overload { (decltype(visitors))visitors... });
         }
         template <class R = void> R VisitMut(auto&& visitor) {
             return super().template VisitMutImpl<R>((decltype(visitor))visitor);
         }
         template <class R = void> R VisitMut(auto&&... visitors) {
-            return VisitMut<R>(Combinate::Overload { (decltype(visitors))visitors... });
+            return VisitMut<R>(Fns::Overload { (decltype(visitors))visitors... });
         }
     };
 

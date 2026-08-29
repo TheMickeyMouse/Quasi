@@ -149,12 +149,12 @@ namespace Quasi {
             return Tuple<Strong<T>, Strong<T>> { min, max };
         }
 
-        bool All(Predicate<Item> auto&& pred = Combinate::Identity {}) {
+        bool All(Predicate<Item> auto&& pred = Identity {}) {
             for (; CanNext(); Advance())
                 if (!pred(Current())) return false;
             return true;
         }
-        bool Any(Predicate<Item> auto&& pred = Combinate::Identity {}) {
+        bool Any(Predicate<Item> auto&& pred = Identity {}) {
             for (; CanNext(); Advance())
                 if (pred(Current())) return true;
             return false;

@@ -9,9 +9,9 @@ namespace Quasi::Text {
 
     struct StringWriter {
     private:
-        FuncRef<void(Str)> writer;
+        FnRef<void(Str)> writer;
 
-        StringWriter(FuncRef<void(Str)> customWriter) : writer(customWriter) {}
+        StringWriter(FnRef<void(Str)> customWriter) : writer(customWriter) {}
     public:
         static StringWriter WriteTo(String& string);
         static StringWriter WriteToFile(std::FILE* file);

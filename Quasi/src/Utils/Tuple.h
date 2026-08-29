@@ -85,11 +85,11 @@ namespace Quasi {
         }
 
         template <FnArgs<const T&, const Ts&...> M>
-        FuncResult<M, const T&, const Ts&...> Apply(M&& map) const {
+        FnResult<M, const T&, const Ts&...> Apply(M&& map) const {
             return rest.Apply([&] (const Ts&... args) { return map(first, args...); });
         }
         template <FnArgs<T&, Ts&...> M>
-        FuncResult<M, T&, Ts&...> ApplyMut(M&& map) {
+        FnResult<M, T&, Ts&...> ApplyMut(M&& map) {
             return rest.ApplyMut([&] (Ts&... args) { return map(first, args...); });
         }
 
@@ -128,8 +128,8 @@ namespace Quasi {
         void TieTo() const {}
         void TieMoveTo() const {}
 
-        template <FnArgs<> M> FuncResult<M> Apply(M&& map) const { return map(); }
-        template <FnArgs<> M> FuncResult<M> ApplyMut(M&& map)    { return map(); }
+        template <FnArgs<> M> FnResult<M> Apply(M&& map) const { return map(); }
+        template <FnArgs<> M> FnResult<M> ApplyMut(M&& map)    { return map(); }
         template <class Tup> Tup Join(Tup tup) const { return std::move(tup); }
 
         Hashing::Hash GetHashCode() const { return Hashing::EmptyHash(); }

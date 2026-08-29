@@ -154,8 +154,8 @@ namespace Quasi {
         Comparison CmpSized(Str other) const;
         Comparison operator<=>(Str other) const;
 
-        bool All(Predicate<char> auto&& pred = Combinate::Identity {}) const { return AsSpan().All(pred); }
-        bool Any(Predicate<char> auto&& pred = Combinate::Identity {}) const { return AsSpan().Any(pred); }
+        bool All(Predicate<char> auto&& pred = Identity {}) const { return AsSpan().All(pred); }
+        bool Any(Predicate<char> auto&& pred = Identity {}) const { return AsSpan().Any(pred); }
 
         void Reverse() requires mut;
 

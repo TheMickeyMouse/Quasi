@@ -3,9 +3,9 @@
 
 namespace Quasi::Iter {
     template <class It, class F>
-    struct MapIter : IIterator<FuncResult<F, CollectionItem<It>>, MapIter<It, F>> {
+    struct MapIter : IIterator<FnResult<F, CollectionItem<It>>, MapIter<It, F>> {
         using OriginalItem = CollectionItem<It>;
-        using Item = FuncResult<F, OriginalItem>;
+        using Item = FnResult<F, OriginalItem>;
         friend IIterator<Item, MapIter>;
     private:
         It iter;

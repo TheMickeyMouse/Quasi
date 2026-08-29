@@ -28,7 +28,7 @@ namespace Quasi::Graphics {
         u32 VOff() const { return vertices.Length(); }
         u32 FaceCount() const { return indices.Length(); }
 
-        template <FnArgs<const Vtx&> F, class T = FuncResult<F, const Vtx&>>
+        template <FnArgs<const Vtx&> F, class T = FnResult<F, const Vtx&>>
         Mesh<T> GeometryConvert(F&& geometryPass) {
             Mesh<T> converted;
             converted.indices = indices;

@@ -88,7 +88,7 @@ namespace Quasi {
         Tuple<Span, Span> SplitAt(usize i) const { return { Slice(data, i), Slice(data + i + 1, size - i - 1) }; }
         Tuple<Span, const T&, Span> PartitionAt(usize i) const { return { Slice(data, i), data[i], Slice(data + i + 1, size - i - 1) }; }
         Tuple<Span, Span> SplitOnce(const T& sep) const {
-            const OptionUsize i = Find(sep);
+            const OptionUsize i = this->FindIndex(sep);
             return i ? SplitAt(*i) : Tuple { *this, Empty() };
         }
         Tuple<SpanCn, SpanCn> SplitOnceOn(Predicate<T> auto&& pred) const {

@@ -114,10 +114,10 @@ namespace Quasi::Graphics {
 
         static Geometry3D Combine(Span<const Geometry3D> geoms);
 
-        void Deform(FuncRef<void(Face3D& f)> gpass);
-        Geometry3D Pass(FuncRef<void(const Face3D& f, Batch b)> gpass);
+        void Deform(FnRef<void(Face3D& f)> gpass);
+        Geometry3D Pass(FnRef<void(const Face3D& f, Batch b)> gpass);
 
-        template <FnArgs<const Math::fv3&, const Math::fv3&> F, class T = FuncResult<F, const Math::fv3&, const Math::fv3&>>
+        template <FnArgs<const Math::fv3&, const Math::fv3&> F, class T = FnResult<F, const Math::fv3&, const Math::fv3&>>
         Mesh<T> IntoMesh(F&& map);
 
         void Clear();
@@ -161,7 +161,7 @@ namespace Quasi::Graphics {
         // void Deform(FuncRef<void(Face2D& f)> gpass);
         // Geometry2D Pass(FuncRef<void(const Face2D& f, Batch b)> gpass);
 
-        template <FnArgs<const Math::fv2&> F, class T = FuncResult<F, const Math::fv2&>>
+        template <FnArgs<const Math::fv2&> F, class T = FnResult<F, const Math::fv2&>>
         Mesh<T> IntoMesh(F&& map);
 
         void Clear();

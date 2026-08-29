@@ -15,6 +15,8 @@ namespace Quasi {
     public:
         ArrayBox() : buf(nullptr), size(0) {}
         ArrayBox(Nullptr) : buf(nullptr), size(0) {}
+        ArrayBox(ArrayBox&& box) noexcept { this->MoveConstructOp(box); }
+        ArrayBox& operator=(ArrayBox&& box) noexcept { this->MoveAssignOp(box); return *this; }
         using IResource<Span<T>, ArrayBox>::IResource;
         using IResource<Span<T>, ArrayBox>::operator=;
 
@@ -29,7 +31,16 @@ namespace Quasi {
         }
         static ArrayBox Own(T* data, usize len) { return { data, len }; }
         static ArrayBox Own(Span<T> data) { return { data.Data(), data.Length() }; }
-        static ArrayBox Copy(Span<const T> data) { return data.CollectArrayBox(); }
+        static ArrayBox New(Span<const T> data) {
+            ArrayBox array = AllocateUninit(data.Length());
+            Memory::RangeConstructCopyNoOverlap(array.buf, data.Data(), data.Length());
+            return array;
+        }
+        static ArrayBox MoveNew(Span<T> data) {
+            ArrayBox array = AllocateUninit(data.Length());
+            Memory::RangeConstructMoveNoOverlap(array.buf, data.Data(), data.Length());
+            return array;
+        }
     protected:
         void CloseImpl() { Memory::FreeArray(buf); buf = nullptr; size = 0; }
 

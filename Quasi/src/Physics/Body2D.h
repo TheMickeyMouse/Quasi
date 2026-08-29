@@ -24,7 +24,7 @@ namespace Quasi::Physics2D {
         EXIT
     };
 
-    using TriggerFn = FuncRef<void(const Body& self, const Body& other, EventType event)>;
+    using TriggerFn = FnRef<void(const Body& self, const Body& other, EventType event)>;
 
     class Body {
     public:

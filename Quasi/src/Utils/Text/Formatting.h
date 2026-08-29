@@ -35,11 +35,11 @@ namespace Quasi::Text {
 
     // should only be used internally
     usize FormatToDynamic(StringWriter output, Str fmt,
-        const void* const argParams[], const FuncPtr<usize, StringWriter, const void*, Str> writerParams[], usize n);
+        const void* const argParams[], const FnPtr<usize, StringWriter, const void*, Str> writerParams[], usize n);
 
     template <class... Ts>
     usize FormatDynamicTypesTo(StringWriter output, Str fmt, const void* argParams[]) {
-        static constexpr FuncPtr<usize, StringWriter, const void*, Str> writerParams[] = {
+        static constexpr FnPtr<usize, StringWriter, const void*, Str> writerParams[] = {
             &Text::FormatWriterPtr<Ts>..., nullptr
         };
         return Text::FormatToDynamic(output, fmt, argParams, writerParams, sizeof...(Ts));
