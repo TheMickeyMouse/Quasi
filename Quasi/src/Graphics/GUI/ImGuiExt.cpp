@@ -180,7 +180,7 @@ namespace ImGui {
     Q_IMGUI_EDITOR(EditRotation2D, Q Math::Rotor2D& rot2) {
         width = GetRemWidth(width);
 
-        float theta = rot2.Angle().Degrees();
+        float theta = rot2.Angle() * Q Math::RAD_2_DEG;
         DisplayTextCropped(title, GetItemRemainingWidth(width) - GetSpacingWidth());
 
         SameLine(0, GetItemRemainingWidth(width) - GetLastItemWidth());
@@ -190,28 +190,30 @@ namespace ImGui {
         EditScalarWithIcon((const char*)u8"θ:", COLOR_Z_ANGLE, theta, 1, Q fRange { -180, 180 }, "%f°", w);
         PopID();
 
-        rot2 = { Q Math::Degrees(theta) };
+        rot2 = { Q Math::DEG_2_RAD * theta };
     }
 
     Q_IMGUI_EDITOR(EditRotation3D, Q Math::Rotor3D& rot3) {
         width = GetRemWidth(width);
 
         auto [xrot, yrot, zrot] = rot3.EulerAngles();
-        float xr = xrot.Degrees(), yr = yrot.Degrees(), zr = zrot.Degrees();
+        xrot *= Q Math::RAD_2_DEG;
+        yrot *= Q Math::RAD_2_DEG;
+        zrot *= Q Math::RAD_2_DEG;
         DisplayTextCropped(title, GetItemRemainingWidth(width) - GetSpacingWidth());
 
         SameLine(0, GetItemRemainingWidth(width) - GetLastItemWidth());
 
         const float w = (GetItemDefaultWidth(width) - 2 * GetSpacingWidth()) / 3;
         PushID(title.Data());
-        EditScalarWithIcon((const char*)u8"θ:", COLOR_X_ANGLE, xr, 1, nullptr,              "%f°", w); SameLine();
-        EditScalarWithIcon((const char*)u8"Ψ:", COLOR_Y_ANGLE, yr, 1, Q fRange { -90, 90 }, "%f°", w); SameLine();
-        EditScalarWithIcon((const char*)u8"φ:", COLOR_Z_ANGLE, zr, 1, nullptr,              "%f°", w);
+        EditScalarWithIcon((const char*)u8"θ:", COLOR_X_ANGLE, xrot, 1, nullptr,              "%f°", w); SameLine();
+        EditScalarWithIcon((const char*)u8"Ψ:", COLOR_Y_ANGLE, yrot, 1, Q fRange { -90, 90 }, "%f°", w); SameLine();
+        EditScalarWithIcon((const char*)u8"φ:", COLOR_Z_ANGLE, zrot, 1, nullptr,              "%f°", w);
         PopID();
 
-        rot3 = { Q Math::Degrees(xr),
-                 Q Math::Degrees(yr),
-                 Q Math::Degrees(zr) };
+        rot3 = { Q Math::DEG_2_RAD * xrot,
+                 Q Math::DEG_2_RAD * yrot,
+                 Q Math::DEG_2_RAD * zrot };
     }
 
     Q_IMGUI_EDITOR(EditYawPitch, float& yaw, float& pitch) {
@@ -392,10 +394,10 @@ namespace ImGui {
         light.VisitMut(
             [](SunLight& sun) {
                 auto [len, yaw, pitch] = sun.direction.SphericCoords();
-                yaw   = std::isnan(*yaw)   ? 0.0_rad : yaw;
-                pitch = std::isnan(*pitch) ? 0.0_rad : pitch;
-                EditScalar("Yaw",    *yaw,   0.01, Q fRange { -PI,      PI });
-                EditScalar("Pitch",  *pitch, 0.01, Q fRange { -HALF_PI, HALF_PI });
+                yaw   = std::isnan(yaw)   ? 0.0_rad : yaw;
+                pitch = std::isnan(pitch) ? 0.0_rad : pitch;
+                EditScalar("Yaw",    yaw,   0.01, Q fRange { -PI,      PI });
+                EditScalar("Pitch",  pitch, 0.01, Q fRange { -HALF_PI, HALF_PI });
                 EditScalar("Length", len, 0.1, Q fRange { 0, 10 });
                 sun.direction = fv3::FromSpheric(len, yaw, pitch);
             },
@@ -411,13 +413,13 @@ namespace ImGui {
             [](FlashLight& flash) {
                 EditVector("Position", flash.position);
 
-                flash.yaw   = std::isnan(*flash.yaw)   ? 0.0_rad : flash.yaw;
-                flash.pitch = std::isnan(*flash.pitch) ? 0.0_rad : flash.pitch;
-                EditScalar("Yaw",   *flash.yaw,   0.01, Q fRange { -PI,      PI });
-                EditScalar("Pitch", *flash.pitch, 0.01, Q fRange { -HALF_PI, HALF_PI });
+                flash.yaw   = std::isnan(flash.yaw)   ? 0.0_rad : flash.yaw;
+                flash.pitch = std::isnan(flash.pitch) ? 0.0_rad : flash.pitch;
+                EditScalar("Yaw",   flash.yaw,   0.01, Q fRange { -PI,      PI });
+                EditScalar("Pitch", flash.pitch, 0.01, Q fRange { -HALF_PI, HALF_PI });
 
-                EditScalar("Inner Cutoff", *flash.innerCut, 0.01, Q fRange { 0, PI });
-                EditScalar("Outer Cutoff", *flash.outerCut, 0.01, Q fRange { 0, PI });
+                EditScalar("Inner Cutoff", flash.innerCut, 0.01, Q fRange { 0, PI });
+                EditScalar("Outer Cutoff", flash.outerCut, 0.01, Q fRange { 0, PI });
             }
         );
 
@@ -455,8 +457,8 @@ namespace ImGui {
                         "}};\n"
                         "light.color = fColor {:($),};\n\0",
                         flash.position,
-                        *flash.yaw, *flash.pitch,
-                        *flash.innerCut, *flash.outerCut,
+                        flash.yaw, flash.pitch,
+                        flash.innerCut, flash.outerCut,
                         light.color);
                 }
             ).Data());

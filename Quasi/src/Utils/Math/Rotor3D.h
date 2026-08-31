@@ -4,7 +4,7 @@
 namespace Quasi::Math {
     struct Rotor3D : private Quaternion {
         Rotor3D() = default;
-        Rotor3D(Radians x, Radians y, Radians z) : Quaternion(FromEulerAngles({ x, y, z })) {}
+        Rotor3D(f32 x, f32 y, f32 z) : Quaternion(FromEulerAngles({ x, y, z })) {}
         Rotor3D(const Rotor2D& x, const Rotor2D& y, const Rotor2D& z) : Quaternion(FromEulerAngles({ x, y, z })) {}
     private:
         Rotor3D(const Quaternion& q) : Quaternion(q) {}
@@ -32,8 +32,8 @@ namespace Quasi::Math {
         f32 SinHalf() const { return std::sqrt(1 - w * w); }
         fv3 Axis() const { return { x, y, z }; }
 
-        Vec3<Radians> EulerAngles() const { return ToEulerAngles(); }
-        Radians AngleBetween(const Rotor3D& r) const;
+        fv3 EulerAngles() const { return ToEulerAngles(); }
+        f32 AngleBetween(const Rotor3D& r) const;
 
         Rotor3D RotateBy   (const Rotor3D& r) const;
         Rotor3D RotateByInv(const Rotor3D& r) const;

@@ -28,6 +28,8 @@ namespace Quasi {
         template <usize N>
         Span(T (&arr)[N]) : data(arr), size(N) {}
         template <Continuous<RemConst<T>> Coll>
+        Span(const Coll& collection) requires IsConst<T> : data(collection.Data()), size(collection.Length()) {}
+        template <Continuous<T> Coll>
         Span(const Coll& collection) : data(collection.Data()), size(collection.Length()) {}
         template <Continuous<T> Coll>
         Span(Coll& collection) requires IsMut<T> : data(collection.Data()), size(collection.Length()) {}

@@ -15,7 +15,7 @@ namespace Quasi::Graphics {
 
     struct FlashLight {
         Math::fv3 position;
-        Math::Radians yaw, pitch, innerCut, outerCut;
+        float yaw, pitch, innerCut, outerCut;
     };
 
     class Light : public Variant<SunLight, PointLight, FlashLight> {

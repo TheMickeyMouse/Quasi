@@ -51,7 +51,6 @@ set(HEADER_FILES
     src/Utils/Math/Rect.h
     src/Utils/Math/Vector.h
     src/Utils/Math/Geometry.h
-    src/Utils/Math/Angles.h
     src/Utils/Math/Random.h
     src/Utils/Math/Color.h
     src/Utils/Math/Complex.h
@@ -221,7 +220,6 @@ set(ALL_FILES
         src/Utils/PolyVec.h
         src/Utils/Text/Table.h
         src/Utils/Text/Table.cpp
-        src/Utils/GridArray.cpp
         src/Utils/GridArray.h
         src/Utils/Iter/Zip.h
         src/Utils/Iter/ChunksIter.h

@@ -38,7 +38,7 @@ namespace Quasi::Math {
         return { w * invlen, from.Cross(to) * invlen };
     }
 
-    Vec3<Radians> Quaternion::ToEulerAngles() const {
+    fv3 Quaternion::ToEulerAngles() const {
         // return {
         //     Atan2  (2 * (x * y + w * z), w * w + x * x - y * y - z * z),
         //     Arcsin(-2 * (x * z - w * y)),
@@ -55,12 +55,12 @@ namespace Quasi::Math {
 
         const bool onPoles = t < f32s::DELTA * f32s::DELTA;
 
-        const Radians zr = onPoles ? Radians(0.0f) : Atan2(xy, xx);
+        const float zr = onPoles ? 0.0f : std::atan2(xy, xx);
         return {
             onPoles ?
-                Atan2(x, w) * 2 + (xz < 0 ? zr : -zr) :
-                Atan2(yz, t1 - t0),
-            Arctan(xz / std::sqrt(t)), // pitch (theta)
+                std::atan2(x, w) * 2 + (xz < 0 ? zr : -zr) :
+                std::atan2(yz, t1 - t0),
+            std::atan(xz / std::sqrt(t)), // pitch (theta)
             zr, // yaw (psi)
         };
     }

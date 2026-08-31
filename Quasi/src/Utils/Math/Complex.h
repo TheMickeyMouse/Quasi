@@ -1,4 +1,5 @@
 #pragma once
+#include "Constants.h"
 #include "Matrix.h"
 
 namespace Quasi::Math {
@@ -13,7 +14,6 @@ namespace Quasi::Math {
 
         Vec2<T> AsVec2D() const { return { re, im }; }
         static Complex FromVec2D(const Vec2<T>& ri) { return { ri.x, ri.y }; }
-        inline static const Complex i = { 0, 1 };
 
         fT Realf() const { return (fT)re; }
         fT Imagf() const { return (fT)im; }
@@ -26,9 +26,9 @@ namespace Quasi::Math {
         Complex<fT> Norm() const { return *this / Len(); }
         Tuple<Complex<fT>, fT> NormAndLen() const { const fT len = Len(); return { *this / Len(), len }; }
 
-        Radians Angle() const { return Math::Atan2(Imagf(), Realf()); }
-        Radians AngleBetween(const Complex& other) const {
-            return Trig::Arccos((re * other.re + im * other.im) / std::sqrt(Abs() * other.Abs()));
+        fT Angle() const { return std::atan2(Imagf(), Realf()); }
+        fT AngleBetween(const Complex& other) const {
+            return std::acos((re * other.re + im * other.im) / std::sqrt(Abs() * other.Abs()));
         }
 
         static Complex Exp(const Complex& z) requires Floating<T> {
@@ -37,7 +37,7 @@ namespace Quasi::Math {
         }
         static Complex ExpImag(T imag) requires Floating<T> { return { std::cos(imag), std::sin(imag) }; }
         Complex Exp() const requires Floating<T> { return ExpImag(Imagf()) * std::exp(Realf()); }
-        Complex Log() const requires Floating<T> { return { std::log(LenSq()) * 0.5f, *Angle() }; }
+        Complex Log() const requires Floating<T> { return { std::log(LenSq()) * 0.5f, Angle() }; }
 
         // sqrt has positive real values
         Complex<fT> Sqrt() const requires Floating<T> {
@@ -60,10 +60,10 @@ namespace Quasi::Math {
             return { im < 0 ? -re2 : re2, HALF_ROOT_2 * std::sqrt(1 - re) };
         }
         Complex<fT> Pow(f32 p) const requires Floating<T> {
-            return ExpImag(*Angle() * p) * std::pow(Abs(), p);
+            return ExpImag(Angle() * p) * std::pow(Abs(), p);
         }
         Complex<fT> PowImag(f32 imag) const requires Floating<T> {
-            return ExpImag(std::log(LenSq()) * 0.5f * imag) * std::exp(-*Angle() * imag);
+            return ExpImag(std::log(LenSq()) * 0.5f * imag) * std::exp(-Angle() * imag);
         }
         Complex<fT> Pow(Complex p) const requires Floating<T> {
             return (Log() * p).Exp();
@@ -96,9 +96,9 @@ namespace Quasi::Math {
             return { Realf() + (z.Realf() - Realf()) * t, Imagf() + (z.Imagf() - Imagf()) * t };
         }
         Complex<fT> Slerp(const Complex& z, fT t) const {
-            const Radians theta = AngleBetween(z);
-            const fT inv = 1 / Sin(theta);
-            const fT p = Trig::Sin(theta * (1 - t)) * inv, q = Trig::Sin(theta * t) * inv;
+            const fT theta = AngleBetween(z);
+            const fT inv = 1 / std::sin(theta);
+            const fT p = std::sin(theta * (1 - t)) * inv, q = std::sin(theta * t) * inv;
             return (*this) * p + z * q;
         }
 

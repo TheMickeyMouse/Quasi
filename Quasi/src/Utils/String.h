@@ -179,15 +179,16 @@ namespace Quasi {
     };
 
     template <class Char, class Super>
-    String StringHolder<Char, Super>::ReplaceIf(Fn<usize, Str> auto&& pred, Str to) const {
+    String StringHolder<Char, Super>::ReplaceIf(Fn<Tuple<Str>, Str, OptionUsize&> auto&& pred) const {
         String repl;
         usize i = 0;
         while (i < super().LengthImpl()) {
-            if (const usize j = pred(Substr(i)); j == 0) {
-                repl.Append(At(i++));
+            OptionUsize len;
+            if (const auto substitute = pred(Substr(i), len); !len) {
+                repl.Append(this->Get(i++));
             } else {
-                repl.AppendStr(to);
-                i += j;
+                repl.AppendStr(substitute);
+                i += *len;
             }
         }
         return repl;

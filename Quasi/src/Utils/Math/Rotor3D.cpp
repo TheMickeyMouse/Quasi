@@ -38,7 +38,7 @@ namespace Quasi::Math {
                  1 - 2 * (x * x + y * y), };
     }
 
-    Radians Rotor3D::AngleBetween(const Rotor3D& r) const { return Arccos(Dot(r)); }
+    f32 Rotor3D::AngleBetween(const Rotor3D& r) const { return std::acos(Dot(r)); }
 
     Rotor3D Rotor3D::RotateBy(const Rotor3D& r) const {
         // 16 muls, 12 adds

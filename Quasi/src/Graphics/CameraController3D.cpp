@@ -64,11 +64,11 @@ namespace Quasi::Graphics {
         //     worldFront * (std::sin(yaw) * std::cos(pitch)) +
         //     worldUp    * std::sin(pitch);
         // return { -position, 1, Math::Rotor3D::LookAt(front, worldFront).Inverse() };
-        return { position, 1, Math::Rotor3D::RotateAxis(worldUp, Math::Radians(yaw)) + Math::Rotor3D::RotateAxis(Right(), Math::Radians(pitch)) };
+        return { position, 1, Math::Rotor3D::RotateAxis(worldUp, yaw) + Math::Rotor3D::RotateAxis(Right(), pitch) };
     }
 
     Math::Matrix3D CameraController3D::GetProjMat() const {
         const float aspect = GraphicsDevice::GetDeviceInstance().GetWindowSize().AspectRatio();
-        return Math::Matrix3D::PerspectiveFov(Math::Degrees(viewFov), aspect, 0.01f, 100.0f);
+        return Math::Matrix3D::PerspectiveFov(viewFov, aspect, 0.01f, 100.0f);
     }
 }

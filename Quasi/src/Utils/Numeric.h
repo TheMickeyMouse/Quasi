@@ -8,16 +8,16 @@
 #undef INFINITY
 
 namespace Quasi {
-    using i8   = std::int8_t;
-    using i16  = std::int16_t;
-    using i32  = std::int32_t;
-    using i64  = std::int64_t;
-    using u8   = std::uint8_t;
-    using u16  = std::uint16_t;
-    using u32  = std::uint32_t;
-    using u64  = std::uint64_t;
-    using f32  = float;
-    using f64  = double;
+    using i8  = std::int8_t;
+    using i16 = std::int16_t;
+    using i32 = std::int32_t;
+    using i64 = std::int64_t;
+    using u8  = std::uint8_t;
+    using u16 = std::uint16_t;
+    using u32 = std::uint32_t;
+    using u64 = std::uint64_t;
+    using f32 = float;
+    using f64 = double;
     using ushort = u16;
     using ulong  = u64;
     using usize  = std::size_t;
@@ -40,6 +40,8 @@ namespace Quasi {
     template <class T> struct NumInfo {};
 
     namespace Math {
+        /// A fractional approximation lookup table for log_2(n) * 2^16,
+        /// where @p n is the index into the array. log_2(0) is set to 0.
         static constexpr u32 LOG2_LOOKUP[37] = {
             0,      0,      65536,  103872, 131072, 152169,
             169408, 183982, 196608, 207744, 217705, 226717,
@@ -48,6 +50,9 @@ namespace Quasi {
             300480, 304339, 308048, 311616, 315054, 318372,
             321577, 324678, 327680, 330589, 333411, 336152, 338816
         };
+        /// A fractional approximation lookup table for 2^16 / log_2(n),
+        /// where @p n is the index into the array.
+        /// 1/log_2(1) and 1/log_2(0) is set to the @p u32 max value.
         static constexpr u32 INV_LOG2_LOOKUP[37] = {
             ~0u,   ~0u,   65536, 41348, 32768, 28224,
             25352, 23344, 21845, 20674, 19728, 18944,
@@ -56,6 +61,7 @@ namespace Quasi {
             14293, 14112, 13942, 13782, 13632, 13490,
             13355, 13228, 13107, 12991, 12881, 12776, 12676
         };
+        /// A lookup table for the powers of 10. @code POWERS_OF_TEN[n]@endcode == 10^n.
         static constexpr u64 POWERS_OF_10[20] = {
             1ULL,
             10ULL,
@@ -79,10 +85,11 @@ namespace Quasi {
             10'000'000'000'000'000'000ULL,
         };
 
-        // a fractional approximation of log_2(10). = 217706 / 2^16
-        static constexpr usize LOG10_2_MUL     = LOG2_LOOKUP[10];
-        // a fractional approximation of 1 / log_2(10). = 19728 / 2^16
+        /// A fractional approximation of log_2(10) * 2^16. (log_2(10) ~ 217706 / 2^16).
+        static constexpr usize LOG10_2_MUL = LOG2_LOOKUP[10];
+        /// A fractional approximation of 2^16 / log_2(10). (1/log_2(10) ~ 19728 / 2^16).
         static constexpr usize INV_LOG10_2_MUL = INV_LOG2_LOOKUP[10];
+        /// 64-bit floating point equivalent of log_2(10).
         static constexpr f64 LOG10_2 = 3.321928094887362f;
     }
 
@@ -133,14 +140,14 @@ namespace Quasi {
         }
     };
 
-    using i8s    = NumInfo<i8>;
-    using u8s    = NumInfo<u8>;
-    using i16s   = NumInfo<i16>;
-    using u16s   = NumInfo<u16>;
-    using i32s   = NumInfo<i32>;
-    using u32s   = NumInfo<u32>;
-    using i64s   = NumInfo<i64>;
-    using u64s   = NumInfo<u64>;
+    using i8s = NumInfo<i8>;
+    using u8s = NumInfo<u8>;
+    using i16s = NumInfo<i16>;
+    using u16s = NumInfo<u16>;
+    using i32s = NumInfo<i32>;
+    using u32s = NumInfo<u32>;
+    using i64s = NumInfo<i64>;
+    using u64s = NumInfo<u64>;
     using isizes = NumInfo<isize>;
     using usizes = NumInfo<usize>;
     static constexpr i8    operator ""_i8   (unsigned long long x) { return (i8)x; }
@@ -153,14 +160,6 @@ namespace Quasi {
     static constexpr u64   operator ""_u64  (unsigned long long x) { return (u64)x; }
     static constexpr isize operator ""_isize(unsigned long long x) { return (isize)x; }
     static constexpr usize operator ""_usize(unsigned long long x) { return (usize)x; }
-
-    enum class FpClassification {
-        NAN     = FP_NAN,
-        INF     = FP_INFINITE,
-        ZERO    = FP_ZERO,
-        SUBNORM = FP_SUBNORMAL,
-        NORM    = FP_NORMAL,
-    };
 
 #define QUASI_DEFINE_FLOATING(FLOAT, CCODENAME, SAME_SIZED, SAME_SIZED_SIGNED) \
     template <> struct NumInfo<FLOAT> { \
@@ -217,12 +216,9 @@ namespace Quasi {
         \
         static FLOAT FastFloor(FLOAT x) { return FastToFloatUnsigned(FastToIntUnsigned(x)); } \
         \
-        static FpClassification Classify(FLOAT f) { return (FpClassification)std::fpclassify(f); } \
         static bool IsNaN(FLOAT f)     { return std::isnan(f); } \
         static bool IsInf(FLOAT f)     { return f == INFINITY || f == NEG_INFINITY; } \
         static bool IsFinite(FLOAT f)  { return std::abs(f) < INFINITY; } \
-        static bool IsSubnorm(FLOAT f) { return Classify(f) == FpClassification::SUBNORM; } \
-        static bool IsNorm(FLOAT f)    { return Classify(f) == FpClassification::NORM; } \
         \
         static constexpr FLOAT QNaN(SAME_SIZED payload) { return FromBits(QNAN_TEMPLATE | (payload & MANTISSA_MASK)); } \
         static SAME_SIZED QNaNPayload(FLOAT f) { return IsNaN(f) ? BitsOf(f) & (MANTISSA_MASK >> 1) : 0; } \

@@ -31,7 +31,7 @@ namespace Quasi::Math {
         static Quaternion RotateTo(const fv3& from, const fv3& to); // both vectors assumed to be normed
 
         static Quaternion FromEulerAngles(const Vec3<Rotor2D>& r) { return RotateXYZ(r); }
-        Vec3<Radians> ToEulerAngles() const;
+        fv3 ToEulerAngles() const;
 
         static Quaternion LookAt(const fv3& direction, const fv3& worldFront); // both vectors assumed to be normed
 

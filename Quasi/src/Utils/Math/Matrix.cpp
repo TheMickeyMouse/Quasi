@@ -202,8 +202,8 @@ namespace Quasi::Math {
         }};
     }
 
-    Matrix<4> Matrix<4>::PerspectiveFov(Radians fovDeg, float aspect, float near, float far) {
-        const float tan   = Math::Tan(fovDeg * 0.5f),
+    Matrix<4> Matrix<4>::PerspectiveFov(float fovDeg, float aspect, float near, float far) {
+        const float tan   = std::tan(fovDeg * 0.5f),
                     y     = 1.0f /  tan,
                     x     = 1.0f / (tan * aspect),
                     rdz   = 1.0f / (far - near),

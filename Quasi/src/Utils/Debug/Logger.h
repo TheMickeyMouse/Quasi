@@ -205,12 +205,6 @@ namespace Quasi {
         Debug::QAssert$(HasValue(), msg);
         return Unwrap();
     }
-
-    template <class T, class Super> T& INullable<T, Super>::Assert(Fn<void> auto&& assertfn) { return QGetterMut$(Assert, assertfn); }
-    template <class T, class Super> const T& INullable<T, Super>::Assert(Fn<void> auto&& assertfn) const {
-        if (Q_SHOULD_ASSERT && IsNull()) assertfn();
-        return Unwrap();
-    }
 }
 
 namespace Quasi::Text {

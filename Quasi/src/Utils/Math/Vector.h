@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include <cmath>
 
-#include "Angles.h"
 #include "Utils/Text/Num.h"
 
 #include "Utils/Array.h"
@@ -218,14 +217,14 @@ namespace Quasi::Math {
         Super& StepToward(const Super& other, T d) requires Floating<T> { const auto [dir, s] = (other - super()).NormAndLen(); return AddAssign(dir * std::min(s, d)); }
         Super& StepExact (const Super& other, T d) requires Floating<T> { const auto [dir, s] = (other - super()).NormAndLen(); return AddAssign(dir * d); }
         Super Slerp(const Super& other, fT t) const requires Floating<T> {
-            const Radians theta = AngleBetween(other);
-            const fT inv = 1 / Sin(theta);
-            return BinaryMap(other, [p = Trig::Sin(theta * (1 - t)) * inv, q = Trig::Sin(theta * t) * inv] (T a, T b) {
+            const fT theta = AngleBetween(other);
+            const fT inv = 1 / std::sin(theta);
+            return BinaryMap(other, [p = std::sin(theta * (1 - t)) * inv, q = std::sin(theta * t) * inv] (T a, T b) {
                 return a * p + b * q;
             });
         }
 
-        Radians AngleBetween(const Super& other) const { return Trig::Arccos(Dot(other) / (Len() * other.Len())); }
+        fT AngleBetween(const Super& other) const { return std::acos(Dot(other) / (Len() * other.Len())); }
 
         Super Clamp() const requires Floating<T> { return Clamp(0, 0); }
         Super Clamp(T min, T max) const { return Map([&] (T x) { return Math::Clamp(x, min, max); }); }
@@ -342,7 +341,7 @@ namespace Quasi::Math {
 
     template <Numeric T> struct Vector<T, 2> : IVector<T, 2> {
         friend IVector<T, 2>;
-        using fT = typename IVector<T, 2>::fT;
+        using fT = IVector<T, 2>::fT;
         T x, y;
     protected:
         T* DataImpl() { return &x; }
@@ -373,11 +372,11 @@ namespace Quasi::Math {
         fT Slope()       const { return (fT)y / (fT)x; }
         fT AspectRatio() const { return (fT)x / (fT)y; }
 
-        Radians PolarAngle() const { return Trig::Atan2(y, x); }
-        Radians SignedAngleBetween(const Vector& other) const { return Trig::Atan2(Cross(other), this->Dot(other)); }
+        fT PolarAngle() const { return std::atan2(y, x); }
+        fT SignedAngleBetween(const Vector& other) const { return std::atan2(Cross(other), this->Dot(other)); }
 
-        Tuple<fT, Radians> PolarCoords() const { return { this->Len(), this->PolarAngle() }; }
-        static Vector FromPolar(T r, Radians theta) requires Floating<T> { return { r * Cos(theta), r * Sin(theta) }; }
+        Tuple<fT, fT> PolarCoords() const { return { this->Len(), this->PolarAngle() }; }
+        static Vector FromPolar(T r, fT theta) requires Floating<T> { return { r * std::cos(theta), r * std::sin(theta) }; }
         static Vector FromPolar(T r, const Rotor2D& theta) requires Floating<T>;
 
         Vector Perpend()          const { return { -y, x }; }
@@ -410,7 +409,7 @@ namespace Quasi::Math {
 
     template <Numeric T> struct Vector<T, 3> : IVector<T, 3> {
         friend IVector<T, 3>;
-        using fT = typename IVector<T, 2>::fT;
+        using fT = IVector<T, 2>::fT;
         T x, y, z;
     protected:
         T* DataImpl() { return &x; }
@@ -469,18 +468,18 @@ namespace Quasi::Math {
                      Vector { b, sign + y * y * a, -y } };
         }
 
-        Radians SignedAngleBetween(const Vector& other, const Vector& normal) const {
-            return Trig::Atan2((fT)Cross(other).Dot(normal), (fT)this->Dot(other));
+        fT SignedAngleBetween(const Vector& other, const Vector& normal) const {
+            return std::atan2((fT)Cross(other).Dot(normal), (fT)this->Dot(other));
         }
-        Radians Yaw()   const { return Trig::Atan2(x, z); }
-        Radians Pitch() const { return Trig::Atan2(y, std::sqrt(x * x + z * z)); }
-        Tuple<fT, Radians, Radians> SphericCoords() const requires Floating<T> {
+        fT Yaw() const { return std::atan2(x, z); }
+        fT Pitch() const { return std::atan2(y, std::sqrt(x * x + z * z)); }
+        Tuple<fT, fT, fT> SphericCoords() const requires Floating<T> {
             const fT len = this->Len();
-            return { len, Yaw(), Trig::Arcsin(y / len) };
+            return { len, Yaw(), std::asin(y / len) };
         }
-        static Vector FromSpheric(T r, Radians yaw, Radians pitch) requires Floating<T> {
-            const T xz = r * Cos(pitch);
-            return { xz * Cos(yaw), r * Sin(pitch), xz * Sin(yaw) };
+        static Vector FromSpheric(T r, fT yaw, fT pitch) requires Floating<T> {
+            const T xz = r * std::cos(pitch);
+            return { xz * std::cos(yaw), r * std::sin(pitch), xz * std::sin(yaw) };
         }
         static Vector FromSpheric(T r, const Rotor2D& yaw, const Rotor2D& pitch) requires Floating<T>;
         Vec2<fT> ProjectTo2DPlane() const { const fT invZ = (fT)1 / z; return { x * invZ, y * invZ }; }
@@ -495,7 +494,7 @@ namespace Quasi::Math {
 
     template <Numeric T> struct Vector<T, 4> : IVector<T, 4> {
         friend IVector<T, 4>;
-        using fT = typename IVector<T, 2>::fT;
+        using fT = IVector<T, 2>::fT;
         T x, y, z, w;
     protected:
         T* DataImpl() { return &x; }

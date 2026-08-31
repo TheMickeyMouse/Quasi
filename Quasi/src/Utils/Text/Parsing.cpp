@@ -132,7 +132,7 @@ namespace Quasi::Text {
             out = std::move(s);
             return i;
         } else {
-            const usize end = endString.AndThen(Qfn$(string.Find))
+            const usize end = endString.AndThen(Qfn$(string.FindIndex))
                                        .UnwrapOr(string.Length());
             out = string.First(end);
             return end;

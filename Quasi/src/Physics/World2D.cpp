@@ -16,7 +16,7 @@ namespace Quasi::Physics2D {
         const bool isStatic = options.type == BodyType::STATIC;
         return *bodies.Push(Box<Body>::Build(
             options.position,
-            Degrees(options.rotAngle),
+            options.rotAngle * DEG_2_RAD,
             isStatic ? 0 : area * options.density,
             options.type,
             *this,

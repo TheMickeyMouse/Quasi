@@ -37,7 +37,7 @@ namespace Quasi::Graphics {
     }
 
     void OBJModelLoader::ParseProperty(const Str line) {
-        const OptionUsize spaceIdx = line.Find(' ');
+        const OptionUsize spaceIdx = line.FindIndex(' ');
         if (!spaceIdx) return;
         const auto [prefix, data] = line.SplitAt(*spaceIdx);
 

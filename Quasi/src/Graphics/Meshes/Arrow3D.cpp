@@ -17,7 +17,7 @@ namespace Quasi::Graphics::Meshes {
 
         const u32 divisions = 3 << subdivisions;
         {
-            const Rotor2D halfRot = Radians(f32s::Comp(-(int)subdivisions, PI / 3.0f));
+            const Rotor2D halfRot = f32s::Comp(-(int)subdivisions, PI / 3.0f);
             const Matrix3x3 step = Quaternion { halfRot.Cos(), fwd * halfRot.Sin() }.AsMatrixLinear();
             fv3 p = planeX;
             const fv3 halfFwd = fwd * (0.5f * INV_NORMAL_LEN);

@@ -350,9 +350,14 @@ namespace Quasi {
 
     void String::RemoveAllOfEach(Span<const Str> anystr) {
         if (anystr.IsEmpty()) return;
-        return RemoveIf([&] (Str str) {
-           const OptionUsize i = str.StartsWithOneOf(anystr);
-           return i ? anystr[*i].Length() : 0;
+        
+        return RemoveIf([&] (Str str) -> usize {
+            for (const Str s : anystr) {
+                if (str.StartsWith(s)) {
+                    return s.Length();
+                }
+            }
+            return 0;
         });
     }
 

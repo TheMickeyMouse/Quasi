@@ -373,7 +373,7 @@ namespace Quasi::Math {
         MatrixTransform3D AsTransform() const;
         static Matrix OrthoProjection(const fRect3D& box);
         static Matrix PerspectiveProjection(const fRect3D& box);
-        static Matrix PerspectiveFov(Radians fovDeg, float aspect, float near, float far);
+        static Matrix PerspectiveFov(float fovDeg, float aspect, float near, float far);
         static Matrix Transform(const fv3& translate, const fv3& scale, const Rotor3D& rotate);
         static Matrix LookAt(const fv3& eye, const fv3& direction, const fv3& worldUp);
     };

@@ -5,8 +5,8 @@ namespace Quasi::Graphics::Meshes {
         using namespace Math;
         const fv3 forward = (end - start).Norm();
         const Rotor3D orientUp = Rotor3D::OrientY(forward);
-        const Matrix3x3 LON_ROT = Rotor3D::RotateAxis(forward, Radians(TAU / -(float)sections.x)).AsMatrixLinear(),
-                        LAT_ROT = Rotor3D::RotateAxis(orientUp.KHat(), Radians(HALF_PI / -(float)sections.y)).AsMatrixLinear();
+        const Matrix3x3 LON_ROT = Rotor3D::RotateAxis(forward, TAU / -(float)sections.x).AsMatrixLinear(),
+                        LAT_ROT = Rotor3D::RotateAxis(orientUp.KHat(), HALF_PI / -(float)sections.y).AsMatrixLinear();
 
         batch.PushV(end + forward * radius, forward);
         fv3 pitchBase = forward;

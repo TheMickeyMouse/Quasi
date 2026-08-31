@@ -44,7 +44,7 @@ namespace Quasi {
     Tuple<const char&, CStr> CStr::SplitFirst() const { return { this->First(), Tail() }; }
     Tuple<Str, const char&> CStr::SplitLast() const { return { Init(), Last() }; }
     Tuple<Str, CStr> CStr::SplitAt(usize at) const { return { First(at), Skip(at) }; }
-    Tuple<Str, const char&, CStr> CStr::PartitionAt(usize at) const { return { First(at), At(at), Skip(at + 1) }; }
+    Tuple<Str, const char&, CStr> CStr::PartitionAt(usize at) const { return { First(at), Get(at), Skip(at + 1) }; }
 
     CStr& CStr::Advance(usize num) {
         data += num;

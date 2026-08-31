@@ -18,7 +18,7 @@ namespace Quasi::Math {
         if (!opt.StartsWith('(')) return {};
         opt.Advance(1);
 
-        OptionUsize captureEnd = opt.Find(')');
+        OptionUsize captureEnd = opt.FindIndex(')');
         if (!captureEnd) return {};
 
         FormatOptions options;

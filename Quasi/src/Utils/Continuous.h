@@ -69,14 +69,19 @@ namespace Quasi {
 
     /// The base class for continuous collections, i.e. a container that stores elements in a contiguous manner,
     /// with no gaps or seams in between, analogous to a traditional C array. The collection type that implements
-    /// this base class should be convertible to a @code Span<T> @endcode.
+    /// this base class should be convertible to a @code Span<T>@endcode, the most generic continuous collection.
     ///
-    /// To create and establish a continuous collection, one should write the following:
+    /// To create and establish a continuous collection, one should write the following: @code
+    /// struct MyContinuousCollection : IContinuous<MyElementType, MyContinuousCollection> { ... }
+    /// @endcode
+    /// and implement the following methods:
     /// @code
-    /// struct IntList : IContinuous<int, IntList> { ... }
+    /// MyElementType* DataImpl() { ... }
+    /// const MyElementType* DataImpl() const { ... }
+    /// usize LengthImpl() const { ... }
     /// @endcode
     /// @tparam T The element type of the collection. <b>Const-ness is significant;</b>
-    /// A continuous collection holding @code const T @endcode means the underlying elements are @b immutable by default,
+    /// A continuous collection holding @code const T@endcode means the underlying elements are @b immutable by default,
     /// while a continuous collection holding @p T means that the container holds ownership of the underlying elements/is allowed to @b mutate them.
     /// @tparam Super The continuous collection class with elements @p T.
     template <class T, class Super>
@@ -141,14 +146,16 @@ namespace Quasi {
         /// If applicable (@p T is @p char or has the same size as a @p char), returns a mutable string slice with the @b bytes of the collection.
         StrMut AsStrMut() requires (sizeof(T) == sizeof(char)) && IsMut<T>;
 
-        /// Checks whether the container is empty.
+        /// Checks whether the container is @b empty.
         bool IsEmpty() const { return Length() == 0; }
-        /// Checks whether the container contains elements. Returns @p true if it does.
+        /// Checks whether the container is @b non-empty.
         explicit operator bool() const { return !IsEmpty(); }
 
         /// Gets the @p i th element in the collection.
+        /// @warning UB if @code i >= length@endcode. For safe access, use @p TryGet .
         T& Get(usize i) { return Data()[i]; }
         /// Gets the @p i th element in the collection.
+        /// @warning UB if @code i >= length@endcode. For safe access, use @p TryGet .
         const T& Get(usize i) const { return Data()[i]; }
         /// Tries to get the @p i th element in the collection. Returns null if the index is out of bounds.
         OptRef<T> TryGet(usize i) { return i < Length() ? OptRefs::SomeRef(Data()[i]) : nullptr; }
@@ -160,12 +167,16 @@ namespace Quasi {
         const T& GetWrap(WrappingIndex i) const { return Data()[i(Length())]; }
 
         /// Gets the first element in the collection.
+        /// @warning UB if the collection is empty. For safe access, use @p TryFirst .
         T& First() { return Data()[0]; }
         /// Gets the first element in the collection.
+        /// @warning UB if the collection is empty. For safe access, use @p TryFirst .
         const T& First() const { return Data()[0]; }
         /// Gets the last element in the collection.
+        /// @warning UB if the collection is empty. For safe access, use @p TryLast .
         T& Last() { return Data()[Length() - 1]; }
         /// Gets the last element in the collection.
+        /// @warning UB if the collection is empty. For safe access, use @p TryLast .
         const T& Last() const { return Data()[Length() - 1]; }
 
         /// Tries to get the first element in the collection. Returns null if the collection is empty.
@@ -191,40 +202,55 @@ namespace Quasi {
         SpanCn operator[](zRange range) const { return Subspan(range); }
 
         /// Returns the first @p num elements in the collection as a span. Identical to @code Subspan(0, num)@endcode.
+        /// @warning UB if @p num is @b greater than the length.
         SpanMt First(usize num) { return SpanMt::Slice(Data(), num); }
         /// Returns the first @p num elements in the collection as a span. Identical to @code Subspan(0, num)@endcode.
+        /// @warning UB if @p num is @b greater than the length.
         SpanCn First(usize num) const { return SpanCn::Slice(Data(), num); }
         /// Returns the elements after the first @p len in the collection as a span. Identical to @code Subspan(len)@endcode.
+        /// @warning UB if @p len is @b greater than the length.
         SpanMt Skip(usize len) { return SpanMt::Slice(Data() + len, Length() - len); }
         /// Returns the elements after the first @p len in the collection as a span. Identical to @code Subspan(len)@endcode.
+        /// @warning UB if @p len is @b greater than the length.
         SpanCn Skip(usize len) const { return SpanCn::Slice(Data() + len, Length() - len); }
         /// Returns the elements after the first in the collection as a span. Identical to @code Skip(1)@endcode.
+        /// @warning UB if the collection is empty.
         SpanMt Tail() { return SpanMt::Slice(Data() + 1, Length() - 1); }
         /// Returns the elements after the first in the collection as a span. Identical to @code Skip(1)@endcode.
+        /// @warning UB if the collection is empty.
         SpanCn Tail() const { return SpanCn::Slice(Data() + 1, Length() - 1); }
         /// Returns the last @p num elements in the collection as a span. Identical to @code Skip(Length() - num)@endcode.
+        /// @warning UB if @p num is @b greater than the length.
         SpanMt Last(usize num) { return SpanMt::Slice(Data() + Length() - num, num); }
         /// Returns the last @p num elements in the collection as a span. Identical to @code Skip(Length() - num)@endcode.
+        /// @warning UB if @p num is @b greater than the length.
         SpanCn Last(usize num) const { return SpanCn::Slice(Data() + Length() - num, num); }
 
         /// Returns the elements after and including @p start in the collection,
         /// aka those in the index range @code [start..Length()]@endcode.
+        /// @warning UB if @p start is @b greater than the length.
         SpanMt Subspan(usize start) { return SpanMt::Slice(Data() + start, Length() - start); }
         /// Returns the elements after and including @p start in the collection,
         /// aka those in the index range @code [start..Length()]@endcode.
+        /// @warning UB if @p start is @b greater than the length.
         SpanCn Subspan(usize start) const { return SpanCn::Slice(Data() + start, Length() - start); }
         /// Returns the @p count elements starting at @p start in the collection,
         /// aka those in the index range @code [start..start+count]@endcode.
+        /// @warning UB if @p start + @p count is @b greater than the length.
         SpanMt Subspan(usize start, usize count) { return SpanMt::Slice(Data() + start, count); }
         /// Returns the @p count elements starting at @p start in the collection,
         /// aka those in the index range @code [start..start+count]@endcode.
+        /// @warning UB if @p start + @p count is @b greater than the length.
         SpanCn Subspan(usize start, usize count) const { return SpanCn::Slice(Data() + start, count); }
         /// Returns the elements in the index range @p range in the collection.
+        /// @warning UB if @p range.max is @b greater than the length.
         SpanMt Subspan(zRange range) { return SpanMt::Slice(Data() + range.min, range.max - range.min); }
         /// Returns the elements in the index range @p range in the collection.
+        /// @warning UB if @p range.max is @b greater than the length.
         SpanCn Subspan(zRange range) const { return SpanCn::Slice(Data() + range.min, range.max - range.min); }
 
         /// Swaps the @p i th and @p j th element in the collection. (requires the collection to be mutable).
+        /// @warning UB if either @p i or @p j are out of bounds.
         void Swap(usize i, usize j) requires IsMut<T> { std::swap(Get(i), Get(j)); }
         /// Reverses the elements in the collection in place by swapping them. (requires the collection to be mutable).
         void Reverse() requires IsMut<T> {
@@ -251,7 +277,7 @@ namespace Quasi {
         /// @code pred(self[0]) && pred(self[1]) && ... && pred(self[len-1]) @endcode
         /// @param pred The predicate to check against each element for.
         /// Uses the boolean conversion operator by default.
-        template <Predicate<T> P = Fns::Identity>
+        template <Predicate<T> P = Identity>
         bool All(P&& pred = P {}) const {
             for (const T& x : *this) { if (!pred(x)) return false; }
             return true;
@@ -262,7 +288,7 @@ namespace Quasi {
         /// @code pred(self[0]) || pred(self[1]) || ... || pred(self[len-1]) @endcode
         /// @param pred The predicate to check against each element for.
         /// Uses the boolean conversion operator by default.
-        template <Predicate<T> P = Fns::Identity>
+        template <Predicate<T> P = Identity>
         bool Any(P&& pred = P {}) const {
             for (const T& x : *this) { if (pred(x)) return true; }
             return false;

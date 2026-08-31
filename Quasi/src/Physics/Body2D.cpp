@@ -57,7 +57,7 @@ namespace Quasi::Physics2D {
 
     void Body::Update(float dt) {
         position += velocity * dt;
-        rotation += Radians(angularVelocity * dt);
+        rotation += angularVelocity * dt;
         TryUpdateTransforms();
     }
 

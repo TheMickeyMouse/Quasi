@@ -3,8 +3,8 @@
 namespace Quasi::Graphics::Meshes {
     void Sphere::MergeImpl(Geometry3D::Batch batch) const {
         using namespace Math;
-        const Rotor2D LAT_ROT = Radians(PI  / -(float)sections.y),
-                      LON_ROT = Radians(TAU / (float)sections.x);
+        const Rotor2D LAT_ROT = PI  / -(float)sections.y,
+                      LON_ROT = TAU / (float)sections.x;
 
         Vec<fv3>& vs = batch.geometry.vertices, &ns = batch.geometry.normals;
         const usize tail = ns.Length();
