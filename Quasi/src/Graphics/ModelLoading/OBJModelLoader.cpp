@@ -2,9 +2,9 @@
 #include "Utils/Algorithm.h"
 #include "Utils/Comparison.h"
 
-#include "Utils/Iter/LinesIter.h"
+#include "Utils/Iter/Lines.h"
 #include "Utils/Text/Parsing.h"
-#include "Utils/Iter/SplitIter.h"
+#include "Utils/Iter/Split.h"
 
 namespace Quasi::Graphics {
     void OBJModelLoader::LoadFile(CStr filepath) {

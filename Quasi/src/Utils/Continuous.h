@@ -76,6 +76,7 @@ namespace Quasi {
     /// @endcode
     /// and implement the following methods:
     /// @code
+    /// friend IContinuous<MyElementType, MyContinuousCollection>;
     /// MyElementType* DataImpl() { ... }
     /// const MyElementType* DataImpl() const { ... }
     /// usize LengthImpl() const { ... }

@@ -243,4 +243,23 @@ namespace Quasi::Text {
         }
         return s8;
     }
+
+    Option<Utf32> CodepointIter::CurrentImpl() const {
+        return currentChar;
+    }
+
+    void CodepointIter::AdvanceImpl() {
+        u32 readLen;
+        Utf32 c;
+        if (!TryUtf8CharTo32((const Utf8*)text.Data(), text.Length(), c, readLen)) {
+            currentChar = nullptr;
+            return;
+        }
+        currentChar = c;
+        text.Advance(readLen);
+    }
+
+    bool CodepointIter::CanNextImpl() const  {
+        return currentChar.HasValue();
+    }
 }

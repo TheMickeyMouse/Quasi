@@ -4,8 +4,8 @@
 #include "Utils/Text/Num.h"
 
 #include "Utils/Array.h"
-#include "Utils/Iter/SplitIter.h"
-#include "Utils/Iter/EnumerateIter.h"
+#include "Utils/Iter/Split.h"
+#include "Utils/Iter/Enumerate.h"
 
 namespace Quasi::Math {
     struct Rotor2D;

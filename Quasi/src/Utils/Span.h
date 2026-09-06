@@ -7,7 +7,7 @@ namespace Quasi {
     namespace Algorithm {};
     template <class T> struct BufferIterator;
     namespace Iter {
-        template <class T> struct ChunksIter;
+        template <class T> struct Chunks;
     }
     template <class T, usize N> struct Array;
 
@@ -73,8 +73,8 @@ namespace Quasi {
 
         // WindowIter                               Windows(usize len)
         // FixedWindowIter                          WindowsFixed(usize len)
-        Iter::ChunksIter<T> Chunks(usize chunkSize);
-        Iter::ChunksIter<const T> Chunks(usize chunkSize) const;
+        Iter::Chunks<T> Chunks(usize chunkSize);
+        Iter::Chunks<const T> Chunks(usize chunkSize) const;
         // ChunkIter                                Chunks(usize chunk)
         // RevChunkIter                             RevChunks(usize chunk)
         // ChunkExactIter                           ChunksExact(usize chunk)
@@ -98,11 +98,11 @@ namespace Quasi {
             return i ? SplitAt(*i) : Tuple { *this, Empty() };
         }
 
-        Iter::SplitIter<Span> Split(const T& sep) const {
-            return Iter::SplitIter<Span>::New(*this, Only(sep));
+        Iter::Split<Span> Split(const T& sep) const {
+            return Iter::Split<Span>::New(*this, Only(sep));
         }
-        Iter::SplitIter<Span> Split(Span<const T> sep) const {
-            return Iter::SplitIter<Span>::New(*this, sep);
+        Iter::Split<Span> Split(Span<const T> sep) const {
+            return Iter::Split<Span>::New(*this, sep);
         }
 
         // SplitIfIter           SplitIf(Fn<bool, T&> pred)

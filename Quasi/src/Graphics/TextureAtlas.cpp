@@ -1,6 +1,6 @@
 #include "TextureAtlas.h"
 #include "Utils/Algorithm.h"
-#include "Utils/Iter/MapIter.h"
+#include "Utils/Iter/Map.h"
 
 namespace Quasi::Graphics {
     TextureAtlas::TextureAtlas(Span<ImageView> sprites, bool pixelated, int padding) {

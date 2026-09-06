@@ -25,6 +25,7 @@ namespace Quasi {
     /// @endcode
     /// and implement the following methods:
     /// @code
+    /// friend MyNullable<MyUnderlying, MyNullable>;
     /// bool HasValue() const;
     /// const T& Unwrap() const;
     /// T& Unwrap();
@@ -62,6 +63,8 @@ namespace Quasi {
         bool IsNull() const { return !HasValue(); }
         /// Identical to @p HasValue() .
         explicit operator bool() const { return HasValue(); }
+        /// Identical to @code HasValue()@endcode, used to override other conversions in if-statements.
+        explicit operator bool() { return HasValue(); }
 
         /// Sets the value to null.
         void SetNull() { super().SetNull(); }

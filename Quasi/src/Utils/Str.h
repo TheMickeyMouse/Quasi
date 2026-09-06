@@ -7,7 +7,7 @@ namespace Quasi {
     }
 
     namespace Iter {
-        struct LinesIter;
+        struct Lines;
     }
 
     struct Str;
@@ -187,10 +187,10 @@ namespace Quasi {
         /// // e somewh
         /// // e...
         /// @endcode
-        Iter::SplitIter<Str> Split(Str sep) const;
+        Iter::Split<Str> Split(Str sep) const;
         /// Returns an iterator which yields the individual lines in a string.
         /// Uses the new line character as the separator (@p '\n').
-        Iter::LinesIter Lines() const;
+        Iter::Lines Lines() const;
         /// Counts the number of lines in the string.
         /// Identical to @code CountChars('\n') + 1@endcode.
         usize CountLines() const;

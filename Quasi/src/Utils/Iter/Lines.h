@@ -2,18 +2,18 @@
 #include "Utils/Str.h"
 
 namespace Quasi::Iter {
-    struct LinesIter : IIterator<const Str, LinesIter> {
+    struct Lines : IIterator<const Str, Lines> {
         using Item = const Str;
         friend IIterator;
     private:
         Str source;
         usize i = -1;
-        LinesIter(Str src) : source(src) { AdvanceImpl(); }
+        Lines(Str src) : source(src) { AdvanceImpl(); }
     protected:
         Str CurrentImpl() const;
         void AdvanceImpl();
         bool CanNextImpl() const;
     public:
-        static LinesIter New(Str s) { return { s }; }
+        static Lines New(Str s) { return { s }; }
     };
 }

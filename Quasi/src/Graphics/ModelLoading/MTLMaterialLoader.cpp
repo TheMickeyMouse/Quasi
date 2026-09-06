@@ -3,7 +3,7 @@
 
 #include "OBJModel.h"
 #include "Utils/Match.h"
-#include "Utils/Iter/LinesIter.h"
+#include "Utils/Iter/Lines.h"
 #include "Utils/Text/Parsing.h"
 
 namespace Quasi::Graphics {

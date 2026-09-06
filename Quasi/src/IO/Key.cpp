@@ -1,7 +1,7 @@
 #include <GLFW/glfw3.h>
 
 #include "Key.h"
-#include "Utils/Iter/SplitIter.h"
+#include "Utils/Iter/Split.h"
 
 namespace Quasi::IO {
     Key::E_ Key::GlfwCodeToKey(int code) {

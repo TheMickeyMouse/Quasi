@@ -97,10 +97,10 @@ set(HEADER_FILES
     src/Utils/Text/Num.h
     src/Utils/Text/StringWriter.h
     src/Utils/Text/Formatting.h
-    src/Utils/Iter/MapIter.h
-    src/Utils/Iter/EnumerateIter.h
-    src/Utils/Iter/LinesIter.h
-    src/Utils/Iter/SplitIter.h
+    src/Utils/Iter/Map.h
+    src/Utils/Iter/Enumerate.h
+    src/Utils/Iter/Lines.h
+    src/Utils/Iter/Split.h
     src/Utils/IO/Archive.h
 
     src/vendor/imgui/imconfig.h
@@ -194,7 +194,7 @@ set(SOURCE_FILES
     src/Utils/Text/Num.cpp
     src/Utils/Text/StringWriter.cpp
     src/Utils/Text/Formatting.cpp
-    src/Utils/Iter/LinesIter.cpp
+    src/Utils/Iter/Lines.cpp
 )
 source_group("Source Files" FILES ${SOURCE_FILES})
 
@@ -222,7 +222,7 @@ set(ALL_FILES
         src/Utils/Text/Table.cpp
         src/Utils/GridArray.h
         src/Utils/Iter/Zip.h
-        src/Utils/Iter/ChunksIter.h
+        src/Utils/Iter/Chunks.h
         src/Utils/Text/UTF.h
         src/Utils/Text/UTF.cpp
 )

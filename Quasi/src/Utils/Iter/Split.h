@@ -3,13 +3,13 @@
 
 namespace Quasi::Iter {
     template <class View>
-    struct SplitIter : IIterator<const View, SplitIter<View>> {
-        friend IIterator<const View, SplitIter>;
+    struct Split : IIterator<const View, Split<View>> {
+        friend IIterator<const View, Split>;
         using Item = const View;
     private:
         View source, separator;
         usize i = -1;
-        SplitIter(View src, View sep) : source(src), separator(sep) { AdvanceImpl(); }
+        Split(View src, View sep) : source(src), separator(sep) { AdvanceImpl(); }
     protected:
         View CurrentImpl() const { return source.First(i); }
         void AdvanceImpl() {
@@ -24,6 +24,6 @@ namespace Quasi::Iter {
         }
         bool CanNextImpl() const { return !source.IsEmpty(); }
     public:
-        static SplitIter New(View src, View sep) { return { src, sep }; }
+        static Split New(View src, View sep) { return { src, sep }; }
     };
 }

@@ -17,9 +17,9 @@ namespace Quasi {
 
 #pragma region Iter Declarations
     namespace Iter {
-        template <class It>          struct EnumerateIter;
-        template <class It, class F> struct MapIter;
-        template <class Vw>          struct SplitIter;
+        template <class It>          struct Enumerate;
+        template <class It, class F> struct Map;
+        template <class Vw>          struct Split;
     }
 #pragma endregion
 
@@ -184,10 +184,10 @@ namespace Quasi {
             return firstN;
         }
 
-        Iter::EnumerateIter<Super> Enumerate() const&;
-        Iter::EnumerateIter<Super> Enumerate() &&;
-        template <FnArgs<T> F> Iter::MapIter<Super, F> Map(F&& fn) const&;
-        template <FnArgs<T> F> Iter::MapIter<Super, F> Map(F&& fn) &&;
+        Iter::Enumerate<Super> Enumerate() const&;
+        Iter::Enumerate<Super> Enumerate() &&;
+        template <FnArgs<T> F> Iter::Map<Super, F> Map(F&& fn) const&;
+        template <FnArgs<T> F> Iter::Map<Super, F> Map(F&& fn) &&;
         // TODO:
         // StepBy
         // Chain

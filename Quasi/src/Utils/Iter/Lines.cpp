@@ -1,13 +1,13 @@
-#include "LinesIter.h"
+#include "Lines.h"
 
 #include "Utils/Bitwise.h"
 
 namespace Quasi::Iter {
-    Str LinesIter::CurrentImpl() const {
+    Str Lines::CurrentImpl() const {
         return source.First(i);
     }
 
-    void LinesIter::AdvanceImpl() {
+    void Lines::AdvanceImpl() {
         if (i == source.Length()) {
             source.Advance(i);
             return;
@@ -28,7 +28,7 @@ namespace Quasi::Iter {
         }
     }
 
-    bool LinesIter::CanNextImpl() const {
+    bool Lines::CanNextImpl() const {
         return !source.IsEmpty();
     }
 }

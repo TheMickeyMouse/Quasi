@@ -4,8 +4,8 @@
 #include "Span.h"
 #include "String.h"
 #include "CStr.h"
-#include "Iter/LinesIter.h"
-#include "Iter/SplitIter.h"
+#include "Iter/Lines.h"
+#include "Iter/Split.h"
 #include "Text/StringWriter.h"
 
 namespace Quasi {
@@ -111,8 +111,8 @@ namespace Quasi {
         return Hashing::HashBytes(this->AsBytes());
     }
 
-    strdef Iter::SplitIter<Str> strcls::Split(Str sep) const { return Iter::SplitIter<Str>::New(AsStr(), sep); }
-    strdef Iter::LinesIter strcls::Lines() const { return Iter::LinesIter::New(AsStr()); }
+    strdef Iter::Split<Str> strcls::Split(Str sep) const { return Iter::Split<Str>::New(AsStr(), sep); }
+    strdef Iter::Lines strcls::Lines() const { return Iter::Lines::New(AsStr()); }
     strdef usize strcls::CountLines() const { return CountChars('\n') + 1; }
     strdef usize strcls::CountChars(Char c) const {
         usize count = 0;

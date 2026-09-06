@@ -9,36 +9,36 @@ namespace Quasi::Iter {
     };
 
     template <class It>
-    struct EnumerateIter : IIterator<const EnumeratePair<CollectionItem<It>>, EnumerateIter<It>> {
+    struct Enumerate : IIterator<const EnumeratePair<CollectionItem<It>>, Enumerate<It>> {
         using OriginalItem = CollectionItem<It>;
         using Item = const EnumeratePair<OriginalItem>;
-        friend IIterator<Item, EnumerateIter>;
+        friend IIterator<Item, Enumerate>;
     private:
         usize i = 0;
         It iter;
-        explicit EnumerateIter(It it) : iter(std::move(it)) {}
+        explicit Enumerate(It it) : iter(std::move(it)) {}
     protected:
         Item CurrentImpl() const { return { i, iter.Current() }; }
         void AdvanceImpl() { iter.Advance(); ++i; }
         bool CanNextImpl() const { return iter.CanNext(); }
     public:
-        static EnumerateIter New(It it) { return EnumerateIter { it }; }
+        static Enumerate New(It it) { return Enumerate { it }; }
     };
 
     namespace Enumerators {
         template <IteratorAny It>
-        static EnumerateIter<It> Iter(It it) { return EnumerateIter<It>::New(std::move(it)); }
+        static Enumerate<It> Iter(It it) { return Enumerate<It>::New(std::move(it)); }
     }
 }
 
 namespace Quasi {
     template <class T, class Super>
-    Iter::EnumerateIter<Super> IIterator<T, Super>::Enumerate() const& {
+    Iter::Enumerate<Super> IIterator<T, Super>::Enumerate() const& {
         return Iter::Enumerators::Iter(super());
     }
 
     template <class T, class Super>
-    Iter::EnumerateIter<Super> IIterator<T, Super>::Enumerate() && {
+    Iter::Enumerate<Super> IIterator<T, Super>::Enumerate() && {
         return Iter::Enumerators::Iter(std::move(super()));
     }
 }

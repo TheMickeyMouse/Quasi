@@ -14,7 +14,7 @@ namespace Quasi::Text {
     using Utf16 = u16;
     /// A UTF-8 character.
     using Utf8  = u8;
-    // A Latin-1 / ISO/IEC 8859-1 character.
+    /// A Latin-1 / ISO/IEC 8859-1 character.
     enum Latin1 : u8 {};
 
     /// Determines the code point length given the first character in a sequence.
@@ -121,4 +121,26 @@ namespace Quasi::Text {
     Vec<Utf16> Utf32To16(Span<const Utf32> s32);
 
     String Latin1ToUtf8(Span<const Latin1> sLat);
+
+    /// An iterator that goes through the @em codepoints of a string,
+    /// unlike traditional string iterators which iterate through @em characters, which confuse
+    /// UTF-8 code units with actual characters.
+    ///
+    /// Takes in a UTF-8 encoded string, and yields out the code points in the form of a 32-bit integer.
+    /// If a bad UTF-8 character is encountered, the iterator terminates and returns null for that character.
+    /// Reaching the end of the string will also terminate the iterator.
+    struct CodepointIter : IIterator<const Option<Utf32>, CodepointIter> {
+        using Item = const Option<Utf32>;
+        friend IIterator;
+    private:
+        Str text;
+        Option<Utf32> currentChar;
+        CodepointIter(Str utf8) : text(utf8) { AdvanceImpl(); }
+    public:
+        static CodepointIter FromUtf8(Str text) { return { text }; }
+    protected:
+        Option<Utf32> CurrentImpl() const;
+        void AdvanceImpl();
+        bool CanNextImpl() const;
+    };
 }

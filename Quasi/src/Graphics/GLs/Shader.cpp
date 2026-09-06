@@ -4,7 +4,7 @@
 #include "Texture.h"
 #include "Utils/Text.h"
 #include "GLDebug.h"
-#include "Utils/Iter/LinesIter.h"
+#include "Utils/Iter/Lines.h"
 
 namespace Quasi::Graphics {
     Shader::Shader(GraphicsID id) : ShaderProgram(id) {}

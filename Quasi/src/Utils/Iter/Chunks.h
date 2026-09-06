@@ -3,14 +3,14 @@
 
 namespace Quasi::Iter {
     template <class T>
-    struct ChunksIter : IIterator<const Span<T>, ChunksIter<T>> {
+    struct Chunks : IIterator<const Span<T>, Chunks<T>> {
         using Item = const Span<T>;
-        friend IIterator<Item, ChunksIter>;
+        friend IIterator<Item, Chunks>;
     private:
         T* iter, *endIter;
         usize chunkSize = 1;
     public:
-        explicit ChunksIter(T* iter, T* endIter, usize chunkSize) : iter(iter), endIter(endIter), chunkSize(chunkSize) {}
+        explicit Chunks(T* iter, T* endIter, usize chunkSize) : iter(iter), endIter(endIter), chunkSize(chunkSize) {}
     protected:
         Item CurrentImpl() const {
             return Spans::Slice(iter, std::min((usize)(endIter - iter), chunkSize));
@@ -24,11 +24,11 @@ namespace Quasi::Iter {
 
 namespace Quasi {
     template <class T>
-    Iter::ChunksIter<T> Span<T>::Chunks(usize chunkSize) {
-        return Iter::ChunksIter<T> { data, data + size, chunkSize };
+    Iter::Chunks<T> Span<T>::Chunks(usize chunkSize) {
+        return Iter::Chunks<T> { data, data + size, chunkSize };
     }
     template <class T>
-    Iter::ChunksIter<const T> Span<T>::Chunks(usize chunkSize) const {
-        return Iter::ChunksIter<const T> { data, data + size, chunkSize };
+    Iter::Chunks<const T> Span<T>::Chunks(usize chunkSize) const {
+        return Iter::Chunks<const T> { data, data + size, chunkSize };
     }
 }
