@@ -139,11 +139,6 @@ namespace Quasi {
         Box<T> New(T val) { return Box<T>::New(std::move(val)); }
     }
 
-    struct GlobalArrayDelete {
-        void operator()(auto* ptr) const { Memory::FreeArray(ptr); }
-    };
-    template <class T> using BufferBox = Box<T, GlobalArrayDelete>;
-
     struct MallocFreeDelete {
         void operator()(auto* ptr) const { std::free(ptr); }
     };

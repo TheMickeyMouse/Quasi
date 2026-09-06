@@ -8,7 +8,7 @@
 
 namespace Quasi::Graphics {
     u8* Image::AllocImage(int w, int h) {
-        return Memory::AllocateArrayUninit<u8>(w * h * 4);
+        return (u8*)Memory::AllocateRaw(w * h * 4);
     }
 
     Image Image::Empty() {

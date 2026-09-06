@@ -20,11 +20,18 @@ namespace Quasi {
         using IResource<Span<T>, ArrayBox>::IResource;
         using IResource<Span<T>, ArrayBox>::operator=;
 
-        static ArrayBox Allocate      (usize amt) { return { Memory::AllocateArray<T>(amt), amt }; }
-        static ArrayBox AllocateUninit(usize amt) { return { Memory::AllocateArrayUninit<T>(amt), amt }; }
+        static ArrayBox Allocate(usize amt) {
+            T* buf = (T*)Memory::AllocateRaw(sizeof(T) * amt);
+            Memory::RangeConstruct(buf, T {}, amt);
+            return { buf, amt };
+        }
+        static ArrayBox AllocateUninit(usize amt) {
+            T* buf = (T*)Memory::AllocateRaw(sizeof(T) * amt);
+            return { buf, amt };
+        }
         template <usize N>
         static ArrayBox Build(T (&&arr) [N]) {
-            T* buf = Memory::AllocateArrayUninit<T>(N);
+            T* buf = Memory::AllocateRaw(sizeof(T) * N);
             for (usize i = 0; i < N; ++i)
                 Memory::ConstructMoveAt(&buf[i], std::move(arr[i]));
             return { buf, N };
@@ -42,7 +49,11 @@ namespace Quasi {
             return array;
         }
     protected:
-        void CloseImpl() { Memory::FreeArray(buf); buf = nullptr; size = 0; }
+        void CloseImpl() {
+            Memory::RangeDestruct(buf, size);
+            Memory::Free(buf);
+            buf = nullptr; size = 0;
+        }
 
         RemRef<T>* DataImpl() { return buf; }
         const RemRef<T>* DataImpl() const { return buf; }

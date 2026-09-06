@@ -175,7 +175,7 @@ namespace Quasi {
     public:
         /// @internal
         /// @brief Allocates a buffer of size @p size.
-        static T* AllocateBuffer(usize size) { return Memory::AllocateArrayUninit<T>(size); }
+        static T* AllocateBuffer(usize size) { return (T*)Memory::AllocateRaw(sizeof(T) * size); }
         /// @internal
         /// @brief Checks whether a vector can hold an extra `amount` elements without needing to resize.
         bool CanFit(usize amount) const { return size + amount <= capacity; }

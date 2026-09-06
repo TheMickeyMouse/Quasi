@@ -173,8 +173,8 @@ namespace Quasi::Text {
     Option<Vec<Utf32>> Utf8To32(Str s8) {
         Vec<Utf32> s32;
         for (usize i = 0; i < s8.Length();) {
-            u32 n;
-            Utf32 char32;
+            u32 n = 0;
+            Utf32 char32 = 0;
             if (TryUtf8CharTo32((Utf8*)&s8[i], s8.Length() - i, char32, n))
                 return nullptr;
             s32.Push(char32);
@@ -199,8 +199,8 @@ namespace Quasi::Text {
     Option<Vec<Utf16>> Utf8To16(Str s8) {
         Vec<Utf16> s16;
         for (usize i = 0; i < s8.Length();) {
-            u32 n, m;
-            Utf16 codepoint[2];
+            u32 n = 0, m = 0;
+            Utf16 codepoint[2] = { 0, 0 };
             if (TryUtf8CharTo16((Utf8*)&s8[i], s8.Length() - i, m, codepoint, 2, n))
                 return nullptr;
             s16.Extend(Spans::Slice(codepoint, n));
@@ -212,8 +212,8 @@ namespace Quasi::Text {
     Option<Vec<Utf32>> Utf16To32(Span<const Utf16> s16) {
         Vec<Utf32> s32;
         for (usize i = 0; i < s16.Length();) {
-            u32 n;
-            Utf32 char32;
+            u32 n = 0;
+            Utf32 char32 = 0;
             if (TryUtf16CharTo32(&s16[i], s16.Length() - i, char32, n))
                 return nullptr;
             s32.Push(char32);
