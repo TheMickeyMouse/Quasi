@@ -2,10 +2,11 @@
 
 #include "Hash.h"
 #include "Span.h"
-#include "String.h"
 #include "CStr.h"
+#include "Text/UTF.h"
 #include "Iter/Lines.h"
 #include "Iter/Split.h"
+#include "Text/Num.h"
 #include "Text/StringWriter.h"
 
 namespace Quasi {
@@ -73,6 +74,67 @@ namespace Quasi {
                 case 't':  return '\t';
                 case 'v':  return '\v';
                 default:   return nullptr;
+            }
+        }
+
+        bool TryWriteEscape(const char* s, u32 n, Out<u32&> numRead, char* out, Out<u32&> numWritten) {
+            using namespace Text::NumberConversion;
+            if (n < 1) return false;
+            if (*s != '\\') {
+                *out = *s;
+                numWritten = numRead = 1;
+                return true;
+            }
+            if (n < 2) return false;
+            switch (s[1]) {
+                case '\'': { numWritten = 1; numRead = 2; *out = '\''; return true; }
+                case '"':  { numWritten = 1; numRead = 2; *out = '\"'; return true; }
+                case '?':  { numWritten = 1; numRead = 2; *out = '\?'; return true; }
+                case '\\': { numWritten = 1; numRead = 2; *out = '\\'; return true; }
+                case 'a':  { numWritten = 1; numRead = 2; *out = '\a'; return true; }
+                case 'b':  { numWritten = 1; numRead = 2; *out = '\b'; return true; }
+                case 'f':  { numWritten = 1; numRead = 2; *out = '\f'; return true; }
+                case 'n':  { numWritten = 1; numRead = 2; *out = '\n'; return true; }
+                case 'r':  { numWritten = 1; numRead = 2; *out = '\r'; return true; }
+                case 't':  { numWritten = 1; numRead = 2; *out = '\t'; return true; }
+                case 'v':  { numWritten = 1; numRead = 2; *out = '\v'; return true; }
+                case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': { // octal
+                    if (n < 4) return false;
+                    numWritten = 1;
+                    numRead = 4; // \nnn
+                    if (!IsDigitRadix(s[2], 8) || !IsDigitRadix(s[3], 8)) return false;
+                    u32 x = Memory::ReadU32(s) & 0x0F0F0F; // \abc is read as 0c0b0a
+                    x *= 1 + (8 << 8) + (64 << 16);
+                    *out = (char)(x >> 16);
+                    return true;
+                }
+                case 'x': { // hex
+                    if (n < 4) return false;
+                    numWritten = 1;
+                    numRead = 4;
+                    const auto h1 = TryToHexDigit(s[2]), h2 = TryToHexDigit(s[3]);
+                    if (!h1 || !h2) return false;
+                    *out = (char)(*h1 * 16 + *h2);
+                    return true;
+                }
+                case 'u': { // short unicode
+                    if (n < 6) return false;
+                    numRead = 6;
+                    u32 x = Memory::ReadU32(&s[2]);
+                    if (!AreAllHexDigits4(x)) return false;
+                    x = ParseHexDigits4(x);
+                    return Text::TryUtf32CharTo8(x, (Text::Utf8*)out, 4, numWritten);
+                }
+                case 'U': { // long unicode
+                    if (n < 10) return false;
+                    numRead = 10;
+                    u32 x = Memory::ReadU32(&s[2]), y = Memory::ReadU32(&s[6]);
+                    if (!AreAllHexDigits4(x) || !AreAllHexDigits4(y)) return false;
+                    x = ParseHexDigits4(x);
+                    y = ParseHexDigits4(y);
+                    return Text::TryUtf32CharTo8(x << 16 | y, (Text::Utf8*)out, 4, numWritten);
+                }
+                default: return false;
             }
         }
 
@@ -399,26 +461,22 @@ namespace Quasi {
         output.Write('"');
         for (const char c : *this) {
             char buf[4];
-            len += output.Write(Str::Slice(buf, Chr::WriteEscape(c, buf)));
+            len += output.Write(Slice(buf, Chr::WriteEscape(c, buf)));
         }
         output.Write('"');
         return len;
     }
 
     Option<String> Str::Unescape() const {
-        // early check, so that we never have to check again
-        if (Last() == '\\') return nullptr;
-
-        String ss = String::WithCap(this->Length());
-        for (usize i = 0; i < this->Length(); ++i) {
-            if (Get(i) == '\\') {
-                ss += Chr::UnescapeRepr(Get(i + 1)).UnwrapOr(Get(i + 1));
-                ++i;
-            } else {
-                ss += Get(i);
-            }
+        String unescaped;
+        for (usize i = 0; i < Length();) {
+            char buf[4];
+            u32 numRead, numWritten;
+            if (!Chr::TryWriteEscape(Data() + i, Length() - i, numRead, buf, numWritten)) return nullptr;
+            i += numRead;
+            unescaped.AppendStr(Slice(buf, numWritten));
         }
-        return ss;
+        return unescaped;
     }
 
     StrMut Str::AsMut() { return StrMut::Slice(Memory::AsMutPtr(data), size); }

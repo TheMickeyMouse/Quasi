@@ -1652,6 +1652,12 @@ namespace Quasi::Graphics {
         return { *this, mesh };
     }
 
+    Canvas::TransformScope::TransformScope(Canvas& canvas) : canvas(canvas), oldTransform(canvas.transform) {}
+    Canvas::TransformScope::~TransformScope() { canvas.transform = oldTransform; }
+    Canvas::TransformScope Canvas::PushTransform() {
+        return { *this };
+    }
+
     Canvas::PushStylesScope::PushStylesScope(Canvas& canvas) : canvas(canvas), originalAttr(canvas.drawAttr) {}
     Canvas::PushStylesScope::~PushStylesScope() {
         canvas.drawAttr = originalAttr;

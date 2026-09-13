@@ -14,6 +14,7 @@ namespace Quasi::IO {
     class IO {
     private:
         Ref<Graphics::GraphicsDevice> gdevice;
+        bool windowResized;
     public:
         IO(Graphics::GraphicsDevice& gd);
 
@@ -63,11 +64,12 @@ namespace Quasi::IO {
         void MoveCursor(const Math::fv2& positionPx);
         void Scroll(float deltaY, float deltaX = 0);
 
+        static void OnGlfwWindowMoveCallback(GLFWwindow* window, int x, int y);
         static void OnGlfwFramebufferSizeCallback(GLFWwindow* window, int width, int height);
-        static void OnGlfwCursorMoveCallback(GLFWwindow* window, double x, double y);
         static void OnGlfwMouseCallback(GLFWwindow* window, int mouse, int action, int mods);
         static void OnGlfwScrollCallback(GLFWwindow* window, double xOff, double yOff);
         static void OnGlfwKeyCallback(GLFWwindow* window, int key, int positionCode, int action, int modifierBits);
+        static void OnGlfwMinimizeCallback(GLFWwindow* window, int minimized);
 
         void CursorLock();
         void CursorHide();

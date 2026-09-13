@@ -36,8 +36,11 @@ namespace Quasi::Graphics {
         Vec<RenderHandle> renders;
         VertexArray emptyVAO = VertexArray::New();
 
-        Math::iv2 windowSize;
+        Math::iv2 windowSize, windowPos;
+        // Math::iv2 restoredSize, restoredPos;
         GLFWwindow* mainWindow;
+        // bool isMaximized = false, isMinimized = false;
+        bool sizeUpdated = false;
 
         struct GLRenderOptions {
             RenderMode renderMode = RenderMode::FILL;
@@ -53,7 +56,7 @@ namespace Quasi::Graphics {
         friend IO::IO;
 
         Debug::DateTime frameBeginTime;
-        Debug::TimeDuration frameDurationTime;
+        Debug::TimeDuration frameDurationTime = {};
 
         inline static OptRef<GraphicsDevice> Instance;
         inline static bool ShowDebugMenu = false;
@@ -95,12 +98,15 @@ namespace Quasi::Graphics {
         bool IsClosed() const { return !mainWindow; }
         bool WindowIsOpen() const;
     
-        Math::iv2 GetWindowSize() const { return windowSize; }
+        const Math::iv2& GetWindowSize() const { return windowSize; }
+        const Math::iv2& GetWindowPos() const { return windowPos; }
         float GetAspectRatio() const { return (float)windowSize.x / (float)windowSize.y; }
         GLFWwindow* GetWindow() { return mainWindow; }
         const GLFWwindow* GetWindow() const { return mainWindow; }
+        Debug::TimeDuration GetFrameTime() const { return frameDurationTime; }
 
-        void EnterFullscreen();
+        void MoveWindow(const Math::iv2& newPos);
+        void ResizeWindow(const Math::iv2& newSize, bool isManual);
 
         FontDevice& GetFontDevice() { return fontDevice; }
         const FontDevice& GetFontDevice() const { return fontDevice; }

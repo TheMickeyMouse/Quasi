@@ -101,6 +101,21 @@ namespace Quasi {
         /// (ex: returns @p '\n' for the character 'n').
         /// Returns null if no corresponding escape code exists.
         Option<char> UnescapeRepr(char c);
+        /// Reads an escape sequence from the input string @p s and writes
+        /// the appropriate character into the string buffer @p out,
+        /// returning out the number of characters read in @p numRead and written in @p numWritten .
+        /// Escape sequences @b must start with the backslash character.
+        ///
+        /// Returns false if a bad or incomplete escape code was encountered.
+        ///
+        /// Can read shortened escape codes like @p '\n' or @p '\t',
+        /// octal codes like @p '\nnn', hexadecimal codes like @p '\xhh',
+        /// or a unicode code like @p '\uhhhh' or @p '\Uhhhhhhhh'
+        /// (n is an octal digit and h is a hexidecimal digit)
+        ///
+        /// Writes the character directly if no escpaing is required, i.e. no backslash was found.
+        /// @note Never writes more than 4 characters or consumes more than 10 characters.
+        bool TryWriteEscape(const char* s, u32 n, Out<u32&> numRead, char* out, Out<u32&> numWritten);
 
         /// Converts the character @p c into its lowercase variant
         /// if @p c is an uppercase alphabetic character, does nothing otherwise.

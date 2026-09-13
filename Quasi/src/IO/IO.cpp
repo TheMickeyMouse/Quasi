@@ -28,10 +28,12 @@ namespace Quasi::IO {
     }
 
     void IO::AttachCallbacks(GLFWwindow* win) {
+        glfwSetWindowPosCallback      (win, &OnGlfwWindowMoveCallback);
         glfwSetFramebufferSizeCallback(win, &OnGlfwFramebufferSizeCallback);
         glfwSetMouseButtonCallback    (win, &OnGlfwMouseCallback);
         glfwSetScrollCallback         (win, &OnGlfwScrollCallback);
         glfwSetKeyCallback            (win, &OnGlfwKeyCallback);
+        glfwSetWindowIconifyCallback  (win, &OnGlfwMinimizeCallback);
     }
 
     void IO::Update() {
@@ -125,8 +127,12 @@ namespace Quasi::IO {
         mouseScroll += deltaY; mouseScrollX += deltaX;
     }
 
+    void IO::OnGlfwWindowMoveCallback(GLFWwindow* window, int x, int y) {
+        GetIOPtr(window)->gdevice->windowPos = { x, y };
+    }
+
     void IO::OnGlfwFramebufferSizeCallback(GLFWwindow* window, int width, int height) {
-        GetIOPtr(window)->gdevice->windowSize = { width, height };
+        GetIOPtr(window)->gdevice->ResizeWindow({ width, height }, false);
     }
 
     void IO::OnGlfwMouseCallback(GLFWwindow* window, int mouse, int action, int mods) {
@@ -153,6 +159,10 @@ namespace Quasi::IO {
         IO& io = *GetIOPtr(window);
         io.PressKey(Key::GlfwCodeToKey(key), action != GLFW_RELEASE);
         io.PressMods((ModKey::E)modifierBits);
+    }
+
+    void IO::OnGlfwMinimizeCallback(GLFWwindow* window, int minimized) {
+        GetIOPtr(window)->gdevice->isMinimized = (bool)minimized;
     }
 
     void IO::CursorLock() {

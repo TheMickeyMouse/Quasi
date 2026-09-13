@@ -253,6 +253,14 @@ namespace Quasi::Graphics {
         };
         DeferRenderScope RenderTo(UIMesh& mesh);
 
+        struct TransformScope {
+            Canvas& canvas;
+            Math::Transform2D oldTransform;
+            TransformScope(Canvas& canvas);
+            ~TransformScope();
+        };
+        TransformScope PushTransform();
+
         struct PushStylesScope {
             Canvas& canvas;
             DrawAttributes originalAttr;

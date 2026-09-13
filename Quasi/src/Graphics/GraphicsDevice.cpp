@@ -19,7 +19,7 @@ namespace Quasi::Graphics {
     class RenderData;
 
     GraphicsDevice::GraphicsDevice(GLFWwindow* window, Math::iv2 winSize) :
-        windowSize(winSize), mainWindow{ window } {
+        windowSize(winSize), restoredSize(winSize), mainWindow(window) {
         Instance = *this;
     }
 
@@ -73,6 +73,8 @@ namespace Quasi::Graphics {
         frameBeginTime = Debug::Timer::Now();
         GLDebugContainer::GpuProcessDuration = Debug::Timer::Instant();
 
+        if (sizeUpdated) GL::Viewport(0, 0, windowSize.x, windowSize.y);
+        sizeUpdated = false;
         Render::Clear();
 
 #ifndef Q_NO_IMGUI
@@ -91,10 +93,6 @@ namespace Quasi::Graphics {
     void GraphicsDevice::End() {
         if (IsClosed()) return;
 
-        const auto end = Debug::Timer::Now();
-        frameDurationTime = end - frameBeginTime;
-        frameBeginTime = end;
-
 #ifndef Q_NO_IMGUI
         ImGui::Render();
 #endif
@@ -106,6 +104,10 @@ namespace Quasi::Graphics {
 #endif
 
         glfwSwapBuffers(mainWindow);
+
+        const auto end = Debug::Timer::Now();
+        frameDurationTime = end - frameBeginTime;
+        frameBeginTime = end;
     }
     
     void GraphicsDevice::BindRender(RenderData& render) {
@@ -160,14 +162,31 @@ namespace Quasi::Graphics {
         return mainWindow && !glfwWindowShouldClose(mainWindow);
     }
 
-    void GraphicsDevice::EnterFullscreen() {
-        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-
-        Debug::QInfo$("Window Size: {} by {} px", mode->width, mode->height);
-        // Switch to fullscreen
-        glfwSetWindowMonitor(mainWindow, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+    void GraphicsDevice::MoveWindow(const Math::iv2& newPos) {
+        if (isMaximized) return;
+        glfwSetWindowPos(mainWindow, newPos.x, newPos.y);
     }
+
+    void GraphicsDevice::ResizeWindow(const Math::iv2& newSize, bool isManual) {
+        if (isMaximized && isManual) return;
+        sizeUpdated |= windowSize != newSize;
+        windowSize = newSize;
+        if (isManual) glfwSetWindowSize(mainWindow, windowSize.x, windowSize.y);
+    }
+
+    // void GraphicsDevice::MaximizeWindow() {
+    //     isMaximized = !isMaximized;
+    //     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    //     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+    //     sizeUpdated = true;
+    //     if (isMaximized) {
+    //         restoredSize = windowSize;
+    //         restoredPos = windowPos;
+    //         glfwSetWindowMonitor(mainWindow, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+    //     } else {
+    //         glfwSetWindowMonitor(mainWindow, nullptr, restoredPos.x, restoredPos.y, restoredSize.x, restoredPos.y, 0);
+    //     }
+    // }
 
     void GraphicsDevice::SetDrawMode(const RenderMode mode) {
         renderOptions.renderMode = mode;
