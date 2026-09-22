@@ -162,7 +162,7 @@ namespace Quasi::IO {
     }
 
     void IO::OnGlfwMinimizeCallback(GLFWwindow* window, int minimized) {
-        GetIOPtr(window)->gdevice->isMinimized = (bool)minimized;
+        // GetIOPtr(window)->gdevice->isMinimized = (bool)minimized;
     }
 
     void IO::CursorLock() {

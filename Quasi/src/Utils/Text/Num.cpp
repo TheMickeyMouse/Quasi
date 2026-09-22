@@ -1025,7 +1025,7 @@ namespace Quasi::Text {
             return hasSign + fixedPart + 1 + *expPart;
         }
 
-        if (isFixed) return nullptr;
+        // if (isFixed) return nullptr;
 
         out = negative ? -num : num;
         return hasSign + fixedPart;
@@ -1033,7 +1033,7 @@ namespace Quasi::Text {
 
     template <class N>
     usize NumberConversion::FloatConv<N>::ParseInteger(Str string, Out<N&> out) {
-        string = string.First(string.FindIf([] (char x) { return !Chr::IsDigit(x); }).UnwrapOr(string.Length()));
+        string = string.First(string.FindIndexIf([] (char x) { return !Chr::IsDigit(x); }).UnwrapOr(string.Length()));
         const usize totalLen = string.Length();
         string = string.TrimStart('0');
 
@@ -1059,7 +1059,7 @@ namespace Quasi::Text {
 
     template <class N>
     usize NumberConversion::FloatConv<N>::ParseDecimal(Str string, InOut<N&> out) {
-        string = string.First(string.FindIf([] (char x) { return !Chr::IsDigit(x); }).UnwrapOr(string.Length()));
+        string = string.First(string.FindIndexIf([] (char x) { return !Chr::IsDigit(x); }).UnwrapOr(string.Length()));
         const usize totalLen = string.Length();
         string = string.TrimEnd('0');
 

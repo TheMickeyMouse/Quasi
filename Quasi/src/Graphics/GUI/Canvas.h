@@ -31,6 +31,7 @@ namespace Quasi::Graphics {
     class UIMesh : public Mesh<UIVertex> {
     public:
         void SetTextureFill();
+        void SetColor(const Math::fColor& c);
         void FillGradient(const Gradient& g);
         void OverlayGradient(const Gradient& g);
     };
@@ -202,15 +203,9 @@ namespace Quasi::Graphics {
             OPEN_CURVE, CLOSED_CURVE
         };
         struct Path {
-            Canvas& canvas;
-            u32 closing = OPEN_CURVE;
-            enum {
-                OPEN_CURVE_SECOND_POINT = 2,
-                OPEN_CURVE_MIDDLE_POINT = 3,
-                CLOSED_CURVE_SECOND_POINT = 4,
-                CLOSED_CURVE_MIDDLE_POINT = 5,
-                COMPLETED = -1,
-            };
+            Ref<Canvas> canvas;
+            bool close;
+            enum { START, FIRST, MIDDLE, END } stage = START;
         private:
             Math::fv2 firstPoint, firstTangent, lastPoint, lastTangent;
 
@@ -220,12 +215,13 @@ namespace Quasi::Graphics {
 
             void DrawCircularArcCCW(const Math::fv2& startPoint, const Math::fv2& center, const Math::Rotor2D& turn);
         public:
-            Path(Canvas& canvas, CurveMode mode) : canvas(canvas), closing(mode) {}
+            Path(Canvas& canvas, CurveMode mode) : canvas(canvas), close(mode) {}
             void AddPoint(const Math::fv2& point);
             // from lastPoint to current point is a full turn
             void AddCircularArc(const Math::fv2& center, const Math::Rotor2D& turn, ArcDirection dir = CCW);
             void AddQuadBez(const Math::fv2& control, const Math::fv2& end);
             void ClosePath();
+            void DontClosePath();
             ~Path();
         };
         Path NewPath(CurveMode mode = CLOSED_CURVE);
@@ -239,6 +235,8 @@ namespace Quasi::Graphics {
         void StrokeWeight(float weight);
         void StrokeCap(UIRender::RenderStyle cap);
         void StrokeJoin(UIRender::RenderStyle join);
+
+        float GetFeather() const;
 
         void Fill(const Math::fColor& fillColor);
         void Stroke(const Math::fColor& strokeColor);
@@ -282,6 +280,7 @@ namespace Quasi::Graphics {
         Math::fv2 TransformToWorldSpace(const Math::fv2& point) const;
         void SetViewport(const Math::fRect2D& vp);
         void FlipYDirection();
+        void SetCanvasSize(const Math::iv2& size);
 
         void Update(float dt);
         void AddInteractable(Ref<Interactable> inter);

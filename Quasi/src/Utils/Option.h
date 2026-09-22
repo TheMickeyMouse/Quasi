@@ -280,7 +280,10 @@ namespace Quasi {
     struct Option : INullable<T, Option<T>> {
         friend INullable<T, Option>;
     private:
-        [[no_unique_address]] T value;
+        union {
+            [[no_unique_address]] Empty _ = {};
+            [[no_unique_address]] T value;
+        };
         bool isSome = true;
     public:
         /// Creates the null value.
@@ -291,6 +294,22 @@ namespace Quasi {
         Option(const T& value) : value(value) {}
         /// Creates the object holding @p value by moving it.
         Option(T&& value) : value(std::move(value)) {}
+
+        ~Option() { if (isSome) value.~T(); }
+        Option(Option&& other) noexcept : isSome(other.isSome) {
+            if (isSome) Memory::ConstructMoveAt(&value, std::move(other.value));
+        }
+        Option(const Option& other) noexcept : isSome(other.isSome) {
+            if (isSome) Memory::ConstructCopyAt(&value, other.value);
+        }
+        Option& operator=(Option&& other) noexcept {
+            if (other.isSome) SetImpl(std::move(other.value)); else SetNullImpl();
+            return *this;
+        }
+        Option& operator=(const Option& other) noexcept {
+            if (other.isSome) SetImpl(other.value); else SetNullImpl();
+            return *this;
+        }
     protected:
         static Option SomeImpl(const T& value) { return { value }; }
         static Option SomeImpl(T&& value) { return { std::move(value) }; }
@@ -300,11 +319,19 @@ namespace Quasi {
         T& UnwrapImpl() { return value; }
         const T& UnwrapImpl() const { return value; }
 
-        void SetNullImpl() { isSome = false; }
-        void SetImpl(const T& v) { isSome = true; value = v; }
-        void SetImpl(T&& v)      { isSome = true; value = std::move(v); }
+        void SetNullImpl() { if (!isSome) return; isSome = false; value.~T(); }
+        void SetImpl(const T& v) {
+            if (isSome) value = v;
+            else { isSome = true; Memory::ConstructCopyAt(&value, v); }
+        }
+        void SetImpl(T&& v) {
+            if (isSome) value = std::move(v);
+            else { isSome = true; Memory::ConstructMoveAt(&value, std::move(v)); }
+        }
     public:
-        bool operator==(const Option&) const = default;
+        bool operator==(const Option& other) const {
+            return isSome ? (other.isSome && value == other.value) : !other.isSome;
+        }
         bool operator==(const T& other) const { return isSome && value == other; }
 
         /// Hashes the index.

@@ -301,26 +301,27 @@ namespace Quasi::IO {
         // idk why im doing this but its cool i guess
         // removes lowercase
         const int len = name.Length();
-        const u64 text = (Memory::ReadU64Big(name.Data()) & 0xDFDFDFDFDFDFDFDF) >> (64 - std::min(64, (int)(8 * len)));
-        if (text == "SPACE"_u64  && len == 5) return SPACE;
-        if (text == "ESC"_u64    && len == 3) return ESCAPE;
-        if (text == "ESCAPE"_u64 && len == 6) return ESCAPE;
-        if (text == "ENTER"_u64  && len == 5) return ENTER;
-        if (text == "TAB"_u64    && len == 3) return TAB;
-        if (text == "INSERT"_u64 && len == 6) return INSERT;
-        if (text == "INS"_u64    && len == 3) return INSERT;
-        if (text == "DEL"_u64    && len == 3) return DELETE;
-        if (text == "DELETE"_u64 && len == 6) return DELETE;
-        if (text == "RIGHT"_u64  && len == 5) return RIGHT;
-        if (text == "LEFT"_u64   && len == 4) return LEFT;
-        if (text == "DOWN"_u64   && len == 4) return DOWN;
-        if (text == "UP"_u64     && len == 2) return UP;
-        if (text == "PGUP"_u64   && len == 4) return PAGE_UP;
-        if (text == "PGDN"_u64   && len == 4) return PAGE_DOWN;
-        if (text == "HOME"_u64   && len == 4) return HOME;
-        if (text == "END"_u64    && len == 3) return END;
-        if (text == "PRTSCN"_u64 && len == 6) return PRINT_SCREEN;
-        if (text == "PAUSE"_u64  && len == 5) return PAUSE;
+        const u64 textSensitive = Memory::ReadU64Big(name.Data()) >> (64 - std::min(64, (int)(8 * len))),
+                  text = textSensitive & 0xDFDFDFDFDFDFDFDF;
+        if (text == "SPACE"_u64    && len == 5) return SPACE;
+        if (text == "ESC"_u64      && len == 3) return ESCAPE;
+        if (text == "ESCAPE"_u64   && len == 6) return ESCAPE;
+        if (text == "ENTER"_u64    && len == 5) return ENTER;
+        if (text == "TAB"_u64      && len == 3) return TAB;
+        if (text == "INSERT"_u64   && len == 6) return INSERT;
+        if (text == "INS"_u64      && len == 3) return INSERT;
+        if (text == "DEL"_u64      && len == 3) return DELETE;
+        if (text == "DELETE"_u64   && len == 6) return DELETE;
+        if (text == "RIGHT"_u64    && len == 5) return RIGHT;
+        if (text == "LEFT"_u64     && len == 4) return LEFT;
+        if (text == "DOWN"_u64     && len == 4) return DOWN;
+        if (text == "UP"_u64       && len == 2) return UP;
+        if (text == "PGUP"_u64     && len == 4) return PAGE_UP;
+        if (text == "PGDN"_u64     && len == 4) return PAGE_DOWN;
+        if (text == "HOME"_u64     && len == 4) return HOME;
+        if (text == "END"_u64      && len == 3) return END;
+        if (text == "PRTSCN"_u64   && len == 6) return PRINT_SCREEN;
+        if (text == "PAUSE"_u64    && len == 5) return PAUSE;
         if (text == "SHIFT"_u64    && len == 5) return LSHIFT;
         if (text == "CTRL"_u64     && len == 4) return LCONTROL;
         if (text == "CONTROL"_u64  && len == 7) return LCONTROL;
@@ -333,6 +334,18 @@ namespace Quasi::IO {
         if (text == "RSUPER"_u64   && len == 6) return RWIN;
         if (text == "MENU"_u64     && len == 4) return MENU;
         if (text == "CAPS"_u64     && len == 4) return CAPS_LOCK;
+        if (textSensitive == "F1"_u64  && len == 2) return F1;
+        if (textSensitive == "F2"_u64  && len == 2) return F2;
+        if (textSensitive == "F3"_u64  && len == 2) return F3;
+        if (textSensitive == "F4"_u64  && len == 2) return F4;
+        if (textSensitive == "F5"_u64  && len == 2) return F5;
+        if (textSensitive == "F6"_u64  && len == 2) return F6;
+        if (textSensitive == "F7"_u64  && len == 2) return F7;
+        if (textSensitive == "F8"_u64  && len == 2) return F8;
+        if (textSensitive == "F9"_u64  && len == 2) return F9;
+        if (textSensitive == "F10"_u64 && len == 3) return F10;
+        if (textSensitive == "F11"_u64 && len == 3) return F11;
+        if (textSensitive == "F12"_u64 && len == 3) return F12;
 
         if (name.EqualsIgnoreCase("CAPS LOCK"))   return CAPS_LOCK;
         if (name.EqualsIgnoreCase("SCROLL LOCK")) return SCROLL_LOCK;

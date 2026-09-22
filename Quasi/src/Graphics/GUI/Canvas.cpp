@@ -21,6 +21,12 @@ namespace Quasi::Graphics {
         // TODO
     }
 
+    void UIMesh::SetColor(const Math::fColor& c) {
+        for (UIVertex& v : vertices) {
+            v.Color = c;
+        }
+    }
+
     void UIMesh::FillGradient(const Gradient& g) {
         for (UIVertex& v : vertices) {
             v.Color = g.At(v.Position);
@@ -43,8 +49,7 @@ namespace Quasi::Graphics {
         varray.Bind();
         varray.AddBuffer(vbo, UIVertex::VERTEX_LAYOUT);
 
-        screenTexture = Texture2D::New(nullptr, screenSize);
-        screenBuffer = FrameBuffer::With(screenTexture);
+        SetCanvasSize(screenSize);
 
         shaderStd = Shader::New(
             "#version 450 core\n"
@@ -86,12 +91,12 @@ namespace Quasi::Graphics {
             "    switch (prim) {"
             "        case 1: {"
             "            float dist = 1 - length(vSTUV.xy);"
-            "            color.a *= clamp(dist / fwidth(dist), 0.0, 1.0);"
+            "            color.a *= clamp(0.5 + dist / fwidth(dist), 0.0, 1.0);"
             "            break;"
             "        }"
             "        case 2: {"
             "            float dist = (1 - vSTUV.z) * 0.5f - abs(length(vSTUV.xy) - (vSTUV.z + 1) * 0.5);"
-            "            color.a *= clamp(dist / fwidth(dist), 0.0, 1.0);"
+            "            color.a *= clamp(0.5 + dist / fwidth(dist), 0.0, 1.0);"
             "            break;"
             "        }"
             // "        case 3: {"
@@ -453,7 +458,12 @@ namespace Quasi::Graphics {
     }
 
     void Canvas::DrawMesh(const UIMesh& mesh) {
-        DestinationMesh()->Add(mesh);
+        Batch b = NewBatch();
+        for (auto v : mesh.vertices) {
+            v.Position = TransformToWorldSpace(v.Position);
+            b.PushV(v);
+        }
+        b.PushIs(mesh.indices);
     }
 
     void Canvas::DrawTexture(const Texture2D& texture, const Math::fv2& pos, const Math::fv2& size, bool center, const SpriteOptions& options) {
@@ -848,11 +858,14 @@ namespace Quasi::Graphics {
     void Canvas::DrawSimpleLine(const Math::fv2& start, const Math::fv2& end, const Math::fv2& tangent) {
         Batch batch = NewBatch();
         batch.SetStroke();
-        const Math::fv2 normal = tangent.Perpend() * drawAttr.strokeWeight;
-        batch.Point(start + normal);
-        batch.Point(end   + normal);
-        batch.Point(end   - normal);
-        batch.Point(start - normal);
+
+        const float feather = GetFeather();
+        const float u = 1.0f + feather / drawAttr.strokeWeight;
+        const Math::fv2 normal = tangent.Perpend() * (drawAttr.strokeWeight + feather);
+        batch.PointCirc(start + normal, +u, 0);
+        batch.PointCirc(end   + normal, +u, 0);
+        batch.PointCirc(end   - normal, -u, 0);
+        batch.PointCirc(start - normal, -u, 0);
         batch.Quad(0, 1, 2, 3);
     }
 
@@ -862,11 +875,15 @@ namespace Quasi::Graphics {
         // no need to draw flat caps: theyre done by default
         switch (drawAttr.drawStyle & UIRender::CAP_MASK) {
             case UIRender::ROUND_CAP: {
-                const Math::fv2 tangentR2 = tangent * (Math::ROOT_2 * drawAttr.strokeWeight), normalR2 = tangentR2.Perpend();
-                batch.PointCirc(point - tangentR2, +1, +1);
-                batch.PointCirc(point + normalR2,  -1, +1);
-                batch.PointCirc(point - normalR2,  +1, -1);
-                batch.Tri(0, 1, 2);
+                const float feather = GetFeather(), u = 1 + feather / drawAttr.strokeWeight;
+                const Math::fv2 t = tangent * (drawAttr.strokeWeight + feather);
+                const Math::fv2 normal = t.Perpend(), L = point - normal, R = point + normal;
+
+                batch.PointCirc(L, -u, 0);
+                batch.PointCirc(R, +u, 0);
+                batch.PointCirc(L - t, -u, +u);
+                batch.PointCirc(R - t, +u, +u);
+                batch.Quad(0, 1, 3, 2);
                 break;
             }
             case UIRender::SQUARE_CAP:  {
@@ -976,13 +993,14 @@ namespace Quasi::Graphics {
 
     void Canvas::DrawSimpleCircle(const Math::fv2& center, float radius, const Math::fColor& color) {
         Batch batch = NewBatch();
-        static constexpr float R2 = Math::ROOT_2;
-        const float diagonal = R2 * radius;
         batch.SetColor(color);
-        batch.PointCirc({ center.x + diagonal, center.y }, +R2, 0);
-        batch.PointCirc({ center.x, center.y + diagonal }, 0, +R2);
-        batch.PointCirc({ center.x - diagonal, center.y }, -R2, 0);
-        batch.PointCirc({ center.x, center.y - diagonal }, 0, -R2);
+
+        const float feather = GetFeather(),
+                    R = radius + feather, u = R / radius;
+        batch.PointCirc({ center.x + R, center.y + R }, +u, +u);
+        batch.PointCirc({ center.x + R, center.y - R }, +u, -u);
+        batch.PointCirc({ center.x - R, center.y - R }, -u, -u);
+        batch.PointCirc({ center.x - R, center.y + R }, -u, +u);
         batch.Quad(0, 1, 2, 3);
     }
 
@@ -1048,27 +1066,31 @@ namespace Quasi::Graphics {
     }
 
     void Canvas::DrawCircularArcCCW(const Math::fv2& center, const Math::Rotor2D& mid, Math::Rotor2D step, float radius, float thickness, const Math::fColor& color) {
-        const float innerRadius = radius - thickness;
         if (step.Cos() < 0) {
             DrawQuarterArc(center, mid.RotateByInv(step), radius, thickness, color);
             step = step.RotateCW90();
             DrawQuarterArc(center, mid.RotateBy(step), radius, thickness, color);
         }
-        const float secant = Math::ROOT_2 / std::sqrt(1 + step.Cos()),
-                    outerRadius = secant * (radius + thickness),
-                    innerUV = innerRadius / (radius + thickness);
+
+        const float feather = GetFeather(),
+                    invR = 1 / (radius + thickness),
+                    innerRadius = std::max(0.0f, radius - thickness - feather),
+                    outerRadius = Math::ROOT_2 / std::sqrt(1 + step.Cos()) * (radius + thickness + feather),
+                    innerUV = innerRadius * invR, outerUV = outerRadius * invR,
+                    threshold = (radius - thickness) * invR;
+
         Batch batch = NewBatch();
         batch.SetColor(color);
         Math::fv2 fwd = mid.IHat();
-        batch.PointArc(center + fwd * innerRadius, innerUV, 0, innerUV);
-        batch.PointArc(center + fwd * outerRadius, secant,  0, innerUV);
+        batch.PointArc(center + fwd * innerRadius, innerUV, 0, threshold);
+        batch.PointArc(center + fwd * outerRadius, outerUV, 0, threshold);
         fwd = fwd.RotateBy(step);
-        const Math::fv2 iUV = step.IHat() * innerUV, sUV = step.IHat() * secant;
-        batch.PointArc(center + fwd * innerRadius, iUV.x, iUV.y, innerUV);
-        batch.PointArc(center + fwd * outerRadius, sUV.x, sUV.y, innerUV);
+        const Math::fv2 iUV = step.IHat() * innerUV, sUV = step.IHat() * outerUV;
+        batch.PointArc(center + fwd * innerRadius, iUV.x, iUV.y, threshold);
+        batch.PointArc(center + fwd * outerRadius, sUV.x, sUV.y, threshold);
         fwd = step.InvRotate(mid.IHat());
-        batch.PointArc(center + fwd * innerRadius, iUV.x, -iUV.y, innerUV);
-        batch.PointArc(center + fwd * outerRadius, sUV.x, -sUV.y, innerUV);
+        batch.PointArc(center + fwd * innerRadius, iUV.x, -iUV.y, threshold);
+        batch.PointArc(center + fwd * outerRadius, sUV.x, -sUV.y, threshold);
         batch.Quad(0, 1, 3, 2);
         batch.Quad(1, 0, 4, 5);
     }
@@ -1251,62 +1273,50 @@ namespace Quasi::Graphics {
         if (NoPointsYet()) return BeginLineSegment(point);
 
         const Math::fv2 tangent = lastPoint.Tangent(point);
-        canvas.DrawSimpleLine(lastPoint, point, tangent);
+        canvas->DrawSimpleLine(lastPoint, point, tangent);
         EndLineSegment(point, tangent);
     }
 
     bool Canvas::Path::NoPointsYet() {
-        return closing == OPEN_CURVE || closing == CLOSED_CURVE;
+        return stage == START;
     }
 
     void Canvas::Path::BeginLineSegment(const Math::fv2& p) {
-        switch (closing) {
-            case OPEN_CURVE:
-                // no points yet, encountered first point
-                lastPoint = p;
-                closing = OPEN_CURVE_SECOND_POINT;
-                break;
-            case CLOSED_CURVE:
-                // no points yet, but we need to store first point to close the curve
-                firstPoint = lastPoint = p;
-                closing = CLOSED_CURVE_SECOND_POINT;
-                break;
-            default:;
+        if (stage != START) return;
+
+        stage = FIRST;
+        if (close) {
+            // no points yet, but we need to store first point to close the curve
+            firstPoint = lastPoint = p;
+        } else {
+            // no points yet, encountered first point
+            lastPoint = p;
         }
     }
 
     void Canvas::Path::EndLineSegment(const Math::fv2& p, const Math::fv2& tangent) {
-        switch (closing) {
-            case OPEN_CURVE_SECOND_POINT: {
-                // we cap of the first point since we just left it
-                canvas.DrawLineCap(lastPoint, tangent);
-                lastPoint = p;
-                lastTangent = tangent;
-                closing = OPEN_CURVE_MIDDLE_POINT;
-                break;
-            }
-            case OPEN_CURVE_MIDDLE_POINT: {
-                // since we're in the middle, we now have to draw joins instead of caps
-                canvas.DrawLineJoin(lastPoint, lastTangent, tangent);
-                lastPoint = p;
-                lastTangent = tangent;
-                break;
-            }
-            case CLOSED_CURVE_SECOND_POINT: {
+        switch (stage) {
+            case START:         // no points yet
+            case END:   return; // done
+            case FIRST: if (close) {
                 // we cant draw the join of the previous point, since we dont know the last
                 lastPoint = p;
                 firstTangent = lastTangent = tangent;
-                closing = CLOSED_CURVE_MIDDLE_POINT;
-                break;
+            } else {
+                // we cap of the first point since we just left it
+                canvas->DrawLineCap(lastPoint, tangent);
+                lastPoint = p;
+                lastTangent = tangent;
             }
-            case CLOSED_CURVE_MIDDLE_POINT: {
-                // now we can draw the previous join
-                canvas.DrawLineJoin(lastPoint, lastTangent, tangent);
+            stage = MIDDLE;
+            break;
+
+            case MIDDLE:
+                // since we're in the middle, we now have to draw joins instead of caps
+                canvas->DrawLineJoin(lastPoint, lastTangent, tangent);
                 lastPoint = p;
                 lastTangent = tangent;
                 break;
-            }
-            default:;
         }
     }
 
@@ -1314,14 +1324,14 @@ namespace Quasi::Graphics {
         const Math::Rotor2D halfTurn = turn.HalvedCCW();
         const auto [direction, radius] = (startPoint - center).NormAndLen();
         const Math::Rotor2D middle = Math::Rotor2D::FromComplex({ direction.x, direction.y }) + halfTurn;
-        canvas.DrawCircularArcCCW(center, middle, halfTurn, radius, canvas.drawAttr.strokeWeight, canvas.drawAttr.strokeColor);
+        canvas->DrawCircularArcCCW(center, middle, halfTurn, radius, canvas->drawAttr.strokeWeight, canvas->drawAttr.strokeColor);
     }
 
     void Canvas::Path::AddCircularArc(const Math::fv2& center, const Math::Rotor2D& turn, ArcDirection dir) {
         if (NoPointsYet()) return;
 
         const Math::fv2 lastDirection = (lastPoint - center), endPoint = lastDirection.RotateBy(turn) + center;
-        const bool swap = (dir & 1) ^ ((dir & 2) && turn.Sin() < 0);
+        const bool swap = dir == CCW ? false : dir == CW ? true : dir == MAJOR ? turn.Sin() > 0 : turn.Sin() < 0;
         DrawCircularArcCCW(swap ? endPoint : lastPoint, center, swap ? turn.Inverse() : turn);
 
         EndLineSegment(endPoint, lastDirection.Norm().Perpend(!swap));
@@ -1344,7 +1354,7 @@ namespace Quasi::Graphics {
         endNorm   = endNorm.Perpend();
 
         const bool rightwardCurving = v0.Cross(v1) < 0;
-        float w = f32s::Signed(rightwardCurving, canvas.drawAttr.strokeWeight);
+        float w = f32s::Signed(rightwardCurving, canvas->drawAttr.strokeWeight);
         if (startNorm.Dot(endNorm) > -0.99f) {
             // we need arbitrary precision on this path; curves are smooth
             // and thickness limits the size of which bezier curves can be rendered
@@ -1448,7 +1458,7 @@ namespace Quasi::Graphics {
 
             const usize group = (8 << subdivCount) + 1;
 
-            Batch batch = canvas.NewBatch();
+            Batch batch = canvas->NewBatch();
             batch.SetStroke();
             batch.PointsQBezClosed(allPoints.Subspan(0, group), allPoints.Skip(group));
         } else {
@@ -1478,15 +1488,15 @@ namespace Quasi::Graphics {
             const Math::fv2 outerNeighbor = neighbor + neighborNorm, outerReflect = reflect + reflectNorm,
                             middleGround = (outerNeighbor + outerReflect) * 0.5f;
             const auto [down, y] = (middleGround - outerNeighbor).NormAndLen();
-            const float r = std::max(canvas.drawAttr.strokeWeight, y), x = f32s::CopySign(std::sqrt(r * r - y * y), w);
+            const float r = std::max(canvas->drawAttr.strokeWeight, y), x = f32s::CopySign(std::sqrt(r * r - y * y), w);
             const Math::fv2 center = outerNeighbor + down.ComplexMul(y, -x);
-            canvas.DrawHalfCircularChord(
+            canvas->DrawHalfCircularChord(
                 center, down.Perpend() * w,
                 x / r, y / r,
-                canvas.drawAttr.strokeColor
+                canvas->drawAttr.strokeColor
             );
 
-            Batch batch = canvas.NewBatch();
+            Batch batch = canvas->NewBatch();
             batch.SetStroke();
 
             batch.Point(outerNeighbor);
@@ -1564,26 +1574,30 @@ namespace Quasi::Graphics {
     }
 
     void Canvas::Path::ClosePath() {
+        if (stage == START || stage == END) return;
+
         // end the path
-        switch (closing) {
-            case OPEN_CURVE: case CLOSED_CURVE:
-                // no path was drawn. only 1 point.
-                return;
-            case OPEN_CURVE_SECOND_POINT: case OPEN_CURVE_MIDDLE_POINT:
-                // this is the last point. cap it off
-                canvas.DrawLineCap(lastPoint, -lastTangent);
-                break;
-            case CLOSED_CURVE_SECOND_POINT: case CLOSED_CURVE_MIDDLE_POINT: {
-                // this is the last point. close it off with the first
-                const Math::fv2 tangent = lastPoint.Tangent(firstPoint);
-                canvas.DrawLineJoin(lastPoint, lastTangent, tangent); // last join
-                canvas.DrawSimpleLine(lastPoint, firstPoint, tangent);
-                canvas.DrawLineJoin(firstPoint, tangent, firstTangent); // first join
-                break;
-            }
-            default:;
+        if (close) {
+            // this is the last point. close it off with the first
+            const Math::fv2 tangent = lastPoint.Tangent(firstPoint);
+            canvas->DrawLineJoin(lastPoint, lastTangent, tangent); // last join
+            canvas->DrawSimpleLine(lastPoint, firstPoint, tangent);
+            canvas->DrawLineJoin(firstPoint, tangent, firstTangent); // first join
+        } else {
+            // this is the last point. cap it off
+            canvas->DrawLineCap(lastPoint, -lastTangent);
         }
-        closing = COMPLETED;
+        stage = END;
+    }
+
+    void Canvas::Path::DontClosePath() {
+        if (!close) return;
+        if (stage == START || stage == END) return;
+
+        canvas->DrawLineCap(lastPoint, -lastTangent);
+        canvas->DrawLineCap(firstPoint, firstTangent);
+        close = false;
+        stage = END;
     }
 
     Canvas::Path::~Path() { ClosePath(); }
@@ -1613,6 +1627,10 @@ namespace Quasi::Graphics {
     void Canvas::StrokeJoin(UIRender::RenderStyle join) {
         drawAttr.drawStyle &= ~UIRender::JOIN_MASK;
         drawAttr.drawStyle |= join;
+    }
+
+    float Canvas::GetFeather() const {
+        return 1.0f / std::min(transform.scale.x, transform.scale.y);
     }
 
     void Canvas::Fill(const Math::fColor& fillColor) {
@@ -1730,6 +1748,11 @@ namespace Quasi::Graphics {
     void Canvas::FlipYDirection() {
         SetViewport({ { viewport.min.x, viewport.max.y }, { viewport.max.x, viewport.min.y } });
         flipText ^= true;
+    }
+
+    void Canvas::SetCanvasSize(const Math::iv2& size) {
+        screenTexture = Texture2D::New(nullptr, size);
+        screenBuffer = FrameBuffer::With(screenTexture);
     }
 
     void Canvas::Update(float dt) {

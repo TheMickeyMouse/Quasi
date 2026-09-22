@@ -19,7 +19,7 @@ namespace Quasi::Graphics {
     class RenderData;
 
     GraphicsDevice::GraphicsDevice(GLFWwindow* window, Math::iv2 winSize) :
-        windowSize(winSize), restoredSize(winSize), mainWindow(window) {
+        windowSize(winSize), mainWindow(window) {
         Instance = *this;
     }
 
@@ -163,12 +163,12 @@ namespace Quasi::Graphics {
     }
 
     void GraphicsDevice::MoveWindow(const Math::iv2& newPos) {
-        if (isMaximized) return;
+        // if (isMaximized) return;
         glfwSetWindowPos(mainWindow, newPos.x, newPos.y);
     }
 
     void GraphicsDevice::ResizeWindow(const Math::iv2& newSize, bool isManual) {
-        if (isMaximized && isManual) return;
+        // if (isMaximized && isManual) return;
         sizeUpdated |= windowSize != newSize;
         windowSize = newSize;
         if (isManual) glfwSetWindowSize(mainWindow, windowSize.x, windowSize.y);
@@ -302,7 +302,7 @@ namespace Quasi::Graphics {
         }
 
         /* Create a windowed mode window and its OpenGL context */
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         // glfwWindowHint(GLFW_SAMPLES, 4);
 
