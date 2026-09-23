@@ -19,6 +19,8 @@ namespace Quasi::Graphics {
 
             WORD_WRAP = 1 << 4,
 
+            CLIP = 1 << 5,
+
             DEFAULT = 0
         };
 

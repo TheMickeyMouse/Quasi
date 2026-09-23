@@ -457,10 +457,11 @@ namespace Quasi::Graphics {
         DrawLineCap(end,  -tangent);
     }
 
-    void Canvas::DrawMesh(const UIMesh& mesh) {
+    void Canvas::DrawMesh(const UIMesh& mesh, const Option<Math::fColor>& fillColor) {
         Batch b = NewBatch();
         for (auto v : mesh.vertices) {
             v.Position = TransformToWorldSpace(v.Position);
+            if (fillColor) v.Color = *fillColor;
             b.PushV(v);
         }
         b.PushIs(mesh.indices);
@@ -518,9 +519,6 @@ namespace Quasi::Graphics {
         const float lineHeight = (float)font.GetMetric().fontHeight * pointScale * align.lineSpacing;
 
         const Texture2D& fontAtlas = font.GetTexture();
-        Batch batch = NewBatch();
-        batch.SetStroke();
-        batch.SetTexture(fontAtlas.rendererID);
 
         Math::fv2 pen = pos;
 
@@ -606,6 +604,20 @@ namespace Quasi::Graphics {
 
         const u32 horizontalAlignment = align.alignment & TextAlign::ALIGN_MASK;
 
+        if (align.alignment & TextAlign::CLIP) {
+            ForceDrawCurrentBatch();
+            Render::EnableScissor();
+            Math::iRect2D rect = Math::fRect2D::FromSize(transform * pen, transform.MulD(align.rect)).As<int>();
+            if (flipText) {
+                rect.min.y = viewport.Height() - rect.max.y;
+                rect.max.y = viewport.Height() - rect.min.y;
+            }
+            Render::SetScissorRect(rect);
+        }
+
+        Batch batch = NewBatch();
+        batch.SetStroke();
+        batch.SetTexture(fontAtlas.rendererID);
         usize i = 0;
         for (const auto [line, width] : lineBreaks) {
             float beginOffset = 0;
@@ -631,6 +643,11 @@ namespace Quasi::Graphics {
             }
             if (flipText) pen.y += lineHeight;
             ++i;
+        }
+
+        if (align.alignment & TextAlign::CLIP) {
+            ForceDrawCurrentBatch();
+            Render::DisableScissor();
         }
     }
 

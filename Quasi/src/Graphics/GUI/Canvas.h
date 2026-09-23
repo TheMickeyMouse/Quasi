@@ -99,7 +99,7 @@ namespace Quasi::Graphics {
         void DrawPoint(const Math::fv2& position);
         void DrawLine(const Math::fv2& start, const Math::fv2& end);
 
-        void DrawMesh(const UIMesh& mesh);
+        void DrawMesh(const UIMesh& mesh, const Option<Math::fColor>& fillColor = nullptr);
 
         using SpriteOptions = UIDetails::SpriteOptions;
 

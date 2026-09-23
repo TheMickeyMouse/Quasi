@@ -189,10 +189,12 @@ namespace Quasi::Graphics::Render {
     GL_CAP_SWITCH(Blend, BLEND)
     GL_CAP_SWITCH(Depth, DEPTH)
     GL_CAP_SWITCH(Stencil, STENCIL)
+    GL_CAP_SWITCH(Scissor, SCISSOR)
     GL_CAP_SWITCH(CullFace, CULL_FACE)
     GL_CAP_SWITCH(Multisample, MULTISAMPLE)
 #undef GL_CAP_SWITCH
 
+    void SetScissorRect(const Math::iRect2D& rect);
     void UseDepthFunc(CmpOperation op);
 
     void UseStencilTest(CmpOperation op, int ref, int mask = 0xFF);

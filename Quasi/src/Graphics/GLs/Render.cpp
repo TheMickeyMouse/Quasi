@@ -67,6 +67,10 @@ namespace Quasi::Graphics::Render {
         QGLCall$(GL::Disable((int)cap));
     }
 
+    void SetScissorRect(const Math::iRect2D& rect) {
+        GL::Scissor(rect.min.x, rect.max.x, rect.Size().x, rect.Size().y);
+    }
+
     void UseDepthFunc(const CmpOperation op) {
         QGLCall$(GL::DepthFunc((int)op));
     }
