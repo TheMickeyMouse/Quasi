@@ -15,8 +15,8 @@ namespace Quasi::Graphics::Meshes {
         // tip bit
         const Math::fv2 tipF = tipSize * fwd;
         batch.PushV(end);
-        batch.PushV(end + tipF.ComplexMul({ -1, +0.5f }));
-        batch.PushV(end + tipF.ComplexMul({ -1, -0.5f }));
+        batch.PushV(end + tipF.ComplexMul(-1, +0.5f));
+        batch.PushV(end + tipF.ComplexMul(-1, -0.5f));
         batch.Tri(0, 1, 2);
 
         const Math::fv2 thick = tipF.PerpendLeft() * THICKNESS_FACTOR, beforeTip = end - tipF;

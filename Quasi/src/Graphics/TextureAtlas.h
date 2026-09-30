@@ -6,6 +6,12 @@ namespace Quasi::Graphics {
     struct SubTexture {
         OptRef<const Texture2D> tex = nullptr;
         Math::fRect2D rect;
+
+        SubTexture() = default;
+        SubTexture(const Texture2D& tex, const Math::fRect2D& rect = Math::fRect2D::Unit()) : tex(tex), rect(rect) {}
+
+        SubTexture Flipped() const;
+        Math::fv2 Size() const;
     };
 
     class TextureAtlas {

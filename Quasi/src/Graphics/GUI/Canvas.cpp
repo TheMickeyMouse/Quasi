@@ -85,7 +85,7 @@ namespace Quasi::Graphics {
             ""
             "void main() {"
             "    bool invert = (vRenderPrim & 8) == 8;"
-            "    int samplerID = (vRenderPrim >> 4) - 1, prim = vRenderPrim & 7;"
+            "    int samplerID = ((vRenderPrim >> 4) & 0xF) - 1, prim = vRenderPrim & 7;"
             "    vec4 color = vColor;"
             "    if (samplerID != -1) color *= texture(u_textures[samplerID], vTexCoord);"
             "    switch (prim) {"
@@ -268,8 +268,11 @@ namespace Quasi::Graphics {
 
     void Canvas::DrawRoundedRect(const Math::fRect2D& rect, float radius) {
         radius = std::min(radius, std::min(rect.Width(), rect.Height()) * 0.5f);
-        if (NeedDrawFill())
-            DrawSimpleRoundedRect(rect, radius, drawAttr.fillColor);
+        if (NeedDrawFill()) {
+            Batch batch = NewBatch();
+            batch.SetFill();
+            DrawSimpleRoundedRect(batch, rect, radius);
+        }
         if (NeedDrawStroke()) {
             const Math::fRect2D inner = rect.Inset(radius);
             Batch batch = NewBatch();
@@ -457,58 +460,43 @@ namespace Quasi::Graphics {
         DrawLineCap(end,  -tangent);
     }
 
-    void Canvas::DrawMesh(const UIMesh& mesh, const Option<Math::fColor>& fillColor) {
+    void Canvas::DrawMesh(const UIMesh& mesh, const Math::fv2& pos, const Math::fv2& scale, const Option<Math::fColor>& fillColor) {
         Batch b = NewBatch();
         for (auto v : mesh.vertices) {
-            v.Position = TransformToWorldSpace(v.Position);
+            v.Position = TransformToWorldSpace(v.Position * scale + pos);
             if (fillColor) v.Color = *fillColor;
             b.PushV(v);
         }
         b.PushIs(mesh.indices);
     }
 
-    void Canvas::DrawTexture(const Texture2D& texture, const Math::fv2& pos, const Math::fv2& size, bool center, const SpriteOptions& options) {
+    void Canvas::DrawTexture(const SubTexture& texture, const Math::fv2& pos, const Math::fv2& size, bool center, const SpriteOptions& options) {
         const Math::fRect2D rect = center ?
             Math::fRect2D::FromCenter(pos, size) :
             Math::fRect2D::FromSize  (pos, size);
         DrawTextureEx(texture, rect, options);
     }
 
-    void Canvas::DrawTextureW(const Texture2D& texture, const Math::fv2& pos, float w, bool center, const SpriteOptions& options) {
-        return DrawTexture(texture, pos, { w, w / texture.size.AspectRatio() }, center, options);
+    void Canvas::DrawTexture(const SubTexture& texture, const Math::fv2& pos, float wOrh, bool useWidth, bool center, const SpriteOptions& options) {
+        const Math::fv2 size = {
+            useWidth ? wOrh : wOrh * texture.Size().AspectRatio(),
+            useWidth ? wOrh / texture.Size().AspectRatio() : wOrh
+        };
+        return DrawTexture(texture, pos, size, center, options);
     }
 
-    void Canvas::DrawTextureH(const Texture2D& texture, const Math::fv2& pos, float h, bool center,
-        const SpriteOptions& options) {
-        return DrawTexture(texture, pos, { h * texture.size.AspectRatio(), h }, center, options);
-    }
-
-    void Canvas::DrawTextureEx(const Texture2D& texture, const Math::fRect2D& rect, const SpriteOptions& options) {
-        DrawSTextureEx({ texture, options.mask }, rect, options.tint);
-    }
-
-    void Canvas::DrawSTexture(const SubTexture& subtex, const Math::fv2& pos, const Math::fv2& size, bool center, const Math::fColor& tint) {
-        const Math::fRect2D rect = center ?
-            Math::fRect2D::FromCenter(pos, size) :
-            Math::fRect2D::FromSize  (pos, size);
-        DrawSTextureEx(subtex, rect, tint);
-    }
-
-    void Canvas::DrawSTextureW(const SubTexture& subtex, const Math::fv2& pos, float w, bool center, const Math::fColor& tint) {
-        const Math::fv2 subImgSize = subtex.tex->Size().As<float>() * subtex.rect.Size();
-        return DrawSTexture(subtex, pos, { w, w / subImgSize.AspectRatio() }, center, tint);
-    }
-
-    void Canvas::DrawSTextureH(const SubTexture& subtex, const Math::fv2& pos, float h, bool center, const Math::fColor& tint) {
-        const Math::fv2 subImgSize = subtex.tex->Size().As<float>() * subtex.rect.Size();
-        return DrawSTexture(subtex, pos, { h * subImgSize.AspectRatio(), h }, center, tint);
-    }
-
-    void Canvas::DrawSTextureEx(const SubTexture& subtex, const Math::fRect2D& rect, const Math::fColor& tint) {
+    void Canvas::DrawTextureEx(const SubTexture& texture, const Math::fRect2D& rect, const SpriteOptions& options) {
         Batch batch = NewBatch();
-        batch.SetColor(tint);
-        batch.SetTexture(subtex.tex->rendererID);
-        DrawSimpleTexRect(batch, rect, subtex.rect);
+        batch.SetColor(options.tint);
+        batch.SetTexture(texture.tex->rendererID);
+        DrawSimpleTexRect(batch, rect, texture.rect);
+    }
+
+    void Canvas::DrawRoundedTexture(const SubTexture& texture, const Math::fRect2D& rect, float radius, const SpriteOptions& options) {
+        Batch batch = NewBatch();
+        batch.SetColor(options.tint);
+        batch.SetTexture(texture.tex->rendererID);
+        DrawSimpleRoundedTexRect(batch, radius, rect, texture.rect);
     }
 
     void Canvas::DrawText(Str text, float fontSize, const Math::fv2& pos, const TextAlign& align) {
@@ -517,8 +505,6 @@ namespace Quasi::Graphics {
         const float pointScale = fontSize / (float)font.FontSize();
         const float relativeFontSize = pointScale * 64.0f;
         const float lineHeight = (float)font.GetMetric().fontHeight * pointScale * align.lineSpacing;
-
-        const Texture2D& fontAtlas = font.GetTexture();
 
         Math::fv2 pen = pos;
 
@@ -609,15 +595,15 @@ namespace Quasi::Graphics {
             Render::EnableScissor();
             Math::iRect2D rect = Math::fRect2D::FromSize(transform * pen, transform.MulD(align.rect)).As<int>();
             if (flipText) {
-                rect.min.y = viewport.Height() - rect.max.y;
-                rect.max.y = viewport.Height() - rect.min.y;
+                rect.min.y = (int)viewport.Height() - rect.max.y;
+                rect.max.y = (int)viewport.Height() - rect.min.y;
             }
             Render::SetScissorRect(rect);
         }
 
         Batch batch = NewBatch();
         batch.SetStroke();
-        batch.SetTexture(fontAtlas.rendererID);
+        batch.SetSDF(font.GetTexture().rendererID);
         usize i = 0;
         for (const auto [line, width] : lineBreaks) {
             float beginOffset = 0;
@@ -688,7 +674,6 @@ namespace Quasi::Graphics {
 
     void Canvas::Batch::SetSDF(GraphicsID sdf) {
         SetPrim(UIRender::SDF);
-        storedPoint.RenderPrim &= ~UIRender::TEXTURE_ID_MASK;
         storedPoint.RenderPrim &= ~UIRender::SDF_ID_MASK;
         storedPoint.RenderPrim |= UIRender::SDF_ID * RegTexture(sdf);
     }
@@ -851,7 +836,6 @@ namespace Quasi::Graphics {
             yTop = yBtm + dim.y;
         }
 
-        SetSDF(atlas.rendererID);
         SetUV(uv.min.x, uv.min.y);
         Push({ start.x,         yBtm });
         SetUV(uv.max.x, uv.min.y);
@@ -1130,33 +1114,59 @@ namespace Quasi::Graphics {
         b.offset += 4;
     }
 
-    void Canvas::DrawSimpleRoundedRect(const Math::fRect2D& outer, float radius, const Math::fColor& color) {
+    void Canvas::DrawSimpleRoundedRect(Batch& b, const Math::fRect2D& outer, float radius) {
         const Math::fRect2D inner = outer.Inset(radius);
+        // 6 (inside) + 4 (corners) triangles, 20 vertices
+        b.Point({ inner.max.x, outer.max.y });
+        b.Point({ inner.min.x, outer.max.y });
+        b.Point({ outer.max.x, inner.max.y });
+        b.Point({ outer.min.x, inner.max.y });
+        b.Point({ outer.max.x, inner.min.y });
+        b.Point({ outer.min.x, inner.min.y });
+        b.Point({ inner.max.x, outer.min.y });
+        b.Point({ inner.min.x, outer.min.y });
+        b.TriStrip({{ 0, 1, 2, 3, 4, 5, 6, 7 }});
+        b.PointCirc({ inner.min.x, outer.min.y }, 1, 0);
+        b.PointCirc({ outer.min.x, inner.min.y }, 0, 1);
+        b.PointCirc({ outer.min.x, outer.min.y }, 1, 1);
+        b.PointCirc({ inner.max.x, outer.min.y }, 1, 0);
+        b.PointCirc({ outer.max.x, inner.min.y }, 0, 1);
+        b.PointCirc({ outer.max.x, outer.min.y }, 1, 1);
+        b.PointCirc({ inner.min.x, outer.max.y }, 1, 0);
+        b.PointCirc({ outer.min.x, inner.max.y }, 0, 1);
+        b.PointCirc({ outer.min.x, outer.max.y }, 1, 1);
+        b.PointCirc({ inner.max.x, outer.max.y }, 1, 0);
+        b.PointCirc({ outer.max.x, inner.max.y }, 0, 1);
+        b.PointCirc({ outer.max.x, outer.max.y }, 1, 1);
+        b.Tri(8, 9, 10); b.Tri(11, 12, 13); b.Tri(14, 15, 16); b.Tri(17, 18, 19);
+    }
 
-        Batch batch = NewBatch();
-        batch.SetColor(color);
-        batch.Point({ inner.max.x, outer.max.y });
-        batch.Point({ inner.min.x, outer.max.y });
-        batch.Point({ outer.max.x, inner.max.y });
-        batch.Point({ outer.min.x, inner.max.y });
-        batch.Point({ outer.max.x, inner.min.y });
-        batch.Point({ outer.min.x, inner.min.y });
-        batch.Point({ inner.max.x, outer.min.y });
-        batch.Point({ inner.min.x, outer.min.y });
-        batch.TriStrip({{ 0, 1, 2, 3, 4, 5, 6, 7 }});
-        batch.PointCirc({ inner.min.x, outer.min.y }, 1, 0);
-        batch.PointCirc({ outer.min.x, inner.min.y }, 0, 1);
-        batch.PointCirc({ outer.min.x, outer.min.y }, 1, 1);
-        batch.PointCirc({ inner.max.x, outer.min.y }, 1, 0);
-        batch.PointCirc({ outer.max.x, inner.min.y }, 0, 1);
-        batch.PointCirc({ outer.max.x, outer.min.y }, 1, 1);
-        batch.PointCirc({ inner.min.x, outer.max.y }, 1, 0);
-        batch.PointCirc({ outer.min.x, inner.max.y }, 0, 1);
-        batch.PointCirc({ outer.min.x, outer.max.y }, 1, 1);
-        batch.PointCirc({ inner.max.x, outer.max.y }, 1, 0);
-        batch.PointCirc({ outer.max.x, inner.max.y }, 0, 1);
-        batch.PointCirc({ outer.max.x, outer.max.y }, 1, 1);
-        batch.Tri(8, 9, 10); batch.Tri(11, 12, 13); batch.Tri(14, 15, 16); batch.Tri(17, 18, 19);
+    void Canvas::DrawSimpleRoundedTexRect(Batch& b, float radius, const Math::fRect2D& outer, const Math::fRect2D& outerUV) {
+        const Math::fRect2D inner = outer.Inset(radius),
+                            innerUV = outerUV.Inset(outerUV.Size() * (radius / outer.Size()));
+
+        b.SetTextureCoord(innerUV.max.x, outerUV.max.y); b.Point({ inner.max.x, outer.max.y });
+        b.SetTextureCoord(innerUV.min.x, outerUV.max.y); b.Point({ inner.min.x, outer.max.y });
+        b.SetTextureCoord(outerUV.max.x, innerUV.max.y); b.Point({ outer.max.x, inner.max.y });
+        b.SetTextureCoord(outerUV.min.x, innerUV.max.y); b.Point({ outer.min.x, inner.max.y });
+        b.SetTextureCoord(outerUV.max.x, innerUV.min.y); b.Point({ outer.max.x, inner.min.y });
+        b.SetTextureCoord(outerUV.min.x, innerUV.min.y); b.Point({ outer.min.x, inner.min.y });
+        b.SetTextureCoord(innerUV.max.x, outerUV.min.y); b.Point({ inner.max.x, outer.min.y });
+        b.SetTextureCoord(innerUV.min.x, outerUV.min.y); b.Point({ inner.min.x, outer.min.y });
+        b.TriStrip({{ 0, 1, 2, 3, 4, 5, 6, 7 }});
+        b.SetTextureCoord(innerUV.min.x, outerUV.min.y); b.PointCirc({ inner.min.x, outer.min.y }, 1, 0);
+        b.SetTextureCoord(outerUV.min.x, innerUV.min.y); b.PointCirc({ outer.min.x, inner.min.y }, 0, 1);
+        b.SetTextureCoord(outerUV.min.x, outerUV.min.y); b.PointCirc({ outer.min.x, outer.min.y }, 1, 1);
+        b.SetTextureCoord(innerUV.max.x, outerUV.min.y); b.PointCirc({ inner.max.x, outer.min.y }, 1, 0);
+        b.SetTextureCoord(outerUV.max.x, innerUV.min.y); b.PointCirc({ outer.max.x, inner.min.y }, 0, 1);
+        b.SetTextureCoord(outerUV.max.x, outerUV.min.y); b.PointCirc({ outer.max.x, outer.min.y }, 1, 1);
+        b.SetTextureCoord(innerUV.min.x, outerUV.max.y); b.PointCirc({ inner.min.x, outer.max.y }, 1, 0);
+        b.SetTextureCoord(outerUV.min.x, innerUV.max.y); b.PointCirc({ outer.min.x, inner.max.y }, 0, 1);
+        b.SetTextureCoord(outerUV.min.x, outerUV.max.y); b.PointCirc({ outer.min.x, outer.max.y }, 1, 1);
+        b.SetTextureCoord(innerUV.max.x, outerUV.max.y); b.PointCirc({ inner.max.x, outer.max.y }, 1, 0);
+        b.SetTextureCoord(outerUV.max.x, innerUV.max.y); b.PointCirc({ outer.max.x, inner.max.y }, 0, 1);
+        b.SetTextureCoord(outerUV.max.x, outerUV.max.y); b.PointCirc({ outer.max.x, outer.max.y }, 1, 1);
+        b.Tri(8, 9, 10); b.Tri(11, 12, 13); b.Tri(14, 15, 16); b.Tri(17, 18, 19);
     }
 
     void Canvas::DrawSimpleVarRoundRect(const Math::fRect2D& outer, float tr, float br, float tl, float bl, const Math::fColor& color) {

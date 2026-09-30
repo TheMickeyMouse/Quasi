@@ -71,7 +71,6 @@ namespace Quasi::Graphics {
         if (IsClosed()) return;
 
         frameBeginTime = Debug::Timer::Now();
-        GLDebugContainer::GpuProcessDuration = Debug::Timer::Instant();
 
         if (sizeUpdated) GL::Viewport(0, 0, windowSize.x, windowSize.y);
         sizeUpdated = false;
@@ -212,11 +211,8 @@ namespace Quasi::Graphics {
     void GraphicsDevice::ShowDebugWindow() {
 #ifndef Q_NO_IMGUI
         ImGui::Begin("Debug Menu", &ShowDebugMenu);
-        const u32 totalUs = Debug::Timer::UnitConvert<Debug::Microsecond>(frameDurationTime),
-                  gpuUs = Debug::Timer::UnitConvert<Debug::Microsecond>(GLDebugContainer::GpuProcessDuration),
-                  cpuUs = totalUs - gpuUs;
-        ImGui::Text("CPU   Time: %d.%03dms", cpuUs   / 1000, cpuUs   % 1000);
-        ImGui::Text("GPU   Time: %d.%03dms", gpuUs   / 1000, gpuUs   % 1000);
+        const u32 totalUs = Debug::Timer::UnitConvert<Debug::Microsecond>(frameDurationTime);;
+        ImGui::Text("Total Time: %d.%03dms", totalUs / 1000, totalUs % 1000);
         ImGui::Text("Application Averages %.2fms/frame (%.1f FPS)", 1000.0 * ioDevice.DeltaTime(), ioDevice.Framerate());
         ImGui::Text("       Theoretically %.2fms/frame (%.1f FPS)", (float)totalUs / 1000.0f, 1'000'000.0f / (float)totalUs);
 

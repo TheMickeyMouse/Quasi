@@ -30,7 +30,7 @@ namespace Quasi::Text {
     // should only be used internally
     template <class T>
     usize FormatWriterPtr(StringWriter out, const void* anyOfT, Str opt) {
-        return Text::FormatObjectTo(out, *Memory::UpcastPtr<T>(anyOfT), opt);
+        return Text::FormatObjectTo(out, *(const T*)anyOfT, opt);
     }
 
     // should only be used internally

@@ -30,8 +30,8 @@ namespace Quasi {
     Str CStr::AsStrWithNull()                const { return Str::Slice(data, size + 1); }
     Span<const char> CStr::AsSpan()          const { return Spans::Slice(data, size); }
     Span<const char> CStr::AsSpanWithNull()  const { return Spans::Slice(data, size + 1); }
-    Span<const byte> CStr::AsBytes()         const { return Spans::Slice(Memory::AsBytePtr(data), size); }
-    Span<const byte> CStr::AsBytesWithNull() const { return Spans::Slice(Memory::AsBytePtr(data), size + 1); }
+    Span<const byte> CStr::AsBytes()         const { return Spans::Slice((const byte*)data, size); }
+    Span<const byte> CStr::AsBytesWithNull() const { return Spans::Slice((const byte*)data, size + 1); }
     CStr::operator Str() const { return AsStr(); }
 
     Str CStr::First(usize num) const { return Str::Slice(data, num); }

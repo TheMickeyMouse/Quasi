@@ -101,7 +101,7 @@ namespace Quasi::Math {
     }
 
     Rotor3D Rotor3D::Random(RandomGenerator& rg) {
-        const auto [u, v, w] = fv3::Random(rg, 0, 1);
+        const auto [u, v, w] = fv3::Random(rg);
         const f32 uComp = std::sqrt(1 - u), uSqrt = std::sqrt(u);
         return Quaternion {
             uComp * std::sin(TAU * v),

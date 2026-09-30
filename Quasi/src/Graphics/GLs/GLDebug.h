@@ -7,7 +7,6 @@ namespace Quasi::Graphics {
     // (couldnt get them to work so here's an alternative)
     struct GLDebugContainer {
         static Debug::Logger Logger;
-        static Debug::TimeDuration GpuProcessDuration;
     };
 
     Debug::Logger& GLLogger();
@@ -56,17 +55,11 @@ namespace Quasi::Graphics {
     auto GLCall(F&& f, Str fsig, const Debug::SourceLoc& loc = Debug::SourceLoc::current()) -> decltype(f()) {
         GLClearErr();
         if constexpr (SameAs<void, decltype(f())>) {
-            const auto begin = Debug::Timer::Now();
             f();
-            const Debug::DateTime end = Debug::Timer::Now();
-            GLDebugContainer::GpuProcessDuration += end - begin;
             GLReportFn(fsig, loc);
             return;
         } else {
-            const auto begin = Debug::Timer::Now();
             const auto res = f();
-            const Debug::DateTime end = Debug::Timer::Now();
-            GLDebugContainer::GpuProcessDuration += end - begin;
             GLReportFn(fsig, loc);
             return res;
         }

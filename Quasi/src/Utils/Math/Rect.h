@@ -32,6 +32,7 @@ namespace Quasi::Math {
         static Rect Empty()      { return {}; }
         static Rect FullDomain() { return { NumInfo<T>::MIN, NumInfo<T>::MAX }; }
         static Rect AntiDomain() { return { NumInfo<T>::MAX, NumInfo<T>::MIN }; }
+        static Rect Unit()       { return { 0, 1 }; }
         static Rect On(const VecT& point) { return { point, point, Inclusive }; }
         static Rect Over(const Collection<VecT> auto& nums) {
             Rect r = AntiDomain();
@@ -129,7 +130,11 @@ namespace Quasi::Math {
         template <class U>
         explicit operator Rect<U, N>() const { return As<U>(); }
 
-        VecT Clamp(const VecT& val) const { return val.Clamp(min, max); }
+        VecT Clamp(const VecT& val) const {
+            VecT v;
+            for (usize i = 0; i < N; ++i) v[i] = Math::Clamp(val[i], min[i], max[i]);
+            return v;
+        }
 
         Rect Fixed() const { return { VecT::Min(min, max), VecT::Max(min, max) }; }
         
@@ -156,7 +161,9 @@ namespace Quasi::Math {
     };
     template <class T, usize N>
     Vector<T, N> IVector<T, N>::Clamp(const Rect<T, N>& rect) const {
-        return Clamp(rect.min, rect.max);
+        Super v;
+        for (usize i = 0; i < N; ++i) v[i] = Math::Clamp(At(i), rect.min[i], rect.max[i]);
+        return v;
     }
 
     template <class T, usize N>

@@ -24,9 +24,6 @@ namespace Quasi {
         return (u64)b[0] << 56 | (u64)b[1] << 48 | (u64)b[2] << 40 | (u64)b[3] << 32 |
                (u64)b[4] << 24 | (u64)b[5] << 16 | (u64)b[6] <<  8 | (u64)b[7];
     }
-    i16 Memory::ReadI16Big(const void* bytes) { return (i16)ReadU16Big(bytes); }
-    i32 Memory::ReadI32Big(const void* bytes) { return (i32)ReadU32Big(bytes); }
-    i64 Memory::ReadI64Big(const void* bytes) { return (i64)ReadU64Big(bytes); }
 
     u16 Memory::ReadU16(const void* bytes) {
         const auto b = (const byte*)bytes;
@@ -41,16 +38,10 @@ namespace Quasi {
         return (u64)b[7] << 56 | (u64)b[6] << 48 | (u64)b[5] << 40 | (u64)b[4] << 32 |
                (u64)b[3] << 24 | (u64)b[2] << 16 | (u64)b[1] <<  8 | (u64)b[0];
     }
-    i16 Memory::ReadI16(const void* bytes) { return (i16)ReadU16(bytes); }
-    i32 Memory::ReadI32(const void* bytes) { return (i32)ReadU32(bytes); }
-    i64 Memory::ReadI64(const void* bytes) { return (i64)ReadU64(bytes); }
 
     u16 Memory::ReadU16Native(const void* bytes) { u16 x; MemCopyNoOverlap(&x, bytes, sizeof(u16)); return x; }
     u32 Memory::ReadU32Native(const void* bytes) { u32 x; MemCopyNoOverlap(&x, bytes, sizeof(u32)); return x; }
     u64 Memory::ReadU64Native(const void* bytes) { u64 x; MemCopyNoOverlap(&x, bytes, sizeof(u64)); return x; }
-    i16 Memory::ReadI16Native(const void* bytes) { i16 x; MemCopyNoOverlap(&x, bytes, sizeof(i16)); return x; }
-    i32 Memory::ReadI32Native(const void* bytes) { i32 x; MemCopyNoOverlap(&x, bytes, sizeof(i32)); return x; }
-    i64 Memory::ReadI64Native(const void* bytes) { i64 x; MemCopyNoOverlap(&x, bytes, sizeof(i64)); return x; }
 
     u16 Memory::ReadZeroExtU16(const void* bytes, usize len) {
         if (len == 0) return 0;
@@ -98,10 +89,6 @@ namespace Quasi {
         b[4] = x >> 24; b[5] = x >> 16; b[6] = x >> 8;  b[7] = x;
     }
 
-    void Memory::WriteI16Big(i16 x, void* out) { WriteU16Big((u16)x, out); }
-    void Memory::WriteI32Big(i32 x, void* out) { WriteU32Big((u32)x, out); }
-    void Memory::WriteI64Big(i64 x, void* out) { WriteU64Big((u64)x, out); }
-
     void Memory::WriteU16(u16 x, void* out) {
         const auto b = (byte*)out;
         b[1] = x >> 8;  b[0] = x;
@@ -116,16 +103,9 @@ namespace Quasi {
         b[3] = x >> 24; b[2] = x >> 16; b[1] = x >> 8;  b[0] = x;
     }
 
-    void Memory::WriteI16(i16 x, void* out) { WriteU16((u16)x, out); }
-    void Memory::WriteI32(i32 x, void* out) { WriteU32((u32)x, out); }
-    void Memory::WriteI64(i64 x, void* out) { WriteU64((u64)x, out); }
-
     void Memory::WriteU16Native(u16 x, void* out) { MemCopyNoOverlap(out, &x, sizeof(u16)); }
     void Memory::WriteU32Native(u32 x, void* out) { MemCopyNoOverlap(out, &x, sizeof(u32)); }
     void Memory::WriteU64Native(u64 x, void* out) { MemCopyNoOverlap(out, &x, sizeof(u64)); }
-    void Memory::WriteI16Native(i16 x, void* out) { MemCopyNoOverlap(out, &x, sizeof(i16)); }
-    void Memory::WriteI32Native(i32 x, void* out) { MemCopyNoOverlap(out, &x, sizeof(i32)); }
-    void Memory::WriteI64Native(i64 x, void* out) { MemCopyNoOverlap(out, &x, sizeof(i64)); }
 
     u16 Memory::ByteSwap16(u16 x) { return (x << 8) | (x >> 8); }
     u32 Memory::ByteSwap32(u32 x) {

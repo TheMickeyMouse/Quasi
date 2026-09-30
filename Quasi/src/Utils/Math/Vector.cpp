@@ -1,4 +1,5 @@
 #include "Vector.h"
+#include "Complex.h"
 
 namespace Quasi::Math {
     template struct Vector<int,    2>;

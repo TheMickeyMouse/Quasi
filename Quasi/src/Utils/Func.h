@@ -41,7 +41,7 @@ namespace Quasi {
         FnRef(Nullptr) : FnRef() {}
         /// Constructs a reference to a C function pointer.
         FnRef(FnPtr<Result, Args...> fptr) : userPtr(fptr), functionPtr(+[] (void* f, Args... args) {
-            return (*Memory::UpcastPtr<FnPtr<Result, Args...>>(f))((Args&&)args...);
+            return (*(FnPtr<Result, Args...>*)f)((Args&&)args...);
         }) {}
 
         /// Creates a function reference by its raw parts: the closure pointer and the function accepting the closure.
@@ -52,7 +52,7 @@ namespace Quasi {
         FnRef(Lamb&& lamb)
             : userPtr(&lamb),
             functionPtr(+[] (void* functionObj, Args... args) {
-                return (*Memory::UpcastPtr<std::decay_t<Lamb>>(functionObj))((Args&&)args...);
+                return (*(std::decay_t<Lamb>*)functionObj)((Args&&)args...);
             })
         {}
 
@@ -78,7 +78,7 @@ namespace Quasi {
             return {
                 &lamb,
                 [] (void* functionObj, Args... args) {
-                    auto* f = Memory::UpcastPtr<std::decay_t<Lamb>>(functionObj);
+                    auto* f = (std::decay_t<Lamb>*)functionObj;
                     return (*f)(f, (Args&&)args...);
                 }
             };
@@ -132,7 +132,7 @@ namespace Quasi {
         FnBox(Nullptr) : FnBox() {}
         /// Constructs a reference to a C function pointer.
         FnBox(FnPtr<Result, Args...> fptr) : userPtr(fptr), functionPtr(+[] (void* f, Args... args) {
-            return (*Memory::UpcastPtr<FnPtr<Result, Args...>>(f))((Args&&)args...);
+            return (*(FnPtr<Result, Args...>*)f)((Args&&)args...);
         }) {}
         ~FnBox() {
             if (userPtr)
@@ -168,7 +168,7 @@ namespace Quasi {
         FnBox(Lamb&& lamb)
             : userPtr(new Lamb(std::forward<Lamb>(lamb))), destructor([] (void* f) { delete (Lamb*)f; }),
             functionPtr(+[] (void* functionObj, Args... args) {
-                return (*Memory::UpcastPtr<std::decay_t<Lamb>>(functionObj))((Args&&)args...);
+                return (*(std::decay_t<Lamb>*)functionObj)((Args&&)args...);
             })
         {}
 
@@ -194,7 +194,7 @@ namespace Quasi {
             return {
                 &lamb,
                 [] (void* functionObj, Args... args) {
-                    auto* f = Memory::UpcastPtr<std::decay_t<Lamb>>(functionObj);
+                    auto* f = (std::decay_t<Lamb>*)functionObj;
                     return (*f)(f, (Args&&)args...);
                 }
             };

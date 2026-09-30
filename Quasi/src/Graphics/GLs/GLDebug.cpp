@@ -4,7 +4,6 @@
 
 namespace Quasi::Graphics {
     Debug::Logger GLDebugContainer::Logger { Text::StringWriter::WriteToConsole() };
-    Debug::TimeDuration GLDebugContainer::GpuProcessDuration { 0 };
 
     Debug::Logger& GLLogger() {
         return GLDebugContainer::Logger;

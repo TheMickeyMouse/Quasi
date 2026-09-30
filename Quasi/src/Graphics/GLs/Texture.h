@@ -102,10 +102,10 @@ namespace Quasi::Graphics {
 
         const Math::Vector<int, DIM>& Size() const { return size; }
         Math::Vector<f32, DIM> Px2UV(const Math::Vector<int, DIM>& px) const {
-            return px.template As<f32>().DivComps(size.template As<f32>());
+            return px.template As<f32>() / size.template As<f32>();
         }
         Math::Vector<int, DIM> UV2Px(const Math::Vector<f32, DIM>& uv) const {
-            return (uv.MulComps(size.template As<f32>())).template As<int>();
+            return (uv * size.template As<f32>()).template As<int>();
         }
         Math::Rect<f32, DIM> Px2UV(const Math::Rect<int, DIM>& pxRect) const {
             return pxRect.template As<f32>() / size.template As<f32>();

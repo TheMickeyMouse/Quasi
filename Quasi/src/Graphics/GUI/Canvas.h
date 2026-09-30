@@ -39,7 +39,6 @@ namespace Quasi::Graphics {
     namespace UIDetails {
         struct SpriteOptions {
             Math::fColor tint = 1;
-            Math::fRect2D mask = { 0, 1 };
         };
     }
 
@@ -99,20 +98,16 @@ namespace Quasi::Graphics {
         void DrawPoint(const Math::fv2& position);
         void DrawLine(const Math::fv2& start, const Math::fv2& end);
 
-        void DrawMesh(const UIMesh& mesh, const Option<Math::fColor>& fillColor = nullptr);
+        void DrawMesh(const UIMesh& mesh, const Math::fv2& pos, const Math::fv2& scale, const Option<Math::fColor>& fillColor = nullptr);
 
         using SpriteOptions = UIDetails::SpriteOptions;
 
-        void DrawTexture (const Texture2D& texture, const Math::fv2& pos, const Math::fv2& size, bool center = true, const SpriteOptions& options = {});
-        void DrawTextureW(const Texture2D& texture, const Math::fv2& pos, float w, bool center = true, const SpriteOptions& options = {});
-        void DrawTextureH(const Texture2D& texture, const Math::fv2& pos, float h, bool center = true, const SpriteOptions& options = {});
+        void DrawTexture(const SubTexture& texture, const Math::fv2& pos, const Math::fv2& size, bool center = true, const SpriteOptions& options = {});
+        void DrawTexture(const SubTexture& texture, const Math::fv2& pos, float wOrh, bool useWidth = true, bool center = true, const SpriteOptions& options = {});
         // full method
-        void DrawTextureEx(const Texture2D& texture, const Math::fRect2D& rect, const SpriteOptions& options = {});
+        void DrawTextureEx(const SubTexture& texture, const Math::fRect2D& rect, const SpriteOptions& options = {});
 
-        void DrawSTexture  (const SubTexture& subtex, const Math::fv2& pos, const Math::fv2& size, bool center = true, const Math::fColor& tint = 1);
-        void DrawSTextureW (const SubTexture& subtex, const Math::fv2& pos, float w, bool center = true, const Math::fColor& tint = 1);
-        void DrawSTextureH (const SubTexture& subtex, const Math::fv2& pos, float h, bool center = true, const Math::fColor& tint = 1);
-        void DrawSTextureEx(const SubTexture& subtex, const Math::fRect2D& rect, const Math::fColor& tint = 1);
+        void DrawRoundedTexture(const SubTexture& texture, const Math::fRect2D& rect, float radius, const SpriteOptions& options = {});
 
         // pos = bottom left corner of text, align.rect = box extending to the top-right corner
         void DrawText(Str text, float fontSize, const Math::fv2& pos, const TextAlign& align = {});
@@ -191,7 +186,8 @@ namespace Quasi::Graphics {
 
         void DrawSimpleRect(Batch& b, const Math::fRect2D& rect);
         void DrawSimpleTexRect(Batch& b, const Math::fRect2D& rect, const Math::fRect2D& uvRect);
-        void DrawSimpleRoundedRect(const Math::fRect2D& outer, float radius, const Math::fColor& color);
+        void DrawSimpleRoundedRect(Batch& b, const Math::fRect2D& outer, float radius);
+        void DrawSimpleRoundedTexRect(Batch& b, float radius, const Math::fRect2D& outer, const Math::fRect2D& outerUV);
         void DrawSimpleVarRoundRect(const Math::fRect2D& outer, float tr, float br, float tl, float bl, const Math::fColor& color);
         void DrawRectStroke(const Math::fRect2D& rect);
 

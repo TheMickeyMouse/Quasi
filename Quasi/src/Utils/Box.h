@@ -106,7 +106,7 @@ namespace Quasi {
         Box Clone() const { return Box::NewIn(allocator, *data); }
 
         template <Extends<T> Derived> Box<Derived> Downcast() {
-            Derived* dyn = Memory::DynCastPtr<Derived>(data);
+            Derived* dyn = dynamic_cast<Derived*>(data);
             if (dyn) {
                 (void)Release();
                 return Box<Derived>::Own(dyn);

@@ -3,6 +3,14 @@
 #include "Utils/Iter/Map.h"
 
 namespace Quasi::Graphics {
+    SubTexture SubTexture::Flipped() const {
+        return { tex, { { rect.min.x, rect.max.y }, { rect.max.x, rect.min.y } } };
+    }
+
+    Math::fv2 SubTexture::Size() const {
+        return tex->size.As<float>() * rect.Size();
+    }
+
     TextureAtlas::TextureAtlas(Span<ImageView> sprites, bool pixelated, int padding) {
         sprites.SortByKey([] (const ImageView& sprite) { return sprite.height; });
         PackSprites(sprites, pixelated, padding);

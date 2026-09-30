@@ -82,16 +82,10 @@ namespace Quasi::Math {
     };
 
     template <class T, usize N>
-    Vector<T, N> IVector<T, N>::Random(RandomGenerator& rand, const Super& min, const Super& max) {
-        Super v;
-        for (usize i = 0; i < N; ++i) v[i] = rand.Get(min[i], max[i]);
-        return v;
-    }
-    template <class T, usize N>
-    Vector<T, N> IVector<T, N>::Random(RandomGenerator& rand) { return Random(rand, 0, 1); }
-    template <class T, usize N>
     Vector<T, N> IVector<T, N>::Random(RandomGenerator& rand, const Rect<T, N>& range) {
-        return Random(rand, range.min, range.max);
+        Super v;
+        for (usize i = 0; i < N; ++i) v[i] = rand.Get(range.min[i], range.max[i]);
+        return v;
     }
     template <class T, usize N>
     Vector<T, N> IVector<T, N>::RandomOnUnit(RandomGenerator& rand) requires Floating<T> {
