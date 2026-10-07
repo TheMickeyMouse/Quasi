@@ -6,7 +6,6 @@
 
 #include "Complex.h"
 #include "CameraController3D.h"
-#include "Light.h"
 
 #include "Utils/Math/Transform2D.h"
 #include "Utils/Math/Transform3D.h"
@@ -358,111 +357,6 @@ namespace ImGui {
             End();
         }
 
-        TreePop();
-    }
-
-    Q_IMGUI_EDITOR(EditLight, Q Graphics::Light& light) {
-        (void)width;
-        Separator();
-        if (!TreeNode(title.Data())) return;
-
-        BeginTabBar("Light Edit");
-
-        using namespace Q Math;
-        using namespace Q Graphics;
-        if (TabItemButton("Sun") && !light.Is<SunLight>())
-            light.Set(SunLight {
-                .direction = light.Direction()
-            });
-        if (TabItemButton("Point") && !light.Is<PointLight>())
-            light.Set(PointLight {
-                .position = light.Position(),
-                .constant = 1.0f,
-                .linear = 0.0f,
-                .quadratic = 0.001f
-            });
-        if (TabItemButton("Spot") && !light.Is<FlashLight>()) {
-            const auto [_, yaw, pitch] = light.Direction().SphericCoords();
-            light.Set(FlashLight {
-                .position = light.Position(),
-                .yaw = yaw, .pitch = pitch,
-                .innerCut = 12.5_deg, .outerCut = 20.0_deg
-            });
-        }
-
-        EditColor("Color + Intensity", light.color);
-        light.VisitMut(
-            [](SunLight& sun) {
-                auto [len, yaw, pitch] = sun.direction.SphericCoords();
-                yaw   = std::isnan(yaw)   ? 0.0_rad : yaw;
-                pitch = std::isnan(pitch) ? 0.0_rad : pitch;
-                EditScalar("Yaw",    yaw,   0.01, Q fRange { -PI,      PI });
-                EditScalar("Pitch",  pitch, 0.01, Q fRange { -HALF_PI, HALF_PI });
-                EditScalar("Length", len, 0.1, Q fRange { 0, 10 });
-                sun.direction = fv3::FromSpheric(len, yaw, pitch);
-            },
-            [](PointLight& point) {
-                EditVector("Position", point.position);
-                if (TreeNode("Light Attenuation")) {
-                    EditScalar("Constant",  point.constant,  0.01f);
-                    EditScalar("Linear",    point.linear,    0.01f);
-                    EditScalar("Quadratic", point.quadratic, 0.01f);
-                    TreePop();
-                }
-            },
-            [](FlashLight& flash) {
-                EditVector("Position", flash.position);
-
-                flash.yaw   = std::isnan(flash.yaw)   ? 0.0_rad : flash.yaw;
-                flash.pitch = std::isnan(flash.pitch) ? 0.0_rad : flash.pitch;
-                EditScalar("Yaw",   flash.yaw,   0.01, Q fRange { -PI,      PI });
-                EditScalar("Pitch", flash.pitch, 0.01, Q fRange { -HALF_PI, HALF_PI });
-
-                EditScalar("Inner Cutoff", flash.innerCut, 0.01, Q fRange { 0, PI });
-                EditScalar("Outer Cutoff", flash.outerCut, 0.01, Q fRange { 0, PI });
-            }
-        );
-
-        EndTabBar();
-        if (Button("Copy State to Clipboard")) {
-            SetClipboardText(light.Visit<Quasi::String>(
-                [&](const SunLight& sun) {
-                    return Quasi::Text::Format(
-                        "light = Graphics::SunLight {{\n"
-                        "   .direction = fv3 {:($),},\n"
-                        "}};\n"
-                        "light.color = fColor {:($),};\n\0",
-                        sun.direction,
-                        light.color);
-                },
-                [&](const PointLight& point) {
-                    return Quasi::Text::Format(
-                        "light = Graphics::PointLight {{\n"
-                        "   .position = fv3 {:($),},\n"
-                        "   .constant = {},\n"
-                        "   .linear = {},\n"
-                        "   .quadratic = {},\n"
-                        "}};\n"
-                        "light.color = fColor {:($),};\n\0",
-                        point.position,
-                        point.constant, point.linear, point.quadratic,
-                        light.color);
-                },
-                [&](const FlashLight& flash) {
-                    return Quasi::Text::Format(
-                        "light = Graphics::FlashLight {{\n"
-                        "   .position = fv3 {{{($),}}},\n"
-                        "   .yaw = {}, .pitch = {},\n"
-                        "   .innerCut = {}, .outerCut = {}\n"
-                        "}};\n"
-                        "light.color = fColor {:($),};\n\0",
-                        flash.position,
-                        flash.yaw, flash.pitch,
-                        flash.innerCut, flash.outerCut,
-                        light.color);
-                }
-            ).Data());
-        }
         TreePop();
     }
 

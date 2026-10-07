@@ -637,14 +637,6 @@ namespace Quasi::Graphics {
         }
     }
 
-    void Canvas::ShowHitboxes() {
-        Batch b = NewBatch();
-        b.SetColor({ 1, 0.1f });
-        for (Ref i : interactables) {
-            DrawSimpleRect(b, i->hitbox);
-        }
-    }
-
     void Canvas::ForceDrawCurrentBatch() {
         EndFrame();
         BeginFrame();
@@ -1114,59 +1106,66 @@ namespace Quasi::Graphics {
         b.offset += 4;
     }
 
-    void Canvas::DrawSimpleRoundedRect(Batch& b, const Math::fRect2D& outer, float radius) {
-        const Math::fRect2D inner = outer.Inset(radius);
-        // 6 (inside) + 4 (corners) triangles, 20 vertices
-        b.Point({ inner.max.x, outer.max.y });
-        b.Point({ inner.min.x, outer.max.y });
-        b.Point({ outer.max.x, inner.max.y });
-        b.Point({ outer.min.x, inner.max.y });
-        b.Point({ outer.max.x, inner.min.y });
-        b.Point({ outer.min.x, inner.min.y });
-        b.Point({ inner.max.x, outer.min.y });
-        b.Point({ inner.min.x, outer.min.y });
-        b.TriStrip({{ 0, 1, 2, 3, 4, 5, 6, 7 }});
-        b.PointCirc({ inner.min.x, outer.min.y }, 1, 0);
-        b.PointCirc({ outer.min.x, inner.min.y }, 0, 1);
-        b.PointCirc({ outer.min.x, outer.min.y }, 1, 1);
-        b.PointCirc({ inner.max.x, outer.min.y }, 1, 0);
-        b.PointCirc({ outer.max.x, inner.min.y }, 0, 1);
-        b.PointCirc({ outer.max.x, outer.min.y }, 1, 1);
-        b.PointCirc({ inner.min.x, outer.max.y }, 1, 0);
-        b.PointCirc({ outer.min.x, inner.max.y }, 0, 1);
-        b.PointCirc({ outer.min.x, outer.max.y }, 1, 1);
-        b.PointCirc({ inner.max.x, outer.max.y }, 1, 0);
-        b.PointCirc({ outer.max.x, inner.max.y }, 0, 1);
-        b.PointCirc({ outer.max.x, outer.max.y }, 1, 1);
-        b.Tri(8, 9, 10); b.Tri(11, 12, 13); b.Tri(14, 15, 16); b.Tri(17, 18, 19);
+    void Canvas::DrawSimpleRoundedRect(Batch& b, const Math::fRect2D& rect, float radius) {
+        const float feather = GetFeather(), u = 1 + feather / radius;
+        const Math::fRect2D inner = rect.Inset(radius), outer = rect.Extrude(feather);
+        // 0 2   6 4
+        // 1 3   7 5
+        //
+        // 9 B   F D
+        // 8 A   E C
+        b.PointCirc({ outer.min.x, outer.min.y }, -u, -u); // 0 (0)
+        b.PointCirc({ outer.min.x, inner.min.y }, -u,  0); // 1 (1)
+        b.PointCirc({ inner.min.x, outer.min.y },  0, -u); // 2 (2)
+        b.PointCirc({ inner.min.x, inner.min.y },  0,  0); // 3 (3)
+        b.PointCirc({ outer.max.x, outer.min.y }, +u, -u); // 4 (4)
+        b.PointCirc({ outer.max.x, inner.min.y }, +u,  0); // 5 (5)
+        b.PointCirc({ inner.max.x, outer.min.y },  0, -u); // 6 (6)
+        b.PointCirc({ inner.max.x, inner.min.y },  0,  0); // 7 (7)
+        b.PointCirc({ outer.min.x, outer.max.y }, -u, +u); // 8 (8)
+        b.PointCirc({ outer.min.x, inner.max.y }, -u,  0); // 9 (9)
+        b.PointCirc({ inner.min.x, outer.max.y },  0, +u); // A (10)
+        b.PointCirc({ inner.min.x, inner.max.y },  0,  0); // B (11)
+        b.PointCirc({ outer.max.x, outer.max.y }, +u, +u); // C (12)
+        b.PointCirc({ outer.max.x, inner.max.y }, +u,  0); // D (13)
+        b.PointCirc({ inner.max.x, outer.max.y },  0, +u); // E (14)
+        b.PointCirc({ inner.max.x, inner.max.y },  0,  0); // F (15)
+        b.TriStrip({{ 0,  1,  2,  3,  6,  7,  4,  5 }});
+        b.TriStrip({{ 1,  9,  3,  11, 7,  15, 5,  13 }});
+        b.TriStrip({{ 9,  8,  11, 10, 15, 14, 13, 12 }});
     }
 
-    void Canvas::DrawSimpleRoundedTexRect(Batch& b, float radius, const Math::fRect2D& outer, const Math::fRect2D& outerUV) {
-        const Math::fRect2D inner = outer.Inset(radius),
-                            innerUV = outerUV.Inset(outerUV.Size() * (radius / outer.Size()));
-
-        b.SetTextureCoord(innerUV.max.x, outerUV.max.y); b.Point({ inner.max.x, outer.max.y });
-        b.SetTextureCoord(innerUV.min.x, outerUV.max.y); b.Point({ inner.min.x, outer.max.y });
-        b.SetTextureCoord(outerUV.max.x, innerUV.max.y); b.Point({ outer.max.x, inner.max.y });
-        b.SetTextureCoord(outerUV.min.x, innerUV.max.y); b.Point({ outer.min.x, inner.max.y });
-        b.SetTextureCoord(outerUV.max.x, innerUV.min.y); b.Point({ outer.max.x, inner.min.y });
-        b.SetTextureCoord(outerUV.min.x, innerUV.min.y); b.Point({ outer.min.x, inner.min.y });
-        b.SetTextureCoord(innerUV.max.x, outerUV.min.y); b.Point({ inner.max.x, outer.min.y });
-        b.SetTextureCoord(innerUV.min.x, outerUV.min.y); b.Point({ inner.min.x, outer.min.y });
-        b.TriStrip({{ 0, 1, 2, 3, 4, 5, 6, 7 }});
-        b.SetTextureCoord(innerUV.min.x, outerUV.min.y); b.PointCirc({ inner.min.x, outer.min.y }, 1, 0);
-        b.SetTextureCoord(outerUV.min.x, innerUV.min.y); b.PointCirc({ outer.min.x, inner.min.y }, 0, 1);
-        b.SetTextureCoord(outerUV.min.x, outerUV.min.y); b.PointCirc({ outer.min.x, outer.min.y }, 1, 1);
-        b.SetTextureCoord(innerUV.max.x, outerUV.min.y); b.PointCirc({ inner.max.x, outer.min.y }, 1, 0);
-        b.SetTextureCoord(outerUV.max.x, innerUV.min.y); b.PointCirc({ outer.max.x, inner.min.y }, 0, 1);
-        b.SetTextureCoord(outerUV.max.x, outerUV.min.y); b.PointCirc({ outer.max.x, outer.min.y }, 1, 1);
-        b.SetTextureCoord(innerUV.min.x, outerUV.max.y); b.PointCirc({ inner.min.x, outer.max.y }, 1, 0);
-        b.SetTextureCoord(outerUV.min.x, innerUV.max.y); b.PointCirc({ outer.min.x, inner.max.y }, 0, 1);
-        b.SetTextureCoord(outerUV.min.x, outerUV.max.y); b.PointCirc({ outer.min.x, outer.max.y }, 1, 1);
-        b.SetTextureCoord(innerUV.max.x, outerUV.max.y); b.PointCirc({ inner.max.x, outer.max.y }, 1, 0);
-        b.SetTextureCoord(outerUV.max.x, innerUV.max.y); b.PointCirc({ outer.max.x, inner.max.y }, 0, 1);
-        b.SetTextureCoord(outerUV.max.x, outerUV.max.y); b.PointCirc({ outer.max.x, outer.max.y }, 1, 1);
-        b.Tri(8, 9, 10); b.Tri(11, 12, 13); b.Tri(14, 15, 16); b.Tri(17, 18, 19);
+    void Canvas::DrawSimpleRoundedTexRect(Batch& b, float radius, const Math::fRect2D& rect, const Math::fRect2D& uv) {
+        const float feather = GetFeather(), u = 1 + feather / radius;
+        const Math::fRect2D
+            inner = rect.Inset(radius),
+            outer = rect.Extrude(feather),
+            innerUV = uv.Inset(uv.Size() * (radius / outer.Size())),
+            outerUV = uv;
+        // 0 2   6 4
+        // 1 3   7 5
+        //
+        // 9 B   F D
+        // 8 A   E C
+        b.SetTextureCoord(outerUV.min.x, outerUV.min.y); b.PointCirc({ outer.min.x, outer.min.y }, -u, -u); // 0 (0)
+        b.SetTextureCoord(outerUV.min.x, innerUV.min.y); b.PointCirc({ outer.min.x, inner.min.y }, -u,  0); // 1 (1)
+        b.SetTextureCoord(innerUV.min.x, outerUV.min.y); b.PointCirc({ inner.min.x, outer.min.y },  0, -u); // 2 (2)
+        b.SetTextureCoord(innerUV.min.x, innerUV.min.y); b.PointCirc({ inner.min.x, inner.min.y },  0,  0); // 3 (3)
+        b.SetTextureCoord(outerUV.max.x, outerUV.min.y); b.PointCirc({ outer.max.x, outer.min.y }, +u, -u); // 4 (4)
+        b.SetTextureCoord(outerUV.max.x, innerUV.min.y); b.PointCirc({ outer.max.x, inner.min.y }, +u,  0); // 5 (5)
+        b.SetTextureCoord(innerUV.max.x, outerUV.min.y); b.PointCirc({ inner.max.x, outer.min.y },  0, -u); // 6 (6)
+        b.SetTextureCoord(innerUV.max.x, innerUV.min.y); b.PointCirc({ inner.max.x, inner.min.y },  0,  0); // 7 (7)
+        b.SetTextureCoord(outerUV.min.x, outerUV.max.y); b.PointCirc({ outer.min.x, outer.max.y }, -u, +u); // 8 (8)
+        b.SetTextureCoord(outerUV.min.x, innerUV.max.y); b.PointCirc({ outer.min.x, inner.max.y }, -u,  0); // 9 (9)
+        b.SetTextureCoord(innerUV.min.x, outerUV.max.y); b.PointCirc({ inner.min.x, outer.max.y },  0, +u); // A (10)
+        b.SetTextureCoord(innerUV.min.x, innerUV.max.y); b.PointCirc({ inner.min.x, inner.max.y },  0,  0); // B (11)
+        b.SetTextureCoord(outerUV.max.x, outerUV.max.y); b.PointCirc({ outer.max.x, outer.max.y }, +u, +u); // C (12)
+        b.SetTextureCoord(outerUV.max.x, innerUV.max.y); b.PointCirc({ outer.max.x, inner.max.y }, +u,  0); // D (13)
+        b.SetTextureCoord(innerUV.max.x, outerUV.max.y); b.PointCirc({ inner.max.x, outer.max.y },  0, +u); // E (14)
+        b.SetTextureCoord(innerUV.max.x, innerUV.max.y); b.PointCirc({ inner.max.x, inner.max.y },  0,  0); // F (15)
+        b.TriStrip({{ 0,  1,  2,  3,  6,  7,  4,  5 }});
+        b.TriStrip({{ 1,  9,  3,  11, 7,  15, 5,  13 }});
+        b.TriStrip({{ 9,  8,  11, 10, 15, 14, 13, 12 }});
     }
 
     void Canvas::DrawSimpleVarRoundRect(const Math::fRect2D& outer, float tr, float br, float tl, float bl, const Math::fColor& color) {
@@ -1780,52 +1779,6 @@ namespace Quasi::Graphics {
     void Canvas::SetCanvasSize(const Math::iv2& size) {
         screenTexture = Texture2D::New(nullptr, size);
         screenBuffer = FrameBuffer::With(screenTexture);
-    }
-
-    void Canvas::Update(float dt) {
-        (void)dt;
-
-        IO::IO& io = GraphicsDevice::GetDeviceInstance().GetIO();
-        Math::fv2 mousePos = io.GetMousePos();
-        mousePos.y = (float)GraphicsDevice::GetDeviceInstance().GetWindowSize().y - mousePos.y;
-
-        const int mouseEventPress = (io.MouseAnyOnPress()   ? MouseEventType::CLICK : 0) |
-                                    (io.MouseAnyOnRelease() ? MouseEventType::RELEASE : 0);
-
-        // this flags prevent other interactables from getting triggered when their
-        // hitboxes overlap.
-        bool alreadyTriggered = false, entered = false;
-        for (Ref i : interactables) {
-            int event = MouseEventType::NONE;
-
-            const bool enters = i->hitbox.Contains(mousePos), capturesEnter = i->capturedEvents & MouseEventType::ENTER;
-            entered |= enters && capturesEnter;
-            // leave: either the mouse leaves the hitbox OR the object becomes disabled
-            if (i->hovered && (!enters || !capturesEnter)) {
-                event = MouseEventType::LEAVE;
-            } else
-            // enter: the mouse must enter the hitbox AND not enter any previous objects that lay above it.
-            if (enters && !alreadyTriggered) {
-                if (!i->hovered) event = MouseEventType::ENTER;
-                event |= mouseEventPress;
-            }
-
-            if (event == MouseEventType::NONE) continue;
-            // we still want to send 'leave' and 'release' events even if it's disabled
-            if (!(event & (i->capturedEvents | 0b1010))) continue;
-
-            // send events, also record cursor shape updates
-            alreadyTriggered |= !i->CaptureEvent((MouseEventType::E)event, io);
-        }
-        GraphicsDevice::GetDeviceInstance().GetIO().SetCursorShape(entered ? IO::CursorShape::HAND : IO::CursorShape::DEFAULT);
-    }
-
-    void Canvas::AddInteractable(Ref<Interactable> inter) {
-        interactables.Push(inter);
-    }
-
-    void Canvas::RemoveInteractable(Ref<Interactable> inter) {
-        interactables.Keep([=] (Ref<Interactable> element) { return !element.RefEquals(inter); });
     }
 
     void Canvas::BeginFrame() {

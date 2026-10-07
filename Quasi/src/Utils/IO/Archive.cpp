@@ -3,7 +3,7 @@
 #include <filesystem>
 
 #include "Utils/Debug/Logger.h"
-#include "Utils/Iter/MapIter.h"
+#include "Utils/Iter/Map.h"
 
 namespace Quasi {
     Archive Archive::New(u8* data, usize size, HashMap<String, zRange> items) {

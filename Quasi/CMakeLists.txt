@@ -28,7 +28,6 @@ set(HEADER_FILES
     src/Graphics/Triplet.h
     src/Graphics/CameraController2D.h
     src/Graphics/CameraController3D.h
-    src/Graphics/Light.h
 
     src/Graphics/GUI/Canvas.h
     src/Graphics/GUI/UIVertex.h
@@ -57,17 +56,6 @@ set(HEADER_FILES
     src/Utils/Math/Quaternion.h
     src/Utils/Math/Transform2D.h
     src/Utils/Math/Transform3D.h
-
-    src/Physics/World2D.h
-    src/Physics/Shape2D.h
-    src/Physics/Body2D.h
-    src/Physics/Collision2D.h
-    src/Physics/Manifold2D.h
-    src/Physics/SeperatingAxisSolver.h
-    src/Physics/CircleShape2D.h
-    src/Physics/CapsuleShape2D.h
-    src/Physics/PolygonShape2D.h
-    src/Physics/RectShape2D.h
 
     src/Utils/Text.h
     src/Utils/Option.h
@@ -135,7 +123,6 @@ set(SOURCE_FILES
 
     src/Graphics/CameraController2D.cpp
     src/Graphics/CameraController3D.cpp
-    src/Graphics/Light.cpp
     src/Graphics/GraphicsDevice.cpp
     src/Graphics/RenderData.cpp
     src/Graphics/GUI/Canvas.cpp
@@ -170,17 +157,7 @@ set(SOURCE_FILES
     src/Utils/Math/Quaternion.cpp
     src/Utils/Math/Transform2D.cpp
     src/Utils/Math/Transform3D.cpp
-
-    src/Physics/World2D.cpp
-    src/Physics/Shape2D.cpp
-    src/Physics/Body2D.cpp
-    src/Physics/Collision2D.cpp
-    src/Physics/Manifold2D.cpp
-    src/Physics/SeperatingAxisSolver.cpp
-    src/Physics/CircleShape2D.cpp
-    src/Physics/CapsuleShape2D.cpp
-    src/Physics/PolygonShape2D.cpp
-    src/Physics/RectShape2D.cpp
+    src/Utils/IO/Archive.cpp
 
     src/Utils/Text.cpp
     src/Utils/Str.cpp
@@ -205,8 +182,6 @@ set(ALL_FILES
         src/Graphics/Image.h
         src/Graphics/TextureAtlas.cpp
         src/Graphics/Image.cpp
-        src/Graphics/GUI/Interactable.cpp
-        src/Graphics/GUI/Interactable.h
         src/Utils/Continuous.h
         src/IO/Key.h
         src/IO/Key.cpp

@@ -1,5 +1,4 @@
 #pragma once
-#include "Interactable.h"
 #include "Mesh.h"
 #include "UIVertex.h"
 #include "RenderObject.h"
@@ -60,8 +59,6 @@ namespace Quasi::Graphics {
         DrawAttributes drawAttr;
         // TODO: replace this with a better method to fetch fonts
         Font defaultFont = Font::LoadFile(R"(C:\Windows\Fonts\arial.ttf)", 64);
-
-        Vec<Ref<Interactable>> interactables;
 
         static constexpr u32 MAX_TEXTURE_SAMPLERS = 8;
         GraphicsID textures[MAX_TEXTURE_SAMPLERS] = {};
@@ -186,8 +183,8 @@ namespace Quasi::Graphics {
 
         void DrawSimpleRect(Batch& b, const Math::fRect2D& rect);
         void DrawSimpleTexRect(Batch& b, const Math::fRect2D& rect, const Math::fRect2D& uvRect);
-        void DrawSimpleRoundedRect(Batch& b, const Math::fRect2D& outer, float radius);
-        void DrawSimpleRoundedTexRect(Batch& b, float radius, const Math::fRect2D& outer, const Math::fRect2D& outerUV);
+        void DrawSimpleRoundedRect(Batch& b, const Math::fRect2D& rect, float radius);
+        void DrawSimpleRoundedTexRect(Batch& b, float radius, const Math::fRect2D& rect, const Math::fRect2D& uv);
         void DrawSimpleVarRoundRect(const Math::fRect2D& outer, float tr, float br, float tl, float bl, const Math::fColor& color);
         void DrawRectStroke(const Math::fRect2D& rect);
 
@@ -277,10 +274,6 @@ namespace Quasi::Graphics {
         void SetViewport(const Math::fRect2D& vp);
         void FlipYDirection();
         void SetCanvasSize(const Math::iv2& size);
-
-        void Update(float dt);
-        void AddInteractable(Ref<Interactable> inter);
-        void RemoveInteractable(Ref<Interactable> inter);
 
         void BeginFrame();
         void EndFrame();
