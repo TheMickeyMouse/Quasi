@@ -7,10 +7,10 @@ namespace Quasi::Graphics {
         Math::fv2 Position;
         Math::fv2 TexCoord;
         Math::uColor Color;
-        Math::fv4 STUV;
+        Math::fv3 UV;
         u32 RenderPrim = 0;
 
-        QuasiDefineVertex$(UIVertex, 2D, (Position, Position)(TexCoord)(Color)(STUV)(RenderPrim))
+        QuasiDefineVertex$(UIVertex, 2D, (Position, Position)(TexCoord)(Color)(UV)(RenderPrim))
     };
 
     namespace UIRender {

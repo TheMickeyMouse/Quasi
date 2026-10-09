@@ -109,8 +109,6 @@ namespace Quasi::Graphics {
         // pos = bottom left corner of text, align.rect = box extending to the top-right corner
         void DrawText(Str text, float fontSize, const Math::fv2& pos, const TextAlign& align = {});
 
-        void ShowHitboxes();
-
         // if for some reason we either:
         //      1. run out of index/vertex memory
         //   or 2. use up all the texture slots,
@@ -129,8 +127,7 @@ namespace Quasi::Graphics {
             void SetPrim(u32 prim);
             void SetPrimAndStyle(u32 primAndStyle);
             void SetPosition(const Math::fv2& point);
-            void SetUV(float u, float v);
-            void SetSTUV(float s, float t, float u, float v = 0);
+            void SetUV(float u, float v, float w = 0);
             void SetTextureCoord(float u, float v);
             void SetTexture(GraphicsID textureID);
             void SetSDF(GraphicsID sdf);

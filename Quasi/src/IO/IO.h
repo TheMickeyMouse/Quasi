@@ -98,17 +98,18 @@ namespace Quasi::IO {
         struct KeyBtnInfo {
         private:
             bool down = false;
-            float downDuration = 0.0f;
+            u8 changed = 0; // 0 means not changed, 1 & 2 means changed
             float clickTime = 0.0, releaseTime = 0.0f;
         public:
             void Press(IO& io, bool pressed = true);
-            void Update(float dt);
 
             bool Pressed()         const { return down; }
-            bool OnPress()         const { return down  && downDuration == 0.0f; }
-            bool OnRelease()       const { return !down && downDuration == 0.0f; }
+            bool OnPress()         const { return down  && changed; }
+            bool OnRelease()       const { return !down && changed; }
             float OnPressTime()    const { return clickTime; }
             float OnReleaseTime()  const { return releaseTime; }
+
+            friend IO;
         };
 
     private:

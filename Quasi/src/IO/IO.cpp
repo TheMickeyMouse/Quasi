@@ -72,9 +72,11 @@ namespace Quasi::IO {
         prevKeyAnyDown = keyAnyDown;
         keyAnyDown = nextKeyAnyDown;
         nextKeyAnyDown = false;
-        
+
         for (KeyBtnInfo& kInfo : keyInfo) {
-            kInfo.Update(DeltaTime());
+            if (!kInfo.changed) continue;
+            if (kInfo.changed > 1) kInfo.changed = 0;
+            else ++kInfo.changed;
         }
     }
 
@@ -190,19 +192,7 @@ namespace Quasi::IO {
     void IO::KeyBtnInfo::Press(IO& io, bool pressed) {
         (pressed ? clickTime : releaseTime) = io.currentTime;
         down = pressed;
-    }
-
-    void IO::KeyBtnInfo::Update(float dt) {
-        if (down) {
-            if (downDuration < 0.0f) {
-                downDuration = 0.0f;
-            } else {
-                downDuration += dt;
-            }
-        } else {
-            if (downDuration > 0.0f) downDuration = 0.0f;
-            else downDuration -= dt;
-        }
+        changed = 1;
     }
 
     void IO::PressKey(Key::E_ key, bool action) {

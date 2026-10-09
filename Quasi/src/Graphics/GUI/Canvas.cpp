@@ -56,12 +56,12 @@ namespace Quasi::Graphics {
             "layout (location = 0) in vec2 position;"
             "layout (location = 1) in vec2 texCoord;"
             "layout (location = 2) in vec4 color;"
-            "layout (location = 3) in vec4 stuv;"
+            "layout (location = 3) in vec3 uv;"
             "layout (location = 4) in int renderPrim;"
             ""
             "out vec4 vColor;"
             "out vec2 vTexCoord;"
-            "out vec4 vSTUV;"
+            "out vec3 vUV;"
             "flat out int vRenderPrim;"
             ""
             "uniform mat4 u_projection;"
@@ -70,7 +70,7 @@ namespace Quasi::Graphics {
             "    gl_Position = u_projection * vec4(position, 0.0, 1.0);"
             "    vColor = color;"
             "    vTexCoord = texCoord;"
-            "    vSTUV = stuv;"
+            "    vUV = uv;"
             "    vRenderPrim = renderPrim;"
             "}\n",
             "#version 450 core\n"
@@ -79,7 +79,7 @@ namespace Quasi::Graphics {
             ""
             "in vec4 vColor;"
             "in vec2 vTexCoord;"
-            "in vec4 vSTUV;"
+            "in vec3 vUV;"
             "flat in int vRenderPrim;"
             "layout (binding = 0) uniform sampler2D u_textures[8];"
             ""
@@ -90,12 +90,12 @@ namespace Quasi::Graphics {
             "    if (samplerID != -1) color *= texture(u_textures[samplerID], vTexCoord);"
             "    switch (prim) {"
             "        case 1: {"
-            "            float dist = 1 - length(vSTUV.xy);"
+            "            float dist = 1 - length(vUV.xy);"
             "            color.a *= clamp(0.5 + dist / fwidth(dist), 0.0, 1.0);"
             "            break;"
             "        }"
             "        case 2: {"
-            "            float dist = (1 - vSTUV.z) * 0.5f - abs(length(vSTUV.xy) - (vSTUV.z + 1) * 0.5);"
+            "            float dist = (1 - vUV.z) * 0.5f - abs(length(vUV.xy) - (vUV.z + 1) * 0.5);"
             "            color.a *= clamp(0.5 + dist / fwidth(dist), 0.0, 1.0);"
             "            break;"
             "        }"
@@ -114,7 +114,7 @@ namespace Quasi::Graphics {
             // "            break;"
             // "        }"
             "        case 6: {"
-            "           float distance = texture(u_textures[vRenderPrim >> 8], vSTUV.xy).r - 0.5;"
+            "           float distance = texture(u_textures[vRenderPrim >> 8], vUV.xy).r - 0.5;"
             "           float ds = fwidth(distance);"
             "           color.a *= clamp(0.5 + distance / ds, 0.0, 1.0);"
             "           break;"
@@ -655,8 +655,7 @@ namespace Quasi::Graphics {
     }
     void Canvas::Batch::SetPrimAndStyle(u32 primAndStyle) { storedPoint.RenderPrim = primAndStyle; }
     void Canvas::Batch::SetPosition(const Math::fv2& point) { storedPoint.Position = canvas.TransformToWorldSpace(point); }
-    void Canvas::Batch::SetUV(float u, float v) { storedPoint.STUV = { u, v, 0, 0 }; }
-    void Canvas::Batch::SetSTUV(float s, float t, float u, float v) { storedPoint.STUV = { s, t, u, v }; }
+    void Canvas::Batch::SetUV(float u, float v, float w) { storedPoint.UV = { u, v, w }; }
     void Canvas::Batch::SetTextureCoord(float u, float v) { storedPoint.TexCoord = { u, v }; }
 
     void Canvas::Batch::SetTexture(GraphicsID textureID) {
@@ -677,10 +676,13 @@ namespace Quasi::Graphics {
 
         if (canvas.usedTextures >= MAX_TEXTURE_SAMPLERS)
             canvas.ForceDrawCurrentBatch();
-        canvas.textures[canvas.usedTextures] = textureID;
 
-        GL::ActiveTexture(GL::TEXTURE0 + canvas.usedTextures);
-        GL::BindTexture(GL::TEXTURE_2D, textureID);
+        if (canvas.textures[canvas.usedTextures] != textureID) {
+            canvas.textures[canvas.usedTextures] = textureID;
+
+            GL::ActiveTexture(GL::TEXTURE0 + canvas.usedTextures);
+            GL::BindTexture(GL::TEXTURE_2D, textureID);
+        }
 
         return canvas.usedTextures++;
     }
@@ -697,21 +699,21 @@ namespace Quasi::Graphics {
 
     void Canvas::Batch::PointCirc(const Math::fv2& position, float u, float v) {
         SetPosition(position);
-        storedPoint.STUV = { u, v, 0, 0 };
+        storedPoint.UV = { u, v, 0 };
         SetPrim(UIRender::CIRCLE);
         Push();
     }
 
     void Canvas::Batch::PointArc(const Math::fv2& position, float u, float v, float radiusRatio) {
         SetPosition(position);
-        storedPoint.STUV = { u, v, radiusRatio, 0 };
+        storedPoint.UV = { u, v, radiusRatio };
         SetPrim(UIRender::ARC);
         Push();
     }
 
     void Canvas::Batch::PointQBezGeneric(const Math::fv2& position, float u, float v, bool flip) {
         SetPosition(position);
-        storedPoint.STUV = { u, v, 0, 0 };
+        storedPoint.UV = { u, v, 0 };
         SetPrim((UIRender::QBEZ | (flip << 3)));
         Push();
     }
@@ -721,7 +723,7 @@ namespace Quasi::Graphics {
     void Canvas::Batch::PointQBezC(const Math::fv2& position, bool flip) { PointQBezGeneric(position, 1,    1, flip); }
     void Canvas::Batch::PointQTriple(const Math::fv2& position, bool innerSide) {
         PointQDoubleS(position, innerSide);
-        storedPoint.STUV = { 1, 1, 0, 0 };
+        storedPoint.UV = { 1, 1, 0 };
         Push();
     }
 
@@ -729,7 +731,7 @@ namespace Quasi::Graphics {
         SetPosition(position);
         storedPoint.RenderPrim = UIRender::PLAIN;
         Push();
-        storedPoint.STUV = {};
+        storedPoint.UV = {};
         storedPoint.RenderPrim = UIRender::QBEZ | (innerSide << 3);
         Push();
     }
@@ -739,7 +741,7 @@ namespace Quasi::Graphics {
         storedPoint.RenderPrim = UIRender::PLAIN;
         Push();
         storedPoint.RenderPrim = UIRender::QBEZ | (innerSide << 3);
-        storedPoint.STUV = { 1, 1, 0, 0 };
+        storedPoint.UV = { 1, 1, 0 };
         Push();
     }
 
@@ -748,7 +750,7 @@ namespace Quasi::Graphics {
         storedPoint.RenderPrim = UIRender::PLAIN;
         Push();
         storedPoint.RenderPrim = UIRender::QBEZ | (innerSide << 3);
-        storedPoint.STUV = { 0.5f, 0, 0, 0 };
+        storedPoint.UV = { 0.5f, 0, 0 };
         Push();
     }
 
@@ -757,13 +759,13 @@ namespace Quasi::Graphics {
         storedPoint.RenderPrim = UIRender::QBEZ | (innerSide << 3);
         offset = mesh.vertices.Length();
         for (usize i = 0; i < bezpoints.Length() / 2; ++i) {
-            storedPoint.STUV = { 0, 0, 0, 0 };
+            storedPoint.UV = { 0, 0, 0 };
             Push();
             SetPosition(bezpoints[2 * i + 1]);
-            storedPoint.STUV = { 0.5f, 0, 0, 0 };
+            storedPoint.UV = { 0.5f, 0, 0 };
             Push();
             SetPosition(bezpoints[2 * i + 2]);
-            storedPoint.STUV = { 1, 1, 0, 0 };
+            storedPoint.UV = { 1, 1, 0 };
             Push();
             Tri(3 * i, 3 * i + 1, 3 * i + 2);
         }

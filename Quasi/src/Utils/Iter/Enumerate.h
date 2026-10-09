@@ -16,29 +16,11 @@ namespace Quasi::Iter {
     private:
         usize i = 0;
         It iter;
-        explicit Enumerate(It it) : iter(std::move(it)) {}
     protected:
         Item CurrentImpl() const { return { i, iter.Current() }; }
         void AdvanceImpl() { iter.Advance(); ++i; }
         bool CanNextImpl() const { return iter.CanNext(); }
     public:
-        static Enumerate New(It it) { return Enumerate { it }; }
+        explicit Enumerate(It it) : iter(std::move(it)) {}
     };
-
-    namespace Enumerators {
-        template <IteratorAny It>
-        static Enumerate<It> Iter(It it) { return Enumerate<It>::New(std::move(it)); }
-    }
-}
-
-namespace Quasi {
-    template <class T, class Super>
-    Iter::Enumerate<Super> IIterator<T, Super>::Enumerate() const& {
-        return Iter::Enumerators::Iter(super());
-    }
-
-    template <class T, class Super>
-    Iter::Enumerate<Super> IIterator<T, Super>::Enumerate() && {
-        return Iter::Enumerators::Iter(std::move(super()));
-    }
 }

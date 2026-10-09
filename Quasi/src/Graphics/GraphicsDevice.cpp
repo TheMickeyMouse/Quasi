@@ -12,6 +12,8 @@
 #include "imgui_impl_opengl3.h"
 #endif
 
+#include <thread>
+
 #include "GLs/Texture.h"
 #include "GLs/GLDebug.h"
 
@@ -58,8 +60,6 @@ namespace Quasi::Graphics {
         dest.mainWindow = from.mainWindow;
         from.mainWindow = nullptr;
 
-        dest.renderOptions = from.renderOptions;
-
         dest.fontDevice = std::move(from.fontDevice);
         dest.ioDevice = std::move(from.ioDevice);
         dest.randDevice = from.randDevice;
@@ -70,23 +70,23 @@ namespace Quasi::Graphics {
     void GraphicsDevice::Begin() {
         if (IsClosed()) return;
 
+        // reduces cpu usage by sleeping frame time
+        if (frameDurationTime < std::chrono::milliseconds(16)) {
+            const auto sleepTime = std::chrono::milliseconds(16) - frameDurationTime;
+            // Debug::QInfo$("sleeping for {}", sleepTime.count());
+            std::this_thread::sleep_for(sleepTime);
+        }
+
         frameBeginTime = Debug::Timer::Now();
 
         if (sizeUpdated) GL::Viewport(0, 0, windowSize.x, windowSize.y);
         sizeUpdated = false;
-        Render::Clear();
 
 #ifndef Q_NO_IMGUI
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 #endif
-
-        RenderInMode(renderOptions.renderMode);
-
-        ioDevice.Update();
-
-        renderOptions.drawCalls = 0;
     }
 
     void GraphicsDevice::End() {
@@ -101,14 +101,22 @@ namespace Quasi::Graphics {
 #ifndef Q_NO_IMGUI
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 #endif
-
-        glfwSwapBuffers(mainWindow);
+        if (shouldSwapBuffers) glfwSwapBuffers(mainWindow);
+        shouldSwapBuffers = true;
 
         const auto end = Debug::Timer::Now();
         frameDurationTime = end - frameBeginTime;
         frameBeginTime = end;
     }
-    
+
+    void GraphicsDevice::PollEvents() {
+        ioDevice.Update();
+    }
+
+    void GraphicsDevice::MarkNothingRendered() {
+        shouldSwapBuffers = false;
+    }
+
     void GraphicsDevice::BindRender(RenderData& render) {
         render.device = *this;
         render.deviceIndex = (u32)(renders.Length() - 1);
@@ -139,7 +147,6 @@ namespace Quasi::Graphics {
             s.SetUniformMat4x4("u_view", r.camera);
         }
         Render::Draw(r, s);
-        ++renderOptions.drawCalls;
     }
 
     void GraphicsDevice::RenderInstanced(RenderData& r, int instances, Shader& s, const ShaderArgs& args, bool setDefaultShaderArgs) {
@@ -150,7 +157,6 @@ namespace Quasi::Graphics {
             s.SetUniformMat4x4("u_view", r.camera);
         }
         Render::DrawInstanced(r, s, instances);
-        ++renderOptions.drawCalls;
     }
 
     void GraphicsDevice::ClearColor(const Math::fColor& color) {
@@ -187,14 +193,6 @@ namespace Quasi::Graphics {
     //     }
     // }
 
-    void GraphicsDevice::SetDrawMode(const RenderMode mode) {
-        renderOptions.renderMode = mode;
-    }
-
-    void GraphicsDevice::RenderInMode(const RenderMode mode) {
-        Render::SetRenderMode(mode);
-    }
-
     void GraphicsDevice::DebugMenu() {
 #ifndef Q_NO_IMGUI
         if (ImGui::Button(ShowDebugMenu ? "Hide Debug Menu" : "Show Debug Menu")) {
@@ -219,24 +217,6 @@ namespace Quasi::Graphics {
         ImGui::BeginTabBar("Debug Items");
 
         if (ImGui::BeginTabItem("Basics")) {
-            ImGui::Text("Draw as: "); ImGui::SameLine();
-            ImGui::RadioButton("Fill",   (int*)&renderOptions.renderMode, (int)RenderMode::FILL);  ImGui::SameLine();
-            ImGui::RadioButton("Lines",  (int*)&renderOptions.renderMode, (int)RenderMode::LINES); ImGui::SameLine();
-            ImGui::RadioButton("Points", (int*)&renderOptions.renderMode, (int)RenderMode::POINTS);
-
-            if (renderOptions.renderMode == RenderMode::POINTS) {
-                const float ps = renderOptions.pointSize;
-                ImGui::DragFloat("Point Size", &renderOptions.pointSize, 0.1f, 0);
-                if (ps != renderOptions.pointSize) Render::SetPointSize(renderOptions.pointSize);
-            }
-
-            {
-                const Math::fColor prevClearColor = renderOptions.clearColor;
-                ImGui::ColorEdit4("Clear Color", renderOptions.clearColor.Data());
-                if (renderOptions.clearColor != prevClearColor)
-                    Render::SetClearColor(renderOptions.clearColor);
-            }
-
             static bool showImGuiDebugMenu = false;
             ImGui::Checkbox("Show ImGui Debug Menu", &showImGuiDebugMenu);
 
@@ -280,7 +260,6 @@ namespace Quasi::Graphics {
                 }
             }
             ImGui::Text("Total: %d Vertices (bytes), %d Triangles", vCount, tCount);
-            ImGui::Text("Draw Calls: %d", renderOptions.drawCalls);
             ImGui::EndTabItem();
         }
 

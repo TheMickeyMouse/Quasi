@@ -42,12 +42,7 @@ namespace Quasi::Graphics {
         // bool isMaximized = false, isMinimized = false;
         bool sizeUpdated = false;
 
-        struct GLRenderOptions {
-            RenderMode renderMode = RenderMode::FILL;
-            float pointSize = 10.0f;
-            Math::fColor clearColor;
-            u32 drawCalls;
-        } renderOptions;
+        bool shouldSwapBuffers = true;
 
         FontDevice fontDevice = {};
         IO::IO ioDevice { *this };
@@ -75,6 +70,9 @@ namespace Quasi::Graphics {
 
         void Begin();
         void End();
+        void PollEvents();
+
+        void MarkNothingRendered();
 
         template <class T> RenderObject<T> CreateNewRender(usize vsize = MAX_VERTEX_COUNT, usize isize = MAX_INDEX_COUNT);
         void BindRender(RenderData& render);
@@ -110,9 +108,6 @@ namespace Quasi::Graphics {
 
         FontDevice& GetFontDevice() { return fontDevice; }
         const FontDevice& GetFontDevice() const { return fontDevice; }
-
-        void SetDrawMode(RenderMode mode);
-        static void RenderInMode(RenderMode mode);
 
         void DebugMenu();
     private:
