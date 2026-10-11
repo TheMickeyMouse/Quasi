@@ -208,6 +208,6 @@ namespace Quasi {
         return Spans::Slice((AddConstIf<ArrayElement<T>, T>*)Data(), Length() * ArrayLength<T>());
     }
 
-    template <class T, class A> Span<const T> Box<T, A>::AsSpan() const { return data ? Span<const T>::Only(*data) : nullptr; }
-    template <class T, class A> Span<T>       Box<T, A>::AsSpanMut()    { return data ? Span<T>::Only(*data)       : nullptr; }
+    template <class T> Span<const T> Box<T>::AsSpan() const { return data ? Span<const T>::Only(*data) : nullptr; }
+    template <class T> Span<T>       Box<T>::AsSpanMut()    { return data ? Span<T>::Only(*data)       : nullptr; }
 }

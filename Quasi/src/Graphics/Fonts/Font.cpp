@@ -7,8 +7,8 @@
 #include "Utils/Algorithm.h"
 
 namespace Quasi::Graphics {
-    void FontDeleter::operator()(FT_FaceRec_* ptr) const {
-        if (ptr) FT_Done_Face(ptr);
+    FaceHandle::~FaceHandle() {
+        if (data) FT_Done_Face(data);
     }
 
     Font Font::New(FT_FaceRec_* fHand, int fontSize) {
@@ -31,14 +31,14 @@ namespace Quasi::Graphics {
         constexpr int LOAD_SDF = FT_LOAD_RENDER | FT_LOAD_TARGET_(FT_RENDER_MODE_SDF); // used for sdf rendering
         constexpr int SDF_EXTRUDE = 8;
 
-        const FT_GlyphSlot glyphHandle = faceHandle->glyph;
+        const FT_GlyphSlot glyphHandle = faceHandle.data->glyph;
 
         struct GlyphInfo { iv2 size; char c; };
         GlyphInfo glyphInfo[NUM_GLYPHS];
         for (char charCode = 32; charCode < 127; ++charCode) { // loop through each character
             // new method: SDFs extrude 8 pixels in all directions, so you can load normally and then add 16
             // (no need to load twice!)
-            if (const int error = FT_Load_Char(faceHandle.DataMut(), charCode, FT_LOAD_DEFAULT)) {
+            if (const int error = FT_Load_Char(faceHandle.data, charCode, FT_LOAD_DEFAULT)) {
                 GLLogger().QError$("Loading char with err code {}", error);
                 continue;  /* ignore errors */
             }
@@ -88,14 +88,14 @@ namespace Quasi::Graphics {
         glyphs.Resize(NUM_GLYPHS); // amt of glyphs
 
         metrics = {
-            (int)(faceHandle->size->metrics.ascender - faceHandle->size->metrics.descender),
-            (int)faceHandle->size->metrics.ascender,
-            (int)faceHandle->size->metrics.descender
+            (int)(faceHandle.data->size->metrics.ascender - faceHandle.data->size->metrics.descender),
+            (int)faceHandle.data->size->metrics.ascender,
+            (int)faceHandle.data->size->metrics.descender
         };
 
         const fv2 invTextureSize = 1.0f / (fv2)atlas.size;
         for (char charCode = 32; charCode < 127; ++charCode) { // loop through again, this time drawing textures
-            if (const int error = FT_Load_Char(faceHandle.DataMut(), charCode, LOAD_SDF)) { // loads again
+            if (const int error = FT_Load_Char(faceHandle.data, charCode, LOAD_SDF)) { // loads again
                 GLLogger().QError$("Loading char with err code {}", error);
                 continue;
             }

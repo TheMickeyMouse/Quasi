@@ -51,8 +51,9 @@ namespace Quasi::Text {
     /// @param[in] size The amount one can safely read into the input string. (use 2 if you are *sure* reading is safe)
     /// @param[out] x The output UTF-32 character.
     /// @param[out] n The amount of bytes consumed.
+    /// @param bswap Whether the bytes from @p chars should be byte-swapped @a first before decoding.
     /// @return true if success, false if an ill-formed UTF-16 string occurred or couldn't read.
-    bool TryUtf16CharTo32(const Utf16* chars, u32 size, Utf32& x, u32& n);
+    bool TryUtf16CharTo32(const Utf16* chars, u32 size, Utf32& x, u32& n, bool bswap = false);
 
     /// Converts and writes a UTF-32 character into a UTF-16 code point
     /// @param[in] c The input UTF-32 character to be converted
@@ -104,6 +105,11 @@ namespace Quasi::Text {
     /// @param s16 a UTF-16 encoded string
     /// @return a re-encoded UTF-8 string
     Option<String> Utf16To8(Span<const Utf16> s16);
+
+    /// Converts a UTF-16 string into a UTF-8 string, byteswapping every 2 bytes to account for endianness.
+    /// @param s16 a UTF-16 encoded string that needs to be byte-swapped.
+    /// @return a re-encoded UTF-8 string
+    Option<String> Utf16BswapTo8(Span<const Utf16> s16);
 
     /// Converts a UTF-8 string into a UTF-16 string.
     /// @param s8 a UTF-8 encoded string

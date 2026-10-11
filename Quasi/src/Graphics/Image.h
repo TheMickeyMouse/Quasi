@@ -22,8 +22,8 @@ namespace Quasi::Graphics {
         static Image SolidColor(const Math::uColor& color, int w, int h);
         static Image FromData(u8* imageData, int w, int h) { return { imageData, w, h }; }
         static Image CopyData(ImageView view);
-        static Image LoadPNGBytes(Bytes pngbytes);
-        static Image LoadPNG(CStr fname);
+        static Image LoadPNGBytes(Bytes pngbytes, bool flipY = true);
+        static Image LoadPNG(CStr fname, bool flipY = true);
 
         static Image CaptureScreen(bool flip = true);
         static Image CaptureScreen(int x, int y, int w, int h, bool flip = true);

@@ -677,12 +677,10 @@ namespace Quasi::Graphics {
         if (canvas.usedTextures >= MAX_TEXTURE_SAMPLERS)
             canvas.ForceDrawCurrentBatch();
 
-        if (canvas.textures[canvas.usedTextures] != textureID) {
-            canvas.textures[canvas.usedTextures] = textureID;
+        canvas.textures[canvas.usedTextures] = textureID;
 
-            GL::ActiveTexture(GL::TEXTURE0 + canvas.usedTextures);
-            GL::BindTexture(GL::TEXTURE_2D, textureID);
-        }
+        GL::ActiveTexture(GL::TEXTURE0 + canvas.usedTextures);
+        GL::BindTexture(GL::TEXTURE_2D, textureID);
 
         return canvas.usedTextures++;
     }

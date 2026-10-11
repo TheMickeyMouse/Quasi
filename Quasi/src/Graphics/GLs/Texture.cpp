@@ -2,15 +2,14 @@
 
 #include <glp.h>
 #include "Utils/CStr.h"
-#include "Utils/Vec.h"
 #include "GLDebug.h"
 #include "GraphicsDevice.h"
 #include "Image.h"
 #include "vendor/stb_image/stb_image.h"
 
 namespace Quasi::Graphics {
-    void STBIImageHandler::operator()(byte* dat) const {
-        stbi_image_free(dat);
+    STBIImage::~STBIImage() {
+        stbi_image_free(data);
     }
 
     void TextureBase::DestroyObject(GraphicsID id) {
@@ -109,14 +108,14 @@ namespace Quasi::Graphics {
     }
 
     template <TextureTarget Target>
-    TextureObject<Target> TextureObject<Target>::LoadPNGBytes(Bytes pngbytes, const TextureLoadParams& loadMode) requires (Target == _2D) {
-        const Image img = Image::LoadPNGBytes(pngbytes);
+    TextureObject<Target> TextureObject<Target>::LoadPNGBytes(Bytes pngbytes, const TextureLoadParams& loadMode, bool flipY) requires (Target == _2D) {
+        const Image img = Image::LoadPNGBytes(pngbytes, flipY);
         return New(img.Data(), img.Size(), loadMode);
     }
 
     template <TextureTarget Target>
-    TextureObject<Target> TextureObject<Target>::LoadPNG(CStr fname, const TextureLoadParams& loadMode) requires (Target == _2D) {
-        const Image img = Image::LoadPNG(fname);
+    TextureObject<Target> TextureObject<Target>::LoadPNG(CStr fname, const TextureLoadParams& loadMode, bool flipY) requires (Target == _2D) {
+        const Image img = Image::LoadPNG(fname, flipY);
         return New(img.Data(), img.Size(), loadMode);
     }
 
@@ -130,10 +129,10 @@ namespace Quasi::Graphics {
         int faceTarget = (int)CUBEMAP_RIGHT;
         for (CStr face : faces) {
             int sx, sy, bpx;
-            const auto localTexture = STBIImage::Own(stbi_load(face.Data(), &sx, &sy, &bpx, 4));
+            const STBIImage localTexture = stbi_load(face.Data(), &sx, &sy, &bpx, 4);
             QGLCall$(GL::TexImage2D(
                 faceTarget, 0, (int)loadMode.internalformat, sx, sy, 0,
-                (int)loadMode.format, loadMode.type, localTexture.Data()));
+                (int)loadMode.format, loadMode.type, localTexture.data));
             ++faceTarget;
         }
         cubemap.DefaultParams(loadMode.pixelated, loadMode.border);

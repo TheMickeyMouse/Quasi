@@ -95,7 +95,7 @@ namespace Quasi::Text {
         }
     }
 
-    bool TryUtf16CharTo32(const Utf16* chars, u32 size, Utf32& x, u32& n) {
+    bool TryUtf16CharTo32(const Utf16* chars, u32 size, Utf32& x, u32& n, bool bswap) {
         if (size < 1) return false;
         if (IsHighSurrogateUtf16(*chars)) {
             n = 2;
@@ -103,14 +103,14 @@ namespace Quasi::Text {
             // b4 = xxxxxxxx 110111xx yyyyyyyy 110110yy (if system is BE)
             // b4 = 110111xx xxxxxxxx 110110yy yyyyyyyy (if system is LE)
             u32 b4 = Memory::ReadU32(chars);
-            if constexpr (Memory::IsBigEndian()) {
+            if (Memory::IsBigEndian() ^ bswap) {
                 b4 = ((b4 >> 8) & 0x00FF00FF) | ((b4 << 8) & 0xFF00FF00);
             }
             x = ((b4 & 0x3FF) << 10 | (b4 & 0x3FF'0000) >> 16) + 0x10000;
             return (b4 & 0xFC00'0000) == 0xDC00'0000;
         } else {
             n = 1;
-            x = chars[0];
+            x = bswap ? Memory::ByteSwap16(chars[0]) : chars[0];
             return true;
         }
     }
@@ -189,6 +189,21 @@ namespace Quasi::Text {
             u32 n, m;
             char codepoint[4];
             if (!TryUtf16CharTo8(&s16[i], s16.Length() - i, m, (Utf8*)codepoint, 4, n))
+                return nullptr;
+            s8.AppendStr(Str::Slice(codepoint, n));
+            i += m;
+        }
+        return s8;
+    }
+
+    Option<String> Utf16BswapTo8(Span<const Utf16> s16) {
+        String s8;
+        for (usize i = 0; i < s16.Length();) {
+            Utf32 c;
+            u32 n, m;
+            char codepoint[4];
+            if (!TryUtf16CharTo32(&s16[i], s16.Length() - i, c, m, true) ||
+                !TryUtf32CharTo8(c, (Utf8*)codepoint, 4, n))
                 return nullptr;
             s8.AppendStr(Str::Slice(codepoint, n));
             i += m;

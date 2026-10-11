@@ -90,7 +90,7 @@ namespace Quasi {
         explicit operator bool() const { return buf != nullptr; }
     };
 
-    template <class T, class A> ArrayBox<T> Box<T, A>::IntoArrayBox() {
+    template <class T> ArrayBox<T> Box<T>::IntoArrayBox() {
         return ArrayBox<T>::Own(Release(), 1);
     }
 }

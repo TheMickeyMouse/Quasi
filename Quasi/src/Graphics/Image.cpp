@@ -33,16 +33,16 @@ namespace Quasi::Graphics {
         return { data, view.width, view.height };
     }
 
-    Image Image::LoadPNGBytes(Bytes pngbytes) {
+    Image Image::LoadPNGBytes(Bytes pngbytes, bool flipY) {
         int w, h, BPPixel;
-        stbi_set_flip_vertically_on_load(1);
+        stbi_set_flip_vertically_on_load(flipY);
         u8* localTexture = stbi_load_from_memory(pngbytes.Data(), (int)pngbytes.Length(), &w, &h, &BPPixel, 4);
         return localTexture ? FromData(localTexture, w, h) : Empty();
     }
 
-    Image Image::LoadPNG(CStr fname) {
+    Image Image::LoadPNG(CStr fname, bool flipY) {
         int w, h, BPPixel;
-        stbi_set_flip_vertically_on_load(1);
+        stbi_set_flip_vertically_on_load(flipY);
         u8* localTexture = stbi_load(fname.Data(), &w, &h, &BPPixel, 4);
         return localTexture ? FromData(localTexture, w, h) : Empty();
     }

@@ -27,8 +27,11 @@ namespace Quasi::Graphics {
         TID::E type = TID::BYTE;
     };
 
-    struct STBIImageHandler { void operator()(byte* dat) const; };
-    using STBIImage = Box<byte, STBIImageHandler>;
+    struct STBIImage {
+        byte* data;
+        STBIImage(byte* data) : data(data) {}
+        ~STBIImage();
+    };
 
     class TextureBase : public GLObject<TextureBase> {
     public:
@@ -70,9 +73,9 @@ namespace Quasi::Graphics {
         void Bind() const { BindObject(Target, rendererID); }
         void Unbind() const { UnbindObject(Target); }
 
-        static TextureObject LoadPNGBytes(Bytes pngbytes, const TextureLoadParams& loadMode = {})
+        static TextureObject LoadPNGBytes(Bytes pngbytes, const TextureLoadParams& loadMode = {}, bool flipY = true)
             requires (Target == _2D);
-        static TextureObject LoadPNG(CStr fname, const TextureLoadParams& loadMode = {})
+        static TextureObject LoadPNG(CStr fname, const TextureLoadParams& loadMode = {}, bool flipY = true)
             requires (Target == _2D);
 
         static TextureObject LoadCubemapPNG(IList<CStr> faces /* in order: rludfb */, const TextureLoadParams& loadMode = {})

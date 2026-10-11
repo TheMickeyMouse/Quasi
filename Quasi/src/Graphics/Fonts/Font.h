@@ -12,7 +12,11 @@ struct FT_FaceRec_;
 
 namespace Quasi::Graphics {
     struct FontDeleter { void operator()(FT_FaceRec_* ptr) const; };
-    using FaceHandle = Box<FT_FaceRec_, FontDeleter>;
+    struct FaceHandle {
+        FT_FaceRec_* data;
+        FaceHandle(FT_FaceRec_* ptr) : data(ptr) {}
+        ~FaceHandle();
+    };
 
     struct Glyph {
         // internal coords
@@ -36,7 +40,7 @@ namespace Quasi::Graphics {
         FontMetrics metrics;
         Texture2D atlas;
 
-        Font(FT_FaceRec_* fHand, int fontSize) : faceHandle(FaceHandle::Own(fHand)), fontSize(fontSize) {}
+        Font(FT_FaceRec_* fHand, int fontSize) : faceHandle(fHand), fontSize(fontSize) {}
     public:
         Font() = default;
         static Font New(FT_FaceRec_* fHand, int fontSize);

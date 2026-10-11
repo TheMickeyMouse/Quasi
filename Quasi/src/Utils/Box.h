@@ -45,43 +45,32 @@ namespace Quasi {
 
     template <class T> struct ArrayBox;
 
-    struct GlobalDelete {
-        void operator()(auto* ptr) const { Memory::Free(ptr); }
-    };
-
-    template <class T, class A = GlobalDelete>
-    struct Box : IResource<T, Box<T, A>> {
+    template <class T>
+    struct Box : IResource<T, Box<T>> {
         friend IResource<T, Box>;
     private:
         T* data = nullptr;
-        [[no_unique_address]] A allocator = {};
-        Box(T* data, A alloc = {}) : data(data), allocator(std::move(alloc)) {}
+        Box(T* data) : data(data) {}
     public:
         Box() : data(nullptr) {}
         Box(Nullptr) : data(nullptr) {}
         Box(Box&& box) noexcept { this->MoveConstructOp(box); }
-        template <Extends<T> Derived> Box(Box<Derived>&& box) : data(box.Release()), allocator(std::move(box.allocator)) {}
+        template <Extends<T> Derived> Box(Box<Derived>&& box) : data(box.Release()) {}
         Box& operator=(Box&& box) noexcept { this->MoveAssignOp(box); return *this; }
 
         static Box New        (T value)                 { return { Memory::Allocate<T>(std::move(value)) }; }
         static Box NewUninit  ()                        { return { Memory::AllocateUninit<T>() }; }
         static Box Build      (auto&&... args)          { return { Memory::Allocate<T>((decltype(args))args...) }; }
-        static Box NewIn      (A alloc, T value)        { return { Memory::Allocate<T>(std::move(value)),        std::move(alloc) }; }
-        static Box NewUninitIn(A alloc)                 { return { Memory::AllocateUninit<T>(),                  std::move(alloc) }; }
-        static Box BuildIn    (A alloc, auto&&... args) { return { Memory::Allocate<T>((decltype(args))args...), std::move(alloc) }; }
         static Box Own(Ref<T> data) { return { data.Address() }; }
         static Box Own(T* data)     { return { data }; }
-        static Box OwnIn(A alloc, Ref<T> data) { return { data.Address(), std::move(alloc) }; }
-        static Box OwnIn(A alloc, T* data)     { return { data, std::move(alloc) }; }
         static Box Empty()          { return {}; }
-        static Box EmptyIn(A alloc) { return { nullptr, std::move(alloc)}; }
     protected:
-        void CloseImpl() { allocator(data); data = nullptr; }
+        void CloseImpl() { Memory::Free(data); data = nullptr; }
 
         const T& GetImpl() const { return *data; }
         T& GetMutImpl() { return *data; }
 
-        void TransferImpl(Box& dst) { dst.data = data; dst.allocator = std::move(allocator); data = nullptr; }
+        void TransferImpl(Box& dst) { dst.data = data; data = nullptr; }
     public:
         T Extract() { T out = std::move(*data); CloseImpl(); return out; }
         [[nodiscard]] T* Release() { T* out = data; data = nullptr; return out; }
@@ -95,15 +84,12 @@ namespace Quasi {
         T* Data() { return data; }
         T* DataMut() { return data; }
 
-        const A& Allocator() const { return allocator; }
-        A& AllocatorMut() { return allocator; }
-
         void Write(T value) { Memory::ConstructMoveAt(std::move(value)); }
         void Replace(T* val) { CloseImpl(); data = val; }
         T*   Take   (T* val) { T* out = Release(); data = val; return out; }
-        void Swap(Box& other) { std::swap(data, other.data); std::swap(allocator, other.allocator); }
+        void Swap(Box& other) { std::swap(data, other.data); }
 
-        Box Clone() const { return Box::NewIn(allocator, *data); }
+        Box Clone() const { return Box::New(*data); }
 
         template <Extends<T> Derived> Box<Derived> Downcast() {
             Derived* dyn = dynamic_cast<Derived*>(data);
@@ -131,16 +117,11 @@ namespace Quasi {
 
         explicit operator bool() const { return data != nullptr; }
 
-        template <class _T, class _A> friend struct Box;
+        template <class _T> friend struct Box;
     };
 
     namespace Boxs {
         template <class T>
         Box<T> New(T val) { return Box<T>::New(std::move(val)); }
     }
-
-    struct MallocFreeDelete {
-        void operator()(auto* ptr) const { std::free(ptr); }
-    };
-    template <class T> using CBox = Box<T, MallocFreeDelete>;
 }
