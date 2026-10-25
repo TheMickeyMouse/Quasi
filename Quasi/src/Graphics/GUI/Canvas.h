@@ -267,6 +267,12 @@ namespace Quasi::Graphics {
         };
         DropShadowScope BeginShadow(const Math::fv2& offset, float blurRadius, const Math::fColor& shadowColor);
 
+        struct ClippingScope {
+            Canvas& canvas;
+            ~ClippingScope();
+        };
+        ClippingScope BeginClip(const Math::fRect2D& clippingRect);
+
         Math::fv2 TransformToWorldSpace(const Math::fv2& point) const;
         void SetViewport(const Math::fRect2D& vp);
         void FlipYDirection();

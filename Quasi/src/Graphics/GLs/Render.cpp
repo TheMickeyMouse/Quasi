@@ -68,7 +68,7 @@ namespace Quasi::Graphics::Render {
     }
 
     void SetScissorRect(const Math::iRect2D& rect) {
-        GL::Scissor(rect.min.x, rect.max.x, rect.Size().x, rect.Size().y);
+        GL::Scissor(rect.min.x, rect.min.y, rect.Width(), rect.Height());
     }
 
     void UseDepthFunc(const CmpOperation op) {
@@ -123,7 +123,7 @@ namespace Quasi::Graphics::Render {
     }
 
     void SetViewport(const Math::iRect2D& viewport) {
-        GL::Viewport(viewport.min.x, viewport.min.y, viewport.Size().x, viewport.Size().y);
+        GL::Viewport(viewport.min.x, viewport.min.y, viewport.Width(), viewport.Height());
     }
 
     void MemoryBarrier(int barrierBits) {

@@ -800,11 +800,11 @@ namespace Quasi {
 #define strdef template <class Char, class Super>
 #define strcls StringHolder<Char, Super>
     strdef auto strcls::SplitOnceOn(Predicate<Char> auto&& pred) const -> Tuple<StrChar, StrChar> {
-        const OptionUsize i = FindIf(pred);
+        const OptionUsize i = this->FindIndexIf(pred);
         return SplitAt(i.UnwrapOr(super().LengthImpl()));
     }
     strdef auto strcls::RevSplitOnceOn(Predicate<Char> auto&& pred) const -> Tuple<StrChar, StrChar> {
-        const OptionUsize i = this->RevFindIf(pred);
+        const OptionUsize i = this->RevFindIndexIf(pred);
         return SplitAt(i.UnwrapOr(0));
     }
     strdef auto strcls::TrimIf(Predicate<Char> auto&& pred) const -> StrChar {

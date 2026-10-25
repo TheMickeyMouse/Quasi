@@ -71,8 +71,8 @@ namespace Quasi::Graphics {
         if (IsClosed()) return;
 
         // reduces cpu usage by sleeping frame time
-        if (frameDurationTime < std::chrono::milliseconds(16)) {
-            const auto sleepTime = std::chrono::milliseconds(16) - frameDurationTime;
+        if (frameDurationTime < std::chrono::microseconds(16000)) {
+            const auto sleepTime = std::chrono::microseconds(16000) - frameDurationTime;
             // Debug::QInfo$("sleeping for {}", sleepTime.count());
             std::this_thread::sleep_for(sleepTime);
         }

@@ -593,10 +593,11 @@ namespace Quasi::Graphics {
         if (align.alignment & TextAlign::CLIP) {
             ForceDrawCurrentBatch();
             Render::EnableScissor();
-            Math::iRect2D rect = Math::fRect2D::FromSize(transform * pen, transform.MulD(align.rect)).As<int>();
+            Math::iRect2D rect = Math::fRect2D::FromSize(transform * pos, transform.MulD(align.rect)).As<int>();
             if (flipText) {
-                rect.min.y = (int)viewport.Height() - rect.max.y;
-                rect.max.y = (int)viewport.Height() - rect.min.y;
+                const int ymin = rect.min.y, h = (int)-viewport.Height();
+                rect.min.y = h - rect.max.y;
+                rect.max.y = h - ymin;
             }
             Render::SetScissorRect(rect);
         }
@@ -670,12 +671,16 @@ namespace Quasi::Graphics {
     }
 
     u32 Canvas::Batch::RegTexture(GraphicsID textureID) {
+        if (textureID == GraphicsNoID) return -1;
+
         OptionUsize samplerSlot = Spans::Slice(canvas.textures, canvas.usedTextures).FindIndex(textureID);
 
         if (samplerSlot) return (u32)*samplerSlot;
 
-        if (canvas.usedTextures >= MAX_TEXTURE_SAMPLERS)
+        if (canvas.usedTextures >= MAX_TEXTURE_SAMPLERS) {
             canvas.ForceDrawCurrentBatch();
+            Reload();
+        }
 
         canvas.textures[canvas.usedTextures] = textureID;
 
@@ -1756,6 +1761,24 @@ namespace Quasi::Graphics {
 
     Canvas::DropShadowScope Canvas::BeginShadow(const Math::fv2& offset, float blurRadius, const Math::fColor& shadowColor) {
         return { *this, offset, blurRadius, shadowColor };
+    }
+
+    Canvas::ClippingScope::~ClippingScope() {
+        canvas.ForceDrawCurrentBatch();
+        Render::DisableScissor();
+    }
+
+    Canvas::ClippingScope Canvas::BeginClip(const Math::fRect2D& clippingRect) {
+        ForceDrawCurrentBatch();
+        Render::EnableScissor();
+        Math::iRect2D rect = (Math::iRect2D)clippingRect;
+        if (flipText) { // flip rect
+            const int ymin = rect.min.y, h = -viewport.Height();
+            rect.min.y = h - rect.max.y;
+            rect.max.y = h - ymin;
+        }
+        Render::SetScissorRect(rect);
+        return ClippingScope(*this);
     }
 
     Math::fv2 Canvas::TransformToWorldSpace(const Math::fv2& point) const {

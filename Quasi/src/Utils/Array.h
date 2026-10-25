@@ -25,6 +25,10 @@ namespace Quasi {
         constexpr Array(SimilarTo<T> auto&&... args) : array { args... } {}
         InnerRawArray& CArr() { return array; }
         const InnerRawArray& CArr() const { return array; }
+
+        // support structuerd bindings
+        template <usize Index> T& get() { return array[Index]; }
+        template <usize Index> const T& get() const { return array[Index]; }
     };
 
     template <class T, SimilarTo<T>... U>
@@ -50,4 +54,10 @@ namespace Quasi {
             return range;
         }
     }
+}
+
+// support structured bindins
+namespace std {
+    template <class T, size_t N> struct tuple_size<Quasi::Array<T, N>> { static constexpr size_t value = N; };
+    template <size_t I, class T, size_t N> struct tuple_element<I, Quasi::Array<T, N>> { using type = T; };
 }
