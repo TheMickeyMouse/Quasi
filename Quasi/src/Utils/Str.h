@@ -463,21 +463,39 @@ namespace Quasi {
         /// @b Example: @code
         /// Str("___hi__").Trim('_'); // "hi"
         /// @endcode
-        StrChar Trim(Char c = ' ') const;
+        StrChar Trim(Char c) const;
         /// Trims all the starting characters that are equal to @p c .
         /// By default, trims spaces.
         ///
         /// @b Example: @code
         /// Str("___hi__").Trim('_'); // "hi__"
         /// @endcode
-        StrChar TrimStart(Char c = ' ') const;
+        StrChar TrimStart(Char c) const;
         /// Trims all the ending characters that are equal to @p c .
         /// By default, trims spaces.
         ///
         /// @b Example: @code
         /// Str("___hi__").Trim('_'); // "___hi"
         /// @endcode
-        StrChar TrimEnd(Char c = ' ') const;
+        StrChar TrimEnd(Char c) const;
+        /// Trims all the starting and ending whitespace characters.
+        ///
+        /// @b Example: @code
+        /// Str("\t  hi \n").Trim(); // "hi"
+        /// @endcode
+        StrChar Trim() const { return TrimIf(Qfn$(Chr::IsWhitespace)); }
+        /// Trims all the starting whitespace characters.
+        ///
+        /// @b Example: @code
+        /// Str("\t  hi \n").TrimStart(); // "hi \n"
+        /// @endcode
+        StrChar TrimStart() const { return TrimStartIf(Qfn$(Chr::IsWhitespace)); }
+        /// Trims all the ending whitespace characters.
+        ///
+        /// @b Example: @code
+        /// Str("\t  hi \n").TrimEnd(); // "\t  hi"
+        /// @endcode
+        StrChar TrimEnd() const { return TrimEndIf(Qfn$(Chr::IsWhitespace)); }
 
         /// Returns a string slice where the character prefix is removed.
         StrChar RemovePrefix(Char prefix) const;

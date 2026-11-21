@@ -51,8 +51,9 @@ namespace Quasi {
                 Memory::WriteU16(*escVer << 8 | '\\', out);
                 return 2;
             } else if (!IsPrintable(c)) {
+                const u8 x = (u8)c;
                 static constexpr char hexdig[17] = "0123456789ABCDEF";
-                Memory::WriteU32(hexdig[c & 0xF] << 24 | hexdig[c >> 4] << 16 | "x\\"_u32 , out);
+                Memory::WriteU32(hexdig[x & 0xF] << 24 | hexdig[x >> 4] << 16 | "x\\"_u32 , out);
                 return 4;
             } else {
                 out[0] = c;
@@ -123,7 +124,7 @@ namespace Quasi {
                     u32 x = Memory::ReadU32(&s[2]);
                     if (!AreAllHexDigits4(x)) return false;
                     x = ParseHexDigits4(x);
-                    return Text::TryUtf32CharTo8(x, (Text::Utf8*)out, 4, numWritten);
+                    return Text::TryUtf32CharTo8(x, (Text::Utf8*)out, numWritten);
                 }
                 case 'U': { // long unicode
                     if (n < 10) return false;
@@ -132,7 +133,7 @@ namespace Quasi {
                     if (!AreAllHexDigits4(x) || !AreAllHexDigits4(y)) return false;
                     x = ParseHexDigits4(x);
                     y = ParseHexDigits4(y);
-                    return Text::TryUtf32CharTo8(x << 16 | y, (Text::Utf8*)out, 4, numWritten);
+                    return Text::TryUtf32CharTo8(x << 16 | y, (Text::Utf8*)out, numWritten);
                 }
                 default: return false;
             }
@@ -208,7 +209,7 @@ namespace Quasi {
     strdef auto strcls::Tail()           const -> StrChar { return Substr(1); }
     strdef auto strcls::Last(usize num)  const -> StrChar { return Substr(this->Length() - num, num); }
     strdef auto strcls::Trunc(usize len) const -> StrChar { return Substr(0, this->Length() - len); }
-    strdef auto strcls::Init()           const -> StrChar { return Substr(this->Length() - 1); }
+    strdef auto strcls::Init()           const -> StrChar { return Substr(0, this->Length() - 1); }
     strdef auto strcls::SplitFirst()         const -> Tuple<Char&, StrChar>          { return { First(),  Tail() }; }
     strdef auto strcls::SplitLast()          const -> Tuple<StrChar, Char&>          { return { Init(),   Last() }; }
     strdef auto strcls::CutAt(usize i)       const -> Tuple<StrChar, StrChar>        { return { First(i), Skip(i) }; }

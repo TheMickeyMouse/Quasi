@@ -1,7 +1,7 @@
 #pragma once
-#include "Utils/Numeric.h"
 #include "Formatting.h"
 #include "Parsing.h"
+#include "Utils/Str.h"
 
 namespace Quasi::Text {
 #pragma region Format

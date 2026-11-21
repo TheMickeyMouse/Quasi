@@ -169,7 +169,7 @@ namespace Quasi::Text {
             usize len = 2;
             sw.Write('[');
             for (usize i = 0; i < span.Length(); ++i) {
-                if (!i) len += sw.Write(", ");
+                if (i) len += sw.Write(", ");
                 len += FormatObjectTo(sw, span[i], options);
             }
             sw.Write(']');

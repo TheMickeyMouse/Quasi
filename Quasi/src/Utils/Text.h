@@ -4,6 +4,11 @@
 #include "Option.h"
 #include "Text/Formatting.h"
 
+namespace std {
+    template <typename _CharT, typename _Traits> class basic_ifstream;
+    template <typename _CharT, typename _Traits> class basic_ofstream;
+}
+
 namespace Quasi {
     struct CStr;
 }
@@ -27,9 +32,10 @@ namespace Quasi::Text {
 
     Option<String> ReadFile(CStr fname);
     Option<String> ReadFileBinary(CStr fname);
+    Option<String> ReadFile(std::basic_ifstream<char, std::char_traits<char>>& file);
     bool WriteFile(CStr fname, Str contents);
-    bool WriteFileBinary(CStr fname, Str contents);
     bool WriteFileBinary(CStr fname, Bytes contents);
+    bool WriteFile(std::basic_ofstream<char, std::char_traits<char>>& file, Str contents);
     bool ExistsFile(CStr fname);
 
     Tuple<Str, Str> SplitDirectory(Str fname);

@@ -204,8 +204,8 @@ namespace Quasi {
         /// Option<int>::None() .MapOr(f, -1); // -1, no value to begin with
         /// Option<int>::Some(2).MapOr(f, -1); //  4, 2 * 2 = 4
         /// @endcode
-        template <class U, Fn<U, T> F>
-        U MapOr(F&& map, U&& otherwise) const { return HasValue() ? map(Unwrap()) : (decltype(otherwise))otherwise; }
+        template <FnArgs<T> F, class U>
+        auto MapOr(F&& map, U&& otherwise) const { return HasValue() ? map(Unwrap()) : std::forward<U>(otherwise); }
 
         /// Returns the result of @p map called on the contained value if it exists,
         /// or returns the value produced by @p otherwise.

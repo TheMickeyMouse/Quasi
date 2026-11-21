@@ -8,57 +8,47 @@
 
 namespace Quasi::Text {
     Option<String> ReadFile(CStr fname) {
-        // standard C implementation
-        std::FILE *fp = std::fopen(fname.Data(), "r");
-        if (fp) {
-            std::fseek(fp, 0, SEEK_END);
-            usize length = std::ftell(fp);
-            // ownership is transfered at return
-            char* const contentsRaw = (char*)Memory::AllocateRaw(length * sizeof(char));
-
-            std::rewind(fp);
-            length = std::fread(contentsRaw, 1, length, fp);
-            std::fclose(fp);
-            return String::Compose(contentsRaw, length, length);
-        }
-        return nullptr;
+        auto in = std::ifstream(fname.Data());
+        return ReadFile(in);
     }
 
     Option<String> ReadFileBinary(CStr fname) {
-        std::FILE *fp = std::fopen(fname.Data(), "rb");
-        if (fp) {
-            std::fseek(fp, 0, SEEK_END);
-            usize length = std::ftell(fp);
+        auto in = std::ifstream(fname.Data(), std::ios::binary);
+        return ReadFile(in);
+    }
+
+    Option<String> ReadFile(std::ifstream& file) {
+        if (file) {
+            file.seekg(0, std::ios::end);
+            usize length = file.tellg();
             // ownership is transfered at return
             char* const contentsRaw = (char*)Memory::AllocateRaw(length * sizeof(char));
 
-            std::rewind(fp);
-            length = std::fread(contentsRaw, 1, length, fp);
-            std::fclose(fp);
+            file.seekg(0, std::ios::beg);
+            file.read(contentsRaw, length);
             return String::Compose(contentsRaw, length, length);
         }
         return nullptr;
     }
 
     bool WriteFile(CStr fname, Str contents) {
-        if (std::ofstream out { fname.Data() }) {
-            out.write(contents.Data(), (isize)contents.Length());
-            return true;
-        }
-        return false;
-    }
-
-    bool WriteFileBinary(CStr fname, Str contents) {
-        if (std::ofstream out { fname.Data(), std::ios_base::out | std::ios_base::binary }) {
-            out.write(contents.Data(), (isize)contents.Length());
-            return true;
-        }
-        return false;
+        auto out = std::ofstream(fname.Data());
+        return WriteFile(out, contents);
     }
 
     bool WriteFileBinary(CStr fname, Bytes contents) {
-        return WriteFileBinary(fname, contents.Transmute<char>().AsStr());
+        auto out = std::ofstream(fname.Data(), std::ios::binary);
+        return WriteFile(out, contents.AsStr());
     }
+
+    bool WriteFile(std::ofstream& file, Str contents) {
+        if (file) {
+            file.write(contents.Data(), (isize)contents.Length());
+            return true;
+        }
+        return false;
+    }
+
 
     bool ExistsFile(CStr fname) {
         return std::ifstream { fname.Data() }.good();

@@ -5,6 +5,7 @@
 
 #include "GLs/GLDebug.h"
 #include "Utils/Algorithm.h"
+// #include "Utils/Text/UTF.h"
 
 namespace Quasi::Graphics {
     FaceHandle::~FaceHandle() {
@@ -19,6 +20,23 @@ namespace Quasi::Graphics {
         // GLLogger().Assert(!error, "Font Char size set with err code {}", error);
         int error = FT_Set_Pixel_Sizes(fHand, 0, fontSize);
         GLLogger().Assert(!error, "Font Char size set with err code {}", error);
+
+        // {
+        //     u32 idx = 0, i = 0;
+        //     Text::Utf32 charCode = FT_Get_First_Char(fHand, &idx);
+        //
+        //     Debug::QInfo$("font supports chars: ");
+        //     while (idx) {
+        //         Text::Utf8 c[4];
+        //         u32 n;
+        //         Text::TryUtf32CharTo8(charCode, c, 4, n);
+        //         Text::Print(Str::Slice((const char*)c, n));
+        //
+        //         charCode = FT_Get_Next_Char(fHand, charCode, &idx);
+        //         ++i;
+        //     }
+        //     Debug::QInfo$("\n({} chars total)", i);
+        // }
 
         f.RenderBitmap();
 
@@ -112,7 +130,7 @@ namespace Quasi::Graphics {
     }
 
     const Glyph& Font::GetGlyphRect(char c) const {
-        return glyphs[c - 32];
+        return (32 <= c) ? glyphs[c - 32] : glyphs['?' - 32];
     }
 
     float Font::SpaceWidth() const {
@@ -121,6 +139,7 @@ namespace Quasi::Graphics {
 
     float Font::CalcCharWidth(char c) const {
         if (Chr::IsWhitespace(c)) c = ' ';
+        else if (c < 32) c = '?';
         return GetGlyphRect(c).advance.x;
     }
 

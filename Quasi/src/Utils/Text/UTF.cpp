@@ -1,5 +1,6 @@
 #include "UTF.h"
 #include "Utils/Memory.h"
+#include <cwchar>
 
 namespace Quasi::Text {
     u32 Utf8CodeLen(Utf8 firstByte) {
@@ -60,9 +61,8 @@ namespace Quasi::Text {
         }
     }
 
-    bool TryUtf32CharTo8(Utf32 c, Utf8* x, u32 size, u32& n) {
+    bool TryUtf32CharTo8(Utf32 c, Utf8* x, u32& n) {
         n = Utf32CodeLen(c);
-        if (size < n) return false;
         switch (n) {
             default: return false;
             case 1: x[0] = c; return true;
@@ -115,55 +115,49 @@ namespace Quasi::Text {
         }
     }
 
-    bool TryUtf32CharTo16(Utf32 c, Utf16* x, u32 size, u32& n) {
+    bool TryUtf32CharTo16(Utf32 c, Utf16* x, u32& n) {
         if (c >= 0x10000) {
             c -= 0x10000;
             n = 2;
-            if (size < 2) return false;
             x[0] = 0xD800 | (c >> 10);
             x[1] = 0xDC00 | (c & 0x3FF);
         } else {
             n = 1;
-            if (size < 1) return false;
             x[0] = c;
         }
         return true;
     }
 
-    bool TryUtf16CharTo8(const Utf16* in, u32 inSize, u32& inNum, Utf8* out, u32 outSize, u32& outNum) {
+    bool TryUtf16CharTo8(const Utf16* in, u32 inSize, u32& inNum, Utf8* out, u32& outNum) {
         Utf32 c32;
         if (!TryUtf16CharTo32(in, inSize, c32, inNum)) return false;
-        if (!TryUtf32CharTo8 (c32, out, outSize, outNum)) return false;
+        if (!TryUtf32CharTo8(c32, out, outNum)) return false;
         return true;
     }
 
-    bool TryUtf8CharTo16(const Utf8* in, u32 inSize, u32& inNum, Utf16* out, u32 outSize, u32& outNum) {
+    bool TryUtf8CharTo16(const Utf8* in, u32 inSize, u32& inNum, Utf16* out, u32& outNum) {
         Utf32 c32;
-        if (!TryUtf8CharTo32 (in, inSize, c32, inNum)) return false;
-        if (!TryUtf32CharTo16(c32, out, outSize, outNum)) return false;
-        return true;
+        if (!TryUtf8CharTo32(in, inSize, c32, inNum)) return false;
+        return TryUtf32CharTo16(c32, out, outNum);
     }
 
-    bool TryLatin1CharToUtf8(Latin1 c, Utf8* x, u32 size, u32& n) {
+    void TryLatin1CharToUtf8(Latin1 c, Utf8* x, u32& n) {
         if (c > 0x7F) { // 8-bit is always set
             n = 2;
-            if (size < 2) return false;
             x[0] = 0xC0 | (c >> 6);
             x[1] = c & 0xBF;
         } else {
             n = 1;
-            if (size < 1) return false;
             x[0] = c;
         }
-        return true;
     }
 
-    Option<String> Utf32To8(Span<const Utf32> s32) {
+    Option<String> Utf32To8(U32Str s32) {
         String s8;
         for (usize i = 0; i < s32.Length(); i++) {
             u32 n;
             char codepoint[4];
-            if (!TryUtf32CharTo8(s32[i], (Utf8*)codepoint, 4, n))
+            if (!TryUtf32CharTo8(s32[i], (Utf8*)codepoint, n))
                 return nullptr;
             s8.AppendStr(Str::Slice(codepoint, n));
         }
@@ -183,12 +177,12 @@ namespace Quasi::Text {
         return s32;
     }
 
-    Option<String> Utf16To8(Span<const Utf16> s16) {
+    Option<String> Utf16To8(U16Str s16) {
         String s8;
         for (usize i = 0; i < s16.Length();) {
             u32 n, m;
             char codepoint[4];
-            if (!TryUtf16CharTo8(&s16[i], s16.Length() - i, m, (Utf8*)codepoint, 4, n))
+            if (!TryUtf16CharTo8(&s16[i], s16.Length() - i, m, (Utf8*)codepoint, n))
                 return nullptr;
             s8.AppendStr(Str::Slice(codepoint, n));
             i += m;
@@ -196,14 +190,14 @@ namespace Quasi::Text {
         return s8;
     }
 
-    Option<String> Utf16BswapTo8(Span<const Utf16> s16) {
+    Option<String> Utf16BswapTo8(U16Str s16) {
         String s8;
         for (usize i = 0; i < s16.Length();) {
             Utf32 c;
             u32 n, m;
             char codepoint[4];
             if (!TryUtf16CharTo32(&s16[i], s16.Length() - i, c, m, true) ||
-                !TryUtf32CharTo8(c, (Utf8*)codepoint, 4, n))
+                !TryUtf32CharTo8(c, (Utf8*)codepoint, n))
                 return nullptr;
             s8.AppendStr(Str::Slice(codepoint, n));
             i += m;
@@ -216,7 +210,7 @@ namespace Quasi::Text {
         for (usize i = 0; i < s8.Length();) {
             u32 n = 0, m = 0;
             Utf16 codepoint[2] = { 0, 0 };
-            if (TryUtf8CharTo16((Utf8*)&s8[i], s8.Length() - i, m, codepoint, 2, n))
+            if (TryUtf8CharTo16((Utf8*)&s8[i], s8.Length() - i, m, codepoint, n))
                 return nullptr;
             s16.Extend(Spans::Slice(codepoint, n));
             i += m;
@@ -224,7 +218,7 @@ namespace Quasi::Text {
         return s16;
     }
 
-    Option<Vec<Utf32>> Utf16To32(Span<const Utf16> s16) {
+    Option<Vec<Utf32>> Utf16To32(U16Str s16) {
         Vec<Utf32> s32;
         for (usize i = 0; i < s16.Length();) {
             u32 n = 0;
@@ -237,12 +231,12 @@ namespace Quasi::Text {
         return s32;
     }
 
-    Vec<Utf16> Utf32To16(Span<const Utf32> s32) {
+    Vec<Utf16> Utf32To16(U32Str s32) {
         Vec<Utf16> s16;
         for (usize i = 0; i < s32.Length(); i++) {
             u32 n;
             Utf16 codepoint[2];
-            TryUtf32CharTo16(s32[i], codepoint, 2, n);
+            TryUtf32CharTo16(s32[i], codepoint, n);
             s16.Extend(Spans::Slice(codepoint, n));
         }
         return s16;
@@ -253,28 +247,17 @@ namespace Quasi::Text {
         for (usize i = 0; i < sLat.Length(); i++) {
             u32 n;
             char codepoint[2];
-            TryLatin1CharToUtf8(sLat[i], (Utf8*)codepoint, 2, n);
+            TryLatin1CharToUtf8(sLat[i], (Utf8*)codepoint, n);
             s8.AppendStr(Str::Slice(codepoint, n));
         }
         return s8;
     }
 
-    Option<Utf32> CodepointIter::CurrentImpl() const {
-        return currentChar;
-    }
-
-    void CodepointIter::AdvanceImpl() {
-        u32 readLen;
-        Utf32 c;
-        if (!TryUtf8CharTo32((const Utf8*)text.Data(), text.Length(), c, readLen)) {
-            currentChar = nullptr;
-            return;
+    usize Formatter<U16Str>::FormatTo(StringWriter sw, U16Str input, const FormatOptions&) {
+        usize n = 0;
+        for (const auto s : CodepointIter<Utf16, Utf8>::New(input)) {
+            n += sw.Write(s.AsStr());
         }
-        currentChar = c;
-        text.Advance(readLen);
-    }
-
-    bool CodepointIter::CanNextImpl() const  {
-        return currentChar.HasValue();
+        return n;
     }
 }

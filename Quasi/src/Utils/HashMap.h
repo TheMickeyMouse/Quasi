@@ -68,7 +68,7 @@ namespace Quasi {
             // does not actually deallocate nor call the destructor but puts it back in usable memory
             void Deallocate(T* obj) {
                 Next(obj) = usableMemory;
-                usableMemory = obj;
+                usableMemory = (LinkedListPtr)obj;
             }
 
             // adds memory to the allocator unless there aren't enough bytes to make use of
@@ -151,12 +151,7 @@ namespace Quasi {
     template <class Key, class Value>
     struct KeyValuePair {
         Key key;
-        Value value;
-    };
-
-    template <class Key>
-    struct KeyValuePair<Key, void> {
-        Key key;
+        Value value = {};
     };
 
     namespace HashTables {
@@ -187,13 +182,12 @@ namespace Quasi {
     // According to STL, order of templates has effect on throughput. That's why I've moved the
     // boolean to the front.
     // https://www.reddit.com/r/cpp/comments/ahp6iu/compile_time_binary_size_reductions_and_cs_future/eeguck4/
-    template <bool IsFlat, class Key, class Value, class Hasher>
+    template <bool IsFlat, class Key, class Value, class Pair, class Hasher>
     struct HashTable
-        : Memory::NodeAllocator<KeyValuePair<Key, Value>, 4, 16384, IsFlat>,
-          ICollection<KeyValuePair<Key, Value>, HashTable<IsFlat, Key, Value, Hasher>> {
-        using KeyType = Key;
-        using ValueType = Value;
-        using PairType = KeyValuePair<Key, Value>;
+        : Memory::NodeAllocator<Pair, 4, 16384, IsFlat>,
+          ICollection<Pair&, HashTable<IsFlat, Key, Value, Pair, Hasher>> {
+        static constexpr bool IS_SET = SameAs<Key, Pair>;
+        static constexpr bool IS_MAP = !IS_SET;
         using HasherType = Hasher;
     private:
         // make sure we have 8 elements, needed to quickly rehash mInfo
@@ -202,7 +196,7 @@ namespace Quasi {
         static constexpr byte  InitialInfoInc = 1U << InitialInfoBitPos;
         static constexpr usize InfoMask = InitialInfoInc - 1U;
         static constexpr byte  InitialInfoHashShift = 0;
-        using DataPool = Memory::NodeAllocator<PairType, 4, 16384, IsFlat>;
+        using DataPool = Memory::NodeAllocator<Pair, 4, 16384, IsFlat>;
 
         // type needs to be wider than u8.
         using InfoType = u32;
@@ -233,11 +227,11 @@ namespace Quasi {
         // for small types, we can just rely on stack memory
         struct Node {
         private:
-            IfElse<IsFlat, PairType, PairType*> data;
+            IfElse<IsFlat, Pair, Pair*> data;
         public:
-            explicit Node(HashTable&,   Key k, Value v) requires IsFlat : data { std::move(k), std::move(v) } {}
-            explicit Node(HashTable& t, Key k, Value v) requires (!IsFlat) : data(t.Allocate()) {
-                new (data) PairType(std::move(k), std::move(v));
+            explicit Node(HashTable&,   Pair p) requires IsFlat : data { std::move(p) } {}
+            explicit Node(HashTable& t, Pair p) requires (!IsFlat) : data(t.Allocate()) {
+                new (data) Pair(std::move(p));
             }
             Node(HashTable&, Node&& n) : data(std::move(n.data)) {}
 
@@ -245,31 +239,31 @@ namespace Quasi {
             void Destroy(HashTable& table) const {
                 if constexpr (!IsFlat) {
                     // don't deallocate, just put it into list of datapool.
-                    data->~PairType();
+                    data->~Pair();
                     table.Deallocate(data);
                 }
             }
             void DestroyNoDeallocate() const {
                 if constexpr (!IsFlat)
-                    data->~PairType();
+                    data->~Pair();
             }
 
-            const PairType* operator->() const { if constexpr (IsFlat) { return &data; } else { return data; } }
-            PairType*       operator->()       { if constexpr (IsFlat) { return &data; } else { return data; } }
-            const PairType& operator*()  const { return *operator->(); }
-            PairType&       operator*()        { return *operator->(); }
+            const Pair* operator->() const { if constexpr (IsFlat) { return &data; } else { return data; } }
+            Pair*       operator->()       { if constexpr (IsFlat) { return &data; } else { return data; } }
+            const Pair& operator*()  const { return *operator->(); }
+            Pair&       operator*()        { return *operator->(); }
 
-            Key&       GetKey()       { return operator->()->key; }
-            const Key& GetKey() const { return operator->()->key; }
-            Value&       GetValue()       { return operator->()->value; }
-            const Value& GetValue() const { return operator->()->value; }
+            Key&       GetKey()           requires IS_MAP { return operator*().key; }
+            const Key& GetKey()     const requires IS_MAP { return operator*().key; }
+            Value&       GetValue()       requires IS_MAP { return operator*().value; }
+            const Value& GetValue() const requires IS_MAP { return operator*().value; }
+            Key&       GetKey()           requires IS_SET { return operator*(); }
+            const Key& GetKey()     const requires IS_SET { return operator*(); }
+            Value&       GetValue()       requires IS_SET { return operator*(); }
+            const Value& GetValue() const requires IS_SET { return operator*(); }
 
-            operator PairType&()             { return operator*(); }
-            operator const PairType&() const { return operator*(); }
-            operator Key&()                  { return GetKey(); }
-            operator const Key&()      const { return GetKey(); }
-            operator Value&()                { return GetValue(); }
-            operator const Value&()    const { return GetValue(); }
+            operator Pair&()             { return operator*(); }
+            operator const Pair&() const { return operator*(); }
         };
 
         static void DestroyNodesNoDeallocate(HashTable& m) {
@@ -290,7 +284,7 @@ namespace Quasi {
         // generic iterator for keys, values, valuesmut, pairs, and pairsmut
         template <class T>
         struct TableIter : IIterator<T&, TableIter<T>> {
-            friend IIterator<AddConstIf<PairType, T>&, TableIter>;
+            friend IIterator<AddConstIf<Pair, T>&, TableIter>;
         private:
             using NodePtr = AddConstIf<Node, T>*;
             friend struct HashTable;
@@ -351,11 +345,11 @@ namespace Quasi {
         // standard, but we can ignore it.
         HashTable(Hasher h = {}) : hasher(std::move(h)) {}
 
-        HashTable(Collection<PairType> auto&& kvpairs, Hasher h = {}) : hasher(std::move(h)) {
+        HashTable(Collection<Pair> auto&& kvpairs, Hasher h = {}) : hasher(std::move(h)) {
             Insert(kvpairs);
         }
 
-        HashTable(IList<PairType> initlist, Hasher h = {}) : hasher(std::move(h)) {
+        HashTable(IList<Pair> initlist, Hasher h = {}) : hasher(std::move(h)) {
             Insert(Spans::FromIList(initlist));
         }
 
@@ -549,29 +543,25 @@ namespace Quasi {
 
         Value& operator[](const Key& key) {
             const auto [index, result] = InsertKeyAndPrepareSlot(key);
-            switch (result) {
-                case InsertResult::New: case InsertResult::Overwrite:
-                    InitOrWriteNode(index, key, Value {}, result);
-                default:;
+            if (result != InsertResult::Found) {
+                InitOrWriteNode(index, { key }, result);
             }
             return kvData[index].GetValue();
         }
         Value& operator[](Key&& key) {
             const auto [index, result] = InsertKeyAndPrepareSlot(key);
-            switch (result) {
-                case InsertResult::New: case InsertResult::Overwrite:
-                    InitOrWriteNode(index, std::move(key), Value {}, result);
-                default:;
+            if (result != InsertResult::Found) {
+                InitOrWriteNode(index, { std::move(key) }, result);
             }
             return kvData[index].GetValue();
         }
-        OptRef<const Value> operator[](const Key& key) const { return Get(key); }
-        OptRef<const Value> Get(const Key& key) const {
-            const OptionUsize i = FindIndexOf(key);
-            return i ? OptRefs::SomeRef(kvData[*i].GetValue()) : nullptr;
-        }
         OptRef<const Value> operator[](const auto& kview) const { return Get(kview); }
         OptRef<const Value> Get(const auto& kview) const {
+            const OptionUsize i = FindIndexOf(kview);
+            return i ? OptRefs::SomeRef(kvData[*i].GetValue()) : nullptr;
+        }
+        OptRef<Value> operator[](const auto& kview) { return Get(kview); }
+        OptRef<Value> Get(const auto& kview) {
             const OptionUsize i = FindIndexOf(kview);
             return i ? OptRefs::SomeRef(kvData[*i].GetValue()) : nullptr;
         }
@@ -699,25 +689,25 @@ namespace Quasi {
             ++elmCount;
         }
     public:
-        void Insert(const Collection<PairType> auto& collection) {
+        void Insert(const Collection<Pair> auto& collection) {
             for (auto&& kv : collection)
                 Insert(kv);
         }
 
-        void Insert(IList<PairType> ilist) {
+        void Insert(IList<Pair> ilist) {
             for (const auto& kv : ilist)
                 Insert(kv);
         }
 
         enum class InsertResult { Found, New, Overwrite, OverflowError };
 
-        void InitOrWriteNode(usize index, Key k, Value v, InsertResult r) {
+        void InitOrWriteNode(usize index, Pair p, InsertResult r) {
             switch (r) {
                 case InsertResult::New:
-                    new (&kvData[index]) Node(*this, std::move(k), std::move(v));
+                    new (&kvData[index]) Node(*this, std::move(p));
                     break;
                 case InsertResult::Overwrite:
-                    kvData[index] = Node(*this, std::move(k), std::move(v));
+                    kvData[index] = Node(*this, std::move(p));
                     break;
                 default:;
             }
@@ -774,35 +764,63 @@ namespace Quasi {
     private:
         // tries to insert a new value and returns a reference, unless one already exists
         template <class Kfwd>
-        OptRef<PairType> TryInsertInternal(Kfwd&& k, Value v) {
+        OptRef<Pair> TryInsertInternal(Kfwd&& k, Value v) requires IS_MAP {
             const auto [i, result] = InsertKeyAndPrepareSlot(k);
-            InitOrWriteNode(i, std::forward<Kfwd>(k), std::move(v), result);
-            return result == InsertResult::Found ? nullptr : *kvData[i];
+            if (result != InsertResult::Found) {
+                InitOrWriteNode(i, { std::forward<Kfwd>(k), std::move(v) }, result);
+                return *kvData[i];
+            } else return nullptr;
+        }
+
+        template <class Kfwd>
+        OptRef<Pair> TryInsertInternal(Kfwd&& k) requires IS_SET {
+            const auto [i, result] = InsertKeyAndPrepareSlot(k);
+            if (result != InsertResult::Found) {
+                InitOrWriteNode(i, std::forward<Kfwd>(k), result);
+                return *kvData[i];
+            } else return nullptr;
         }
 
         // sets the value even if it was found,
         // and returns true if the value is new or false if it was overwritten
         template <class Kfwd>
-        Tuple<PairType&, bool> InsertOrAssignInternal(Kfwd&& k, Value v) {
+        Tuple<Pair&, bool> InsertOrAssignInternal(Kfwd&& k, Value v) requires IS_MAP {
             const auto [i, result] = InsertKeyAndPrepareSlot(k);
             switch (result) {
                 case InsertResult::Found:
                     kvData[i].GetValue() = std::move(v);
-                break;
+                    break;
                 case InsertResult::New:
-                    new (&kvData[i]) Node(*this, std::forward<Kfwd>(k), std::move(v));
-                break;
+                    new (&kvData[i]) Node(*this, { std::forward<Kfwd>(k), std::move(v) });
+                    break;
                 case InsertResult::Overwrite:
-                    kvData[i] = Node(*this, std::forward<Kfwd>(k), std::move(v));
+                    kvData[i] = Node(*this, { std::forward<Kfwd>(k), std::move(v) });
                 default:;
             }
-            return { kvData[i], result != InsertResult::Found };
+            return { *kvData[i], result != InsertResult::Found };
+        }
+
+        // always writes
+        Tuple<Pair&, bool> InsertOrAssignInternal(Key k) requires IS_SET {
+            const auto [i, result] = InsertKeyAndPrepareSlot(k);
+            switch (result) {
+                case InsertResult::Found:
+                    *kvData[i] = std::move(k);
+                    break;
+                case InsertResult::New:
+                    new (&kvData[i]) Node(*this, std::move(k));
+                    break;
+                case InsertResult::Overwrite:
+                    kvData[i] = Node(*this, std::move(k));
+                default:;
+            }
+            return { *kvData[i], result != InsertResult::Found };
         }
 
         // returns the previous value associated with the key, unless there wasn't any to begin with
         // also writes the new value to the associated key
         template <class Kfwd>
-        Option<Value> ReplaceInternal(Kfwd&& k, Value v) {
+        Option<Value> ReplaceInternal(Kfwd&& k, Value v) requires IS_MAP {
             const auto [i, result] = InsertKeyAndPrepareSlot(k);
             switch (result) {
                 case InsertResult::Found:
@@ -817,15 +835,37 @@ namespace Quasi {
             }
             return nullptr;
         }
+
+        Option<Value> ReplaceInternal(Key k) requires IS_SET {
+            const auto [i, result] = InsertKeyAndPrepareSlot(k);
+            switch (result) {
+                case InsertResult::Found:
+                    std::swap(*kvData[i], k);
+                    return k;
+                case InsertResult::New:
+                    new (&kvData[i]) Node(*this, std::move(k));
+                    break;
+                case InsertResult::Overwrite:
+                    kvData[i] = Node(*this, std::move(k));
+                default:;
+            }
+            return nullptr;
+        }
     public:
-        OptRef<PairType> TryInsert(const Key& k, Value v) { return TryInsertInternal(k,            std::move(v)); }
-        OptRef<PairType> TryInsert(Key&& k,      Value v) { return TryInsertInternal(std::move(k), std::move(v)); }
-        Tuple<PairType&, bool> InsertOrAssign(const Key& k, Value v) { return InsertOrAssignInternal(k,            std::move(v)); }
-        Tuple<PairType&, bool> InsertOrAssign(Key&&      k, Value v) { return InsertOrAssignInternal(std::move(k), std::move(v)); }
-        PairType& Insert(const Key& k, Value v) { return InsertOrAssignInternal(k,            std::move(v))[1_st]; }
-        PairType& Insert(Key&&      k, Value v) { return InsertOrAssignInternal(std::move(k), std::move(v))[1_st]; }
-        Option<Value> Replace(const Key& k, Value v) { return ReplaceInternal(k,            std::move(v)); }
-        Option<Value> Replace(Key&&      k, Value v) { return ReplaceInternal(std::move(k), std::move(v)); }
+        OptRef<Pair> TryInsert(const Key& k, Value v) requires IS_MAP { return TryInsertInternal(k,            std::move(v)); }
+        OptRef<Pair> TryInsert(Key&& k,      Value v) requires IS_MAP { return TryInsertInternal(std::move(k), std::move(v)); }
+        Tuple<Pair&, bool> InsertOrAssign(const Key& k, Value v) requires IS_MAP { return InsertOrAssignInternal(k,            std::move(v)); }
+        Tuple<Pair&, bool> InsertOrAssign(Key&&      k, Value v) requires IS_MAP { return InsertOrAssignInternal(std::move(k), std::move(v)); }
+        Pair& Insert(const Key& k, Value v) requires IS_MAP { return InsertOrAssignInternal(k,            std::move(v))[1_st]; }
+        Pair& Insert(Key&&      k, Value v) requires IS_MAP { return InsertOrAssignInternal(std::move(k), std::move(v))[1_st]; }
+        Option<Value> Replace(const Key& k, Value v) requires IS_MAP { return ReplaceInternal(k,            std::move(v)); }
+        Option<Value> Replace(Key&&      k, Value v) requires IS_MAP { return ReplaceInternal(std::move(k), std::move(v)); }
+
+        OptRef<Key> TryInsert(const Key& k) requires IS_SET { return TryInsertInternal(k); }
+        OptRef<Key> TryInsert(Key&& k)      requires IS_SET { return TryInsertInternal(std::move(k)); }
+        Tuple<Key&, bool> InsertOrAssign(Key k) requires IS_SET { return InsertOrAssignInternal(std::move(k)); }
+        Pair& Insert(Key k) requires IS_SET { return InsertOrAssignInternal(std::move(k))[1_st]; }
+        Option<Value> Replace(Key k) requires IS_SET { return ReplaceInternal(std::move(k)); }
 
         // removes the key in the map
         bool Remove(const Key& k) {
@@ -837,7 +877,7 @@ namespace Quasi {
             return true;
         }
 
-        void RemoveAt(TableIter<const PairType>& iter) {
+        void RemoveAt(TableIter<const Pair>& iter) {
             const usize i = iter.kvData - kvData;
             ShiftDown(i);
             --elmCount;
@@ -847,7 +887,7 @@ namespace Quasi {
             }
         }
 
-        void KeepEntries(Predicate<PairType> auto&& pred) {
+        void KeepEntries(Predicate<Pair> auto&& pred) {
             for (auto iter = IterImpl(); iter.CanNext(); iter.Advance()) {
                 if (!pred(iter.Current()))
                     RemoveAt(iter);
@@ -866,11 +906,11 @@ namespace Quasi {
         }
 
         // removes the key value pair, and returns the pair as well
-        Option<PairType> TakeEntry(const Key& k) {
+        Option<Pair> TakeEntry(const Key& k) {
             const OptionUsize i = FindIndexOf(k);
             if (!i) return nullptr;
 
-            PairType kvpair = std::move(*kvData[*i]);
+            Pair kvpair = std::move(*kvData[*i]);
             ShiftDown(i);
             --elmCount;
             return kvpair;
@@ -883,10 +923,10 @@ namespace Quasi {
             return FindIndexOf(kview).HasValue();
         }
     protected:
-        TableIter<const PairType> IterImpl() const { return TableIter<const PairType>::FromFwd(kvData, KvEnd(), infoData); }
-        TableIter<PairType>    IterMutImpl()       { return TableIter<PairType>      ::FromFwd(kvData, KvEnd(), infoData); }
+        TableIter<const Pair> IterImpl() const { return TableIter<const Pair>::FromFwd(kvData, KvEnd(), infoData); }
+        TableIter<Pair>    IterMutImpl()       { return TableIter<Pair>      ::FromFwd(kvData, KvEnd(), infoData); }
     public:
-        TableIter<const PairType> IterStartingAt(const Key& k) const {
+        TableIter<const Pair> IterStartingAt(const Key& k) const {
             const OptionUsize i = FindIndexOf(k);
             if (!i) return {};
             return { &kvData[*i], KvEnd(), &infoData[*i] };
@@ -1103,12 +1143,12 @@ namespace Quasi {
             infoHashShift  = InitialInfoHashShift;
         }
 
-        friend ICollection<KeyValuePair<Key, Value>, HashTable>;
+        friend ICollection<Pair&, HashTable>;
     };
 
     template <class K, class V, class Hasher = Hashing::DefaultHasher>
-    struct HashMap : HashTable<sizeof(KeyValuePair<K, V>) <= sizeof(usize) * 6, K, V, Hasher> {};
+    struct HashMap : HashTable<sizeof(KeyValuePair<K, V>) <= sizeof(usize) * 6, K, V, KeyValuePair<K, V>, Hasher> {};
 
     template <class K, class Hasher = Hashing::DefaultHasher>
-    struct HashSet : HashTable<sizeof(K) <= sizeof(usize) * 6, K, void, Hasher> {};
+    struct HashSet : HashTable<sizeof(K) <= sizeof(usize) * 6, K, K, K, Hasher> {};
 }

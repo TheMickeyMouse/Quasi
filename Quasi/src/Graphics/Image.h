@@ -66,7 +66,7 @@ namespace Quasi::Graphics {
 
         void BlitImage(const Math::iv2& dest, const ImageView& image);
 
-        void ExportPNG(CStr fdest);
+        void ExportPNG(CStr fdest) const;
 
         void Free();
     };
